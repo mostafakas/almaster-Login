@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster Agent Portal</title>
+    <title>Almaster Cloud V3.4 (Stable)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -50,7 +50,7 @@
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
-        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V3.0</h2>
+        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V3.4</h2>
     </div>
 
     <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
@@ -199,7 +199,36 @@
     </div>
 
     <script>
-        // 1. FIREBASE CONFIG
+        // ==========================================
+        // 0. HELPER FUNCTIONS (DEFINED FIRST TO FIX ERROR)
+        // ==========================================
+        function getStatusColor(s) {
+            if(s==='Online') return { border:'border-green-500', text:'text-green-600', bg:'bg-green-100' };
+            if(s==='Busy') return { border:'border-red-500', text:'text-red-600', bg:'bg-red-100' };
+            if(s==='Break') return { border:'border-yellow-500', text:'text-yellow-600', bg:'bg-yellow-100' };
+            return { border:'border-slate-400', text:'text-slate-500', bg:'bg-slate-200' };
+        }
+
+        function formatTime(ms, short = false) {
+            if(isNaN(ms)) return "00:00";
+            const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
+            const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0');
+            const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
+            return short ? `${h}:${m}` : `${h}:${m}:${s}`;
+        }
+
+        function getMillis(val) {
+            if (!val) return Date.now();
+            if (typeof val === 'number') return val;
+            if (typeof val.toMillis === 'function') return val.toMillis();
+            return Date.now();
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // ==========================================
+        // 1. CONFIGURATION
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM",
             authDomain: "almaster-b8c18.firebaseapp.com",
@@ -220,7 +249,9 @@
         let idleInterval;
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=';
 
+        // ==========================================
         // 2. AUTHENTICATION
+        // ==========================================
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
@@ -250,15 +281,17 @@
 
         function logout() { auth.signOut().then(()=>location.reload()); }
 
-        // 3. INIT SYSTEM
+        // ==========================================
+        // 3. SYSTEM LOGIC
+        // ==========================================
         function initSystem() {
             document.getElementById('loader').classList.add('hidden-section');
             document.getElementById('view-login').classList.add('hidden-section');
             document.getElementById('view-system').classList.remove('hidden-section');
 
-            document.getElementById('sb-name').innerText = userProfile.name;
-            document.getElementById('sb-role').innerText = userProfile.role;
-            document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
+            document.getElementById('sb-name').innerText = userProfile.name || 'User';
+            document.getElementById('sb-role').innerText = userProfile.role || 'Employee';
+            document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + 'User';
 
             if(userProfile.role === 'admin') document.getElementById('admin-menu').classList.remove('hidden-section');
             else document.getElementById('admin-menu').classList.add('hidden-section');
@@ -268,7 +301,10 @@
             setInterval(updateTimers, 1000);
         }
 
-        // 4. MAIN DASHBOARD LOGIC
+        function switchTab(tab) {
+            // Only dashboard tab exists now, but kept for future expansion
+        }
+
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
                 const grid = document.getElementById('grid-users');
@@ -281,11 +317,10 @@
                     const colors = getStatusColor(u.status);
                     const canControl = isMe || isAdmin;
 
-                    // Calculate Time Banks
                     const tb = u.timeBank || {};
                     
                     let buttonsHTML = '';
-                    if(isMe) { // Only I can see my controls (Admin can edit profile but not change live status)
+                    if(isMe) { 
                          buttonsHTML = `
                         <div class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
                             ${btnHTML(u.email, 'Online', 'green')}
@@ -300,6 +335,8 @@
                     let adminEditBtn = isAdmin ? `<button onclick="openEditModal('${u.email}')" class="absolute top-2 right-2 text-slate-300 hover:text-primary-500 p-2"><i class="fas fa-cog"></i></button>` : '';
                     let historyBtn = (isMe || isAdmin) ? `<button onclick="viewLogs('${u.email}')" class="text-primary-500 hover:underline text-xs"><i class="fas fa-history mr-1"></i> Logs</button>` : '';
 
+                    const safeStart = getMillis(u.lastChange);
+
                     const card = `
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 relative border-l-4 ${colors.border} ${isMe ? 'ring-2 ring-primary-200' : ''}">
                         ${adminEditBtn}
@@ -313,24 +350,24 @@
                             </div>
                             
                             <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-3 rounded-xl mb-2">
-                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${colors.bg} ${colors.text}">${u.status}</span>
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${colors.bg} ${colors.text}">${u.status || 'Offline'}</span>
                                 <div class="font-mono text-lg font-bold text-slate-700 dark:text-slate-300 main-timer" 
-                                     data-start="${u.lastChange?.toMillis() || Date.now()}" 
+                                     data-start="${safeStart}" 
                                      data-bank="${tb[u.status] || 0}">00:00:00</div>
                             </div>
 
                             <div class="stats-grid text-slate-500">
                                 <div class="stat-box">
                                     <div class="text-[8px] uppercase">Online</div>
-                                    <div class="font-mono font-bold stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${u.lastChange?.toMillis() || 0}">00:00</div>
+                                    <div class="font-mono font-bold stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</div>
                                 </div>
                                 <div class="stat-box">
                                     <div class="text-[8px] uppercase">Busy</div>
-                                    <div class="font-mono font-bold stat-timer" data-val="${tb['Busy'] || 0}" data-active="${u.status === 'Busy'}" data-start="${u.lastChange?.toMillis() || 0}">00:00</div>
+                                    <div class="font-mono font-bold stat-timer" data-val="${tb['Busy'] || 0}" data-active="${u.status === 'Busy'}" data-start="${safeStart}">00:00</div>
                                 </div>
                                 <div class="stat-box">
                                     <div class="text-[8px] uppercase">Break</div>
-                                    <div class="font-mono font-bold stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${u.lastChange?.toMillis() || 0}">00:00</div>
+                                    <div class="font-mono font-bold stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</div>
                                 </div>
                                 <div class="stat-box">
                                     <div class="text-[8px] uppercase">Total</div>
@@ -355,22 +392,18 @@
             return `<button onclick="setStatus('${email}', '${status}')" class="p-2 rounded-lg bg-${color}-50 hover:bg-${color}-500 text-${color}-600 hover:text-white transition shadow-sm font-bold text-[10px] uppercase">${status}</button>`;
         }
 
-        // 5. STATUS LOGIC (ACCUMULATIVE)
         async function setStatus(email, newStatus, isAuto = false) {
-            if(newStatus === userProfile.status) return; // No change
+            if(newStatus === userProfile.status) return; 
 
-            // 1. Calculate time spent in OLD status
             const now = Date.now();
-            const lastTime = userProfile.lastChange ? userProfile.lastChange.toMillis() : now;
+            const lastTime = getMillis(userProfile.lastChange);
             const diff = now - lastTime;
             const oldStatus = userProfile.status || 'Offline';
 
-            // 2. Update Bank
             let timeBank = userProfile.timeBank || {};
             if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
             timeBank[oldStatus] += diff;
 
-            // 3. Push Update
             const timestamp = firebase.firestore.FieldValue.serverTimestamp();
             let deviceInfo = "Unknown";
             try { deviceInfo = `${navigator.platform} | ${navigator.userAgent.match(/\(([^)]+)\)/)[1]}`; } catch(e){}
@@ -378,11 +411,10 @@
             await db.collection('users').doc(email).update({
                 status: newStatus,
                 lastChange: timestamp,
-                timeBank: timeBank, // Save accumulation
+                timeBank: timeBank,
                 device: deviceInfo
             });
 
-            // 4. Log
             await db.collection('logs').add({
                 user: email, status: newStatus, time: timestamp, auto: isAuto
             });
@@ -390,53 +422,9 @@
             if(email === currentUser.email && newStatus !== 'Offline') resetIdleTimer(true);
         }
 
-        // 6. LOGS
-        async function viewLogs(email) {
-            document.getElementById('modal-logs').classList.remove('hidden');
-            const container = document.getElementById('logs-container');
-            container.innerHTML = '<div class="text-center mt-10"><i class="fas fa-spinner fa-spin text-2xl text-primary-500"></i><p class="text-xs mt-2">Loading History...</p></div>';
-
-            try {
-                // IMPORTANT: Ensure you created the index in Firebase Console if this fails!
-                // Link will appear in console if missing.
-                const snapshot = await db.collection('logs')
-                    .where('user', '==', email)
-                    .orderBy('time', 'desc')
-                    .limit(30)
-                    .get();
-                
-                if(snapshot.empty) {
-                    container.innerHTML = '<p class="text-center text-slate-400 mt-10">No movements recorded yet.</p>';
-                    return;
-                }
-
-                let html = '<ul class="space-y-2">';
-                snapshot.forEach(doc => {
-                    const l = doc.data();
-                    const date = l.time ? moment(l.time.toDate()) : moment();
-                    html += `
-                    <li class="flex justify-between items-center text-sm border-b dark:border-slate-700 pb-2 px-2 hover:bg-slate-50 dark:hover:bg-slate-900 rounded">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full ${l.status==='Online'?'bg-green-500':l.status==='Busy'?'bg-red-500':'bg-slate-300'}"></span>
-                            <span class="font-bold ${l.auto ? 'text-orange-500' : 'text-slate-700 dark:text-white'}">
-                                ${l.auto ? '<i class="fas fa-robot mr-1" title="Auto Idle"></i>' : ''} ${l.status}
-                            </span>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-mono text-xs text-slate-600 dark:text-slate-400">${date.format('h:mm:ss A')}</div>
-                            <div class="text-[10px] text-slate-400">${date.fromNow()}</div>
-                        </div>
-                    </li>`;
-                });
-                html += '</ul>';
-                container.innerHTML = html;
-            } catch (error) {
-                console.error(error);
-                container.innerHTML = `<div class="text-red-500 text-center text-xs p-4">Error: ${error.message}<br>Check Console for Index Link.</div>`;
-            }
-        }
-
-        // 7. EDIT MODAL
+        // ==========================================
+        // 4. ADMIN & MODALS
+        // ==========================================
         async function openEditModal(email) {
             const modal = document.getElementById('modal-edit');
             const form = document.getElementById('form-edit');
@@ -525,11 +513,56 @@
             }
         }
 
-        // 8. TIMERS & IDLE
+        async function viewLogs(email) {
+            document.getElementById('modal-logs').classList.remove('hidden');
+            const container = document.getElementById('logs-container');
+            container.innerHTML = '<div class="text-center mt-10"><i class="fas fa-spinner fa-spin text-2xl text-primary-500"></i><p class="text-xs mt-2">Loading History...</p></div>';
+
+            try {
+                const snapshot = await db.collection('logs')
+                    .where('user', '==', email)
+                    .orderBy('time', 'desc')
+                    .limit(30)
+                    .get();
+                
+                if(snapshot.empty) {
+                    container.innerHTML = '<p class="text-center text-slate-400 mt-10">No movements recorded yet.</p>';
+                    return;
+                }
+
+                let html = '<ul class="space-y-2">';
+                snapshot.forEach(doc => {
+                    const l = doc.data();
+                    const safeTime = l.time ? l.time.toDate() : new Date();
+                    const date = moment(safeTime);
+                    html += `
+                    <li class="flex justify-between items-center text-sm border-b dark:border-slate-700 pb-2 px-2 hover:bg-slate-50 dark:hover:bg-slate-900 rounded">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${l.status==='Online'?'bg-green-500':l.status==='Busy'?'bg-red-500':'bg-slate-300'}"></span>
+                            <span class="font-bold ${l.auto ? 'text-orange-500' : 'text-slate-700 dark:text-white'}">
+                                ${l.auto ? '<i class="fas fa-robot mr-1" title="Auto Idle"></i>' : ''} ${l.status}
+                            </span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono text-xs text-slate-600 dark:text-slate-400">${date.format('h:mm:ss A')}</div>
+                            <div class="text-[10px] text-slate-400">${date.fromNow()}</div>
+                        </div>
+                    </li>`;
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = `<div class="text-red-500 text-center text-xs p-4"><b>Missing Index!</b><br>Open Console (F12) and click the link from Firebase.</div>`;
+            }
+        }
+
+        // ==========================================
+        // 5. TIMERS & IDLE
+        // ==========================================
         function updateTimers() {
             const now = Date.now();
             
-            // 1. Update Main Timers
             document.querySelectorAll('.main-timer').forEach(el => {
                 const start = parseInt(el.dataset.start);
                 const bank = parseInt(el.dataset.bank) || 0;
@@ -538,7 +571,6 @@
                 el.innerText = formatTime(bank + currentSession);
             });
 
-            // 2. Update Stat Timers (Detailed)
             document.querySelectorAll('.stat-box').forEach(box => {
                 const timer = box.querySelector('.stat-timer');
                 if(!timer) return;
@@ -550,19 +582,16 @@
                 if(isActive && start > 0) total += (now - start);
                 
                 timer.innerText = formatTime(total, true);
+                
+                // Update Total for Card
+                const totalDisplay = box.parentElement.querySelector('.total-timer');
+                if(totalDisplay) {
+                    // Logic to sum all stats would go here, for simplicity we skip dynamic summing in this view loop
+                }
             });
         }
 
-        function formatTime(ms, short = false) {
-            const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
-            const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0');
-            const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
-            return short ? `${h}:${m}` : `${h}:${m}:${s}`;
-        }
-
-        function userActivity() {
-            resetIdleTimer();
-        }
+        function userActivity() { resetIdleTimer(); }
 
         function startIdleTracker() {
             clearInterval(idleInterval);
@@ -570,10 +599,8 @@
                 if(!userProfile || userProfile.status === 'Offline') return;
                 idleTime++;
                 const limit = (userProfile.idleLimit || 5) * 60;
-                
-                // Debug Indicator
                 const debugEl = document.getElementById('idle-debug');
-                if(debugEl) debugEl.style.backgroundColor = idleTime > 0 ? '#fbbf24' : '#22c55e'; // Yellow if counting, Green if active
+                if(debugEl) debugEl.style.backgroundColor = idleTime > 0 ? '#fbbf24' : '#22c55e'; 
 
                 if (idleTime >= limit) {
                     document.getElementById('modal-idle').classList.remove('hidden');
@@ -601,7 +628,6 @@
                 if(window.cntInt) clearInterval(window.cntInt);
             }
         }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
 </html>
