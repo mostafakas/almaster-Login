@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster V12.0 (Silent Hunter)</title>
+    <title>Almaster V13.1 (Keyboard Strict)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -43,30 +43,30 @@
         .dark-mode .stat-box { background: #1e293b; }
         .user-card { transition: all 0.3s ease; }
 
-        /* The Trap Screen (Appears if they miss the notification) */
-        #trap-screen {
-            position: fixed; inset: 0; z-index: 200000;
-            background: #ef4444; color: white;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 20px;
+        /* Admin Alerts */
+        #admin-alerts-container {
+            position: fixed; bottom: 20px; left: 20px; z-index: 99999;
+            display: flex; flex-direction: column; gap: 10px;
+            max-height: 80vh; overflow-y: auto; pointer-events: none;
         }
-        .trap-btn {
-            background: white; color: #ef4444; padding: 15px 40px; 
-            border-radius: 30px; font-weight: bold; font-size: 1.2rem; margin-top: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        .admin-alert-toast {
+            pointer-events: auto;
+            width: 320px; background: white; border-left: 6px solid #ef4444;
+            padding: 15px; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.4s ease-out; position: relative;
         }
+        .dark-mode .admin-alert-toast { background: #1e293b; color: white; border-color: #ef4444; }
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .pulse-urgent { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body class="min-h-screen text-slate-800 dark:text-slate-100 font-sans selection:bg-primary-500 selection:text-white">
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
-        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V12.0</h2>
-    </div>
-
-    <div id="perm-banner" class="hidden-section fixed top-0 left-0 w-full bg-yellow-400 text-black p-4 z-[300] text-center font-bold shadow-lg">
-        ⚠️ SYSTEM REQUIRES PERMISSION
-        <button onclick="askPermission()" class="ml-4 bg-black text-white px-4 py-1 rounded hover:bg-slate-800 transition">ENABLE NOTIFICATIONS</button>
+        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V13.1</h2>
     </div>
 
     <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
@@ -153,16 +153,7 @@
         </main>
     </div>
 
-    <div id="trap-screen" class="hidden-section">
-        <i class="fas fa-lock text-6xl mb-6"></i>
-        <h1 class="text-4xl font-bold mb-2">SYSTEM LOCKED</h1>
-        <p class="text-xl opacity-90 max-w-md mb-8">You missed the activity check. Your session has been marked as IDLE from the time the check was sent.</p>
-        <div class="bg-white/20 p-4 rounded-xl mb-6">
-            <p class="text-sm font-mono uppercase">Idle Duration:</p>
-            <p class="text-3xl font-bold font-mono" id="trap-timer">00:00:00</p>
-        </div>
-        <button onclick="resumeWork()" class="trap-btn">I'M BACK TO WORK</button>
-    </div>
+    <div id="admin-alerts-container"></div>
 
     <div id="chat-fab" class="hidden-section fixed bottom-6 right-6 z-50">
         <button onclick="toggleChat()" class="bg-primary-600 hover:bg-primary-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 relative">
@@ -207,7 +198,7 @@
                             <option value="admin">Admin</option>
                         </select>
                     </div>
-                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Silent Check Freq (Min)</label><input type="number" id="edit-idle" class="form-input" min="1" value="15"></div>
+                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Idle Limit (Min)</label><input type="number" id="edit-idle" class="form-input" min="1" value="5"></div>
                     <div class="md:col-span-2"><label class="text-[10px] font-bold uppercase text-slate-400">Email</label><input type="email" id="edit-email" class="form-input" readonly></div>
                     <div class="md:col-span-2 pt-4 flex gap-3 border-t dark:border-slate-700 mt-2">
                         <button type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-lg shadow-lg">Save</button>
@@ -246,7 +237,17 @@
         // ==========================================
         // 0. HELPER FUNCTIONS
         // ==========================================
-        function getStatusColor(s) {
+        function getStatusColor(s, isFocus, isIdle) {
+            // Priority 1: Offline
+            if(s==='Offline') return { border:'border-slate-400', text:'text-slate-500', bg:'bg-slate-200' };
+            
+            // Priority 2: Idle (Red) - Overrides everything else if Idle
+            if(isIdle) return { border:'border-red-500', text:'text-red-600', bg:'bg-red-100', customLabel: 'Idle (Inactive)' };
+
+            // Priority 3: Away (Orange) - Online but not focused
+            if(s==='Online' && isFocus === false) return { border:'border-orange-500', text:'text-orange-600', bg:'bg-orange-100', customLabel: 'Away (Tab)' };
+            
+            // Priority 4: Active States
             if(s==='Online') return { border:'border-green-500', text:'text-green-600', bg:'bg-green-100' };
             if(s==='Busy') return { border:'border-red-500', text:'text-red-600', bg:'bg-red-100' };
             if(s==='Break') return { border:'border-yellow-500', text:'text-yellow-600', bg:'bg-yellow-100' };
@@ -288,17 +289,25 @@
 
         let currentUser = null;
         let userProfile = null;
+        let lastActionTime = Date.now(); 
+        let idleCheckInterval;
         let allUsersData = [];
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=';
 
-        // --- SILENT TRAP VARIABLES ---
-        let nextCheckTime = 0;
-        let checkIntervalHandler;
-        let isTrapActive = false;
-        let trapStartTime = 0;
+        // TRACKERS (STRICT KEYBOARD ONLY FOR IDLE RESET)
+        window.addEventListener('keydown', resetIdleTimer); 
+        // Note: Mouse move REMOVED from idle reset, only used for visual 'active' check locally if needed
+        
+        // Track Focus State (Tab Switching) - Immediate Update
+        document.addEventListener('visibilitychange', () => {
+            if(currentUser && userProfile && userProfile.status !== 'Offline') {
+                const isFocused = !document.hidden;
+                db.collection('users').doc(currentUser.email).update({ isFocused: isFocused });
+            }
+        });
 
         // ==========================================
-        // 2. AUTHENTICATION & PERMISSIONS
+        // 2. AUTHENTICATION
         // ==========================================
         auth.onAuthStateChanged(async (user) => {
             if (user) {
@@ -307,8 +316,8 @@
                 if(doc.exists) {
                     userProfile = doc.data();
                     await setStatus(user.email, 'Online', true);
+                    db.collection('users').doc(user.email).update({ isFocused: true });
                     initSystem();
-                    checkPermissions();
                 } else {
                     alert("Account not configured. Contact Admin.");
                     auth.signOut();
@@ -334,18 +343,6 @@
             auth.signOut().then(()=>location.reload()); 
         }
 
-        function checkPermissions() {
-            if ("Notification" in window && Notification.permission !== "granted") {
-                document.getElementById('perm-banner').classList.remove('hidden-section');
-            }
-        }
-
-        function askPermission() {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") document.getElementById('perm-banner').classList.add('hidden-section');
-            });
-        }
-
         // ==========================================
         // 3. SYSTEM LOGIC
         // ==========================================
@@ -364,10 +361,7 @@
 
             listenToAllUsers();
             initChat();
-            
-            // Start The Trap Logic
-            scheduleNextTrap();
-            checkIntervalHandler = setInterval(checkIfTimeForTrap, 5000); 
+            startIdleTracker(); 
             
             setInterval(updateTimers, 1000);
         }
@@ -377,119 +371,66 @@
                 allUsersData = [];
                 snapshot.forEach(doc => allUsersData.push(doc.data()));
                 renderGrid();
+                if(userProfile.role === 'admin') renderAdminAlerts();
                 
                 const myDoc = allUsersData.find(u => u.email === currentUser.email);
-                if(myDoc) {
-                    userProfile = myDoc;
-                    // If marked idle in DB, lock screen locally
-                    if(userProfile.isIdle) {
-                        document.getElementById('trap-screen').classList.remove('hidden-section');
-                    } else {
-                        document.getElementById('trap-screen').classList.add('hidden-section');
-                    }
-                }
+                if(myDoc) userProfile = myDoc;
+                
                 updateReportDropdown();
             });
         }
 
         // ==========================================
-        // 4. THE SILENT TRAP ENGINE
+        // 4. ADMIN ALERTS
         // ==========================================
-        function scheduleNextTrap() {
-            // Get frequency (minutes)
-            let freqMin = parseInt(userProfile.idleLimit) || 15;
-            if(freqMin < 1) freqMin = 1;
-            
-            // Add randomness (0-5 mins)
-            const randomAdd = Math.floor(Math.random() * 5 * 60 * 1000); 
-            const base = freqMin * 60 * 1000;
-            
-            nextCheckTime = Date.now() + base + randomAdd;
-            isTrapActive = false;
-        }
-
-        function checkIfTimeForTrap() {
-            if(!userProfile || userProfile.status === 'Offline' || userProfile.isIdle || isTrapActive) return;
-            if(userProfile.role === 'admin') return; // Admin immunity (remove for testing)
-
-            if(Date.now() >= nextCheckTime) {
-                deploySilentTrap();
-            }
-        }
-
-        function deploySilentTrap() {
-            isTrapActive = true;
-            trapStartTime = Date.now();
-
-            if (Notification.permission === "granted") {
-                // THE SILENT TRAP
-                const n = new Notification("Security Check", {
-                    body: "Click to verify presence...",
-                    icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png",
-                    silent: true, // No sound!
-                    requireInteraction: true // Stays on screen
-                });
-
-                // If user clicks, they are safe
-                n.onclick = function() {
-                    window.focus();
-                    n.close();
-                    scheduleNextTrap(); // Reset logic
-                };
-
-                // Wait 60 seconds. If not clicked, mark IDLE.
-                setTimeout(() => {
-                    // Check if still trap active (meaning they didn't click)
-                    if(isTrapActive) {
-                        n.close(); // Close notification
-                        markAsIdle(); // They missed it
+        function renderAdminAlerts() {
+            const container = document.getElementById('admin-alerts-container');
+            allUsersData.forEach(u => {
+                const isIdle = u.isIdle === true;
+                const hasLastSession = u.lastIdleSession && u.lastIdleSession.duration > 0;
+                
+                let activeAlert = document.getElementById(`alert-active-${u.email}`);
+                if(isIdle) {
+                    if(!activeAlert) {
+                        const div = document.createElement('div');
+                        div.id = `alert-active-${u.email}`;
+                        div.className = 'admin-alert-toast pulse-urgent';
+                        div.innerHTML = `
+                            <div class="flex items-start gap-3">
+                                <div class="bg-red-100 p-2 rounded-full text-red-600"><i class="fas fa-keyboard"></i></div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-sm text-red-600">IDLE: No Typing!</h4>
+                                    <p class="text-xs font-bold mb-1">${u.name}</p>
+                                    <div class="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded w-fit idle-counter" data-start="${getMillis(u.idleSince)}">00:00:00</div>
+                                </div>
+                            </div>`;
+                        container.appendChild(div);
                     }
-                }, 60000); // 60s trap duration
-            } else {
-                // If no permission, fallback to immediate check
-                // (User can't hide if they don't give permission)
-                markAsIdle(); 
-            }
-        }
+                } else if(activeAlert) activeAlert.remove();
 
-        async function markAsIdle() {
-            const now = Date.now();
-            // User failed. Mark in DB.
-            // Using a "trap timestamp" to calculate lost time later
-            await db.collection('users').doc(currentUser.email).update({
-                isIdle: true,
-                idleSince: firebase.firestore.Timestamp.fromMillis(trapStartTime)
+                let sessionAlert = document.getElementById(`alert-session-${u.email}`);
+                if(hasLastSession) {
+                    if(!sessionAlert) {
+                        const div = document.createElement('div');
+                        div.id = `alert-session-${u.email}`;
+                        div.className = 'admin-alert-toast !border-l-orange-500';
+                        div.innerHTML = `
+                            <div class="flex items-start gap-3">
+                                <div class="bg-orange-100 p-2 rounded-full text-orange-600"><i class="fas fa-history"></i></div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-sm text-orange-600">Idle Report (Resolved)</h4>
+                                    <p class="text-xs font-bold">${u.name}</p>
+                                    <div class="font-mono text-lg font-bold text-slate-800 dark:text-white">${formatTime(u.lastIdleSession.duration)}</div>
+                                    <button onclick="dismissIdleAlert('${u.email}')" class="mt-2 w-full bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs py-1 rounded font-bold transition">Dismiss</button>
+                                </div>
+                            </div>`;
+                        container.appendChild(div);
+                    }
+                } else if(sessionAlert) sessionAlert.remove();
             });
         }
+        async function dismissIdleAlert(email) { await db.collection('users').doc(email).update({ lastIdleSession: null }); }
 
-        async function resumeWork() {
-            // User finally returned and clicked "I'M BACK"
-            const now = Date.now();
-            const idleStart = getMillis(userProfile.idleSince);
-            const duration = now - idleStart;
-            const oldIdle = userProfile.idleBank || 0;
-
-            // Log the "Gap"
-            await db.collection('logs').add({
-                user: currentUser.email, name: userProfile.name,
-                from_status: userProfile.status, to_status: 'Idle (Missed Trap)',
-                duration_ms: duration, time: firebase.firestore.FieldValue.serverTimestamp(),
-                auto: true
-            });
-
-            // Update DB
-            await db.collection('users').doc(currentUser.email).update({
-                isIdle: false,
-                idleSince: null,
-                idleBank: oldIdle + duration
-            });
-            
-            scheduleNextTrap();
-        }
-
-        // ==========================================
-        // 5. GRID RENDER
-        // ==========================================
         function renderGrid() {
             const grid = document.getElementById('grid-users');
             grid.innerHTML = '';
@@ -501,7 +442,9 @@
                 if(isOffline && !showOffline) return;
 
                 const isMe = (currentUser.email === u.email);
-                const colors = getStatusColor(u.status);
+                
+                // Color Logic: Focus, Idle, or Active
+                const colors = getStatusColor(u.status, u.isFocused, u.isIdle);
                 const tb = u.timeBank || {};
                 const idleBank = u.idleBank || 0;
                 const safeStart = getMillis(u.lastChange);
@@ -515,6 +458,7 @@
                     buttonsHTML = `<div class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">${btnHTML(u.email, 'Online', 'green')}${btnHTML(u.email, 'Busy', 'red')}${btnHTML(u.email, 'Break', 'yellow')}${btnHTML(u.email, 'Offline', 'slate')}</div>`;
                 }
 
+                // Tasks
                 let tasksHTML = '';
                 const tasks = u.tasks || [];
                 if(tasks.length > 0 || isAdmin) {
@@ -526,6 +470,10 @@
                 }
 
                 let adminEditBtn = isAdmin ? `<button onclick="openEditModal('${u.email}')" class="absolute top-2 right-2 text-slate-300 hover:text-primary-500 p-2"><i class="fas fa-cog"></i></button>` : '';
+
+                // Dynamic Label
+                let label = u.status || 'Offline';
+                if(colors.customLabel) label = colors.customLabel;
 
                 const card = `
                 <div class="${cardClass}">
@@ -539,7 +487,7 @@
                             </div>
                         </div>
                         <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-lg mb-2">
-                            <span class="px-2 py-1 rounded-full text-[9px] font-bold uppercase ${colors.bg} ${colors.text}">${u.status || 'Offline'}</span>
+                            <span class="px-2 py-1 rounded-full text-[9px] font-bold uppercase ${colors.bg} ${colors.text}">${label}</span>
                             <div class="font-mono text-base font-bold text-slate-700 dark:text-slate-300 main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
                         </div>
                         <div class="stats-grid text-slate-500">
@@ -580,9 +528,7 @@
             await db.collection('logs').add({ user: targetEmail, name: uData.name, from_status: oldStatus, to_status: newStatus, start_time: uData.lastChange || timestamp, end_time: timestamp, duration_ms: duration, auto: isAuto });
             let updateData = { status: newStatus, lastChange: timestamp, timeBank: timeBank, isIdle: false };
             await userRef.update(updateData);
-            
-            // Reset check timer if user changes status manually
-            if(targetEmail === currentUser.email) scheduleNextTrap();
+            if(targetEmail === currentUser.email) resetIdleTimer();
         }
 
         function updateTimers() {
@@ -590,14 +536,7 @@
             document.querySelectorAll('.main-timer').forEach(el => { const start = parseInt(el.dataset.start); const bank = parseInt(el.dataset.bank) || 0; if(start) el.innerText = formatTime(bank + (now - start)); });
             document.querySelectorAll('.stat-timer').forEach(t => { const bank = parseInt(t.dataset.val)||0; const start = parseInt(t.dataset.start)||0; t.innerText = formatTime((t.dataset.active==='true') ? bank + (now - start) : bank); });
             document.querySelectorAll('.stat-idle').forEach(t => { const bank = parseInt(t.dataset.val)||0; const start = parseInt(t.dataset.start)||0; t.innerText = formatTime((t.dataset.isidle==='true') ? bank + (now - start) : bank); });
-            
-            // Trap Timer
-            const trapTimer = document.getElementById('trap-timer');
-            if(userProfile && userProfile.isIdle && trapTimer) {
-                const idleStart = getMillis(userProfile.idleSince);
-                trapTimer.innerText = formatTime(now - idleStart);
-            }
-
+            document.querySelectorAll('.idle-counter').forEach(el => { const start = parseInt(el.dataset.start); if(start) el.innerText = formatTime(now - start); });
             document.querySelectorAll('.total-fix-timer').forEach(t => { 
                 let total = parseInt(t.dataset.online) + parseInt(t.dataset.busy) + parseInt(t.dataset.break) + parseInt(t.dataset.idle);
                 const status = t.dataset.active; const start = parseInt(t.dataset.start)||0;
@@ -605,8 +544,49 @@
                 t.innerText = formatTime(total); 
             });
         }
+        
+        // --- STRICT IDLE (KEYBOARD ONLY) ---
+        function resetIdleTimer() {
+            lastActionTime = Date.now(); 
+            
+            // If user WAS idle, they just pressed a key -> recover
+            if(userProfile && userProfile.isIdle) {
+                const now = Date.now();
+                const idleStart = getMillis(userProfile.idleSince);
+                const duration = now - idleStart;
+                const oldIdleBank = userProfile.idleBank || 0;
 
-        // Standard Functions...
+                db.collection('users').doc(currentUser.email).update({ 
+                    isIdle: false, idleSince: null, idleBank: oldIdleBank + duration,
+                    lastIdleSession: { duration: duration, end: firebase.firestore.FieldValue.serverTimestamp() }
+                });
+            }
+        }
+
+        function startIdleTracker() {
+            clearInterval(idleCheckInterval);
+            idleCheckInterval = setInterval(() => {
+                // Admin immune check (remove if you want to test on self)
+                if(!userProfile || userProfile.status === 'Offline' || userProfile.role === 'admin') return; 
+                
+                let mins = parseInt(userProfile.idleLimit);
+                if(isNaN(mins) || mins < 1) mins = 1; 
+                
+                const limit = mins * 60 * 1000;
+                const now = Date.now();
+                
+                // Note: Only keyboard resets lastActionTime now
+                if ((now - lastActionTime) > limit) {
+                    if(!userProfile.isIdle) {
+                        db.collection('users').doc(currentUser.email).update({ 
+                            isIdle: true, idleSince: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                }
+            }, 2000);
+        }
+
+        // Standard Utils
         function updateReportDropdown(){const e=document.getElementById("report-user-select"),t=e.value;e.innerHTML='<option value="all">-- All Employees --</option>',allUsersData.forEach(t=>{const n=document.createElement("option");n.value=t.email,n.innerText=t.name,e.appendChild(n)}),e.value=t}
         function openReportModal(){document.getElementById("modal-report").classList.remove("hidden")}
         async function downloadReport(e){const t=document.getElementById("export-status"),n=document.getElementById("report-user-select").value;t.innerText="Processing...";const r=new Date;r.setDate(r.getDate()-e),r.setHours(0,0,0,0);let a=db.collection("logs").where("end_time",">=",r).orderBy("end_time","desc");"all"!==n&&(a=a.where("user","==","n"));const o=await a.get();if(o.empty)return void(t.innerText="No records.");let s="User Name,Action,Start Time,End Time,Duration,Type\n";o.forEach(e=>{const t=e.data(),n=t.start_time?t.start_time.toDate():null,r=t.end_time?t.end_time.toDate():new Date,a=moment(r).format("YYYY-MM-DD"),o=n?moment(n).format("HH:mm:ss"):"--",l=moment(r).format("HH:mm:ss"),i=formatTime(t.duration_ms||0);s+=`${t.name},"${t.from_status}->${t.to_status}",${a} ${o},${a} ${l},${i},${t.auto?"Auto":"Manual"}\n`});const l=new Blob([s],{type:"text/csv;charset=utf-8;"}),i=document.createElement("a");i.href=URL.createObjectURL(l),i.download=`Report_${e}Days.csv`,i.click(),t.innerText="Done!",setTimeout(()=>closeModal("modal-report"),2e3)}
