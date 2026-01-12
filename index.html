@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster V14 (Ultimate Tracker)</title>
+    <title>Almaster V15 (Pro Admin)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
@@ -29,254 +31,117 @@
     </script>
 
     <style>
-        body { background-color: #f8fafc; }
+        body { background-color: #f8fafc; overflow-x: hidden; }
         .dark-mode body { background-color: #0f172a; color: white; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .dark-mode .glass { background: rgba(30, 41, 59, 0.95); }
         .hidden-section { display: none !important; }
         .form-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-size: 14px; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
+        .user-card { transition: transform 0.2s; }
+        .user-card:hover { transform: translateY(-5px); }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 10px; font-size: 9px; text-align: center; }
+        .stat-box { background: #f1f5f9; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0; }
+        .dark-mode .stat-box { background: #1e293b; border-color: #334155; }
         
-        /* Animations */
-        @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .recording-pulse { animation: pulse-ring 1.5s infinite; }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .dark-mode ::-webkit-scrollbar-thumb { background: #475569; }
+        /* Message Bubbles */
+        .msg-me { background: #0ea5e9; color: white; align-self: flex-end; border-radius: 15px 15px 2px 15px; }
+        .msg-other { background: #f1f5f9; color: #1e293b; align-self: flex-start; border-radius: 15px 15px 15px 2px; }
+        .dark-mode .msg-other { background: #334155; color: white; }
     </style>
 </head>
-<body class="min-h-screen text-slate-800 dark:text-slate-100 font-sans selection:bg-primary-500 selection:text-white">
+<body class="min-h-screen text-slate-800 dark:text-slate-100 font-sans selection:bg-primary-500">
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
-        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V14 ULTIMATE</h2>
+        <h2 class="text-lg font-bold animate-pulse tracking-widest">ALMASTER V15</h2>
     </div>
 
-    <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
+    <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-900">
         <div class="w-full max-w-sm glass p-8 rounded-2xl shadow-2xl">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-primary-700 dark:text-primary-400 mb-1">ALMASTER</h1>
-                <p class="text-xs text-slate-500 uppercase tracking-widest font-bold">Secure Access</p>
-            </div>
+            <h1 class="text-3xl font-bold text-primary-600 text-center mb-6">ALMASTER</h1>
             <form onsubmit="handleLogin(event)">
-                <div class="mb-4">
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Email</label>
-                    <input type="email" id="login-email" class="form-input" placeholder="user@almaster.com" required>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Password</label>
-                    <input type="password" id="login-pass" class="form-input" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="w-full bg-primary-600 text-white font-bold py-3 rounded-lg hover:bg-primary-700 transition shadow-lg">Login & Track Location</button>
+                <input type="email" id="login-email" class="form-input" placeholder="Email" required>
+                <input type="password" id="login-pass" class="form-input" placeholder="Password" required>
+                <button type="submit" class="w-full bg-primary-600 text-white font-bold py-3 rounded-lg shadow-lg">Login</button>
             </form>
-            <p id="login-error" class="text-red-500 text-center mt-4 text-xs font-bold bg-red-50 p-2 rounded hidden"></p>
+            <p id="login-error" class="text-red-500 text-center mt-4 text-xs font-bold hidden"></p>
         </div>
     </div>
 
-    <div id="view-system" class="hidden-section flex min-h-screen overflow-hidden">
-        
-        <aside class="w-20 md:w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20 transition-all duration-300">
-            <div class="h-20 flex items-center justify-center border-b border-slate-800">
-                <h1 class="text-xl font-bold md:block hidden tracking-widest text-primary-400">ALMASTER</h1>
-                <h1 class="text-xl font-bold md:hidden block text-primary-400">A</h1>
-            </div>
-            
-            <div class="p-4 flex flex-col items-center md:flex-row md:items-center gap-3 border-b border-slate-800 bg-slate-800/50">
-                <img id="sb-img" src="" class="w-10 h-10 rounded-full object-cover border-2 border-primary-500 shadow-md bg-slate-700">
-                <div class="hidden md:block overflow-hidden">
-                    <p id="sb-name" class="font-bold text-sm truncate w-32">User</p>
-                    <p id="sb-role" class="text-[10px] text-slate-400 uppercase font-bold">Loading...</p>
+    <div id="view-system" class="hidden-section flex min-h-screen">
+        <aside class="w-20 md:w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20">
+            <div class="p-6 border-b border-slate-800 font-bold text-xl text-primary-500">ALMASTER</div>
+            <div class="p-4 border-b border-slate-800 flex items-center gap-3">
+                <img id="sb-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500">
+                <div class="hidden md:block">
+                    <p id="sb-name" class="font-bold text-sm truncate w-32"></p>
+                    <p id="sb-role" class="text-[10px] text-slate-400 font-bold uppercase"></p>
                 </div>
             </div>
-
-            <nav class="flex-1 p-2 space-y-1 overflow-y-auto">
-                <button class="nav-item w-full text-left p-3 rounded-lg bg-slate-800 text-white flex items-center justify-center md:justify-start gap-3">
-                    <i class="fas fa-th-large text-lg"></i> <span class="hidden md:block text-sm font-medium">Dashboard</span>
-                </button>
-                
-                <div id="admin-menu" class="hidden-section pt-4 mt-2 border-t border-slate-700">
-                    <p class="hidden md:block px-3 text-[10px] text-slate-500 uppercase font-bold mb-2">Admin Control</p>
-                    <button onclick="openEditModal('new')" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3">
-                        <i class="fas fa-user-plus text-lg"></i> <span class="hidden md:block text-sm font-medium">Add Employee</span>
-                    </button>
-                    <button onclick="openReportModal()" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3">
-                        <i class="fas fa-file-download text-lg"></i> <span class="hidden md:block text-sm font-medium">Pro Reports</span>
-                    </button>
-                    
-                    <div class="px-3 mt-4">
-                        <label class="flex items-center space-x-2 cursor-pointer text-xs text-slate-400">
-                            <input type="checkbox" id="show-offline-toggle" onchange="renderGrid()" class="rounded bg-slate-700 border-slate-600">
-                            <span>Show Offline</span>
-                        </label>
-                    </div>
+            <nav class="flex-1 p-2 space-y-2 overflow-y-auto">
+                <button onclick="location.reload()" class="w-full text-left p-3 rounded-lg bg-slate-800 flex items-center gap-3"><i class="fas fa-home"></i> <span class="hidden md:block">Dashboard</span></button>
+                <div id="admin-menu" class="hidden-section pt-4 border-t border-slate-800">
+                    <button onclick="openEditModal('new')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3 text-slate-400 hover:text-white"><i class="fas fa-user-plus"></i> <span class="hidden md:block">Add User</span></button>
+                    <button onclick="openReportModal()" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3 text-slate-400 hover:text-white"><i class="fas fa-file-invoice"></i> <span class="hidden md:block">Reports</span></button>
                 </div>
             </nav>
-            
-            <button onclick="enableSound()" id="btn-sound" class="p-2 text-yellow-400 text-xs text-center hover:bg-slate-800 hidden"><i class="fas fa-volume-up"></i> Enable Sounds</button>
-            <button onclick="logout()" class="p-4 text-red-400 hover:bg-red-900/20 transition border-t border-slate-800 flex items-center justify-center md:justify-start gap-3">
-                <i class="fas fa-sign-out-alt"></i> <span class="hidden md:block text-sm font-bold">Logout</span>
-            </button>
+            <button onclick="enableSound()" id="btn-sound" class="p-2 text-yellow-400 text-[10px]"><i class="fas fa-volume-up"></i> Click to Activate Sounds</button>
+            <button onclick="logout()" class="p-4 text-red-400 border-t border-slate-800 flex items-center gap-3"><i class="fas fa-sign-out-alt"></i> <span class="hidden md:block">Logout</span></button>
         </aside>
 
-        <main class="flex-1 bg-slate-100 dark:bg-slate-900 relative overflow-hidden flex flex-col">
-            <header class="bg-white dark:bg-slate-800 h-16 shadow-sm flex items-center justify-between px-6 z-10">
-                <h2 class="text-xl font-bold text-slate-700 dark:text-white">Team Dashboard</h2>
-                <div class="flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/20 rounded-full border border-green-100 dark:border-green-900">
-                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span class="text-xs font-bold text-green-700 dark:text-green-400">Live Sync</span>
+        <main class="flex-1 bg-slate-100 dark:bg-slate-900 flex flex-col overflow-hidden">
+            <header class="h-16 bg-white dark:bg-slate-800 shadow flex items-center justify-between px-6">
+                <h2 class="font-bold dark:text-white">Team Dashboard</h2>
+                <div id="global-status-indicator" class="flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/20 rounded-full">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-xs font-bold text-green-600">Syncing Live</span>
                 </div>
             </header>
-
-            <div class="flex-1 overflow-auto p-4 md:p-8">
-                <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade"></div>
-            </div>
+            <div id="grid-users" class="flex-1 overflow-auto p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6"></div>
         </main>
     </div>
 
-    <div id="admin-alerts-container"></div>
+    <div id="admin-alerts-container" class="fixed bottom-5 left-5 z-[300] flex flex-col gap-2"></div>
 
-    <div id="chat-fab" class="hidden-section fixed bottom-6 right-6 z-50">
-        <button onclick="toggleChat()" class="bg-primary-600 hover:bg-primary-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 relative">
+    <div id="chat-window" class="fixed bottom-24 right-6 w-80 md:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl z-50 hidden border flex flex-col h-[550px]">
+        <div class="p-4 bg-primary-600 text-white rounded-t-2xl flex justify-between items-center">
+            <div>
+                <h3 id="chat-title" class="font-bold">Team Chat</h3>
+                <span id="chat-status" class="text-[10px] opacity-80 font-bold">Public Group</span>
+            </div>
+            <button onclick="toggleChat()"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50 dark:bg-slate-900/50"></div>
+        <div id="chat-preview" class="hidden p-2 bg-yellow-50 text-[10px] border-t flex justify-between items-center">
+            <span id="preview-filename"></span>
+            <button onclick="clearChatFile()"><i class="fas fa-times text-red-500"></i></button>
+        </div>
+        <form onsubmit="handleSendMessage(event)" class="p-3 border-t dark:border-slate-700 flex gap-2 items-center">
+            <input type="file" id="chat-file-input" class="hidden" onchange="previewFile(this)">
+            <button type="button" onclick="document.getElementById('chat-file-input').click()" class="text-slate-400 hover:text-primary-500"><i class="fas fa-paperclip"></i></button>
+            <input type="text" id="chat-input" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none" placeholder="Message..." autocomplete="off">
+            <button type="button" id="chat-voice-btn" onmousedown="startVoice()" onmouseup="stopVoice()" class="text-slate-400 hover:text-red-500"><i class="fas fa-microphone"></i></button>
+            <button type="submit" class="w-8 h-8 bg-primary-600 text-white rounded-full"><i class="fas fa-paper-plane text-xs"></i></button>
+        </form>
+    </div>
+
+    <div id="chat-fab" class="fixed bottom-6 right-6 z-40 hidden-section">
+        <button onclick="openChat('public')" class="w-14 h-14 bg-primary-600 text-white rounded-full shadow-2xl hover:scale-110 transition relative">
             <i class="fas fa-comments text-2xl"></i>
-            <span id="chat-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold hidden">0</span>
+            <span id="chat-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-[10px] flex items-center justify-center rounded-full hidden">!</span>
         </button>
     </div>
 
-    <div id="chat-window" class="fixed bottom-24 right-6 w-80 md:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl z-50 hidden border border-slate-200 dark:border-slate-700 flex flex-col h-[600px]">
-        <div class="p-3 bg-primary-600 text-white rounded-t-2xl flex justify-between items-center shadow-md">
-            <div class="flex flex-col">
-                <h3 class="font-bold text-sm"><i class="fas fa-comments mr-2"></i> Messenger</h3>
-                <span class="text-[10px] opacity-80">Text, Voice & Files</span>
-            </div>
-            <button onclick="toggleChat()" class="hover:text-slate-200"><i class="fas fa-times"></i></button>
-        </div>
-        
-        <div class="p-2 bg-slate-100 dark:bg-slate-700 border-b dark:border-slate-600">
-            <select id="chat-recipient" class="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-800 dark:text-white font-bold">
-                <option value="public">📢 Group Chat (Everyone)</option>
-                </select>
-        </div>
-
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900/50 space-y-3"></div>
-        
-        <div class="p-3 bg-white dark:bg-slate-800 border-t dark:border-slate-700">
-            <div id="preview-container" class="hidden mb-2 p-2 bg-slate-100 rounded text-xs flex justify-between items-center">
-                <span id="preview-name" class="truncate max-w-[200px]">File</span>
-                <button onclick="clearAttachment()" class="text-red-500"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <form onsubmit="sendMessage(event)" class="flex gap-2 items-center">
-                <button type="button" onclick="document.getElementById('chat-file').click()" class="text-slate-400 hover:text-primary-500"><i class="fas fa-paperclip"></i></button>
-                <input type="file" id="chat-file" class="hidden" onchange="handleFileSelect(this)">
-                
-                <input type="text" id="chat-input" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 ring-primary-500 dark:text-white" placeholder="Type..." autocomplete="off">
-                
-                <button type="button" id="btn-record" onmousedown="startRecording()" onmouseup="stopRecording()" class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 hover:text-red-500 hover:bg-red-100 flex items-center justify-center transition"><i class="fas fa-microphone"></i></button>
-                <button type="submit" class="w-8 h-8 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center transition"><i class="fas fa-paper-plane text-xs"></i></button>
-            </form>
-        </div>
-    </div>
-
-    <div id="modal-stats" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
-                <h3 class="text-lg font-bold dark:text-white">Performance Analytics</h3>
-                <button onclick="closeModal('modal-stats')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-6 overflow-y-auto">
-                <div class="flex justify-center mb-6 h-64">
-                    <canvas id="userChart"></canvas>
-                </div>
-                <div id="stats-details" class="grid grid-cols-2 gap-4 text-center"></div>
-                <div id="location-info" class="mt-6 p-3 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-mono">
-                    <p class="font-bold mb-1">Last Known Location:</p>
-                    <span id="loc-text">Fetching...</span>
-                    <a id="loc-link" href="#" target="_blank" class="text-primary-500 hover:underline ml-2">View Map</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-screenshot-req" class="fixed inset-0 z-[200] hidden bg-red-900/90 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 text-center animate-bounce">
-            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-camera"></i></div>
-            <h3 class="text-xl font-bold text-red-600 mb-2">ADMIN REQUEST</h3>
-            <p class="text-slate-600 mb-6">The Admin is requesting a live screenshot of your work. Please confirm to send it.</p>
-            <button onclick="captureAndSendScreen()" class="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 shadow-lg">CAPTURE & SEND NOW</button>
-        </div>
-    </div>
-
-    <div id="modal-edit" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50">
-                <h3 class="text-lg font-bold text-slate-800 dark:text-white" id="modal-title">Edit Employee</h3>
-                <button onclick="closeModal('modal-edit')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            <div class="p-6 overflow-y-auto">
-                <form id="form-edit" onsubmit="saveUserChanges(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="hidden" id="edit-email-key">
-                    <div class="md:col-span-2 flex justify-center mb-4">
-                        <div class="relative group cursor-pointer" onclick="document.getElementById('edit-file').click()">
-                            <img id="edit-preview" src="" class="w-24 h-24 rounded-full object-cover border-4 border-slate-200 dark:border-slate-600 group-hover:border-primary-500 transition">
-                            <input type="file" id="edit-file" class="hidden" accept="image/*" onchange="handleImageUpload(this)">
-                            <input type="hidden" id="edit-photo-base64">
-                        </div>
-                    </div>
-                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Full Name</label><input type="text" id="edit-name" class="form-input" required></div>
-                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Job Title</label><input type="text" id="edit-title" class="form-input" required></div>
-                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Department</label><input type="text" id="edit-dept" class="form-input"></div>
-                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Role</label>
-                        <select id="edit-role" class="form-input font-bold">
-                            <option value="employee">Employee</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Idle Limit (Min)</label><input type="number" id="edit-idle" class="form-input" min="1" value="5"></div>
-                    <div class="md:col-span-2"><label class="text-[10px] font-bold uppercase text-slate-400">Email</label><input type="email" id="edit-email" class="form-input" readonly></div>
-                    <div class="md:col-span-2 pt-4 flex gap-3 border-t dark:border-slate-700 mt-2">
-                        <button type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-lg shadow-lg">Save</button>
-                        <button type="button" onclick="deleteUser()" id="btn-delete" class="px-4 text-red-500 border border-red-200 rounded-lg"><i class="fas fa-trash"></i></button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <div id="modal-report" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-             <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
-                <h3 class="text-lg font-bold dark:text-white">Detailed Report</h3>
-                <button onclick="closeModal('modal-report')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-6">
-                <div class="mb-4">
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Select Employee</label>
-                    <select id="report-user-select" class="form-input font-bold"><option value="all">-- All Employees --</option></select>
-                </div>
-                <div class="grid gap-3">
-                    <button onclick="downloadReport(1)" class="w-full py-3 bg-slate-100 hover:bg-primary-50 text-slate-700 hover:text-primary-600 font-bold rounded-xl border border-slate-200 transition text-left px-4 flex justify-between items-center"><span><i class="fas fa-calendar-day mr-2"></i> Today</span> <i class="fas fa-download"></i></button>
-                    <button onclick="downloadReport(7)" class="w-full py-3 bg-slate-100 hover:bg-primary-50 text-slate-700 hover:text-primary-600 font-bold rounded-xl border border-slate-200 transition text-left px-4 flex justify-between items-center"><span><i class="fas fa-calendar-week mr-2"></i> Last 7 Days</span> <i class="fas fa-download"></i></button>
-                </div>
-                <p id="export-status" class="text-center text-xs text-slate-400 mt-4"></p>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-proof" class="fixed inset-0 z-[150] hidden bg-black/90 backdrop-blur flex items-center justify-center p-4">
-        <div class="relative max-w-4xl w-full">
-            <button onclick="closeModal('modal-proof')" class="absolute -top-10 right-0 text-white text-2xl hover:text-red-500"><i class="fas fa-times"></i></button>
-            <img id="proof-image-view" class="w-full rounded border-2 border-white shadow-2xl">
-            <p id="proof-meta" class="text-center text-white mt-2 font-mono text-xs"></p>
+    <div id="modal-stats" class="fixed inset-0 z-[150] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl p-6">
+            <div class="flex justify-between mb-4"><h3 class="font-bold text-lg">Work Analytics</h3><button onclick="closeModal('modal-stats')"><i class="fas fa-times"></i></button></div>
+            <div class="h-64"><canvas id="statChart"></canvas></div>
+            <div id="loc-data" class="mt-4 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg text-xs font-mono"></div>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // 0. CONFIG & SOUNDS
-        // ==========================================
+        // --- 1. CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM",
             authDomain: "almaster-b8c18.firebaseapp.com",
@@ -289,541 +154,422 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // Audio Objects
         const sounds = {
-            message: new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3'), // Ping
-            alert: new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3'),   // Alarm
-            change: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3')  // Click
+            msg: new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3'),
+            alert: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'), // Simple click/ping
         };
         let soundEnabled = false;
-        function enableSound() { soundEnabled = true; document.getElementById('btn-sound').classList.add('hidden'); sounds.change.play().catch(e=>console.log(e)); }
-        function playSound(type) { if(soundEnabled && sounds[type]) sounds[type].play().catch(e=>console.log("Audio blocked")); }
-
         let currentUser = null;
         let userProfile = null;
-        let lastActionTime = Date.now(); 
-        let idleCheckInterval;
-        let allUsersData = [];
-        let chartInstance = null;
+        let allUsers = [];
+        let activeChatId = 'public';
         let mediaRecorder = null;
         let audioChunks = [];
         let attachmentBase64 = null;
-        const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=';
 
-        window.addEventListener('keydown', resetIdleTimer); 
-        document.addEventListener('visibilitychange', () => {
-            if(currentUser && userProfile && userProfile.status !== 'Offline') {
-                db.collection('users').doc(currentUser.email).update({ isFocused: !document.hidden });
-            }
-        });
-
-        // ==========================================
-        // 1. AUTH & INIT
-        // ==========================================
+        // --- 2. AUTH ---
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
                 const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
                 if(doc.exists) {
                     userProfile = doc.data();
-                    // Status & Geolocation
-                    await setStatus(user.email, 'Online', true);
-                    updateLocation(); // Track Location
-                    db.collection('users').doc(user.email).update({ isFocused: true });
                     initSystem();
-                } else {
-                    alert("Account not configured."); auth.signOut();
-                }
+                    updateStatus(user.email, 'Online', true);
+                    trackLocation();
+                } else { auth.signOut(); }
             } else {
-                document.getElementById('view-system').classList.add('hidden-section');
-                document.getElementById('view-login').classList.remove('hidden-section');
-                document.getElementById('loader').classList.add('hidden-section');
-                document.getElementById('chat-fab').classList.add('hidden-section');
+                showLogin();
             }
         });
 
-        async function handleLogin(e) {
+        function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('login-email').value.toLowerCase().trim();
+            const email = document.getElementById('login-email').value.trim();
             const pass = document.getElementById('login-pass').value;
-            try { await auth.signInWithEmailAndPassword(email, pass); } 
-            catch (err) { document.getElementById('login-error').innerText = err.message; document.getElementById('login-error').classList.remove('hidden'); }
+            auth.signInWithEmailAndPassword(email, pass).catch(err => {
+                document.getElementById('login-error').innerText = err.message;
+                document.getElementById('login-error').classList.remove('hidden');
+            });
         }
 
-        async function logout() { 
-            if(currentUser) await setStatus(currentUser.email, 'Offline', true);
-            auth.signOut().then(()=>location.reload()); 
-        }
+        function logout() { updateStatus(currentUser.email, 'Offline', true).then(() => auth.signOut().then(() => location.reload())); }
 
-        function updateLocation() {
-            if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    db.collection('users').doc(currentUser.email).update({
-                        location: { lat: pos.coords.latitude, lng: pos.coords.longitude, time: Date.now() }
-                    });
-                }, err => console.log("Loc Error", err));
-            }
-        }
-
+        // --- 3. SYSTEM CORE ---
         function initSystem() {
             document.getElementById('loader').classList.add('hidden-section');
             document.getElementById('view-login').classList.add('hidden-section');
             document.getElementById('view-system').classList.remove('hidden-section');
             document.getElementById('chat-fab').classList.remove('hidden-section');
-            document.getElementById('btn-sound').classList.remove('hidden');
 
             document.getElementById('sb-name').innerText = userProfile.name;
             document.getElementById('sb-role').innerText = userProfile.role;
-            document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
-
+            document.getElementById('sb-img').src = userProfile.photo || `https://ui-avatars.com/api/?name=${userProfile.name}`;
+            
             if(userProfile.role === 'admin') document.getElementById('admin-menu').classList.remove('hidden-section');
-            
-            listenToAllUsers();
-            initChat();
-            startIdleTracker(); 
-            listenForScreenshotRequests(); // Listener for screenshot commands
-            
-            setInterval(updateTimers, 1000);
+
+            db.collection('users').onSnapshot(snap => {
+                allUsers = [];
+                snap.forEach(doc => allUsers.push(doc.data()));
+                renderGrid();
+                renderAlerts();
+            });
+
+            initChatListener();
+            initCommandListener();
+            startIdleTracker();
+            setInterval(refreshTimers, 1000);
         }
 
-        // ==========================================
-        // 2. MAIN LOGIC (GRID, ALERTS)
-        // ==========================================
-        function listenToAllUsers() {
-            db.collection('users').onSnapshot(snapshot => {
-                let oldData = [...allUsersData];
-                allUsersData = [];
-                snapshot.forEach(doc => allUsersData.push(doc.data()));
-                
-                // Sound Alerts Logic
-                if(oldData.length > 0) {
-                    allUsersData.forEach(nu => {
-                        const ou = oldData.find(o => o.email === nu.email);
-                        if(ou && ou.status !== nu.status) playSound('change'); // Status changed
-                        if(userProfile.role === 'admin' && nu.isIdle && !ou.isIdle) playSound('alert'); // Idle Alert
-                    });
-                }
+        async function updateStatus(email, newStatus, auto = false) {
+            const ref = db.collection('users').doc(email.toLowerCase());
+            const snap = await ref.get();
+            const data = snap.data();
+            if(!data) return;
 
-                renderGrid();
-                if(userProfile.role === 'admin') renderAdminAlerts();
-                const myDoc = allUsersData.find(u => u.email === currentUser.email);
-                if(myDoc) userProfile = myDoc;
-                updateReportDropdown();
-                updateChatRecipients();
+            const now = Date.now();
+            const lastChange = data.lastChange ? (data.lastChange.toMillis ? data.lastChange.toMillis() : data.lastChange) : now;
+            const duration = now - lastChange;
+            const oldStatus = data.status || 'Offline';
+
+            let timeBank = data.timeBank || {};
+            if(oldStatus !== 'Offline') {
+                timeBank[oldStatus] = (timeBank[oldStatus] || 0) + duration;
+            }
+
+            await ref.update({
+                status: newStatus,
+                lastChange: firebase.firestore.FieldValue.serverTimestamp(),
+                timeBank: timeBank,
+                isIdle: false
+            });
+
+            await db.collection('logs').add({
+                user: email,
+                name: data.name,
+                from: oldStatus,
+                to: newStatus,
+                time: firebase.firestore.FieldValue.serverTimestamp(),
+                duration: duration
             });
         }
 
+        // --- 4. UI RENDERING ---
         function renderGrid() {
             const grid = document.getElementById('grid-users');
+            const showOffline = document.getElementById('show-offline-toggle')?.checked || false;
             grid.innerHTML = '';
-            const showOffline = document.getElementById('show-offline-toggle').checked;
-            const isAdmin = userProfile.role === 'admin';
-            
-            allUsersData.forEach(u => {
-                const isOffline = (u.status === 'Offline');
-                if(isOffline && !showOffline) return;
-                const isMe = (currentUser.email === u.email);
+
+            allUsers.forEach(u => {
+                if(u.status === 'Offline' && !showOffline) return;
+                const isMe = u.email === currentUser.email;
+                const isAdmin = userProfile.role === 'admin';
                 
-                // Colors
-                let colors = { border:'border-slate-400', text:'text-slate-500', bg:'bg-slate-200' };
-                if(u.isIdle) colors = { border:'border-red-500', text:'text-red-600', bg:'bg-red-100', label: 'Idle' };
-                else if(u.status === 'Online' && u.isFocused === false) colors = { border:'border-orange-500', text:'text-orange-600', bg:'bg-orange-100', label: 'Away' };
-                else if(u.status === 'Online') colors = { border:'border-green-500', text:'text-green-600', bg:'bg-green-100' };
-                else if(u.status === 'Busy') colors = { border:'border-red-500', text:'text-red-600', bg:'bg-red-100' };
-                else if(u.status === 'Break') colors = { border:'border-yellow-500', text:'text-yellow-600', bg:'bg-yellow-100' };
+                let borderColor = 'border-slate-300';
+                let statusLabel = u.status;
+                if(u.isIdle) { borderColor = 'border-red-500'; statusLabel = 'Idle'; }
+                else if(u.status === 'Online') borderColor = 'border-green-500';
+                else if(u.status === 'Busy') borderColor = 'border-red-400';
+                else if(u.status === 'Break') borderColor = 'border-yellow-400';
 
-                let cardClass = `bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-lg relative border-l-4 ${colors.border} ${isMe ? 'ring-2 ring-primary-200' : ''}`;
-                if(isOffline) cardClass += ' opacity-70 grayscale';
-                if(u.isIdle && isAdmin) cardClass += ' border-red-500 ring-2 ring-red-100'; 
-
-                // Controls
-                let btns = '';
-                if(isMe || isAdmin) { 
-                    btns = `<div class="grid grid-cols-4 gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-                        ${btnHTML(u.email, 'Online', 'green')}
-                        ${btnHTML(u.email, 'Busy', 'red')}
-                        ${btnHTML(u.email, 'Break', 'yellow')}
-                        ${btnHTML(u.email, 'Offline', 'slate')}
-                    </div>`;
-                }
-                
-                // Tasks
-                let tasksHTML = '';
-                const tasks = u.tasks || [];
-                tasksHTML = `<div class="mt-3 bg-slate-50 dark:bg-slate-900/50 p-2 rounded border border-slate-100 dark:border-slate-700 max-h-24 overflow-y-auto"><p class="text-[9px] font-bold uppercase text-slate-400 mb-2 flex justify-between">Tasks ${isAdmin?`<button onclick="addTask('${u.email}')" class="text-primary-500 hover:underline">+ Add</button>`:''}</p><ul class="space-y-1">`;
-                tasks.forEach((t, idx) => {
-                    tasksHTML += `<li class="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300 group"><input type="checkbox" class="mt-1" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" ${(!isMe && !isAdmin) ? 'disabled' : ''}><span class="flex-1 break-words leading-tight ${t.done?'line-through opacity-50':''}">${t.text}</span>${isAdmin ? `<button onclick="deleteTask('${u.email}', ${idx})" class="text-red-400 opacity-0 group-hover:opacity-100 px-1"><i class="fas fa-trash-alt"></i></button>` : ''}</li>`;
-                });
-                tasksHTML += `</ul></div>`;
-
-                // Admin Tools (Screenshot & Edit)
-                let adminTools = '';
-                if(isAdmin && !isOffline) {
-                    adminTools = `<div class="absolute top-2 right-2 flex gap-1">
-                        <button onclick="requestScreenshot('${u.email}')" title="Request Screenshot" class="text-slate-300 hover:text-red-500 p-1"><i class="fas fa-camera"></i></button>
-                        <button onclick="openEditModal('${u.email}')" title="Edit" class="text-slate-300 hover:text-primary-500 p-1"><i class="fas fa-cog"></i></button>
-                    </div>`;
-                }
-
-                // Stats & Charts Button
-                const chartBtn = `<button onclick="openStatsModal('${u.email}')" class="absolute top-2 right-12 text-slate-300 hover:text-blue-500 p-1" title="Charts"><i class="fas fa-chart-pie"></i></button>`;
+                const tb = u.timeBank || {};
+                const currentStart = u.lastChange ? u.lastChange.toMillis() : Date.now();
 
                 const card = `
-                <div class="${cardClass}">
-                    ${adminTools || chartBtn}
-                    <div class="p-4">
-                        <div class="flex items-center gap-3 mb-3">
-                            <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm bg-slate-100 cursor-pointer" onclick="openStatsModal('${u.email}')">
-                            <div class="overflow-hidden">
-                                <h3 class="font-bold text-base dark:text-white truncate">${u.name} ${isMe ? '(You)' : ''}</h3>
-                                <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider truncate">${u.title || '-'}</p>
+                <div class="user-card bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border-l-4 ${borderColor} relative">
+                    <div class="flex items-center gap-3 mb-4">
+                        <img src="${u.photo || 'https://ui-avatars.com/api/?name='+u.name}" class="w-12 h-12 rounded-full shadow-sm">
+                        <div class="overflow-hidden">
+                            <h3 class="font-bold text-sm truncate">${u.name}</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">${u.title || 'Staff'}</p>
+                        </div>
+                        <div class="ml-auto flex gap-1">
+                            <button onclick="openChat('${u.email}')" class="text-primary-500 p-1"><i class="fas fa-comment-dots"></i></button>
+                            <button onclick="openStatsModal('${u.email}')" class="text-slate-400 p-1"><i class="fas fa-chart-line"></i></button>
+                            ${isAdmin && !isMe ? `<button onclick="requestSS('${u.email}')" class="text-red-400 p-1"><i class="fas fa-camera"></i></button>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-2 rounded mb-3">
+                        <span class="text-[10px] font-bold uppercase ${u.isIdle?'text-red-500':'text-slate-500'}">${statusLabel}</span>
+                        <span class="font-mono text-sm font-bold timer-live" data-start="${currentStart}" data-bank="${tb[u.status]||0}">00:00:00</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box"><div>ON</div><div class="timer-stat" data-val="${tb['Online']||0}" data-active="${u.status==='Online'}">00:00</div></div>
+                        <div class="stat-box"><div>BSY</div><div class="timer-stat" data-val="${tb['Busy']||0}" data-active="${u.status==='Busy'}">00:00</div></div>
+                        <div class="stat-box"><div>BRK</div><div class="timer-stat" data-val="${tb['Break']||0}" data-active="${u.status==='Break'}">00:00</div></div>
+                        <div class="stat-box text-red-500"><div>IDL</div><div class="timer-stat" data-val="${u.idleBank||0}" data-active="${u.isIdle}">00:00</div></div>
+                    </div>
+
+                    ${(isMe || isAdmin) ? `
+                    <div class="grid grid-cols-4 gap-1 mt-3">
+                        <button onclick="updateStatus('${u.email}','Online')" class="text-[8px] font-bold py-1 rounded bg-green-50 text-green-600 border border-green-100 uppercase">Online</button>
+                        <button onclick="updateStatus('${u.email}','Busy')" class="text-[8px] font-bold py-1 rounded bg-red-50 text-red-600 border border-red-100 uppercase">Busy</button>
+                        <button onclick="updateStatus('${u.email}','Break')" class="text-[8px] font-bold py-1 rounded bg-yellow-50 text-yellow-600 border border-yellow-100 uppercase">Break</button>
+                        <button onclick="updateStatus('${u.email}','Offline')" class="text-[8px] font-bold py-1 rounded bg-slate-50 text-slate-600 border border-slate-100 uppercase">Off</button>
+                    </div>` : ''}
+
+                    <div class="mt-3 border-t pt-2 max-h-20 overflow-y-auto">
+                        ${(u.tasks || []).map((t, i) => `
+                            <div class="flex items-center gap-2 text-[10px]">
+                                <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${u.email}', ${i}, this.checked)" ${(!isMe && !isAdmin)?'disabled':''}>
+                                <span class="${t.done?'line-through text-slate-400':''}">${t.text}</span>
                             </div>
-                        </div>
-                        <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-lg mb-2">
-                            <span class="px-2 py-1 rounded-full text-[9px] font-bold uppercase ${colors.bg} ${colors.text}">${colors.label || u.status || 'Offline'}</span>
-                            <div class="font-mono text-base font-bold text-slate-700 dark:text-slate-300 main-timer" data-start="${getMillis(u.lastChange)}" data-bank="${(u.timeBank||{})[u.status] || 0}">00:00:00</div>
-                        </div>
-                        ${tasksHTML}
-                        ${btns}
+                        `).join('')}
+                        ${isAdmin ? `<button onclick="addTask('${u.email}')" class="text-[9px] text-primary-500 mt-1 font-bold">+ New Task</button>` : ''}
                     </div>
                 </div>`;
                 grid.innerHTML += card;
             });
         }
 
-        // ==========================================
-        // 3. STATS & CHARTS
-        // ==========================================
-        function openStatsModal(email) {
-            const u = allUsersData.find(x => x.email === email);
-            if(!u) return;
-            document.getElementById('modal-stats').classList.remove('hidden');
+        // --- 5. CHAT LOGIC (Split Private/Public) ---
+        function openChat(id) {
+            activeChatId = id;
+            const win = document.getElementById('chat-window');
+            const title = document.getElementById('chat-title');
+            const status = document.getElementById('chat-status');
             
-            // Location
-            const locEl = document.getElementById('loc-text');
-            const locLink = document.getElementById('loc-link');
-            if(u.location) {
-                locEl.innerText = `${u.location.lat.toFixed(4)}, ${u.location.lng.toFixed(4)}`;
-                locLink.href = `https://www.google.com/maps?q=${u.location.lat},${u.location.lng}`;
-                locLink.classList.remove('hidden');
+            win.classList.remove('hidden');
+            if(id === 'public') {
+                title.innerText = "Team Group";
+                status.innerText = "Everyone";
             } else {
-                locEl.innerText = "Unknown";
-                locLink.classList.add('hidden');
+                const user = allUsers.find(u => u.email === id);
+                title.innerText = user ? user.name : "Private Chat";
+                status.innerText = "Private Message";
             }
+            loadMessages();
+        }
 
-            // Draw Chart
-            const ctx = document.getElementById('userChart').getContext('2d');
-            if(chartInstance) chartInstance.destroy();
-            
-            const tb = u.timeBank || {};
-            const data = [tb['Online']||0, tb['Busy']||0, tb['Break']||0, u.idleBank||0].map(ms => ms/1000/60); // mins
-            
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Online', 'Busy', 'Break', 'Idle'],
-                    datasets: [{
-                        data: data,
-                        backgroundColor: ['#22c55e', '#ef4444', '#eab308', '#cbd5e1'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        function initChatListener() {
+            db.collection('messages').orderBy('time', 'asc').limitToLast(30).onSnapshot(snap => {
+                loadMessages();
+                if(!snap.metadata.hasPendingWrites) playSound('msg');
             });
-
-            // Details Text
-            const details = document.getElementById('stats-details');
-            details.innerHTML = `
-                <div class="p-2 bg-green-50 rounded"><div class="text-xs text-green-600 font-bold">Online</div><div class="font-mono font-bold">${formatTime(tb['Online']||0)}</div></div>
-                <div class="p-2 bg-red-50 rounded"><div class="text-xs text-red-600 font-bold">Busy</div><div class="font-mono font-bold">${formatTime(tb['Busy']||0)}</div></div>
-                <div class="p-2 bg-yellow-50 rounded"><div class="text-xs text-yellow-600 font-bold">Break</div><div class="font-mono font-bold">${formatTime(tb['Break']||0)}</div></div>
-                <div class="p-2 bg-slate-100 rounded"><div class="text-xs text-slate-600 font-bold">Idle</div><div class="font-mono font-bold">${formatTime(u.idleBank||0)}</div></div>
-            `;
         }
 
-        // ==========================================
-        // 4. SCREENSHOT LOGIC (Command Pattern)
-        // ==========================================
-        async function requestScreenshot(targetEmail) {
-            if(!confirm("Request screenshot from " + targetEmail + "?")) return;
-            // Send command to user via Firestore
-            await db.collection('commands').add({
-                target: targetEmail,
-                type: 'screenshot',
-                requester: currentUser.email,
-                status: 'pending',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("Request sent. Waiting for user approval...");
-        }
-
-        function listenForScreenshotRequests() {
-            db.collection('commands')
-                .where('target', '==', currentUser.email)
-                .where('status', '==', 'pending')
-                .onSnapshot(snapshot => {
-                    snapshot.forEach(async doc => {
-                        const data = doc.data();
-                        // Show modal to user
-                        document.getElementById('modal-screenshot-req').classList.remove('hidden');
-                        document.getElementById('modal-screenshot-req').dataset.cmdId = doc.id;
-                        playSound('alert');
-                    });
-                });
-        }
-
-        async function captureAndSendScreen() {
-            try {
-                document.getElementById('modal-screenshot-req').classList.add('hidden');
-                // 1. Get Stream
-                const stream = await navigator.mediaDevices.getDisplayMedia({ video: { mediaSource: 'screen' } });
-                const track = stream.getVideoTracks()[0];
-                const imageCapture = new ImageCapture(track);
-                const bitmap = await imageCapture.grabFrame();
-                
-                // 2. Convert to Canvas -> Base64
-                const canvas = document.createElement('canvas');
-                canvas.width = bitmap.width;
-                canvas.height = bitmap.height;
-                const context = canvas.getContext('2d');
-                context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-                const base64 = canvas.toDataURL('image/jpeg', 0.5); // Compress quality 0.5
-                
-                // 3. Stop stream
-                track.stop();
-
-                // 4. Send to DB (Messages or Proofs)
-                const cmdId = document.getElementById('modal-screenshot-req').dataset.cmdId;
-                await db.collection('messages').add({
-                    text: '📸 SCREENSHOT PROOF',
-                    attachment: base64,
-                    type: 'image',
-                    user: currentUser.email,
-                    name: userProfile.name,
-                    to: 'admin', // Or specific admin email
-                    time: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // 5. Mark command done
-                if(cmdId) await db.collection('commands').doc(cmdId).update({ status: 'completed' });
-                
-                alert("Screenshot Sent!");
-
-            } catch (err) {
-                console.error(err);
-                alert("Screenshot failed or cancelled.");
-            }
-        }
-
-        function viewProof(base64) {
-            document.getElementById('proof-image-view').src = base64;
-            document.getElementById('modal-proof').classList.remove('hidden');
-        }
-
-        // ==========================================
-        // 5. CHAT (Private, Voice, Files)
-        // ==========================================
-        function initChat() {
-            db.collection("messages").orderBy("time", "asc").limitToLast(50).onSnapshot(snap => {
-                const container = document.getElementById("chat-messages");
-                container.innerHTML = "";
-                let unread = false;
-
+        function loadMessages() {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = '';
+            
+            db.collection('messages').orderBy('time', 'asc').limitToLast(50).get().then(snap => {
                 snap.forEach(doc => {
-                    const data = doc.data();
-                    // Filter: Show if Public OR Involved (Me as Sender or Receiver)
-                    if (data.to === 'public' || data.to === currentUser.email || data.user === currentUser.email || (userProfile.role === 'admin' && data.to === 'admin')) {
-                        
-                        const isMe = data.user === currentUser.email;
-                        const isPrivate = data.to !== 'public';
-                        
-                        let content = `<div>${data.text}</div>`;
-                        if(data.attachment) {
-                            if(data.type === 'image') content += `<img src="${data.attachment}" class="mt-2 rounded max-w-[200px] cursor-pointer" onclick="viewProof('${data.attachment}')">`;
-                            if(data.type === 'audio') content += `<audio controls src="${data.attachment}" class="mt-2 w-48"></audio>`;
+                    const d = doc.data();
+                    const isPublic = d.to === 'public' && activeChatId === 'public';
+                    const isPrivate = (d.to === currentUser.email && d.from === activeChatId) || (d.to === activeChatId && d.from === currentUser.email);
+                    
+                    if(isPublic || isPrivate) {
+                        const isMe = d.from === currentUser.email;
+                        let content = `<div>${d.text}</div>`;
+                        if(d.file) {
+                            if(d.type === 'image') content += `<img src="${d.file}" class="mt-2 rounded max-h-40 cursor-pointer" onclick="window.open(this.src)">`;
+                            else if(d.type === 'audio') content += `<audio src="${d.file}" controls class="mt-2 w-full h-8"></audio>`;
                         }
 
                         container.innerHTML += `
-                        <div class="max-w-[85%] p-2 rounded-xl text-xs ${isMe ? "ml-auto bg-primary-600 text-white" : "mr-auto bg-slate-100 dark:bg-slate-700 dark:text-white"} ${isPrivate ? 'border-2 border-yellow-400' : ''}">
-                            <div class="font-bold opacity-70 flex justify-between gap-2 mb-1">
-                                <span>${data.name} ${isPrivate?'<i class="fas fa-lock text-[9px]"></i>':''}</span>
-                                <span>${data.time ? moment(data.time.toDate()).format("h:mm A") : "."}</span>
-                            </div>
+                        <div class="${isMe ? 'msg-me' : 'msg-other'} p-3 max-w-[80%] text-xs shadow-sm">
+                            <div class="font-bold text-[9px] mb-1 opacity-70">${d.name}</div>
                             ${content}
+                            <div class="text-[8px] text-right mt-1 opacity-50">${moment(d.time?.toMillis()).format('h:mm A')}</div>
                         </div>`;
-                        
-                        // Notification logic
-                        if(!isMe && !document.hasFocus()) { unread = true; playSound('message'); }
                     }
                 });
-                
                 container.scrollTop = container.scrollHeight;
-                if(unread) {
-                    document.getElementById("chat-badge").classList.remove("hidden");
-                    document.getElementById("chat-badge").innerText = "!";
-                }
             });
         }
 
-        function updateChatRecipients() {
-            const sel = document.getElementById('chat-recipient');
-            const oldVal = sel.value;
-            sel.innerHTML = '<option value="public">📢 Group Chat (Everyone)</option>';
-            allUsersData.forEach(u => {
-                if(u.email !== currentUser.email) {
-                    const opt = document.createElement('option');
-                    opt.value = u.email;
-                    opt.innerText = `👤 ${u.name}`;
-                    sel.appendChild(opt);
-                }
-            });
-            sel.value = oldVal;
-        }
-
-        async function sendMessage(e) {
+        async function handleSendMessage(e) {
             e.preventDefault();
-            const txt = document.getElementById("chat-input").value.trim();
-            const to = document.getElementById("chat-recipient").value;
-            
-            if(!txt && !attachmentBase64) return;
+            const input = document.getElementById('chat-input');
+            if(!input.value.trim() && !attachmentBase64) return;
 
-            await db.collection("messages").add({
-                text: txt,
-                attachment: attachmentBase64,
-                type: attachmentBase64 ? (attachmentBase64.startsWith('data:audio') ? 'audio' : 'image') : 'text',
-                user: currentUser.email,
+            const msgData = {
+                from: currentUser.email,
+                to: activeChatId,
                 name: userProfile.name,
-                to: to,
+                text: input.value,
+                file: attachmentBase64,
+                type: attachmentBase64 ? (attachmentBase64.startsWith('data:image') ? 'image' : (attachmentBase64.startsWith('data:audio') ? 'audio' : 'file')) : 'text',
+                time: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection('messages').add(msgData);
+            input.value = '';
+            clearChatFile();
+        }
+
+        // --- 6. SCREENSHOT & COMMANDS ---
+        async function requestSS(email) {
+            await db.collection('commands').add({
+                to: email,
+                type: 'ss',
+                status: 'pending',
                 time: firebase.firestore.FieldValue.serverTimestamp()
             });
-
-            document.getElementById("chat-input").value = "";
-            clearAttachment();
+            alert("Screenshot request triggered.");
         }
 
-        // Voice Recording
-        function startRecording() {
-            document.getElementById('btn-record').classList.add('recording-pulse', 'bg-red-500', 'text-white');
-            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.start();
-                audioChunks = [];
-                mediaRecorder.addEventListener("dataavailable", event => audioChunks.push(event.data));
-                mediaRecorder.addEventListener("stop", () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' }); // Basic blob
-                    const reader = new FileReader();
-                    reader.readAsDataURL(audioBlob);
-                    reader.onloadend = () => {
-                        attachmentBase64 = reader.result;
-                        showPreview('Voice Note', 'audio');
-                    };
+        function initCommandListener() {
+            db.collection('commands').where('to', '==', currentUser.email).where('status', '==', 'pending').onSnapshot(snap => {
+                snap.forEach(async doc => {
+                    const cmd = doc.data();
+                    if(cmd.type === 'ss' && userProfile.status === 'Online') {
+                        // Mark as processing
+                        await db.collection('commands').doc(doc.id).update({ status: 'done' });
+                        // Trigger SS
+                        autoCaptureScreen();
+                    }
                 });
             });
         }
-        function stopRecording() {
-            document.getElementById('btn-record').classList.remove('recording-pulse', 'bg-red-500', 'text-white');
-            if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+
+        async function autoCaptureScreen() {
+            try {
+                // This triggers the native browser picker
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                const track = stream.getVideoTracks()[0];
+                const imageCapture = new ImageCapture(track);
+                const bitmap = await imageCapture.grabFrame();
+                const canvas = document.createElement('canvas');
+                canvas.width = bitmap.width; canvas.height = bitmap.height;
+                canvas.getContext('2d').drawImage(bitmap, 0, 0);
+                const base64 = canvas.toDataURL('image/jpeg', 0.5);
+                track.stop();
+
+                // Send to admin as a private message
+                await db.collection('messages').add({
+                    from: currentUser.email,
+                    to: 'admin_private_logs', // Or specific logic to notify admin
+                    name: userProfile.name,
+                    text: "📸 System Auto-Screenshot",
+                    file: base64,
+                    type: 'image',
+                    time: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) { console.log("SS Cancelled/Failed"); }
         }
 
-        // File/Image
-        function handleFileSelect(input) {
-            if(input.files && input.files[0]) {
-                const file = input.files[0];
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Compress if image (simple canvas logic could go here, but keeping simple for now)
-                    attachmentBase64 = e.target.result;
-                    showPreview(file.name, file.type.startsWith('image') ? 'image' : 'file');
-                };
-                reader.readAsDataURL(file);
-            }
+        // --- 7. ALERTS (Admin Notification) ---
+        function renderAlerts() {
+            const container = document.getElementById('admin-alerts-container');
+            if(userProfile.role !== 'admin') return;
+
+            allUsers.forEach(u => {
+                const id = `alert-${u.email.replace(/[^a-z]/g, '')}`;
+                if(u.isIdle && !document.getElementById(id)) {
+                    const div = document.createElement('div');
+                    div.id = id;
+                    div.className = "bg-white dark:bg-slate-800 border-l-4 border-red-500 shadow-xl p-3 flex items-center justify-between gap-4 animate-bounce";
+                    div.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                            <span class="text-xs font-bold">${u.name} is Idle!</span>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+                    `;
+                    container.appendChild(div);
+                    playSound('alert');
+                } else if(!u.isIdle && document.getElementById(id)) {
+                    document.getElementById(id).remove();
+                }
+            });
         }
 
-        function showPreview(name, type) {
-            document.getElementById('preview-container').classList.remove('hidden');
-            document.getElementById('preview-name').innerText = (type==='audio'?'🎤 ':'📎 ') + name;
-        }
-        function clearAttachment() {
-            attachmentBase64 = null;
-            document.getElementById('preview-container').classList.add('hidden');
-            document.getElementById('chat-file').value = '';
+        // --- 8. UTILS & TIMERS ---
+        function startIdleTracker() {
+            window.addEventListener('keydown', () => {
+                if(userProfile.isIdle) {
+                    const duration = Date.now() - userProfile.idleSince.toMillis();
+                    db.collection('users').doc(currentUser.email).update({ 
+                        isIdle: false, 
+                        idleBank: (userProfile.idleBank || 0) + duration 
+                    });
+                }
+                lastActivity = Date.now();
+            });
+            
+            let lastActivity = Date.now();
+            setInterval(() => {
+                if(userProfile.status === 'Online' && !userProfile.isIdle) {
+                    const limit = (userProfile.idleLimit || 5) * 60 * 1000;
+                    if(Date.now() - lastActivity > limit) {
+                        db.collection('users').doc(currentUser.email).update({ isIdle: true, idleSince: firebase.firestore.FieldValue.serverTimestamp() });
+                    }
+                }
+            }, 10000);
         }
 
-        // ==========================================
-        // UTILS
-        // ==========================================
-        function getStatusColor(s, f, i) { /* Same as V13 */ } // Not strictly needed inside renderGrid logic now
-        function formatTime(ms) { 
-            if(isNaN(ms)) return "00:00:00";
-            const s=Math.floor((ms/1000)%60).toString().padStart(2,'0'), m=Math.floor((ms/1000/60)%60).toString().padStart(2,'0'), h=Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
+        function refreshTimers() {
+            const now = Date.now();
+            document.querySelectorAll('.timer-live').forEach(el => {
+                const start = parseInt(el.dataset.start);
+                const bank = parseInt(el.dataset.bank);
+                el.innerText = formatTime(bank + (now - start));
+            });
+        }
+
+        function formatTime(ms) {
+            const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
+            const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0');
+            const h = Math.floor(ms/3600000).toString().padStart(2,'0');
             return `${h}:${m}:${s}`;
         }
-        function getMillis(val) { return (!val) ? Date.now() : (typeof val === 'number' ? val : (val.toMillis ? val.toMillis() : Date.now())); }
-        function btnHTML(e,s,c) { return `<button onclick="setStatus('${e}','${s}')" class="p-1 rounded bg-${c}-50 hover:bg-${c}-500 text-${c}-600 hover:text-white transition shadow-sm font-bold text-[9px] uppercase">${s}</button>`; }
+
+        function playSound(type) { if(soundEnabled) sounds[type].play().catch(e=>0); }
+        function enableSound() { soundEnabled = true; document.getElementById('btn-sound').classList.add('hidden'); }
+        function toggleChat() { document.getElementById('chat-window').classList.toggle('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function toggleChat() { document.getElementById("chat-window").classList.toggle("hidden"); document.getElementById("chat-badge").classList.add("hidden"); }
         
-        // Timer Loop
-        function updateTimers() {
-            const now = Date.now();
-            document.querySelectorAll('.main-timer').forEach(el => { const start=parseInt(el.dataset.start), bank=parseInt(el.dataset.bank)||0; if(start) el.innerText=formatTime(bank+(now-start)); });
+        async function previewFile(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                attachmentBase64 = e.target.result;
+                document.getElementById('chat-preview').classList.remove('hidden');
+                document.getElementById('preview-filename').innerText = file.name;
+            };
+            reader.readAsDataURL(file);
+        }
+        function clearChatFile() { attachmentBase64 = null; document.getElementById('chat-preview').classList.add('hidden'); document.getElementById('chat-file-input').value = ''; }
+
+        // --- Stats ---
+        function openStatsModal(email) {
+            const u = allUsers.find(x => x.email === email);
+            document.getElementById('modal-stats').classList.remove('hidden');
+            document.getElementById('loc-data').innerText = u.location ? `Lat: ${u.location.lat}, Lng: ${u.location.lng}` : "No Location Data";
+            
+            const ctx = document.getElementById('statChart').getContext('2d');
+            const tb = u.timeBank || {};
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Online', 'Busy', 'Break', 'Idle'],
+                    datasets: [{ data: [tb['Online']||0, tb['Busy']||0, tb['Break']||0, u.idleBank||0], backgroundColor: ['#22c55e', '#ef4444', '#eab308', '#94a3b8'] }]
+                }
+            });
         }
 
-        // DB Actions
-        async function setStatus(targetEmail, newStatus, isAuto = false) {
-            const userRef = db.collection('users').doc(targetEmail);
-            const snapshot = await userRef.get();
-            const uData = snapshot.data();
-            if(uData.status === newStatus && !isAuto) return; 
-            const now = Date.now();
-            const lastTime = getMillis(uData.lastChange);
-            const duration = now - lastTime; 
-            const oldStatus = uData.status || 'Offline';
-            let timeBank = uData.timeBank || {};
-            if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
-            timeBank[oldStatus] += duration;
-            await db.collection('logs').add({ user: targetEmail, name: uData.name, from_status: oldStatus, to_status: newStatus, start_time: uData.lastChange || firebase.firestore.FieldValue.serverTimestamp(), end_time: firebase.firestore.FieldValue.serverTimestamp(), duration_ms: duration, auto: isAuto });
-            await userRef.update({ status: newStatus, lastChange: firebase.firestore.FieldValue.serverTimestamp(), timeBank: timeBank, isIdle: false });
-            if(targetEmail === currentUser.email) resetIdleTimer();
+        async function addTask(email) {
+            const text = prompt("Enter Task:");
+            if(text) await db.collection('users').doc(email).update({ tasks: firebase.firestore.FieldValue.arrayUnion({text, done: false}) });
+        }
+        async function toggleTask(email, idx, val) {
+            const ref = db.collection('users').doc(email);
+            const u = (await ref.get()).data();
+            u.tasks[idx].done = val;
+            await ref.update({ tasks: u.tasks });
         }
 
-        // Idle Logic
-        function resetIdleTimer() {
-            lastActionTime = Date.now(); 
-            if(userProfile && userProfile.isIdle) {
-                const now = Date.now();
-                const idleStart = getMillis(userProfile.idleSince);
-                const duration = now - idleStart;
-                const oldIdleBank = userProfile.idleBank || 0;
-                db.collection('users').doc(currentUser.email).update({ isIdle: false, idleSince: null, idleBank: oldIdleBank + duration });
+        function trackLocation() {
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    db.collection('users').doc(currentUser.email).update({ location: {lat: pos.coords.latitude, lng: pos.coords.longitude} });
+                });
             }
         }
-        function startIdleTracker() {
-            clearInterval(idleCheckInterval);
-            idleCheckInterval = setInterval(() => {
-                if(!userProfile || userProfile.status === 'Offline' || userProfile.role === 'admin') return; 
-                let mins = parseInt(userProfile.idleLimit) || 5;
-                if((Date.now() - lastActionTime) > (mins * 60 * 1000)) {
-                    if(!userProfile.isIdle) db.collection('users').doc(currentUser.email).update({ isIdle: true, idleSince: firebase.firestore.FieldValue.serverTimestamp() });
-                }
-            }, 5000);
-        }
-
-        // Admin Actions
-        async function addTask(e){const t=prompt("Task:");t&&(await db.collection("users").doc(e).update({tasks:firebase.firestore.FieldValue.arrayUnion({text:t,done:!1})}))}
-        async function toggleTask(e,t,n){const r=db.collection("users").doc(e),o=await r.get(),s=o.data().tasks||[];s[t]&&(s[t].done=n,await r.update({tasks:s}))}
-        async function deleteTask(e,t){confirm("Delete?")&&(await db.collection("users").doc(e).get().then(n=>{const r=n.data().tasks||[];r.splice(t,1),db.collection("users").doc(e).update({tasks:r})}))}
-        function openEditModal(e){document.getElementById("modal-edit").classList.remove("hidden"); /* (Same logic as V13) */ const t=document.getElementById("edit-email");if("new"===e)document.getElementById("form-edit").reset(),t.readOnly=!1,t.value="",t.setAttribute("data-mode","new"),document.getElementById("edit-preview").src=DEFAULT_PHOTO+"New",document.getElementById("btn-delete").classList.add("hidden");else db.collection("users").doc(e).get().then(n=>{const r=n.data();t.readOnly=!0,t.value=r.email,t.setAttribute("data-mode","edit"),document.getElementById("edit-name").value=r.name,document.getElementById("edit-title").value=r.title||"",document.getElementById("edit-dept").value=r.dept||"",document.getElementById("edit-role").value=r.role||"employee",document.getElementById("edit-idle").value=r.idleLimit||5,document.getElementById("edit-photo-base64").value=r.photo||"",document.getElementById("edit-preview").src=r.photo||DEFAULT_PHOTO+r.name,document.getElementById("btn-delete").classList.remove("hidden")})}
-        async function saveUserChanges(e){e.preventDefault();const t=document.getElementById("edit-email").value.toLowerCase().trim(),n={name:document.getElementById("edit-name").value,title:document.getElementById("edit-title").value,dept:document.getElementById("edit-dept").value,role:document.getElementById("edit-role").value,idleLimit:parseInt(document.getElementById("edit-idle").value)||5,photo:document.getElementById("edit-photo-base64").value};"new"===document.getElementById("edit-email").getAttribute("data-mode")?(n.email=t,n.status="Offline",await db.collection("users").doc(t).set(n)):await db.collection("users").doc(t).update(n),closeModal("modal-edit")}
-        async function deleteUser(){confirm("Delete?")&&(await db.collection("users").doc(document.getElementById("edit-email").value).delete(),closeModal("modal-edit"))}
-        function handleImageUpload(e){if(e.files&&e.files[0]){const t=new FileReader;t.onload=function(e){const n=new Image;n.src=e.target.result,n.onload=function(){const e=document.createElement("canvas"),t=e.getContext("2d"),r=300/n.width;e.width=300,e.height=n.height*r,t.drawImage(n,0,0,e.width,e.height),document.getElementById("edit-preview").src=e.toDataURL("image/jpeg",.7),document.getElementById("edit-photo-base64").value=e.toDataURL("image/jpeg",.7)}},t.readAsDataURL(e.files[0])}}
-        
-        function renderAdminAlerts(){const c=document.getElementById('admin-alerts-container'); allUsersData.forEach(u=>{ if(u.isIdle && !document.getElementById(`alert-${u.email}`)){const d=document.createElement('div');d.id=`alert-${u.email}`;d.className='admin-alert-toast pulse-urgent fixed bottom-5 left-5 w-64 bg-white border-l-4 border-red-500 shadow-xl p-4 rounded z-50';d.innerHTML=`<div class='font-bold text-red-600'>⚠️ IDLE ALERT</div><div class='text-sm'>${u.name} is inactive!</div>`;c.appendChild(d)}else if(!u.isIdle){const a=document.getElementById(`alert-${u.email}`);if(a)a.remove()}})}
-        
-        // Report Logic
-        function updateReportDropdown(){const e=document.getElementById("report-user-select"),t=e.value;e.innerHTML='<option value="all">-- All Employees --</option>',allUsersData.forEach(t=>{const n=document.createElement("option");n.value=t.email,n.innerText=t.name,e.appendChild(n)}),e.value=t}
-        function openReportModal(){document.getElementById("modal-report").classList.remove("hidden")}
-        async function downloadReport(e){const t=document.getElementById("export-status"),n=document.getElementById("report-user-select").value;t.innerText="Processing...";const r=new Date;r.setDate(r.getDate()-e),r.setHours(0,0,0,0);let a=db.collection("logs").where("end_time",">=",r).orderBy("end_time","desc");"all"!==n&&(a=a.where("user","==","n"));const o=await a.get();if(o.empty)return void(t.innerText="No records.");let s="User,Action,Date,Time,Duration\n";o.forEach(e=>{const t=e.data();s+=`${t.name},${t.from_status}->${t.to_status},${moment(t.end_time.toDate()).format("YYYY-MM-DD")},${moment(t.end_time.toDate()).format("HH:mm")},${formatTime(t.duration_ms||0)}\n`});const l=new Blob([s],{type:"text/csv"}),i=document.createElement("a");i.href=URL.createObjectURL(l),i.download="Report.csv",i.click(),t.innerText="Done!"}
     </script>
 </body>
 </html>
