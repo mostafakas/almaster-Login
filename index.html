@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster V7.0 (Stealth Monitor)</title>
+    <title>Almaster V8.0 (Final Strict Monitor)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -38,36 +38,36 @@
         .form-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-size: 14px; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
         
-        .task-checkbox:checked + span { text-decoration: line-through; color: #94a3b8; }
-        
-        /* Updated Stats Grid to fit 5 items */
-        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; margin-top: 10px; font-size: 8px; text-align: center; }
+        /* Stats Grid (5 Columns) */
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 10px; font-size: 8px; text-align: center; }
         .stat-box { background: #f1f5f9; padding: 4px; border-radius: 4px; }
         .dark-mode .stat-box { background: #1e293b; }
         .user-card { transition: all 0.3s ease; }
 
-        /* Admin Alerts Container */
+        /* Admin Alerts - Fixed Bottom Left */
         #admin-alerts-container {
-            position: fixed; bottom: 20px; left: 20px; z-index: 9999;
+            position: fixed; bottom: 20px; left: 20px; z-index: 99999;
             display: flex; flex-direction: column; gap: 10px;
-            max-height: 80vh; overflow-y: auto; pointer-events: none; /* Let clicks pass through empty space */
+            max-height: 80vh; overflow-y: auto; pointer-events: none;
         }
         .admin-alert-toast {
-            pointer-events: auto; /* Re-enable clicks on the alerts */
-            width: 300px; background: white; border-left: 5px solid #ef4444;
-            padding: 12px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            animation: slideIn 0.3s ease-out;
+            pointer-events: auto;
+            width: 320px; background: white; border-left: 6px solid #ef4444;
+            padding: 15px; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: slideUp 0.4s ease-out; position: relative;
         }
-        .dark-mode .admin-alert-toast { background: #1e293b; color: white; }
-        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .dark-mode .admin-alert-toast { background: #1e293b; color: white; border-color: #ef4444; }
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .pulse-urgent { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
-<body class="min-h-screen text-slate-800 dark:text-slate-100 font-sans selection:bg-primary-500 selection:text-white" 
-      onclick="resetIdleTimer()">
+<body class="min-h-screen text-slate-800 dark:text-slate-100 font-sans selection:bg-primary-500 selection:text-white">
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
-        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V7.0</h2>
+        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V8.0</h2>
     </div>
 
     <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
@@ -200,7 +200,7 @@
                             <option value="admin">Admin</option>
                         </select>
                     </div>
-                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Click Idle Limit (Min)</label><input type="number" id="edit-idle" class="form-input" min="1" value="5"></div>
+                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Idle Limit (Min)</label><input type="number" id="edit-idle" class="form-input" min="1" value="5"></div>
                     <div class="md:col-span-2"><label class="text-[10px] font-bold uppercase text-slate-400">Email</label><input type="email" id="edit-email" class="form-input" readonly></div>
                     <div class="md:col-span-2 pt-4 flex gap-3 border-t dark:border-slate-700 mt-2">
                         <button type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-lg shadow-lg">Save</button>
@@ -299,6 +299,9 @@
         let userCache = {}; 
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=';
 
+        // GLOBAL CLICK LISTENER (Fixes sensitivity issue)
+        window.addEventListener('mousedown', () => resetIdleTimer());
+
         // ==========================================
         // 2. AUTHENTICATION
         // ==========================================
@@ -373,7 +376,6 @@
         // ==========================================
         function renderAdminAlerts() {
             const container = document.getElementById('admin-alerts-container');
-            // We do NOT clear container to avoid flickering, we update/append
             
             allUsersData.forEach(u => {
                 const isIdle = u.isIdle === true;
@@ -385,7 +387,7 @@
                     if(!activeAlert) {
                         const div = document.createElement('div');
                         div.id = `alert-active-${u.email}`;
-                        div.className = 'admin-alert-toast';
+                        div.className = 'admin-alert-toast pulse-urgent';
                         div.innerHTML = `
                             <div class="flex items-start gap-3">
                                 <div class="bg-red-100 p-2 rounded-full text-red-600"><i class="fas fa-eye-slash"></i></div>
@@ -396,6 +398,7 @@
                                 </div>
                             </div>`;
                         container.appendChild(div);
+                        playStatusSound('Idle');
                     }
                 } else if(activeAlert) {
                     activeAlert.remove();
@@ -420,7 +423,7 @@
                                 </div>
                             </div>`;
                         container.appendChild(div);
-                        playStatusSound('Idle'); // Alert admin
+                        playStatusSound('Idle'); 
                     }
                 } else if(sessionAlert) {
                     sessionAlert.remove();
@@ -429,7 +432,6 @@
         }
 
         async function dismissIdleAlert(email) {
-            // Remove the flag from DB so alert disappears
             await db.collection('users').doc(email).update({ lastIdleSession: null });
         }
 
@@ -448,7 +450,6 @@
                 const isOffline = (u.status === 'Offline' || !u.status);
                 if(isOffline && !showOffline) return;
 
-                // Sound Logic
                 const prev = userCache[u.email] || {};
                 if(prev.status && prev.status !== u.status) playStatusSound(u.status);
                 userCache[u.email] = { status: u.status, isIdle: u.isIdle };
@@ -463,10 +464,8 @@
                 let cardClass = `user-card bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-lg relative border-l-4 ${colors.border} ${isMe ? 'ring-2 ring-primary-200' : ''}`;
                 if(isOffline) cardClass += ' opacity-70 grayscale';
 
-                // IDLE BADGE (Admin View)
-                let idleBadge = '';
                 if (u.isIdle && u.status === 'Online' && isAdmin) {
-                    cardClass += ' border-red-500 ring-2 ring-red-100'; // Red border
+                    cardClass += ' border-red-500 ring-2 ring-red-100'; 
                 }
 
                 let buttonsHTML = '';
@@ -530,6 +529,7 @@
                                 <div class="text-[7px] uppercase">Break</div>
                                 <div class="font-mono font-bold stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</div>
                             </div>
+                            
                             <div class="stat-box bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
                                 <div class="text-[7px] uppercase">Idle</div>
                                 <div class="font-mono font-bold stat-idle" data-val="${idleBank}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</div>
@@ -596,7 +596,6 @@
         // ==========================================
         function updateTimers() {
             const now = Date.now();
-            // 1. Normal Timers (Main & Status specific)
             document.querySelectorAll('.main-timer').forEach(el => {
                 const start = parseInt(el.dataset.start);
                 const bank = parseInt(el.dataset.bank) || 0;
@@ -606,23 +605,25 @@
                 const bank = parseInt(t.dataset.val)||0; const start = parseInt(t.dataset.start)||0;
                 t.innerText = formatTime((t.dataset.active==='true') ? bank + (now - start) : bank);
             });
-            // 2. Idle Timer (Inside Grid)
             document.querySelectorAll('.stat-idle').forEach(t => {
                 const bank = parseInt(t.dataset.val)||0; const start = parseInt(t.dataset.start)||0;
-                // If user IS idle right now, add duration
                 t.innerText = formatTime((t.dataset.isidle==='true') ? bank + (now - start) : bank);
             });
-            // 3. Admin Toast Counter
             document.querySelectorAll('.idle-counter').forEach(el => {
                  const start = parseInt(el.dataset.start);
                  if(start) el.innerText = formatTime(now - start);
             });
-            // 4. TOTAL TIMER FIX (Sum All)
+            
+            // TOTAL FIX
             document.querySelectorAll('.total-fix-timer').forEach(t => {
                 let total = parseInt(t.dataset.online) + parseInt(t.dataset.busy) + parseInt(t.dataset.break) + parseInt(t.dataset.idle);
-                // Add current session
+                // Check if session is active (Online/Busy/Break)
+                const status = t.dataset.active;
                 const start = parseInt(t.dataset.start)||0;
-                if(start > 0) total += (now - start);
+                
+                if(start > 0 && status !== 'Offline') {
+                    total += (now - start);
+                }
                 t.innerText = formatTime(total);
             });
         }
@@ -631,14 +632,12 @@
         function resetIdleTimer() {
             lastClickTime = Date.now(); 
             
-            // If I was idle, and I click -> I am active.
             if(userProfile && userProfile.isIdle) {
                 const now = Date.now();
                 const idleStart = getMillis(userProfile.idleSince);
                 const duration = now - idleStart;
                 const oldIdleBank = userProfile.idleBank || 0;
 
-                // Update DB: Close idle session, Save Bank, Trigger Admin Alert
                 db.collection('users').doc(currentUser.email).update({ 
                     isIdle: false, 
                     idleSince: null,
@@ -651,15 +650,17 @@
         function startIdleTracker() {
             clearInterval(idleCheckInterval);
             idleCheckInterval = setInterval(() => {
-                // EXEMPT ADMIN FROM IDLE CHECKS
                 if(!userProfile || userProfile.status === 'Offline' || userProfile.role === 'admin') return;
                 
-                const limit = (userProfile.idleLimit || 5) * 60 * 1000;
+                // FORCE INT: Ensure it's treated as number, default 1 min if missing
+                let mins = parseInt(userProfile.idleLimit);
+                if(isNaN(mins) || mins < 1) mins = 1; 
+                
+                const limit = mins * 60 * 1000;
                 const now = Date.now();
                 
                 if ((now - lastClickTime) > limit) {
                     if(!userProfile.isIdle) {
-                        // Mark as Idle + Save Timestamp (SILENTLY - NO POPUP)
                         db.collection('users').doc(currentUser.email).update({ 
                             isIdle: true,
                             idleSince: firebase.firestore.FieldValue.serverTimestamp()
@@ -670,7 +671,7 @@
         }
 
         // ==========================================
-        // 7. EXPORT & MODALS
+        // 7. EXPORT & MODALS (Standard)
         // ==========================================
         function updateReportDropdown() {
             const select = document.getElementById('report-user-select');
@@ -718,7 +719,6 @@
             statusEl.innerText = "Done!"; setTimeout(() => closeModal('modal-report'), 2000);
         }
         
-        // Chat & Task Functions (Same as before)
         async function addTask(e){const t=prompt("Task:");t&&(await db.collection("users").doc(e).update({tasks:firebase.firestore.FieldValue.arrayUnion({text:t,done:!1})}))}
         async function toggleTask(e,t,n){const r=db.collection("users").doc(e),o=await r.get(),s=o.data().tasks||[];s[t]&&(s[t].done=n,await r.update({tasks:s}))}
         async function deleteTask(e,t){confirm("Delete?")&&(await db.collection("users").doc(e).get().then(n=>{const r=n.data().tasks||[];r.splice(t,1),db.collection("users").doc(e).update({tasks:r})}))}
