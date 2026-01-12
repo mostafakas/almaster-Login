@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster V13.1 (Keyboard Strict)</title>
+    <title>Almaster V13.1 (Status Enhanced)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -121,7 +121,6 @@
                     <button onclick="openReportModal()" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3">
                         <i class="fas fa-file-download text-lg"></i> <span class="hidden md:block text-sm font-medium">Pro Reports</span>
                     </button>
-                    
                     <div class="px-3 mt-4">
                         <label class="flex items-center space-x-2 cursor-pointer text-xs text-slate-400">
                             <input type="checkbox" id="show-offline-toggle" onchange="renderGrid()" class="rounded bg-slate-700 border-slate-600">
@@ -238,7 +237,7 @@
 
     <script>
         // ==========================================
-        // 0. HELPER FUNCTIONS
+        // 0. HELPERS
         // ==========================================
         function getStatusColor(s, isFocus, isIdle) {
             if(s==='Offline') return { border:'border-slate-400', text:'text-slate-500', bg:'bg-slate-200' };
@@ -268,7 +267,7 @@
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         // ==========================================
-        // 1. CONFIGURATION
+        // 1. FIREBASE CONFIG
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM",
@@ -290,6 +289,7 @@
         let allUsersData = [];
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=';
 
+        // TRACKERS
         window.addEventListener('keydown', resetIdleTimer); 
         
         document.addEventListener('visibilitychange', () => {
@@ -300,7 +300,7 @@
         });
 
         // ==========================================
-        // 2. AUTHENTICATION
+        // 2. AUTH
         // ==========================================
         auth.onAuthStateChanged(async (user) => {
             if (user) {
@@ -312,7 +312,7 @@
                     db.collection('users').doc(user.email).update({ isFocused: true });
                     initSystem();
                 } else {
-                    alert("Account not configured. Contact Admin.");
+                    alert("Account not configured.");
                     auth.signOut();
                 }
             } else {
@@ -337,7 +337,7 @@
         }
 
         // ==========================================
-        // 3. SYSTEM LOGIC
+        // 3. SYSTEM
         // ==========================================
         function initSystem() {
             document.getElementById('loader').classList.add('hidden-section');
@@ -370,9 +370,6 @@
             });
         }
 
-        // ==========================================
-        // 4. ADMIN ALERTS
-        // ==========================================
         function renderAdminAlerts() {
             const container = document.getElementById('admin-alerts-container');
             allUsersData.forEach(u => {
@@ -385,8 +382,7 @@
                         const div = document.createElement('div');
                         div.id = `alert-active-${u.email}`;
                         div.className = 'admin-alert-toast pulse-urgent';
-                        div.innerHTML = `
-                            <div class="flex items-start gap-3">
+                        div.innerHTML = `<div class="flex items-start gap-3">
                                 <div class="bg-red-100 p-2 rounded-full text-red-600"><i class="fas fa-keyboard"></i></div>
                                 <div class="flex-1">
                                     <h4 class="font-bold text-sm text-red-600">IDLE: No Typing!</h4>
@@ -404,8 +400,7 @@
                         const div = document.createElement('div');
                         div.id = `alert-session-${u.email}`;
                         div.className = 'admin-alert-toast !border-l-orange-500';
-                        div.innerHTML = `
-                            <div class="flex items-start gap-3">
+                        div.innerHTML = `<div class="flex items-start gap-3">
                                 <div class="bg-orange-100 p-2 rounded-full text-orange-600"><i class="fas fa-history"></i></div>
                                 <div class="flex-1">
                                     <h4 class="font-bold text-sm text-orange-600">Idle Report (Resolved)</h4>
@@ -419,8 +414,12 @@
                 } else if(sessionAlert) sessionAlert.remove();
             });
         }
+
         async function dismissIdleAlert(email) { await db.collection('users').doc(email).update({ lastIdleSession: null }); }
 
+        // ==========================================
+        // 4. RENDER GRID (THE MODIFIED PART)
+        // ==========================================
         function renderGrid() {
             const grid = document.getElementById('grid-users');
             grid.innerHTML = '';
@@ -437,49 +436,68 @@
                 const idleBank = u.idleBank || 0;
                 const safeStart = getMillis(u.lastChange);
 
+                // UI Focus Logic
+                const focusDot = u.isFocused 
+                    ? '<span class="flex h-3 w-3 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>' 
+                    : '<span class="h-3 w-3 rounded-full bg-slate-300 inline-block border-2 border-white"></span>';
+
+                const focusText = u.isFocused 
+                    ? '<span class="text-[10px] text-green-600 font-bold ml-1">داخل السيستم</span>' 
+                    : '<span class="text-[10px] text-slate-400 font-bold ml-1">خارج التبويب</span>';
+
                 let cardClass = `user-card bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-lg relative border-l-4 ${colors.border} ${isMe ? 'ring-2 ring-primary-200' : ''}`;
                 if(isOffline) cardClass += ' opacity-70 grayscale';
-                if (u.isIdle && isAdmin) cardClass += ' border-red-500 ring-2 ring-red-100'; 
 
-                let buttonsHTML = '';
-                if(isMe || isAdmin) { 
-                    buttonsHTML = `<div class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">${btnHTML(u.email, 'Online', 'green')}${btnHTML(u.email, 'Busy', 'red')}${btnHTML(u.email, 'Break', 'yellow')}${btnHTML(u.email, 'Offline', 'slate')}</div>`;
-                }
+                let buttonsHTML = (isMe || isAdmin) ? `<div class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">${btnHTML(u.email, 'Online', 'green')}${btnHTML(u.email, 'Busy', 'red')}${btnHTML(u.email, 'Break', 'yellow')}${btnHTML(u.email, 'Offline', 'slate')}</div>` : '';
 
                 let tasksHTML = '';
                 const tasks = u.tasks || [];
                 if(tasks.length > 0 || isAdmin) {
                     tasksHTML = `<div class="mt-4 bg-slate-50 dark:bg-slate-900/50 p-2 rounded border border-slate-100 dark:border-slate-700"><p class="text-[9px] font-bold uppercase text-slate-400 mb-2">Tasks</p><ul class="space-y-1">`;
                     tasks.forEach((t, idx) => {
-                        tasksHTML += `<li class="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300 group"><input type="checkbox" class="task-checkbox mt-1" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" ${(!isMe && !isAdmin) ? 'disabled' : ''}><span class="flex-1 break-words leading-tight">${t.text}</span>${isAdmin ? `<button onclick="deleteTask('${u.email}', ${idx})" class="text-red-400 opacity-0 group-hover:opacity-100 px-1"><i class="fas fa-trash-alt"></i></button>` : ''}</li>`;
+                        tasksHTML += `<li class="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300 group"><input type="checkbox" class="task-checkbox mt-1" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" ${(!isMe && !isAdmin) ? 'disabled' : ''}><span class="flex-1 break-words leading-tight">${t.text}</span></li>`;
                     });
                     tasksHTML += `</ul></div>`;
                 }
 
-                let adminEditBtn = isAdmin ? `<button onclick="openEditModal('${u.email}')" class="absolute top-2 right-2 text-slate-300 hover:text-primary-500 p-2"><i class="fas fa-cog"></i></button>` : '';
                 let label = colors.customLabel || u.status || 'Offline';
 
                 const card = `
                 <div class="${cardClass}">
-                    ${adminEditBtn}
+                    ${isAdmin ? `<button onclick="openEditModal('${u.email}')" class="absolute top-2 right-2 text-slate-300 hover:text-primary-500 p-2"><i class="fas fa-cog"></i></button>` : ''}
                     <div class="p-4">
                         <div class="flex items-center gap-3 mb-3">
-                            <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm bg-slate-100">
+                            <div class="relative">
+                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm bg-slate-100">
+                                <div class="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-0.5 shadow-sm">
+                                    ${focusDot}
+                                </div>
+                            </div>
                             <div class="overflow-hidden">
-                                <h3 class="font-bold text-base dark:text-white truncate">${u.name} ${isMe ? '(You)' : ''}</h3>
-                                <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider truncate">${u.title || '-'}</p>
+                                <div class="flex items-center">
+                                    <h3 class="font-bold text-base dark:text-white truncate">${u.name}</h3>
+                                    ${isMe ? '<span class="ml-1 text-[10px] text-primary-500 font-bold">(أنت)</span>' : ''}
+                                </div>
+                                <div class="flex items-center">
+                                    ${focusText}
+                                </div>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-lg mb-2">
-                            <span class="px-2 py-1 rounded-full text-[9px] font-bold uppercase ${colors.bg} ${colors.text}">${label}</span>
+
+                        <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-lg mb-2 border border-slate-100 dark:border-slate-800">
+                            <div class="flex flex-col">
+                                <span class="text-[8px] uppercase text-slate-400 font-bold">الحالة</span>
+                                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase w-fit ${colors.bg} ${colors.text}">${label}</span>
+                            </div>
                             <div class="font-mono text-base font-bold text-slate-700 dark:text-slate-300 main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
                         </div>
-                        <div class="stats-grid text-slate-500">
+
+                        <div class="stats-grid">
                             <div class="stat-box"><div class="text-[7px] uppercase">Online</div><div class="font-mono font-bold stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</div></div>
                             <div class="stat-box"><div class="text-[7px] uppercase">Busy</div><div class="font-mono font-bold stat-timer" data-val="${tb['Busy'] || 0}" data-active="${u.status === 'Busy'}" data-start="${safeStart}">00:00</div></div>
                             <div class="stat-box"><div class="text-[7px] uppercase">Break</div><div class="font-mono font-bold stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</div></div>
-                            <div class="stat-box bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"><div class="text-[7px] uppercase">Idle</div><div class="font-mono font-bold stat-idle" data-val="${idleBank}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</div></div>
-                            <div class="stat-box bg-slate-200 dark:bg-slate-700"><div class="text-[7px] uppercase">Total</div><div class="font-mono font-bold total-fix-timer" data-online="${tb['Online']||0}" data-busy="${tb['Busy']||0}" data-break="${tb['Break']||0}" data-idle="${idleBank}" data-active="${u.status}" data-start="${safeStart}">00:00</div></div>
+                            <div class="stat-box bg-red-50 text-red-600"><div class="text-[7px] uppercase">Idle</div><div class="font-mono font-bold stat-idle" data-val="${idleBank}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</div></div>
+                            <div class="stat-box bg-slate-200"><div class="text-[7px] uppercase">Total</div><div class="font-mono font-bold total-fix-timer" data-online="${tb['Online']||0}" data-busy="${tb['Busy']||0}" data-break="${tb['Break']||0}" data-idle="${idleBank}" data-active="${u.status}" data-start="${safeStart}">00:00</div></div>
                         </div>
                         ${tasksHTML}
                         ${buttonsHTML}
@@ -496,50 +514,43 @@
             const userRef = db.collection('users').doc(targetEmail);
             const snapshot = await userRef.get();
             const uData = snapshot.data();
-            if(!uData) return;
-            if(uData.status === newStatus && !isAuto) return; 
+            if(!uData || (uData.status === newStatus && !isAuto)) return;
 
             const now = Date.now();
             const lastTime = getMillis(uData.lastChange);
-            const duration = now - lastTime; 
-            const oldStatus = uData.status || 'Offline';
-
+            const duration = now - lastTime;
             let timeBank = uData.timeBank || {};
+            const oldStatus = uData.status || 'Offline';
             if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
             timeBank[oldStatus] += duration;
 
             const timestamp = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection('logs').add({ user: targetEmail, name: uData.name, from_status: oldStatus, to_status: newStatus, start_time: uData.lastChange || timestamp, end_time: timestamp, duration_ms: duration, auto: isAuto });
-            let updateData = { status: newStatus, lastChange: timestamp, timeBank: timeBank, isIdle: false };
-            await userRef.update(updateData);
+            await userRef.update({ status: newStatus, lastChange: timestamp, timeBank: timeBank, isIdle: false });
             if(targetEmail === currentUser.email) resetIdleTimer();
         }
 
         function updateTimers() {
             const now = Date.now();
-            document.querySelectorAll('.main-timer').forEach(el => { const start = parseInt(el.dataset.start); const bank = parseInt(el.dataset.bank) || 0; if(start) el.innerText = formatTime(bank + (now - start)); });
-            document.querySelectorAll('.stat-timer').forEach(t => { const bank = parseInt(t.dataset.val)||0; const start = parseInt(t.dataset.start)||0; t.innerText = formatTime((t.dataset.active==='true') ? bank + (now - start) : bank); });
-            document.querySelectorAll('.stat-idle').forEach(t => { const bank = parseInt(t.dataset.val)||0; const start = parseInt(t.dataset.start)||0; t.innerText = formatTime((t.dataset.isidle==='true') ? bank + (now - start) : bank); });
-            document.querySelectorAll('.idle-counter').forEach(el => { const start = parseInt(el.dataset.start); if(start) el.innerText = formatTime(now - start); });
-            document.querySelectorAll('.total-fix-timer').forEach(t => { 
-                let total = parseInt(t.dataset.online) + parseInt(t.dataset.busy) + parseInt(t.dataset.break) + parseInt(t.dataset.idle);
-                const status = t.dataset.active; const start = parseInt(t.dataset.start)||0;
-                if(start > 0 && status !== 'Offline') total += (now - start);
-                t.innerText = formatTime(total); 
+            document.querySelectorAll('.main-timer').forEach(el => { const s = parseInt(el.dataset.start); const b = parseInt(el.dataset.bank)||0; if(s) el.innerText = formatTime(b + (now-s)); });
+            document.querySelectorAll('.stat-timer').forEach(t => { const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; t.innerText = formatTime((t.dataset.active==='true')?b+(now-s):b); });
+            document.querySelectorAll('.stat-idle').forEach(t => { const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; t.innerText = formatTime((t.dataset.isidle==='true')?b+(now-s):b); });
+            document.querySelectorAll('.idle-counter').forEach(el => { const s = parseInt(el.dataset.start); if(s) el.innerText = formatTime(now-s); });
+            document.querySelectorAll('.total-fix-timer').forEach(t => {
+                let tot = parseInt(t.dataset.online)+parseInt(t.dataset.busy)+parseInt(t.dataset.break)+parseInt(t.dataset.idle);
+                const s = parseInt(t.dataset.start)||0; if(s>0 && t.dataset.active!=='Offline') tot+=(now-s);
+                t.innerText = formatTime(tot);
             });
         }
-        
-        // --- IDLE TRACKING ---
+
         function resetIdleTimer() {
-            lastActionTime = Date.now(); 
+            lastActionTime = Date.now();
             if(userProfile && userProfile.isIdle) {
                 const now = Date.now();
-                const idleStart = getMillis(userProfile.idleSince);
-                const duration = now - idleStart;
-                const oldIdleBank = userProfile.idleBank || 0;
+                const dur = now - getMillis(userProfile.idleSince);
                 db.collection('users').doc(currentUser.email).update({ 
-                    isIdle: false, idleSince: null, idleBank: oldIdleBank + duration,
-                    lastIdleSession: { duration: duration, end: firebase.firestore.FieldValue.serverTimestamp() }
+                    isIdle: false, idleSince: null, idleBank: (userProfile.idleBank || 0) + dur,
+                    lastIdleSession: { duration: dur, end: firebase.firestore.FieldValue.serverTimestamp() }
                 });
             }
         }
@@ -547,137 +558,57 @@
         function startIdleTracker() {
             clearInterval(idleCheckInterval);
             idleCheckInterval = setInterval(() => {
-                if(!userProfile || userProfile.status === 'Offline' || userProfile.role === 'admin') return; 
-                let mins = parseInt(userProfile.idleLimit) || 5;
-                const limit = mins * 60 * 1000;
-                const now = Date.now();
-                if ((now - lastActionTime) > limit && !userProfile.isIdle) {
-                    db.collection('users').doc(currentUser.email).update({ 
-                        isIdle: true, idleSince: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                if(!userProfile || userProfile.status === 'Offline' || userProfile.role === 'admin') return;
+                const limit = (parseInt(userProfile.idleLimit)||5)*60*1000;
+                if ((Date.now() - lastActionTime) > limit && !userProfile.isIdle) {
+                    db.collection('users').doc(currentUser.email).update({ isIdle: true, idleSince: firebase.firestore.FieldValue.serverTimestamp() });
                 }
             }, 2000);
         }
 
-        // --- UTILS & MODALS ---
-        function updateReportDropdown(){
-            const e=document.getElementById("report-user-select"),t=e.value;
-            e.innerHTML='<option value="all">-- All Employees --</option>';
-            allUsersData.forEach(item=>{
-                const n=document.createElement("option");
-                n.value=item.email;n.innerText=item.name;e.appendChild(n)
-            });
-            e.value=t
-        }
-
-        function openReportModal(){document.getElementById("modal-report").classList.remove("hidden")}
-        
-        async function downloadReport(days){
-            const t=document.getElementById("export-status"),n=document.getElementById("report-user-select").value;
-            t.innerText="Processing...";
-            const r=new Date;r.setDate(r.getDate()-days);r.setHours(0,0,0,0);
-            let q=db.collection("logs").where("end_time",">=",r).orderBy("end_time","desc");
-            if("all"!==n) q=q.where("user","==",n);
-            const snap=await q.get();
-            if(snap.empty){t.innerText="No records.";return;}
-            let s="User Name,Action,Start Time,End Time,Duration,Type\n";
-            snap.forEach(doc=>{
-                const data=doc.data(),st=data.start_time?data.start_time.toDate():null,et=data.end_time?data.end_time.toDate():new Date;
-                const date=moment(et).format("YYYY-MM-DD"),stS=st?moment(st).format("HH:mm:ss"):"--",etS=moment(et).format("HH:mm:ss"),dur=formatTime(data.duration_ms||0);
-                s+=`${data.name},"${data.from_status}->${data.to_status}",${date} ${stS},${date} ${etS},${dur},${data.auto?"Auto":"Manual"}\n`
-            });
-            const blob=new Blob([s],{type:"text/csv;charset=utf-8;"}),link=document.createElement("a");
-            link.href=URL.createObjectURL(blob);link.download=`Report_${days}Days.csv`;link.click();
-            t.innerText="Done!";setTimeout(()=>closeModal("modal-report"),2000)
-        }
-
-        async function toggleTask(email,idx,done){
-            const ref=db.collection("users").doc(email),doc=await ref.get(),tasks=doc.data().tasks||[];
-            if(tasks[idx]){tasks[idx].done=done;await ref.update({tasks:tasks})}
-        }
-
-        async function deleteTask(email,idx){
-            if(confirm("Delete?")){
-                const ref=db.collection("users").doc(email),doc=await ref.get(),tasks=doc.data().tasks||[];
-                tasks.splice(idx,1);await ref.update({tasks:tasks})
-            }
-        }
-
+        // Standard helpers (Chat, Reports, Edit etc)
         function initChat(){
-            db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(snap=>{
+            db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s=>{
                 const t=document.getElementById("chat-messages");t.innerHTML="";
-                snap.forEach(doc=>{
-                    const data=doc.data(),isMe=data.user===currentUser.email;
-                    t.innerHTML+=`<div class="max-w-[85%] p-2 rounded-xl mb-2 text-xs ${isMe?"ml-auto bg-primary-600 text-white":"mr-auto bg-slate-100 dark:bg-slate-700 dark:text-white"}">
-                        <div class="font-bold opacity-70 flex justify-between gap-2"><span>${data.name}</span><span>${data.time?moment(data.time.toDate()).format("h:mm A"):"."}</span></div>
-                        <div>${data.text}</div></div>`
+                s.forEach(d=>{ const m=d.data(); const isMe=m.user===currentUser.email;
+                    t.innerHTML+=`<div class="max-w-[85%] p-2 rounded-xl mb-2 text-xs ${isMe?"ml-auto bg-primary-600 text-white":"mr-auto bg-slate-100 dark:bg-slate-700"}">
+                        <div class="font-bold opacity-70 flex justify-between gap-2"><span>${m.name}</span><span>${m.time?moment(m.time.toDate()).format("h:mm A"):"."}</span></div>
+                        <div>${m.text}</div></div>`;
                 });
                 t.scrollTop=t.scrollHeight;
-                if(document.getElementById("chat-window").classList.contains("hidden") && !snap.metadata.hasPendingWrites){
-                    document.getElementById("chat-badge").classList.remove("hidden");document.getElementById("chat-badge").innerText="!"
+                if(document.getElementById("chat-window").classList.contains("hidden") && !s.metadata.hasPendingWrites){
+                    document.getElementById("chat-badge").classList.remove("hidden");document.getElementById("chat-badge").innerText="!";
                 }
-            })
+            });
         }
-
-        async function sendMessage(e){
-            e.preventDefault();const t=document.getElementById("chat-input");
-            if(t.value.trim()){
-                await db.collection("messages").add({text:t.value.trim(),user:currentUser.email,name:userProfile.name,time:firebase.firestore.FieldValue.serverTimestamp()});
-                t.value=""
-            }
+        async function sendMessage(e){ e.preventDefault(); const i=document.getElementById("chat-input"); if(i.value.trim()){ await db.collection("messages").add({text:i.value.trim(),user:currentUser.email,name:userProfile.name,time:firebase.firestore.FieldValue.serverTimestamp()}); i.value=""; }}
+        function toggleChat(){ document.getElementById("chat-window").classList.toggle("hidden"); document.getElementById("chat-badge").classList.add("hidden"); }
+        function updateReportDropdown(){ const e=document.getElementById("report-user-select"),v=e.value; e.innerHTML='<option value="all">-- All --</option>'; allUsersData.forEach(u=>{e.innerHTML+=`<option value="${u.email}">${u.name}</option>`}); e.value=v; }
+        function openReportModal(){ document.getElementById("modal-report").classList.remove("hidden"); }
+        async function downloadReport(d){
+            const t=document.getElementById("export-status"),u=document.getElementById("report-user-select").value; t.innerText="Processing...";
+            const r=new Date(); r.setDate(r.getDate()-d); r.setHours(0,0,0,0);
+            let q=db.collection("logs").where("end_time",">=",r).orderBy("end_time","desc");
+            if(u!=="all") q=q.where("user","==",u);
+            const snap=await q.get(); if(snap.empty){t.innerText="No records.";return;}
+            let s="Name,Action,Start,End,Duration,Type\n";
+            snap.forEach(doc=>{ const data=doc.data(); const et=data.end_time?data.end_time.toDate():new Date(); s+=`${data.name},"${data.from_status}->${data.to_status}",${moment(et).format("YYYY-MM-DD HH:mm:ss")},${formatTime(data.duration_ms||0)},${data.auto?"Auto":"Manual"}\n`; });
+            const b=new Blob([s],{type:"text/csv"}),l=document.createElement("a"); l.href=URL.createObjectURL(b); l.download=`Report.csv`; l.click(); t.innerText="Done!";
         }
-
-        function toggleChat(){document.getElementById("chat-window").classList.toggle("hidden");document.getElementById("chat-badge").classList.add("hidden")}
-
-        async function openEditModal(email){
-            document.getElementById("modal-edit").classList.remove("hidden");
-            const t=document.getElementById("edit-email");
-            if("new"===email){
-                document.getElementById("form-edit").reset();t.readOnly=false;t.value="";
-                t.setAttribute("data-mode","new");document.getElementById("edit-preview").src=DEFAULT_PHOTO+"New";
-                document.getElementById("btn-delete").classList.add("hidden");
-            } else {
-                const doc=await db.collection("users").doc(email).get(),data=doc.data();
-                t.readOnly=true;t.value=data.email;t.setAttribute("data-mode","edit");
-                document.getElementById("edit-name").value=data.name;document.getElementById("edit-title").value=data.title||"";
-                document.getElementById("edit-dept").value=data.dept||"";document.getElementById("edit-role").value=data.role||"employee";
-                document.getElementById("edit-idle").value=data.idleLimit||5;document.getElementById("edit-photo-base64").value=data.photo||"";
-                document.getElementById("edit-preview").src=data.photo||DEFAULT_PHOTO+data.name;
-                document.getElementById("btn-delete").classList.remove("hidden");
-            }
+        async function openEditModal(e){
+            document.getElementById("modal-edit").classList.remove("hidden"); const t=document.getElementById("edit-email");
+            if(e==="new"){ document.getElementById("form-edit").reset(); t.readOnly=false; t.setAttribute("data-mode","new"); document.getElementById("edit-preview").src=DEFAULT_PHOTO+"New"; }
+            else { const d=(await db.collection("users").doc(e).get()).data(); t.readOnly=true; t.value=d.email; t.setAttribute("data-mode","edit"); document.getElementById("edit-name").value=d.name; document.getElementById("edit-title").value=d.title||""; document.getElementById("edit-role").value=d.role||"employee"; document.getElementById("edit-idle").value=d.idleLimit||5; document.getElementById("edit-photo-base64").value=d.photo||""; document.getElementById("edit-preview").src=d.photo||DEFAULT_PHOTO+d.name; }
         }
-
         async function saveUserChanges(e){
-            e.preventDefault();const email=document.getElementById("edit-email").value.toLowerCase().trim();
-            const data={
-                name:document.getElementById("edit-name").value,title:document.getElementById("edit-title").value,
-                dept:document.getElementById("edit-dept").value,role:document.getElementById("edit-role").value,
-                idleLimit:parseInt(document.getElementById("edit-idle").value)||5,photo:document.getElementById("edit-photo-base64").value
-            };
-            if("new"===document.getElementById("edit-email").getAttribute("data-mode")){
-                data.email=email;data.status="Offline";await db.collection("users").doc(email).set(data)
-            } else await db.collection("users").doc(email).update(data);
-            closeModal("modal-edit")
+            e.preventDefault(); const em=document.getElementById("edit-email").value.toLowerCase().trim();
+            const data={ name:document.getElementById("edit-name").value, title:document.getElementById("edit-title").value, role:document.getElementById("edit-role").value, idleLimit:parseInt(document.getElementById("edit-idle").value)||5, photo:document.getElementById("edit-photo-base64").value };
+            if(document.getElementById("edit-email").getAttribute("data-mode")==="new"){ data.email=em; data.status="Offline"; await db.collection("users").doc(em).set(data); }
+            else await db.collection("users").doc(em).update(data);
+            closeModal("modal-edit");
         }
-
-        async function deleteUser(){if(confirm("Delete User?")){await db.collection("users").doc(document.getElementById("edit-email").value).delete();closeModal("modal-edit")}}
-
-        function handleImageUpload(el){
-            if(el.files&&el.files[0]){
-                const reader=new FileReader();
-                reader.onload=function(e){
-                    const img=new Image();img.src=e.target.result;
-                    img.onload=function(){
-                        const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d"),scale=300/img.width;
-                        canvas.width=300;canvas.height=img.height*scale;
-                        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-                        const base64=canvas.toDataURL("image/jpeg",.7);
-                        document.getElementById("edit-preview").src=base64;
-                        document.getElementById("edit-photo-base64").value=base64
-                    }
-                };reader.readAsDataURL(el.files[0])
-            }
-        }
+        async function deleteUser(){ if(confirm("Delete?")){ await db.collection("users").doc(document.getElementById("edit-email").value).delete(); closeModal("modal-edit"); } }
+        function handleImageUpload(el){ if(el.files && el.files[0]){ const r=new FileReader(); r.onload=function(e){ const i=new Image(); i.src=e.target.result; i.onload=function(){ const c=document.createElement("canvas"),ctx=c.getContext("2d"),s=300/i.width; c.width=300; c.height=i.height*s; ctx.drawImage(i,0,0,c.width,c.height); const b=c.toDataURL("image/jpeg",.7); document.getElementById("edit-preview").src=b; document.getElementById("edit-photo-base64").value=b; }; }; r.readAsDataURL(el.files[0]); } }
     </script>
 </body>
 </html>
