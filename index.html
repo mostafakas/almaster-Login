@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster Cloud Enterprise</title>
+    <title>Almaster Cloud V2</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -20,7 +20,7 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e' },
+                        primary: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 900: '#0c4a6e' },
                         dark: { 800: '#1e293b', 900: '#0f172a' }
                     },
                     fontFamily: { sans: ['Outfit', 'Cairo', 'sans-serif'] }
@@ -30,225 +30,180 @@
     </script>
 
     <style>
-        body { background-color: #f8fafc; }
+        body { background-color: #f1f5f9; }
         .dark-mode body { background-color: #0f172a; color: white; }
-        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
-        .dark-mode .glass-panel { background: rgba(30, 41, 59, 0.9); }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .dark-mode .glass { background: rgba(30, 41, 59, 0.95); }
         .hidden-section { display: none !important; }
-        .form-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; }
+        .form-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-size: 14px; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
-        
-        /* Animation */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade { animation: fadeIn 0.5s ease-out forwards; }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark-mode ::-webkit-scrollbar-thumb { background: #475569; }
     </style>
 </head>
-<body class="min-h-screen text-slate-800 dark:text-slate-100 font-sans" onmousemove="resetIdleTimer()" onkeypress="resetIdleTimer()">
+<body class="min-h-screen text-slate-800 dark:text-slate-100 font-sans selection:bg-primary-500 selection:text-white" 
+      ontouchstart="resetIdleTimer()" onmousemove="resetIdleTimer()" onkeypress="resetIdleTimer()" onclick="resetIdleTimer()">
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-primary-500 mb-4"></div>
-        <h2 class="text-xl font-bold tracking-widest">CONNECTING TO ALMASTER...</h2>
+        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
+        <h2 class="text-lg font-bold tracking-widest animate-pulse">LOADING ALMASTER V2...</h2>
     </div>
 
-    <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-6 bg-slate-200 dark:bg-slate-900">
-        <div class="w-full max-w-md glass-panel p-8 rounded-2xl shadow-2xl animate-fade">
+    <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
+        <div class="w-full max-w-sm glass p-8 rounded-2xl shadow-2xl">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-primary-700 dark:text-primary-400">ALMASTER</h1>
-                <p class="text-slate-500 text-sm">Workforce Management System</p>
+                <h1 class="text-3xl font-bold text-primary-700 dark:text-primary-400 mb-1">ALMASTER</h1>
+                <p class="text-xs text-slate-500 uppercase tracking-widest font-bold">Employee Portal</p>
             </div>
             <form onsubmit="handleLogin(event)">
                 <div class="mb-4">
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Email</label>
-                    <input type="email" id="login-email" class="form-input" placeholder="admin@almaster.com" required>
+                    <input type="email" id="login-email" class="form-input" placeholder="user@almaster.com" required>
                 </div>
                 <div class="mb-6">
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Password</label>
                     <input type="password" id="login-pass" class="form-input" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="w-full bg-primary-600 text-white font-bold py-3 rounded-lg hover:bg-primary-700 transition shadow-lg">Login Securely</button>
+                <button type="submit" class="w-full bg-primary-600 text-white font-bold py-3 rounded-lg hover:bg-primary-700 transition shadow-lg">Login</button>
             </form>
-            <p id="login-error" class="text-red-500 text-center mt-4 text-sm font-bold bg-red-50 p-2 rounded hidden"></p>
+            <p id="login-error" class="text-red-500 text-center mt-4 text-xs font-bold bg-red-50 p-2 rounded hidden"></p>
         </div>
     </div>
 
-    <div id="view-system" class="hidden-section flex min-h-screen">
+    <div id="view-system" class="hidden-section flex min-h-screen overflow-hidden">
         
-        <aside class="w-64 bg-slate-900 text-white hidden md:flex flex-col p-4 shadow-2xl z-10">
-            <h1 class="text-2xl font-bold mb-8 text-center tracking-wider text-white border-b border-slate-700 pb-4">ALMASTER</h1>
+        <aside class="w-20 md:w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20 transition-all duration-300">
+            <div class="h-20 flex items-center justify-center border-b border-slate-800">
+                <h1 class="text-xl font-bold md:block hidden tracking-widest text-primary-400">ALMASTER</h1>
+                <h1 class="text-xl font-bold md:hidden block text-primary-400">A</h1>
+            </div>
             
-            <div class="mb-8 flex items-center gap-3 bg-slate-800 p-3 rounded-xl border border-slate-700">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-primary-500 to-primary-700 flex items-center justify-center font-bold text-lg text-white shadow" id="avatar-char">U</div>
-                <div>
+            <div class="p-4 flex flex-col items-center md:flex-row md:items-center gap-3 border-b border-slate-800 bg-slate-800/50">
+                <img id="sb-img" src="" class="w-10 h-10 rounded-full object-cover border-2 border-primary-500 shadow-md bg-slate-700">
+                <div class="hidden md:block overflow-hidden">
                     <p id="sb-name" class="font-bold text-sm truncate w-32">User</p>
-                    <p id="sb-role" class="text-[10px] text-primary-400 uppercase font-bold tracking-widest">Loading...</p>
+                    <p id="sb-role" class="text-[10px] text-slate-400 uppercase font-bold">Loading...</p>
                 </div>
             </div>
 
-            <nav class="space-y-2 flex-1">
-                <button onclick="switchTab('dashboard')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition text-slate-300 hover:text-white flex items-center gap-3" id="btn-dash">
-                    <i class="fas fa-th-large w-5 text-center"></i> Dashboard
-                </button>
-                <button onclick="switchTab('my-view')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition text-slate-300 hover:text-white flex items-center gap-3">
-                    <i class="fas fa-user-clock w-5 text-center"></i> My Status
+            <nav class="flex-1 p-2 space-y-1 overflow-y-auto">
+                <button onclick="switchTab('dashboard')" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3 bg-slate-800 text-white">
+                    <i class="fas fa-th-large text-lg"></i> <span class="hidden md:block text-sm font-medium">Dashboard</span>
                 </button>
                 
-                <div id="admin-links" class="hidden-section pt-4 border-t border-slate-700 mt-4">
-                    <p class="text-[10px] text-slate-500 uppercase mb-2 font-bold px-3">Administration</p>
-                    <button onclick="switchTab('users')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition text-slate-300 hover:text-white flex items-center gap-3">
-                        <i class="fas fa-users-gear w-5 text-center"></i> Manage Staff
+                <div id="admin-menu" class="hidden-section pt-4 mt-2 border-t border-slate-700">
+                    <p class="hidden md:block px-3 text-[10px] text-slate-500 uppercase font-bold mb-2">Admin Control</p>
+                    <button onclick="openEditModal('new')" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3">
+                        <i class="fas fa-user-plus text-lg"></i> <span class="hidden md:block text-sm font-medium">Add Employee</span>
                     </button>
                 </div>
             </nav>
             
-            <button onclick="logout()" class="bg-red-900/20 text-red-400 p-3 rounded-lg hover:bg-red-900/50 transition mt-auto border border-red-900/30 font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fas fa-sign-out-alt"></i> Logout
+            <button onclick="logout()" class="p-4 text-red-400 hover:bg-red-900/20 transition border-t border-slate-800 flex items-center justify-center md:justify-start gap-3">
+                <i class="fas fa-sign-out-alt"></i> <span class="hidden md:block text-sm font-bold">Logout</span>
             </button>
         </aside>
 
-        <main class="flex-1 bg-slate-50 dark:bg-slate-900 p-4 md:p-8 overflow-auto relative">
+        <main class="flex-1 bg-slate-100 dark:bg-slate-900 relative overflow-hidden flex flex-col">
             
-            <header class="md:hidden flex justify-between items-center mb-6 bg-white dark:bg-slate-800 p-4 rounded-xl shadow">
-                <h1 class="font-bold text-primary-600">ALMASTER</h1>
-                <button onclick="logout()" class="text-red-500"><i class="fas fa-sign-out-alt"></i></button>
+            <header class="bg-white dark:bg-slate-800 h-16 shadow-sm flex items-center justify-between px-6 z-10">
+                <h2 class="text-xl font-bold text-slate-700 dark:text-white" id="page-title">Live Dashboard</h2>
+                <div class="flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/20 rounded-full border border-green-100 dark:border-green-900">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span class="text-xs font-bold text-green-700 dark:text-green-400">Online Sync</span>
+                </div>
             </header>
 
-            <div id="tab-dashboard" class="hidden-section animate-fade">
-                <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                    <div>
-                        <h2 class="text-3xl font-bold text-slate-800 dark:text-white">Live Operations</h2>
-                        <p class="text-slate-500 text-sm">Real-time monitoring of all staff members</p>
-                    </div>
-                    <div class="bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow-sm border border-green-100 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <span class="text-xs font-bold text-green-700 dark:text-green-400">System Online</span>
-                    </div>
-                </div>
-                <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    </div>
-            </div>
-
-            <div id="tab-my-view" class="hidden-section animate-fade">
-                <div class="max-w-4xl mx-auto mt-6">
-                    <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-xl overflow-hidden">
-                        <div class="h-32 bg-gradient-to-r from-slate-800 to-slate-900 relative"></div>
-                        
-                        <div class="px-8 pb-8 text-center relative">
-                            <div class="w-32 h-32 rounded-full bg-white dark:bg-slate-700 p-1 mx-auto -mt-16 relative z-10 shadow-lg">
-                                <div class="w-full h-full rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-5xl font-bold text-slate-500 dark:text-slate-300" id="my-avatar">U</div>
-                            </div>
-                            
-                            <h2 id="my-name" class="text-3xl font-bold mt-4 text-slate-800 dark:text-white">User Name</h2>
-                            <p id="my-title" class="text-slate-500 font-bold uppercase tracking-widest text-sm mb-8">Job Title</p>
-                            
-                            <div class="bg-slate-50 dark:bg-slate-900 rounded-2xl p-8 border border-slate-100 dark:border-slate-700 inline-block min-w-[320px] mb-8 shadow-inner">
-                                <span id="my-status-badge" class="px-6 py-2 rounded-full text-sm font-bold uppercase tracking-wider mb-4 inline-block transition-all duration-300">Loading...</span>
-                                <div id="my-timer" class="text-6xl font-mono font-bold text-slate-700 dark:text-white tracking-tight">00:00:00</div>
-                                <p class="text-xs text-slate-400 mt-2">Time in current status</p>
-                            </div>
-
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
-                                <button onclick="changeStatus('Online')" class="group p-4 rounded-2xl border border-green-200 bg-green-50 hover:bg-green-500 hover:text-white text-green-700 font-bold transition-all duration-300 shadow-sm hover:shadow-lg">
-                                    <i class="fas fa-check-circle mb-2 text-xl block group-hover:text-white"></i> Online
-                                </button>
-                                <button onclick="changeStatus('Busy')" class="group p-4 rounded-2xl border border-red-200 bg-red-50 hover:bg-red-500 hover:text-white text-red-700 font-bold transition-all duration-300 shadow-sm hover:shadow-lg">
-                                    <i class="fas fa-ban mb-2 text-xl block group-hover:text-white"></i> Busy
-                                </button>
-                                <button onclick="changeStatus('Break')" class="group p-4 rounded-2xl border border-yellow-200 bg-yellow-50 hover:bg-yellow-500 hover:text-white text-yellow-700 font-bold transition-all duration-300 shadow-sm hover:shadow-lg">
-                                    <i class="fas fa-coffee mb-2 text-xl block group-hover:text-white"></i> Break
-                                </button>
-                                <button onclick="changeStatus('Offline')" class="group p-4 rounded-2xl border border-slate-200 bg-slate-100 hover:bg-slate-600 hover:text-white text-slate-600 font-bold transition-all duration-300 shadow-sm hover:shadow-lg">
-                                    <i class="fas fa-power-off mb-2 text-xl block group-hover:text-white"></i> Offline
-                                </button>
-                            </div>
+            <div class="flex-1 overflow-auto p-4 md:p-8">
+                
+                <div id="tab-dashboard" class="animate-fade">
+                    <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         </div>
-                    </div>
                 </div>
-            </div>
 
-            <div id="tab-users" class="hidden-section animate-fade">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Staff Directory</h2>
-                    <button onclick="openUserModal()" class="bg-primary-600 text-white px-5 py-2.5 rounded-lg font-bold shadow-lg hover:bg-primary-700 hover:shadow-xl transition transform hover:-translate-y-0.5">
-                        <i class="fas fa-user-plus mr-2"></i> Add Employee
-                    </button>
-                </div>
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-100 dark:bg-slate-900 text-slate-500 text-xs uppercase font-bold tracking-wider">
-                                <tr>
-                                    <th class="p-5">Employee</th>
-                                    <th class="p-5">Role</th>
-                                    <th class="p-5">Contact</th>
-                                    <th class="p-5 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-users" class="divide-y divide-slate-100 dark:divide-slate-700">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
-
         </main>
     </div>
 
-    <div id="modal-idle" class="fixed inset-0 z-[100] hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl animate-bounce border-4 border-yellow-400">
-            <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-hourglass-half text-4xl text-yellow-600"></i>
+    <div id="modal-edit" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white" id="modal-title">Edit Employee</h3>
+                <button onclick="closeModal('modal-edit')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <h3 class="text-2xl font-bold mb-2 text-slate-800 dark:text-white">Are you still there?</h3>
-            <p class="text-slate-500 mb-8">You have been inactive. System will set you to <b class="text-red-500">Offline</b> in <span id="idle-count" class="font-mono text-xl font-bold bg-slate-100 px-2 rounded">60</span> seconds.</p>
-            <button onclick="resetIdleTimer(true)" class="bg-primary-600 hover:bg-primary-700 text-white w-full py-4 rounded-xl font-bold shadow-lg transition text-lg">
-                I'm Here!
-            </button>
+            
+            <div class="p-6 overflow-y-auto">
+                <form id="form-edit" onsubmit="saveUserChanges(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="hidden" id="edit-email-key"> <div class="md:col-span-2 flex justify-center mb-4">
+                        <div class="relative group cursor-pointer" onclick="document.getElementById('edit-file').click()">
+                            <img id="edit-preview" src="" class="w-24 h-24 rounded-full object-cover border-4 border-slate-200 dark:border-slate-600 group-hover:border-primary-500 transition">
+                            <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-white text-xs font-bold">
+                                <i class="fas fa-camera mr-1"></i> Upload
+                            </div>
+                            <input type="file" id="edit-file" class="hidden" accept="image/*" onchange="handleImageUpload(this)">
+                            <input type="hidden" id="edit-photo-base64">
+                        </div>
+                    </div>
+
+                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Full Name</label><input type="text" id="edit-name" class="form-input" required></div>
+                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Job Title</label><input type="text" id="edit-title" class="form-input" required></div>
+                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Department</label><input type="text" id="edit-dept" class="form-input"></div>
+                    <div><label class="text-[10px] font-bold uppercase text-slate-400">Hire Date</label><input type="date" id="edit-hire" class="form-input"></div>
+                    
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400">Role</label>
+                        <select id="edit-role" class="form-input font-bold">
+                            <option value="employee">Employee</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400">Idle Limit (Minutes)</label>
+                        <input type="number" id="edit-idle" class="form-input" min="1" value="5">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold uppercase text-slate-400">Email (ID)</label>
+                        <input type="email" id="edit-email" class="form-input bg-slate-100 dark:bg-slate-900 text-slate-500 cursor-not-allowed" readonly>
+                    </div>
+
+                    <div class="md:col-span-2 pt-4 flex gap-3 border-t dark:border-slate-700 mt-2">
+                        <button type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-lg hover:bg-primary-700 shadow-lg">Save Changes</button>
+                        <button type="button" onclick="deleteUser()" id="btn-delete" class="px-4 text-red-500 hover:bg-red-50 rounded-lg font-bold border border-red-200"><i class="fas fa-trash"></i></button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <div id="modal-user" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl max-w-md w-full shadow-2xl transform transition-all scale-100">
-            <h3 class="text-xl font-bold mb-4 text-slate-800 dark:text-white">Create New Profile</h3>
-            
-            <div class="text-xs text-amber-800 bg-amber-50 border border-amber-200 p-3 rounded-lg mb-6 flex gap-2">
-                <i class="fas fa-exclamation-triangle mt-0.5"></i>
-                <div>
-                    <b>CRITICAL STEP:</b> After creating the profile here, you MUST go to Firebase Console > Authentication and add the user (Email/Password) manually.
-                </div>
+    <div id="modal-logs" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold dark:text-white">Activity History</h3>
+                <button onclick="closeModal('modal-logs')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
             </div>
+            <div class="flex-1 overflow-y-auto p-4" id="logs-container">
+                <p class="text-center text-slate-400 text-sm mt-10">Loading logs...</p>
+            </div>
+        </div>
+    </div>
 
-            <form onsubmit="saveNewUser(event)" class="space-y-4">
-                <div>
-                    <label class="text-xs font-bold uppercase text-slate-400">Full Name</label>
-                    <input type="text" id="new-name" class="form-input" placeholder="e.g. Ahmed Ali" required>
-                </div>
-                <div>
-                    <label class="text-xs font-bold uppercase text-slate-400">Email Address</label>
-                    <input type="email" id="new-email" class="form-input" placeholder="user@almaster.com" required>
-                </div>
-                <div>
-                    <label class="text-xs font-bold uppercase text-slate-400">Job Title</label>
-                    <input type="text" id="new-title" class="form-input" placeholder="e.g. SEO Specialist" required>
-                </div>
-                <div>
-                    <label class="text-xs font-bold uppercase text-slate-400">Role Access</label>
-                    <select id="new-role" class="form-input font-bold text-slate-700">
-                        <option value="employee">Employee (Limited View)</option>
-                        <option value="admin">Admin (Full Control)</option>
-                    </select>
-                </div>
-                <div class="flex gap-3 pt-4">
-                    <button type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-lg hover:bg-primary-700 shadow-lg">Create Profile</button>
-                    <button type="button" onclick="document.getElementById('modal-user').classList.add('hidden')" class="px-5 text-slate-500 font-bold hover:text-slate-800 hover:bg-slate-100 rounded-lg transition">Cancel</button>
-                </div>
-            </form>
+    <div id="modal-idle" class="fixed inset-0 z-[200] hidden bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl animate-bounce border-4 border-yellow-400">
+            <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-hourglass-half text-3xl text-yellow-600"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-slate-800 dark:text-white">Are you active?</h3>
+            <p class="text-slate-500 mb-6 text-sm">You'll go <b class="text-red-500">Offline</b> in <span id="idle-count" class="font-mono font-bold bg-slate-100 px-2 rounded">60</span>s</p>
+            <button onclick="resetIdleTimer(true)" class="bg-primary-600 hover:bg-primary-700 text-white w-full py-3 rounded-xl font-bold shadow-lg transition">I'm Here!</button>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // 1. FIREBASE CONFIGURATION (ALMASTER)
-        // ==========================================
+        // 1. CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM",
             authDomain: "almaster-b8c18.firebaseapp.com",
@@ -258,47 +213,30 @@
             appId: "1:884142036232:web:eeb6677d988565653a08bd",
             measurementId: "G-JW3C7YCGQ8"
         };
-
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-        
-        // System State
-        let currentUser = null; 
-        let userProfile = null; 
+
+        // GLOBALS
+        let currentUser = null;
+        let userProfile = null;
         let idleTime = 0;
         let idleInterval;
-        const IDLE_LIMIT = 5; // Minutes before idle warning
-        
-        // ==========================================
-        // 2. AUTHENTICATION LOGIC
-        // ==========================================
+        const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=';
+
+        // 2. AUTH
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
-                // Get Profile
                 const doc = await db.collection('users').doc(user.email).get();
-                
                 if(doc.exists) {
                     userProfile = doc.data();
                     initSystem();
                 } else {
-                    // First time Setup for Admin
-                    userProfile = {
-                        name: "System Admin",
-                        email: user.email,
-                        role: "admin",
-                        title: "Owner",
-                        status: "Online",
-                        lastChange: Date.now(),
-                        device: "Setup Device"
-                    };
-                    await db.collection('users').doc(user.email).set(userProfile);
-                    initSystem();
+                    alert("Account exists in Auth but no Profile found. Please ask Admin to create your profile.");
+                    auth.signOut();
                 }
             } else {
-                // Signed Out
                 document.getElementById('view-system').classList.add('hidden-section');
                 document.getElementById('view-login').classList.remove('hidden-section');
                 document.getElementById('loader').classList.add('hidden-section');
@@ -309,268 +247,323 @@
             e.preventDefault();
             const email = document.getElementById('login-email').value;
             const pass = document.getElementById('login-pass').value;
-            const errorBox = document.getElementById('login-error');
-            
-            errorBox.classList.add('hidden');
-            
             try {
                 await auth.signInWithEmailAndPassword(email, pass);
-            } catch (error) {
-                errorBox.innerText = "Login Failed: " + error.message;
-                errorBox.classList.remove('hidden');
+            } catch (err) {
+                const errBox = document.getElementById('login-error');
+                errBox.innerText = err.message;
+                errBox.classList.remove('hidden');
             }
         }
 
-        function logout() {
-            auth.signOut().then(() => location.reload());
-        }
+        function logout() { auth.signOut().then(()=>location.reload()); }
 
-        // ==========================================
-        // 3. CORE SYSTEM
-        // ==========================================
+        // 3. SYSTEM INIT
         function initSystem() {
             document.getElementById('loader').classList.add('hidden-section');
             document.getElementById('view-login').classList.add('hidden-section');
             document.getElementById('view-system').classList.remove('hidden-section');
 
-            // Set Sidebar Info
+            // Setup Sidebar
             document.getElementById('sb-name').innerText = userProfile.name;
-            document.getElementById('sb-role').innerText = userProfile.role.toUpperCase();
-            document.getElementById('avatar-char').innerText = userProfile.name.charAt(0).toUpperCase();
+            document.getElementById('sb-role').innerText = userProfile.role;
+            document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
 
-            // Set Permissions
+            // Admin Check
             if(userProfile.role === 'admin') {
-                document.getElementById('admin-links').classList.remove('hidden-section');
-                switchTab('dashboard');
+                document.getElementById('admin-menu').classList.remove('hidden-section');
             } else {
-                switchTab('my-view');
-                document.getElementById('btn-dash').style.display = 'none';
+                document.getElementById('admin-menu').classList.add('hidden-section');
             }
 
-            // Start Listeners
-            listenToUsers();
-            listenToMyProfile();
+            // Realtime Listeners
+            listenToAllUsers();
             startIdleTracker();
             setInterval(updateTimers, 1000);
         }
 
-        function switchTab(tab) {
-            document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden-section'));
-            document.getElementById(`tab-${tab}`).classList.remove('hidden-section');
-        }
-
-        // ==========================================
-        // 4. REAL-TIME DATA HANDLING
-        // ==========================================
-        
-        // Listen to All Users (Admin Dashboard)
-        function listenToUsers() {
-            db.collection('users').onSnapshot((snapshot) => {
+        // 4. DASHBOARD RENDER
+        function listenToAllUsers() {
+            db.collection('users').onSnapshot(snapshot => {
                 const grid = document.getElementById('grid-users');
-                const table = document.getElementById('table-users');
                 grid.innerHTML = '';
-                table.innerHTML = '';
-
+                
                 snapshot.forEach(doc => {
                     const u = doc.data();
+                    const isMe = (currentUser.email === u.email);
+                    const isAdmin = (userProfile.role === 'admin');
                     const colors = getStatusColor(u.status);
                     
-                    // Dashboard Card
-                    grid.innerHTML += `
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition border-t-4 ${colors.border} relative group">
-                            <div class="flex justify-between items-start mb-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-                                        ${u.name.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div class="overflow-hidden">
-                                        <h3 class="font-bold text-lg leading-tight dark:text-white truncate">${u.name}</h3>
-                                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">${u.title}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-lg p-3 mb-3">
-                                <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${colors.bg} ${colors.text}">${u.status}</span>
-                                <div class="font-mono text-lg font-bold text-slate-600 dark:text-slate-300 timer-display" data-start="${u.lastChange}">00:00:00</div>
-                            </div>
-                            
-                            <div class="text-[10px] text-slate-400 truncate border-t border-slate-100 dark:border-slate-700 pt-2 flex items-center gap-1">
-                                <i class="fas fa-desktop"></i> ${u.device || 'Unknown Device'}
-                            </div>
-                        </div>
-                    `;
+                    // Permission Check: Can I control this card?
+                    // Answer: Only if it's MY card OR I am Admin.
+                    const canControl = isMe || isAdmin;
+                    const controlClass = canControl ? '' : 'pointer-events-none opacity-80 filter grayscale-[0.5]'; 
+                    // Note: Instead of disabling whole card, we just hide buttons for others if not admin
+                    
+                    let buttonsHTML = '';
+                    if(canControl) {
+                        buttonsHTML = `
+                        <div class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                            ${btnHTML(u.email, 'Online', 'green')}
+                            ${btnHTML(u.email, 'Busy', 'red')}
+                            ${btnHTML(u.email, 'Break', 'yellow')}
+                            ${btnHTML(u.email, 'Offline', 'slate')}
+                        </div>`;
+                    } else {
+                        buttonsHTML = `<div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 text-center text-xs text-slate-400 italic">Read Only View</div>`;
+                    }
 
-                    // Staff Table
-                    table.innerHTML += `
-                        <tr class="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
-                            <td class="p-5">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-xs">${u.name.charAt(0)}</div>
-                                    <div>
-                                        <div class="font-bold text-sm dark:text-white">${u.name}</div>
-                                        <div class="text-xs text-slate-400">${u.title}</div>
-                                    </div>
+                    let adminEditBtn = isAdmin ? `<button onclick="openEditModal('${u.email}')" class="absolute top-3 right-3 text-slate-300 hover:text-primary-500 transition"><i class="fas fa-pen"></i></button>` : '';
+
+                    const card = `
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 relative border-l-4 ${colors.border}">
+                        ${adminEditBtn}
+                        <div class="p-5">
+                            <div class="flex items-center gap-4 mb-4">
+                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm bg-slate-100">
+                                <div class="overflow-hidden">
+                                    <h3 class="font-bold text-lg dark:text-white truncate" title="${u.name}">${u.name}</h3>
+                                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider truncate">${u.title || 'No Title'}</p>
+                                    <p class="text-[10px] text-primary-600 truncate">${u.dept || ''}</p>
                                 </div>
-                            </td>
-                            <td class="p-5"><span class="bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">${u.role}</span></td>
-                            <td class="p-5 text-xs font-mono text-slate-500">${u.email}</td>
-                            <td class="p-5 text-right">
-                                <button onclick="deleteUser('${u.email}')" class="text-red-300 hover:text-red-600 transition p-2 hover:bg-red-50 rounded-full"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
+                            </div>
+                            
+                            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-3 rounded-xl mb-2">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${colors.bg} ${colors.text}">${u.status}</span>
+                                <div class="font-mono text-lg font-bold text-slate-700 dark:text-slate-300 timer-display" data-start="${u.lastChange?.toMillis() || Date.now()}">00:00:00</div>
+                            </div>
+
+                            <div class="flex justify-between items-center text-[10px] text-slate-400">
+                                <span title="${u.device || '?'}"><i class="fas fa-desktop mr-1"></i> ${u.device ? u.device.split('|')[0] : 'Web'}</span>
+                                <button onclick="viewLogs('${u.email}')" class="text-primary-500 hover:underline">View History</button>
+                            </div>
+
+                            ${buttonsHTML}
+                        </div>
+                    </div>`;
+                    
+                    grid.innerHTML += card;
                 });
             });
         }
 
-        // Listen to My Own Profile (Employee View)
-        function listenToMyProfile() {
-            db.collection('users').doc(currentUser.email).onSnapshot(doc => {
-                if(!doc.exists) return;
-                const me = doc.data();
-                userProfile = me; // Sync local
-                
-                document.getElementById('my-name').innerText = me.name;
-                document.getElementById('my-title').innerText = me.title;
-                document.getElementById('my-avatar').innerText = me.name.charAt(0).toUpperCase();
-                
-                const badge = document.getElementById('my-status-badge');
-                const colors = getStatusColor(me.status);
-                
-                // Update Badge Style
-                badge.className = `px-6 py-2 rounded-full text-sm font-bold uppercase tracking-wider mb-4 inline-block transition-all duration-300 ${colors.bg} ${colors.text}`;
-                badge.innerText = me.status;
-
-                document.getElementById('my-timer').dataset.start = me.lastChange;
-            });
+        function btnHTML(email, status, color) {
+            return `<button onclick="setStatus('${email}', '${status}')" class="p-2 rounded-lg bg-${color}-50 hover:bg-${color}-500 text-${color}-600 hover:text-white transition shadow-sm font-bold text-[10px] uppercase">${status}</button>`;
         }
 
-        // ==========================================
-        // 5. USER ACTIONS
-        // ==========================================
-        async function changeStatus(newStatus) {
-            // Get Device Info
-            let deviceInfo = "Web Browser";
-            try {
-                const userAgent = navigator.userAgent;
-                let os = "Unknown OS";
-                if (userAgent.indexOf("Win") != -1) os = "Windows";
-                if (userAgent.indexOf("Mac") != -1) os = "MacOS";
-                if (userAgent.indexOf("Linux") != -1) os = "Linux";
-                if (userAgent.indexOf("Android") != -1) os = "Android";
-                if (userAgent.indexOf("like Mac") != -1) os = "iOS";
-                
-                deviceInfo = `${os} (${window.screen.width}x${window.screen.height})`;
-            } catch(e) {}
-            
-            await db.collection('users').doc(currentUser.email).update({
-                status: newStatus,
-                lastChange: Date.now(),
+        // 5. ACTIONS
+        async function setStatus(email, status, isAuto = false) {
+            // Determine device info
+            let deviceInfo = "Unknown";
+            try { deviceInfo = `${navigator.platform} | ${navigator.userAgent.match(/\(([^)]+)\)/)[1]}`; } catch(e){}
+
+            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+            await db.collection('users').doc(email).update({
+                status: status,
+                lastChange: timestamp,
                 device: deviceInfo
             });
-            
-            // If going active, clear idle timer
-            if(newStatus !== 'Offline') resetIdleTimer(true);
+
+            // Add Log
+            await db.collection('logs').add({
+                user: email,
+                status: status,
+                time: timestamp,
+                auto: isAuto
+            });
+
+            if(email === currentUser.email && status !== 'Offline') resetIdleTimer(true);
         }
 
-        async function saveNewUser(e) {
+        async function saveUserChanges(e) {
             e.preventDefault();
-            const email = document.getElementById('new-email').value.trim();
+            const email = document.getElementById('edit-email').value;
+            const isNew = document.getElementById('edit-email').getAttribute('data-mode') === 'new';
+            const inputEmail = document.getElementById('edit-email').value; // For new users
+
             const data = {
-                name: document.getElementById('new-name').value,
-                email: email,
-                title: document.getElementById('new-title').value,
-                role: document.getElementById('new-role').value,
-                status: 'Offline',
-                lastChange: Date.now(),
-                device: 'Not Logged In'
+                name: document.getElementById('edit-name').value,
+                title: document.getElementById('edit-title').value,
+                dept: document.getElementById('edit-dept').value,
+                hireDate: document.getElementById('edit-hire').value,
+                role: document.getElementById('edit-role').value,
+                idleLimit: parseInt(document.getElementById('edit-idle').value) || 5,
+                photo: document.getElementById('edit-photo-base64').value
             };
 
-            try {
-                await db.collection('users').doc(email).set(data);
-                alert(`Profile for ${data.name} created.\n\nIMPORTANT: Now go to Firebase Console > Authentication and add user: ${email}`);
-                document.getElementById('modal-user').classList.add('hidden');
-                document.getElementById('new-name').value = '';
-                document.getElementById('new-email').value = '';
-            } catch(err) {
-                alert("Error: " + err.message);
+            if(isNew) {
+                // Create New
+                data.email = inputEmail;
+                data.status = 'Offline';
+                data.lastChange = firebase.firestore.FieldValue.serverTimestamp();
+                await db.collection('users').doc(inputEmail).set(data);
+                alert('Profile Created. REMEMBER: Go to Firebase Console > Authentication and add this user manually!');
+            } else {
+                // Update Existing
+                await db.collection('users').doc(email).update(data);
+            }
+            closeModal('modal-edit');
+        }
+
+        // 6. ADMIN & EDITING
+        async function openEditModal(email) {
+            const modal = document.getElementById('modal-edit');
+            const form = document.getElementById('form-edit');
+            modal.classList.remove('hidden');
+
+            if(email === 'new') {
+                form.reset();
+                document.getElementById('edit-email').readOnly = false;
+                document.getElementById('edit-email').setAttribute('data-mode', 'new');
+                document.getElementById('modal-title').innerText = "Add New Employee";
+                document.getElementById('edit-preview').src = DEFAULT_PHOTO + 'New';
+                document.getElementById('btn-delete').classList.add('hidden');
+            } else {
+                const doc = await db.collection('users').doc(email).get();
+                const u = doc.data();
+                
+                document.getElementById('edit-email').value = u.email;
+                document.getElementById('edit-email').readOnly = true;
+                document.getElementById('edit-email').setAttribute('data-mode', 'edit');
+                document.getElementById('edit-name').value = u.name;
+                document.getElementById('edit-title').value = u.title || '';
+                document.getElementById('edit-dept').value = u.dept || '';
+                document.getElementById('edit-hire').value = u.hireDate || '';
+                document.getElementById('edit-role').value = u.role || 'employee';
+                document.getElementById('edit-idle').value = u.idleLimit || 5;
+                document.getElementById('edit-photo-base64').value = u.photo || '';
+                document.getElementById('edit-preview').src = u.photo || DEFAULT_PHOTO + u.name;
+                document.getElementById('modal-title').innerText = "Edit: " + u.name;
+                document.getElementById('btn-delete').classList.remove('hidden');
             }
         }
 
-        async function deleteUser(email) {
-            if(!confirm('Are you sure you want to delete this user profile?')) return;
-            await db.collection('users').doc(email).delete();
+        async function deleteUser() {
+            const email = document.getElementById('edit-email').value;
+            if(confirm("Delete this user profile? Data cannot be recovered.")) {
+                await db.collection('users').doc(email).delete();
+                closeModal('modal-edit');
+            }
         }
 
-        // ==========================================
-        // 6. UTILITIES (Time, Idle, UI)
-        // ==========================================
+        // Image Handling (Resize & Compress to Base64)
+        function handleImageUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const MAX_WIDTH = 300; // Limit size
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7); // Compress
+                        document.getElementById('edit-preview').src = dataUrl;
+                        document.getElementById('edit-photo-base64').value = dataUrl;
+                    }
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 7. LOGS
+        async function viewLogs(email) {
+            document.getElementById('modal-logs').classList.remove('hidden');
+            const container = document.getElementById('logs-container');
+            container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+
+            const snapshot = await db.collection('logs')
+                .where('user', '==', email)
+                .orderBy('time', 'desc')
+                .limit(20)
+                .get();
+            
+            if(snapshot.empty) {
+                container.innerHTML = '<p class="text-center text-slate-400">No logs found.</p>';
+                return;
+            }
+
+            let html = '<ul class="space-y-3">';
+            snapshot.forEach(doc => {
+                const l = doc.data();
+                const time = l.time ? moment(l.time.toDate()).format('MMM D, h:mm A') : 'Just now';
+                const fromNow = l.time ? moment(l.time.toDate()).fromNow() : '';
+                html += `
+                <li class="flex justify-between items-center text-sm border-b dark:border-slate-700 pb-2">
+                    <div>
+                        <span class="font-bold ${l.auto ? 'text-orange-500' : 'text-slate-700 dark:text-white'}">
+                            ${l.auto ? '<i class="fas fa-robot mr-1"></i>' : ''} ${l.status}
+                        </span>
+                        <div class="text-[10px] text-slate-400">${fromNow}</div>
+                    </div>
+                    <div class="font-mono text-xs text-slate-500">${time}</div>
+                </li>`;
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        }
+
+        // 8. IDLE & UTILS
+        function getStatusColor(s) {
+            if(s==='Online') return { border:'border-green-500', text:'text-green-600', bg:'bg-green-100' };
+            if(s==='Busy') return { border:'border-red-500', text:'text-red-600', bg:'bg-red-100' };
+            if(s==='Break') return { border:'border-yellow-500', text:'text-yellow-600', bg:'bg-yellow-100' };
+            return { border:'border-slate-400', text:'text-slate-500', bg:'bg-slate-200' };
+        }
+
         function updateTimers() {
-            document.querySelectorAll('.timer-display, #my-timer').forEach(el => {
+            document.querySelectorAll('.timer-display').forEach(el => {
                 const start = parseInt(el.dataset.start);
                 if(!start) return;
-                
                 const diff = Date.now() - start;
-                const totalSeconds = Math.floor(diff / 1000);
-                
-                const h = Math.floor(totalSeconds / 3600).toString().padStart(2,'0');
-                const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2,'0');
-                const s = (totalSeconds % 60).toString().padStart(2,'0');
-                
+                const s = Math.floor((diff/1000)%60).toString().padStart(2,'0');
+                const m = Math.floor((diff/1000/60)%60).toString().padStart(2,'0');
+                const h = Math.floor((diff/1000/60/60)).toString().padStart(2,'0');
                 el.innerText = `${h}:${m}:${s}`;
             });
         }
 
-        function getStatusColor(s) {
-            if(s==='Online') return { border:'border-green-500', text:'text-green-700', bg:'bg-green-100' };
-            if(s==='Busy') return { border:'border-red-500', text:'text-red-700', bg:'bg-red-100' };
-            if(s==='Break') return { border:'border-yellow-500', text:'text-yellow-700', bg:'bg-yellow-100' };
-            return { border:'border-slate-400', text:'text-slate-600', bg:'bg-slate-200' };
-        }
-
-        // IDLE TRACKER
         function startIdleTracker() {
             clearInterval(idleInterval);
             idleInterval = setInterval(() => {
-                if(userProfile && userProfile.status === 'Offline') return; 
+                if(!userProfile || userProfile.status === 'Offline') return;
                 
                 idleTime++;
-                const idleLimitSec = IDLE_LIMIT * 60;
+                const limit = (userProfile.idleLimit || 5) * 60; // Get limit from DB or default 5
                 
-                if (idleTime >= idleLimitSec) {
-                    // Trigger Modal
+                if (idleTime >= limit) {
                     document.getElementById('modal-idle').classList.remove('hidden');
-                    
-                    // Countdown Logic
                     let timeLeft = 60;
-                    const countEl = document.getElementById('idle-count');
-                    countEl.innerText = timeLeft;
+                    document.getElementById('idle-count').innerText = timeLeft;
                     
-                    if(window.tempCountInt) clearInterval(window.tempCountInt);
-                    
-                    window.tempCountInt = setInterval(() => {
+                    if(window.cntInt) clearInterval(window.cntInt);
+                    window.cntInt = setInterval(() => {
                         timeLeft--;
-                        countEl.innerText = timeLeft;
+                        document.getElementById('idle-count').innerText = timeLeft;
                         if(timeLeft <= 0) {
-                            clearInterval(window.tempCountInt);
-                            changeStatus('Offline'); // Auto set offline
+                            clearInterval(window.cntInt);
+                            setStatus(currentUser.email, 'Offline', true);
                             resetIdleTimer(true);
                         }
                     }, 1000);
                 }
-            }, 1000); 
+            }, 1000);
         }
 
         function resetIdleTimer(hideModal = false) {
             idleTime = 0;
             if(hideModal) {
                 document.getElementById('modal-idle').classList.add('hidden');
-                if(window.tempCountInt) clearInterval(window.tempCountInt);
+                if(window.cntInt) clearInterval(window.cntInt);
             }
         }
 
-        function openUserModal() { document.getElementById('modal-user').classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
 </html>
