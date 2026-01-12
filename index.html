@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster Cloud V2.1</title>
+    <title>Almaster Cloud V3.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -30,36 +30,34 @@
     </script>
 
     <style>
-        body { background-color: #f1f5f9; }
+        body { background-color: #f8fafc; }
         .dark-mode body { background-color: #0f172a; color: white; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .dark-mode .glass { background: rgba(30, 41, 59, 0.95); }
         .hidden-section { display: none !important; }
         .form-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-size: 14px; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
-        /* Disabled Input Style */
-        .input-disabled { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
-        .dark-mode .input-disabled { background-color: #1e293b; color: #64748b; }
+        .disabled-card { opacity: 0.7; pointer-events: none; }
         
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .dark-mode ::-webkit-scrollbar-thumb { background: #475569; }
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-top: 10px; font-size: 10px; text-align: center; }
+        .stat-box { background: #f1f5f9; padding: 4px; border-radius: 4px; }
+        .dark-mode .stat-box { background: #1e293b; }
     </style>
 </head>
 <body class="min-h-screen text-slate-800 dark:text-slate-100 font-sans selection:bg-primary-500 selection:text-white" 
-      ontouchstart="resetIdleTimer()" onmousemove="resetIdleTimer()" onkeypress="resetIdleTimer()" onclick="resetIdleTimer()">
+      onmousemove="userActivity()" onkeypress="userActivity()" onclick="userActivity()">
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
-        <h2 class="text-lg font-bold tracking-widest animate-pulse">LOADING ALMASTER V2.1...</h2>
+        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V3.0</h2>
     </div>
 
     <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
         <div class="w-full max-w-sm glass p-8 rounded-2xl shadow-2xl">
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-primary-700 dark:text-primary-400 mb-1">ALMASTER</h1>
-                <p class="text-xs text-slate-500 uppercase tracking-widest font-bold">Employee Portal</p>
+                <p class="text-xs text-slate-500 uppercase tracking-widest font-bold">Secure Access</p>
             </div>
             <form onsubmit="handleLogin(event)">
                 <div class="mb-4">
@@ -93,7 +91,7 @@
             </div>
 
             <nav class="flex-1 p-2 space-y-1 overflow-y-auto">
-                <button onclick="switchTab('dashboard')" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3 bg-slate-800 text-white">
+                <button onclick="switchTab('dashboard')" class="nav-item w-full text-left p-3 rounded-lg bg-slate-800 text-white flex items-center justify-center md:justify-start gap-3">
                     <i class="fas fa-th-large text-lg"></i> <span class="hidden md:block text-sm font-medium">Dashboard</span>
                 </button>
                 
@@ -105,25 +103,26 @@
                 </div>
             </nav>
             
+            <div class="p-4 text-[10px] text-slate-500 text-center">
+                <span id="idle-debug" class="w-2 h-2 rounded-full bg-green-500 inline-block mr-1"></span> Monitoring Active
+            </div>
+
             <button onclick="logout()" class="p-4 text-red-400 hover:bg-red-900/20 transition border-t border-slate-800 flex items-center justify-center md:justify-start gap-3">
                 <i class="fas fa-sign-out-alt"></i> <span class="hidden md:block text-sm font-bold">Logout</span>
             </button>
         </aside>
 
         <main class="flex-1 bg-slate-100 dark:bg-slate-900 relative overflow-hidden flex flex-col">
-            
             <header class="bg-white dark:bg-slate-800 h-16 shadow-sm flex items-center justify-between px-6 z-10">
-                <h2 class="text-xl font-bold text-slate-700 dark:text-white" id="page-title">Live Dashboard</h2>
+                <h2 class="text-xl font-bold text-slate-700 dark:text-white" id="page-title">Team Dashboard</h2>
                 <div class="flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/20 rounded-full border border-green-100 dark:border-green-900">
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span class="text-xs font-bold text-green-700 dark:text-green-400">Online Sync</span>
+                    <span class="text-xs font-bold text-green-700 dark:text-green-400">Live Sync</span>
                 </div>
             </header>
 
             <div class="flex-1 overflow-auto p-4 md:p-8">
-                <div id="tab-dashboard" class="animate-fade">
-                    <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-                </div>
+                <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade"></div>
             </div>
         </main>
     </div>
@@ -137,12 +136,12 @@
             
             <div class="p-6 overflow-y-auto">
                 <form id="form-edit" onsubmit="saveUserChanges(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="hidden" id="edit-email-key"> <div class="md:col-span-2 flex justify-center mb-4">
+                    <input type="hidden" id="edit-email-key">
+                    
+                    <div class="md:col-span-2 flex justify-center mb-4">
                         <div class="relative group cursor-pointer" onclick="document.getElementById('edit-file').click()">
                             <img id="edit-preview" src="" class="w-24 h-24 rounded-full object-cover border-4 border-slate-200 dark:border-slate-600 group-hover:border-primary-500 transition">
-                            <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-white text-xs font-bold">
-                                <i class="fas fa-camera mr-1"></i> Upload
-                            </div>
+                            <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-white text-xs font-bold"><i class="fas fa-camera mr-1"></i> Upload</div>
                             <input type="file" id="edit-file" class="hidden" accept="image/*" onchange="handleImageUpload(this)">
                             <input type="hidden" id="edit-photo-base64">
                         </div>
@@ -152,7 +151,6 @@
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">Job Title</label><input type="text" id="edit-title" class="form-input" required></div>
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">Department</label><input type="text" id="edit-dept" class="form-input"></div>
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">Hire Date</label><input type="date" id="edit-hire" class="form-input"></div>
-                    
                     <div>
                         <label class="text-[10px] font-bold uppercase text-slate-400">Role</label>
                         <select id="edit-role" class="form-input font-bold">
@@ -164,12 +162,10 @@
                         <label class="text-[10px] font-bold uppercase text-slate-400">Idle Limit (Minutes)</label>
                         <input type="number" id="edit-idle" class="form-input" min="1" value="5">
                     </div>
-
                     <div class="md:col-span-2">
                         <label class="text-[10px] font-bold uppercase text-slate-400">Email (ID)</label>
                         <input type="email" id="edit-email" class="form-input" readonly>
                     </div>
-
                     <div class="md:col-span-2 pt-4 flex gap-3 border-t dark:border-slate-700 mt-2">
                         <button type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-lg hover:bg-primary-700 shadow-lg">Save Changes</button>
                         <button type="button" onclick="deleteUser()" id="btn-delete" class="px-4 text-red-500 hover:bg-red-50 rounded-lg font-bold border border-red-200"><i class="fas fa-trash"></i></button>
@@ -182,7 +178,7 @@
     <div id="modal-logs" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
             <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
-                <h3 class="text-lg font-bold dark:text-white">Activity History</h3>
+                <h3 class="text-lg font-bold dark:text-white">Movement History</h3>
                 <button onclick="closeModal('modal-logs')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
             </div>
             <div class="flex-1 overflow-y-auto p-4" id="logs-container">
@@ -197,13 +193,13 @@
                 <i class="fas fa-hourglass-half text-3xl text-yellow-600"></i>
             </div>
             <h3 class="text-xl font-bold mb-2 text-slate-800 dark:text-white">Are you active?</h3>
-            <p class="text-slate-500 mb-6 text-sm">You'll go <b class="text-red-500">Offline</b> in <span id="idle-count" class="font-mono font-bold bg-slate-100 px-2 rounded">60</span>s</p>
+            <p class="text-slate-500 mb-6 text-sm">Going <b class="text-red-500">Offline</b> in <span id="idle-count" class="font-mono font-bold bg-slate-100 px-2 rounded">60</span>s</p>
             <button onclick="resetIdleTimer(true)" class="bg-primary-600 hover:bg-primary-700 text-white w-full py-3 rounded-xl font-bold shadow-lg transition">I'm Here!</button>
         </div>
     </div>
 
     <script>
-        // 1. CONFIG (YOUR KEYS)
+        // 1. FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM",
             authDomain: "almaster-b8c18.firebaseapp.com",
@@ -224,19 +220,17 @@
         let idleInterval;
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=';
 
-        // 2. AUTH
+        // 2. AUTHENTICATION
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
-                // Force Lowercase Check
                 const email = user.email.toLowerCase();
-                
                 const doc = await db.collection('users').doc(email).get();
                 if(doc.exists) {
                     userProfile = doc.data();
                     initSystem();
                 } else {
-                    alert("Account exists in Auth but no Profile found. ID: " + email + "\n\nPlease ask Admin to create your profile with this EXACT email.");
+                    alert("No Profile Found. Please ask Admin to add your email.");
                     auth.signOut();
                 }
             } else {
@@ -248,45 +242,33 @@
 
         async function handleLogin(e) {
             e.preventDefault();
-            // Force lowercase when logging in to match DB
             const email = document.getElementById('login-email').value.toLowerCase().trim();
             const pass = document.getElementById('login-pass').value;
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
-            } catch (err) {
-                const errBox = document.getElementById('login-error');
-                errBox.innerText = err.message;
-                errBox.classList.remove('hidden');
-            }
+            try { await auth.signInWithEmailAndPassword(email, pass); } 
+            catch (err) { document.getElementById('login-error').innerText = err.message; document.getElementById('login-error').classList.remove('hidden'); }
         }
 
         function logout() { auth.signOut().then(()=>location.reload()); }
 
-        // 3. SYSTEM INIT
+        // 3. INIT SYSTEM
         function initSystem() {
             document.getElementById('loader').classList.add('hidden-section');
             document.getElementById('view-login').classList.add('hidden-section');
             document.getElementById('view-system').classList.remove('hidden-section');
 
-            // Setup Sidebar
             document.getElementById('sb-name').innerText = userProfile.name;
             document.getElementById('sb-role').innerText = userProfile.role;
             document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
 
-            // Admin Check
-            if(userProfile.role === 'admin') {
-                document.getElementById('admin-menu').classList.remove('hidden-section');
-            } else {
-                document.getElementById('admin-menu').classList.add('hidden-section');
-            }
+            if(userProfile.role === 'admin') document.getElementById('admin-menu').classList.remove('hidden-section');
+            else document.getElementById('admin-menu').classList.add('hidden-section');
 
-            // Realtime Listeners
             listenToAllUsers();
             startIdleTracker();
             setInterval(updateTimers, 1000);
         }
 
-        // 4. DASHBOARD RENDER
+        // 4. MAIN DASHBOARD LOGIC
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
                 const grid = document.getElementById('grid-users');
@@ -297,12 +279,14 @@
                     const isMe = (currentUser.email === u.email);
                     const isAdmin = (userProfile.role === 'admin');
                     const colors = getStatusColor(u.status);
-                    
                     const canControl = isMe || isAdmin;
+
+                    // Calculate Time Banks
+                    const tb = u.timeBank || {};
                     
                     let buttonsHTML = '';
-                    if(canControl) {
-                        buttonsHTML = `
+                    if(isMe) { // Only I can see my controls (Admin can edit profile but not change live status)
+                         buttonsHTML = `
                         <div class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
                             ${btnHTML(u.email, 'Online', 'green')}
                             ${btnHTML(u.email, 'Busy', 'red')}
@@ -310,32 +294,53 @@
                             ${btnHTML(u.email, 'Offline', 'slate')}
                         </div>`;
                     } else {
-                        buttonsHTML = `<div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 text-center text-xs text-slate-400 italic">Read Only View</div>`;
+                        buttonsHTML = `<div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 text-center text-xs text-slate-400 italic">...</div>`;
                     }
 
-                    let adminEditBtn = isAdmin ? `<button onclick="openEditModal('${u.email}')" class="absolute top-3 right-3 text-slate-300 hover:text-primary-500 transition"><i class="fas fa-pen"></i></button>` : '';
+                    let adminEditBtn = isAdmin ? `<button onclick="openEditModal('${u.email}')" class="absolute top-2 right-2 text-slate-300 hover:text-primary-500 p-2"><i class="fas fa-cog"></i></button>` : '';
+                    let historyBtn = (isMe || isAdmin) ? `<button onclick="viewLogs('${u.email}')" class="text-primary-500 hover:underline text-xs"><i class="fas fa-history mr-1"></i> Logs</button>` : '';
 
                     const card = `
-                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 relative border-l-4 ${colors.border}">
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 relative border-l-4 ${colors.border} ${isMe ? 'ring-2 ring-primary-200' : ''}">
                         ${adminEditBtn}
                         <div class="p-5">
                             <div class="flex items-center gap-4 mb-4">
                                 <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm bg-slate-100">
                                 <div class="overflow-hidden">
-                                    <h3 class="font-bold text-lg dark:text-white truncate" title="${u.name}">${u.name}</h3>
-                                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider truncate">${u.title || 'No Title'}</p>
-                                    <p class="text-[10px] text-primary-600 truncate">${u.dept || ''}</p>
+                                    <h3 class="font-bold text-lg dark:text-white truncate" title="${u.name}">${u.name} ${isMe ? '(You)' : ''}</h3>
+                                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider truncate">${u.title || '-'}</p>
                                 </div>
                             </div>
                             
                             <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-3 rounded-xl mb-2">
                                 <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${colors.bg} ${colors.text}">${u.status}</span>
-                                <div class="font-mono text-lg font-bold text-slate-700 dark:text-slate-300 timer-display" data-start="${u.lastChange?.toMillis() || Date.now()}">00:00:00</div>
+                                <div class="font-mono text-lg font-bold text-slate-700 dark:text-slate-300 main-timer" 
+                                     data-start="${u.lastChange?.toMillis() || Date.now()}" 
+                                     data-bank="${tb[u.status] || 0}">00:00:00</div>
                             </div>
 
-                            <div class="flex justify-between items-center text-[10px] text-slate-400">
-                                <span title="${u.device || '?'}"><i class="fas fa-desktop mr-1"></i> ${u.device ? u.device.split('|')[0] : 'Web'}</span>
-                                <button onclick="viewLogs('${u.email}')" class="text-primary-500 hover:underline">View History</button>
+                            <div class="stats-grid text-slate-500">
+                                <div class="stat-box">
+                                    <div class="text-[8px] uppercase">Online</div>
+                                    <div class="font-mono font-bold stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${u.lastChange?.toMillis() || 0}">00:00</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="text-[8px] uppercase">Busy</div>
+                                    <div class="font-mono font-bold stat-timer" data-val="${tb['Busy'] || 0}" data-active="${u.status === 'Busy'}" data-start="${u.lastChange?.toMillis() || 0}">00:00</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="text-[8px] uppercase">Break</div>
+                                    <div class="font-mono font-bold stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${u.lastChange?.toMillis() || 0}">00:00</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="text-[8px] uppercase">Total</div>
+                                    <div class="font-mono font-bold total-timer">00:00</div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center mt-3">
+                                <span class="text-[10px] text-slate-400" title="${u.device}"><i class="fas fa-desktop mr-1"></i> ${u.device ? u.device.split('|')[0] : 'Web'}</span>
+                                ${historyBtn}
                             </div>
 
                             ${buttonsHTML}
@@ -350,31 +355,127 @@
             return `<button onclick="setStatus('${email}', '${status}')" class="p-2 rounded-lg bg-${color}-50 hover:bg-${color}-500 text-${color}-600 hover:text-white transition shadow-sm font-bold text-[10px] uppercase">${status}</button>`;
         }
 
-        // 5. ACTIONS
-        async function setStatus(email, status, isAuto = false) {
+        // 5. STATUS LOGIC (ACCUMULATIVE)
+        async function setStatus(email, newStatus, isAuto = false) {
+            if(newStatus === userProfile.status) return; // No change
+
+            // 1. Calculate time spent in OLD status
+            const now = Date.now();
+            const lastTime = userProfile.lastChange ? userProfile.lastChange.toMillis() : now;
+            const diff = now - lastTime;
+            const oldStatus = userProfile.status || 'Offline';
+
+            // 2. Update Bank
+            let timeBank = userProfile.timeBank || {};
+            if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
+            timeBank[oldStatus] += diff;
+
+            // 3. Push Update
+            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
             let deviceInfo = "Unknown";
             try { deviceInfo = `${navigator.platform} | ${navigator.userAgent.match(/\(([^)]+)\)/)[1]}`; } catch(e){}
 
-            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-
             await db.collection('users').doc(email).update({
-                status: status,
+                status: newStatus,
                 lastChange: timestamp,
+                timeBank: timeBank, // Save accumulation
                 device: deviceInfo
             });
 
+            // 4. Log
             await db.collection('logs').add({
-                user: email, status: status, time: timestamp, auto: isAuto
+                user: email, status: newStatus, time: timestamp, auto: isAuto
             });
 
-            if(email === currentUser.email && status !== 'Offline') resetIdleTimer(true);
+            if(email === currentUser.email && newStatus !== 'Offline') resetIdleTimer(true);
+        }
+
+        // 6. LOGS
+        async function viewLogs(email) {
+            document.getElementById('modal-logs').classList.remove('hidden');
+            const container = document.getElementById('logs-container');
+            container.innerHTML = '<div class="text-center mt-10"><i class="fas fa-spinner fa-spin text-2xl text-primary-500"></i><p class="text-xs mt-2">Loading History...</p></div>';
+
+            try {
+                // IMPORTANT: Ensure you created the index in Firebase Console if this fails!
+                // Link will appear in console if missing.
+                const snapshot = await db.collection('logs')
+                    .where('user', '==', email)
+                    .orderBy('time', 'desc')
+                    .limit(30)
+                    .get();
+                
+                if(snapshot.empty) {
+                    container.innerHTML = '<p class="text-center text-slate-400 mt-10">No movements recorded yet.</p>';
+                    return;
+                }
+
+                let html = '<ul class="space-y-2">';
+                snapshot.forEach(doc => {
+                    const l = doc.data();
+                    const date = l.time ? moment(l.time.toDate()) : moment();
+                    html += `
+                    <li class="flex justify-between items-center text-sm border-b dark:border-slate-700 pb-2 px-2 hover:bg-slate-50 dark:hover:bg-slate-900 rounded">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${l.status==='Online'?'bg-green-500':l.status==='Busy'?'bg-red-500':'bg-slate-300'}"></span>
+                            <span class="font-bold ${l.auto ? 'text-orange-500' : 'text-slate-700 dark:text-white'}">
+                                ${l.auto ? '<i class="fas fa-robot mr-1" title="Auto Idle"></i>' : ''} ${l.status}
+                            </span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono text-xs text-slate-600 dark:text-slate-400">${date.format('h:mm:ss A')}</div>
+                            <div class="text-[10px] text-slate-400">${date.fromNow()}</div>
+                        </div>
+                    </li>`;
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = `<div class="text-red-500 text-center text-xs p-4">Error: ${error.message}<br>Check Console for Index Link.</div>`;
+            }
+        }
+
+        // 7. EDIT MODAL
+        async function openEditModal(email) {
+            const modal = document.getElementById('modal-edit');
+            const form = document.getElementById('form-edit');
+            const emailInput = document.getElementById('edit-email');
+            modal.classList.remove('hidden');
+
+            if(email === 'new') {
+                form.reset();
+                emailInput.value = '';
+                emailInput.readOnly = false;
+                emailInput.setAttribute('data-mode', 'new');
+                emailInput.classList.remove('input-disabled');
+                document.getElementById('modal-title').innerText = "Add New Employee";
+                document.getElementById('edit-preview').src = DEFAULT_PHOTO + 'New';
+                document.getElementById('btn-delete').classList.add('hidden');
+            } else {
+                const doc = await db.collection('users').doc(email).get();
+                const u = doc.data();
+                emailInput.value = u.email;
+                emailInput.readOnly = true;
+                emailInput.setAttribute('data-mode', 'edit');
+                emailInput.classList.add('input-disabled');
+                document.getElementById('edit-name').value = u.name;
+                document.getElementById('edit-title').value = u.title || '';
+                document.getElementById('edit-dept').value = u.dept || '';
+                document.getElementById('edit-hire').value = u.hireDate || '';
+                document.getElementById('edit-role').value = u.role || 'employee';
+                document.getElementById('edit-idle').value = u.idleLimit || 5;
+                document.getElementById('edit-photo-base64').value = u.photo || '';
+                document.getElementById('edit-preview').src = u.photo || DEFAULT_PHOTO + u.name;
+                document.getElementById('modal-title').innerText = "Edit: " + u.name;
+                document.getElementById('btn-delete').classList.remove('hidden');
+            }
         }
 
         async function saveUserChanges(e) {
             e.preventDefault();
             const emailField = document.getElementById('edit-email');
             const isNew = emailField.getAttribute('data-mode') === 'new';
-            // FORCE LOWERCASE AND TRIM
             const inputEmail = emailField.value.toLowerCase().trim();
 
             const data = {
@@ -392,60 +493,16 @@
                 data.status = 'Offline';
                 data.lastChange = firebase.firestore.FieldValue.serverTimestamp();
                 await db.collection('users').doc(inputEmail).set(data);
-                alert(`Profile for ${inputEmail} created.\n\nIMPORTANT: Now add this user in Firebase Authentication!`);
+                alert('Success! Now add to Firebase Auth.');
             } else {
                 await db.collection('users').doc(inputEmail).update(data);
             }
             closeModal('modal-edit');
         }
-
-        // 6. ADMIN & EDITING
-        async function openEditModal(email) {
-            const modal = document.getElementById('modal-edit');
-            const form = document.getElementById('form-edit');
-            const emailInput = document.getElementById('edit-email');
-            
-            modal.classList.remove('hidden');
-
-            if(email === 'new') {
-                form.reset();
-                emailInput.value = '';
-                emailInput.readOnly = false;
-                emailInput.setAttribute('data-mode', 'new');
-                // REMOVE DISABLED STYLING
-                emailInput.classList.remove('input-disabled');
-                
-                document.getElementById('modal-title').innerText = "Add New Employee";
-                document.getElementById('edit-preview').src = DEFAULT_PHOTO + 'New';
-                document.getElementById('btn-delete').classList.add('hidden');
-            } else {
-                const doc = await db.collection('users').doc(email).get();
-                const u = doc.data();
-                
-                emailInput.value = u.email;
-                emailInput.readOnly = true;
-                emailInput.setAttribute('data-mode', 'edit');
-                // ADD DISABLED STYLING
-                emailInput.classList.add('input-disabled');
-                
-                document.getElementById('edit-name').value = u.name;
-                document.getElementById('edit-title').value = u.title || '';
-                document.getElementById('edit-dept').value = u.dept || '';
-                document.getElementById('edit-hire').value = u.hireDate || '';
-                document.getElementById('edit-role').value = u.role || 'employee';
-                document.getElementById('edit-idle').value = u.idleLimit || 5;
-                document.getElementById('edit-photo-base64').value = u.photo || '';
-                document.getElementById('edit-preview').src = u.photo || DEFAULT_PHOTO + u.name;
-                
-                document.getElementById('modal-title').innerText = "Edit: " + u.name;
-                document.getElementById('btn-delete').classList.remove('hidden');
-            }
-        }
-
+        
         async function deleteUser() {
-            const email = document.getElementById('edit-email').value;
-            if(confirm("Delete this user profile?")) {
-                await db.collection('users').doc(email).delete();
+            if(confirm("Delete this user?")) {
+                await db.collection('users').doc(document.getElementById('edit-email').value).delete();
                 closeModal('modal-edit');
             }
         }
@@ -454,15 +511,10 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const img = new Image();
-                    img.src = e.target.result;
+                    const img = new Image(); img.src = e.target.result;
                     img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const MAX_WIDTH = 300; 
-                        const scaleSize = MAX_WIDTH / img.width;
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
+                        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                        const scale = 300 / img.width; canvas.width = 300; canvas.height = img.height * scale;
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                         document.getElementById('edit-preview').src = dataUrl;
@@ -473,61 +525,43 @@
             }
         }
 
-        // 7. LOGS
-        async function viewLogs(email) {
-            document.getElementById('modal-logs').classList.remove('hidden');
-            const container = document.getElementById('logs-container');
-            container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
-
-            const snapshot = await db.collection('logs')
-                .where('user', '==', email)
-                .orderBy('time', 'desc')
-                .limit(20)
-                .get();
-            
-            if(snapshot.empty) {
-                container.innerHTML = '<p class="text-center text-slate-400">No logs found.</p>';
-                return;
-            }
-
-            let html = '<ul class="space-y-3">';
-            snapshot.forEach(doc => {
-                const l = doc.data();
-                const time = l.time ? moment(l.time.toDate()).format('MMM D, h:mm A') : 'Just now';
-                const fromNow = l.time ? moment(l.time.toDate()).fromNow() : '';
-                html += `
-                <li class="flex justify-between items-center text-sm border-b dark:border-slate-700 pb-2">
-                    <div>
-                        <span class="font-bold ${l.auto ? 'text-orange-500' : 'text-slate-700 dark:text-white'}">
-                            ${l.auto ? '<i class="fas fa-robot mr-1"></i>' : ''} ${l.status}
-                        </span>
-                        <div class="text-[10px] text-slate-400">${fromNow}</div>
-                    </div>
-                    <div class="font-mono text-xs text-slate-500">${time}</div>
-                </li>`;
-            });
-            html += '</ul>';
-            container.innerHTML = html;
-        }
-
-        // 8. IDLE & UTILS
-        function getStatusColor(s) {
-            if(s==='Online') return { border:'border-green-500', text:'text-green-600', bg:'bg-green-100' };
-            if(s==='Busy') return { border:'border-red-500', text:'text-red-600', bg:'bg-red-100' };
-            if(s==='Break') return { border:'border-yellow-500', text:'text-yellow-600', bg:'bg-yellow-100' };
-            return { border:'border-slate-400', text:'text-slate-500', bg:'bg-slate-200' };
-        }
-
+        // 8. TIMERS & IDLE
         function updateTimers() {
-            document.querySelectorAll('.timer-display').forEach(el => {
+            const now = Date.now();
+            
+            // 1. Update Main Timers
+            document.querySelectorAll('.main-timer').forEach(el => {
                 const start = parseInt(el.dataset.start);
+                const bank = parseInt(el.dataset.bank) || 0;
                 if(!start) return;
-                const diff = Date.now() - start;
-                const s = Math.floor((diff/1000)%60).toString().padStart(2,'0');
-                const m = Math.floor((diff/1000/60)%60).toString().padStart(2,'0');
-                const h = Math.floor((diff/1000/60/60)).toString().padStart(2,'0');
-                el.innerText = `${h}:${m}:${s}`;
+                const currentSession = now - start;
+                el.innerText = formatTime(bank + currentSession);
             });
+
+            // 2. Update Stat Timers (Detailed)
+            document.querySelectorAll('.stat-box').forEach(box => {
+                const timer = box.querySelector('.stat-timer');
+                if(!timer) return;
+                const bank = parseInt(timer.dataset.val) || 0;
+                const isActive = timer.dataset.active === 'true';
+                const start = parseInt(timer.dataset.start) || 0;
+                
+                let total = bank;
+                if(isActive && start > 0) total += (now - start);
+                
+                timer.innerText = formatTime(total, true);
+            });
+        }
+
+        function formatTime(ms, short = false) {
+            const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
+            const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0');
+            const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
+            return short ? `${h}:${m}` : `${h}:${m}:${s}`;
+        }
+
+        function userActivity() {
+            resetIdleTimer();
         }
 
         function startIdleTracker() {
@@ -536,10 +570,16 @@
                 if(!userProfile || userProfile.status === 'Offline') return;
                 idleTime++;
                 const limit = (userProfile.idleLimit || 5) * 60;
+                
+                // Debug Indicator
+                const debugEl = document.getElementById('idle-debug');
+                if(debugEl) debugEl.style.backgroundColor = idleTime > 0 ? '#fbbf24' : '#22c55e'; // Yellow if counting, Green if active
+
                 if (idleTime >= limit) {
                     document.getElementById('modal-idle').classList.remove('hidden');
                     let timeLeft = 60;
                     document.getElementById('idle-count').innerText = timeLeft;
+                    
                     if(window.cntInt) clearInterval(window.cntInt);
                     window.cntInt = setInterval(() => {
                         timeLeft--;
@@ -561,7 +601,6 @@
                 if(window.cntInt) clearInterval(window.cntInt);
             }
         }
-
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
