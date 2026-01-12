@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster Cloud V3.4 (Stable)</title>
+    <title>Almaster Manager V4.0 (Pro)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -37,9 +37,16 @@
         .hidden-section { display: none !important; }
         .form-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-size: 14px; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
-        .disabled-card { opacity: 0.7; pointer-events: none; }
         
-        /* Stats Grid */
+        /* Checkbox Style */
+        .task-checkbox:checked + span { text-decoration: line-through; color: #94a3b8; }
+        
+        /* Chat Styles */
+        .chat-bubble { max-width: 80%; padding: 8px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 12px; }
+        .chat-self { background: #0ea5e9; color: white; margin-left: auto; border-bottom-right-radius: 2px; }
+        .chat-other { background: #f1f5f9; color: #334155; margin-right: auto; border-bottom-left-radius: 2px; }
+        .dark-mode .chat-other { background: #334155; color: #e2e8f0; }
+
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-top: 10px; font-size: 10px; text-align: center; }
         .stat-box { background: #f1f5f9; padding: 4px; border-radius: 4px; }
         .dark-mode .stat-box { background: #1e293b; }
@@ -48,9 +55,11 @@
 <body class="min-h-screen text-slate-800 dark:text-slate-100 font-sans selection:bg-primary-500 selection:text-white" 
       onmousemove="userActivity()" onkeypress="userActivity()" onclick="userActivity()">
 
+    <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
-        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V3.4</h2>
+        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V4.0</h2>
     </div>
 
     <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
@@ -91,7 +100,7 @@
             </div>
 
             <nav class="flex-1 p-2 space-y-1 overflow-y-auto">
-                <button onclick="switchTab('dashboard')" class="nav-item w-full text-left p-3 rounded-lg bg-slate-800 text-white flex items-center justify-center md:justify-start gap-3">
+                <button class="nav-item w-full text-left p-3 rounded-lg bg-slate-800 text-white flex items-center justify-center md:justify-start gap-3">
                     <i class="fas fa-th-large text-lg"></i> <span class="hidden md:block text-sm font-medium">Dashboard</span>
                 </button>
                 
@@ -100,13 +109,12 @@
                     <button onclick="openEditModal('new')" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3">
                         <i class="fas fa-user-plus text-lg"></i> <span class="hidden md:block text-sm font-medium">Add Employee</span>
                     </button>
+                    <button onclick="openReportModal()" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3">
+                        <i class="fas fa-file-download text-lg"></i> <span class="hidden md:block text-sm font-medium">Reports (Excel)</span>
+                    </button>
                 </div>
             </nav>
             
-            <div class="p-4 text-[10px] text-slate-500 text-center">
-                <span id="idle-debug" class="w-2 h-2 rounded-full bg-green-500 inline-block mr-1"></span> Monitoring Active
-            </div>
-
             <button onclick="logout()" class="p-4 text-red-400 hover:bg-red-900/20 transition border-t border-slate-800 flex items-center justify-center md:justify-start gap-3">
                 <i class="fas fa-sign-out-alt"></i> <span class="hidden md:block text-sm font-bold">Logout</span>
             </button>
@@ -114,7 +122,7 @@
 
         <main class="flex-1 bg-slate-100 dark:bg-slate-900 relative overflow-hidden flex flex-col">
             <header class="bg-white dark:bg-slate-800 h-16 shadow-sm flex items-center justify-between px-6 z-10">
-                <h2 class="text-xl font-bold text-slate-700 dark:text-white" id="page-title">Team Dashboard</h2>
+                <h2 class="text-xl font-bold text-slate-700 dark:text-white">Team Dashboard</h2>
                 <div class="flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/20 rounded-full border border-green-100 dark:border-green-900">
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                     <span class="text-xs font-bold text-green-700 dark:text-green-400">Live Sync</span>
@@ -127,13 +135,32 @@
         </main>
     </div>
 
+    <div id="chat-fab" class="hidden-section fixed bottom-6 right-6 z-50">
+        <button onclick="toggleChat()" class="bg-primary-600 hover:bg-primary-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 relative">
+            <i class="fas fa-comments text-2xl"></i>
+            <span id="chat-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold hidden">0</span>
+        </button>
+    </div>
+
+    <div id="chat-window" class="fixed bottom-24 right-6 w-80 md:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl z-50 hidden border border-slate-200 dark:border-slate-700 flex flex-col h-[500px]">
+        <div class="p-4 bg-primary-600 text-white rounded-t-2xl flex justify-between items-center shadow-md">
+            <h3 class="font-bold"><i class="fas fa-users mr-2"></i> Team Chat</h3>
+            <button onclick="toggleChat()" class="hover:text-slate-200"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900/50 space-y-2">
+            </div>
+        <form onsubmit="sendMessage(event)" class="p-3 bg-white dark:bg-slate-800 border-t dark:border-slate-700 flex gap-2">
+            <input type="text" id="chat-input" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 ring-primary-500 dark:text-white" placeholder="Type a message..." required autocomplete="off">
+            <button type="submit" class="w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center transition"><i class="fas fa-paper-plane text-xs"></i></button>
+        </form>
+    </div>
+
     <div id="modal-edit" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white" id="modal-title">Edit Employee</h3>
                 <button onclick="closeModal('modal-edit')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
             </div>
-            
             <div class="p-6 overflow-y-auto">
                 <form id="form-edit" onsubmit="saveUserChanges(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="hidden" id="edit-email-key">
@@ -175,14 +202,26 @@
         </div>
     </div>
 
-    <div id="modal-logs" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+    <div id="modal-report" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
             <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
-                <h3 class="text-lg font-bold dark:text-white">Movement History</h3>
-                <button onclick="closeModal('modal-logs')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+                <h3 class="text-lg font-bold dark:text-white">Download Reports</h3>
+                <button onclick="closeModal('modal-report')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
             </div>
-            <div class="flex-1 overflow-y-auto p-4" id="logs-container">
-                <p class="text-center text-slate-400 text-sm mt-10">Loading logs...</p>
+            <div class="p-6 grid gap-3">
+                <button onclick="downloadReport(1)" class="w-full py-3 bg-slate-100 hover:bg-primary-50 text-slate-700 hover:text-primary-600 font-bold rounded-xl border border-slate-200 transition text-left px-4 flex justify-between items-center">
+                    <span><i class="fas fa-calendar-day mr-2"></i> Daily Report</span>
+                    <i class="fas fa-download"></i>
+                </button>
+                <button onclick="downloadReport(7)" class="w-full py-3 bg-slate-100 hover:bg-primary-50 text-slate-700 hover:text-primary-600 font-bold rounded-xl border border-slate-200 transition text-left px-4 flex justify-between items-center">
+                    <span><i class="fas fa-calendar-week mr-2"></i> Weekly Report</span>
+                    <i class="fas fa-download"></i>
+                </button>
+                <button onclick="downloadReport(30)" class="w-full py-3 bg-slate-100 hover:bg-primary-50 text-slate-700 hover:text-primary-600 font-bold rounded-xl border border-slate-200 transition text-left px-4 flex justify-between items-center">
+                    <span><i class="fas fa-calendar-alt mr-2"></i> Monthly Report</span>
+                    <i class="fas fa-download"></i>
+                </button>
+                <p id="export-status" class="text-center text-xs text-slate-400 mt-2"></p>
             </div>
         </div>
     </div>
@@ -200,7 +239,7 @@
 
     <script>
         // ==========================================
-        // 0. HELPER FUNCTIONS (DEFINED FIRST TO FIX ERROR)
+        // 0. HELPER FUNCTIONS
         // ==========================================
         function getStatusColor(s) {
             if(s==='Online') return { border:'border-green-500', text:'text-green-600', bg:'bg-green-100' };
@@ -222,6 +261,11 @@
             if (typeof val === 'number') return val;
             if (typeof val.toMillis === 'function') return val.toMillis();
             return Date.now();
+        }
+
+        function playNotificationSound() {
+            const audio = document.getElementById('notification-sound');
+            audio.play().catch(e => console.log('Audio blocked needs interaction'));
         }
 
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -247,6 +291,7 @@
         let userProfile = null;
         let idleTime = 0;
         let idleInterval;
+        let currentUsersCache = {}; 
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=';
 
         // ==========================================
@@ -268,6 +313,7 @@
                 document.getElementById('view-system').classList.add('hidden-section');
                 document.getElementById('view-login').classList.remove('hidden-section');
                 document.getElementById('loader').classList.add('hidden-section');
+                document.getElementById('chat-fab').classList.add('hidden-section');
             }
         });
 
@@ -288,6 +334,7 @@
             document.getElementById('loader').classList.add('hidden-section');
             document.getElementById('view-login').classList.add('hidden-section');
             document.getElementById('view-system').classList.remove('hidden-section');
+            document.getElementById('chat-fab').classList.remove('hidden-section');
 
             document.getElementById('sb-name').innerText = userProfile.name || 'User';
             document.getElementById('sb-role').innerText = userProfile.role || 'Employee';
@@ -297,12 +344,9 @@
             else document.getElementById('admin-menu').classList.add('hidden-section');
 
             listenToAllUsers();
+            initChat();
             startIdleTracker();
             setInterval(updateTimers, 1000);
-        }
-
-        function switchTab(tab) {
-            // Only dashboard tab exists now, but kept for future expansion
         }
 
         function listenToAllUsers() {
@@ -315,13 +359,20 @@
                     const isMe = (currentUser.email === u.email);
                     const isAdmin = (userProfile.role === 'admin');
                     const colors = getStatusColor(u.status);
-                    const canControl = isMe || isAdmin;
-
                     const tb = u.timeBank || {};
-                    
+                    const tasks = u.tasks || [];
+                    const safeStart = getMillis(u.lastChange);
+
+                    // Sound Effect Trigger
+                    if(currentUsersCache[u.email] && currentUsersCache[u.email] !== u.status) {
+                        playNotificationSound();
+                    }
+                    currentUsersCache[u.email] = u.status;
+
+                    // Buttons
                     let buttonsHTML = '';
                     if(isMe) { 
-                         buttonsHTML = `
+                        buttonsHTML = `
                         <div class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
                             ${btnHTML(u.email, 'Online', 'green')}
                             ${btnHTML(u.email, 'Busy', 'red')}
@@ -333,10 +384,31 @@
                     }
 
                     let adminEditBtn = isAdmin ? `<button onclick="openEditModal('${u.email}')" class="absolute top-2 right-2 text-slate-300 hover:text-primary-500 p-2"><i class="fas fa-cog"></i></button>` : '';
-                    let historyBtn = (isMe || isAdmin) ? `<button onclick="viewLogs('${u.email}')" class="text-primary-500 hover:underline text-xs"><i class="fas fa-history mr-1"></i> Logs</button>` : '';
 
-                    const safeStart = getMillis(u.lastChange);
+                    // Tasks Section
+                    let tasksHTML = '';
+                    if(tasks.length > 0 || isAdmin) {
+                        tasksHTML = `<div class="mt-4 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700">
+                            <p class="text-[10px] font-bold uppercase text-slate-400 mb-2 flex justify-between">
+                                Today's Tasks
+                                ${isAdmin ? `<button onclick="addTask('${u.email}')" class="text-primary-500 hover:underline">+ Add</button>` : ''}
+                            </p>
+                            <ul class="space-y-1">`;
+                        
+                        tasks.forEach((t, idx) => {
+                            tasksHTML += `
+                            <li class="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300 group">
+                                <input type="checkbox" class="task-checkbox mt-1" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" ${(!isMe && !isAdmin) ? 'disabled' : ''}>
+                                <span class="flex-1 break-words leading-tight">${t.text}</span>
+                                ${isAdmin ? `<button onclick="deleteTask('${u.email}', ${idx})" class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 px-1"><i class="fas fa-trash-alt"></i></button>` : ''}
+                            </li>`;
+                        });
 
+                        if(tasks.length === 0) tasksHTML += `<li class="text-[10px] text-slate-400 italic">No tasks assigned.</li>`;
+                        tasksHTML += `</ul></div>`;
+                    }
+
+                    // Card HTML
                     const card = `
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 relative border-l-4 ${colors.border} ${isMe ? 'ring-2 ring-primary-200' : ''}">
                         ${adminEditBtn}
@@ -374,12 +446,8 @@
                                     <div class="font-mono font-bold total-timer">00:00</div>
                                 </div>
                             </div>
-
-                            <div class="flex justify-between items-center mt-3">
-                                <span class="text-[10px] text-slate-400" title="${u.device}"><i class="fas fa-desktop mr-1"></i> ${u.device ? u.device.split('|')[0] : 'Web'}</span>
-                                ${historyBtn}
-                            </div>
-
+                            
+                            ${tasksHTML}
                             ${buttonsHTML}
                         </div>
                     </div>`;
@@ -397,17 +465,30 @@
 
             const now = Date.now();
             const lastTime = getMillis(userProfile.lastChange);
-            const diff = now - lastTime;
+            const duration = now - lastTime; // Time spent in the PREVIOUS state
             const oldStatus = userProfile.status || 'Offline';
 
+            // 1. Update Time Bank
             let timeBank = userProfile.timeBank || {};
             if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
-            timeBank[oldStatus] += diff;
+            timeBank[oldStatus] += duration;
 
             const timestamp = firebase.firestore.FieldValue.serverTimestamp();
             let deviceInfo = "Unknown";
             try { deviceInfo = `${navigator.platform} | ${navigator.userAgent.match(/\(([^)]+)\)/)[1]}`; } catch(e){}
 
+            // 2. Write Log with DURATION (Key Feature)
+            await db.collection('logs').add({
+                user: email,
+                name: userProfile.name,
+                from_status: oldStatus,
+                to_status: newStatus,
+                time: timestamp,
+                duration_prev_state_ms: duration, // Store duration in MS
+                auto: isAuto
+            });
+
+            // 3. Update User Doc
             await db.collection('users').doc(email).update({
                 status: newStatus,
                 lastChange: timestamp,
@@ -415,15 +496,144 @@
                 device: deviceInfo
             });
 
-            await db.collection('logs').add({
-                user: email, status: newStatus, time: timestamp, auto: isAuto
-            });
-
             if(email === currentUser.email && newStatus !== 'Offline') resetIdleTimer(true);
         }
 
         // ==========================================
-        // 4. ADMIN & MODALS
+        // 4. TASKS LOGIC
+        // ==========================================
+        async function addTask(email) {
+            const taskText = prompt("Enter new task:");
+            if(!taskText) return;
+            
+            const doc = await db.collection('users').doc(email).get();
+            const tasks = doc.data().tasks || [];
+            tasks.push({ text: taskText, done: false });
+            await db.collection('users').doc(email).update({ tasks });
+        }
+
+        async function toggleTask(email, index, status) {
+            const doc = await db.collection('users').doc(email).get();
+            const tasks = doc.data().tasks || [];
+            if(tasks[index]) tasks[index].done = status;
+            await db.collection('users').doc(email).update({ tasks });
+        }
+
+        async function deleteTask(email, index) {
+            if(!confirm("Remove task?")) return;
+            const doc = await db.collection('users').doc(email).get();
+            let tasks = doc.data().tasks || [];
+            tasks.splice(index, 1);
+            await db.collection('users').doc(email).update({ tasks });
+        }
+
+        // ==========================================
+        // 5. CHAT LOGIC
+        // ==========================================
+        function initChat() {
+            db.collection('messages').orderBy('time', 'asc').limitToLast(50)
+            .onSnapshot(snapshot => {
+                const box = document.getElementById('chat-messages');
+                box.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const m = doc.data();
+                    const isMe = m.user === currentUser.email;
+                    const time = m.time ? moment(m.time.toDate()).format('h:mm A') : '..';
+                    
+                    const bubble = `
+                    <div class="chat-bubble ${isMe ? 'chat-self' : 'chat-other'}">
+                        <div class="font-bold text-[10px] opacity-70 mb-1 flex justify-between gap-4">
+                            <span>${m.name}</span>
+                            <span>${time}</span>
+                        </div>
+                        <div>${m.text}</div>
+                    </div>`;
+                    box.innerHTML += bubble;
+                });
+                box.scrollTop = box.scrollHeight;
+                
+                // Badge Logic
+                if(document.getElementById('chat-window').classList.contains('hidden') && !snapshot.metadata.hasPendingWrites) {
+                    const badge = document.getElementById('chat-badge');
+                    badge.innerText = "!";
+                    badge.classList.remove('hidden');
+                    playNotificationSound();
+                }
+            });
+        }
+
+        async function sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            input.value = '';
+            await db.collection('messages').add({
+                text: text,
+                user: currentUser.email,
+                name: userProfile.name,
+                time: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        function toggleChat() {
+            const win = document.getElementById('chat-window');
+            win.classList.toggle('hidden');
+            document.getElementById('chat-badge').classList.add('hidden');
+        }
+
+        // ==========================================
+        // 6. REPORTS EXPORT LOGIC
+        // ==========================================
+        function openReportModal() { document.getElementById('modal-report').classList.remove('hidden'); }
+
+        async function downloadReport(days) {
+            const statusEl = document.getElementById('export-status');
+            statusEl.innerText = "Generating CSV... Please wait.";
+            
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - days);
+            
+            const logs = await db.collection('logs')
+                .where('time', '>=', startDate)
+                .orderBy('time', 'desc')
+                .get();
+
+            if(logs.empty) {
+                statusEl.innerText = "No data found for this period.";
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Date,Time,Employee Name,Changed Status To,Previous Status,Duration in Prev Status (Mins),Auto-Idle?\n";
+
+            logs.forEach(doc => {
+                const l = doc.data();
+                const dateObj = l.time ? l.time.toDate() : new Date();
+                const dateStr = moment(dateObj).format('YYYY-MM-DD');
+                const timeStr = moment(dateObj).format('HH:mm:ss');
+                const durationMins = l.duration_prev_state_ms ? (l.duration_prev_state_ms / 60000).toFixed(2) : '0';
+                
+                // CSV Row
+                const row = `${dateStr},${timeStr},${l.name},${l.to_status},${l.from_status},${durationMins},${l.auto ? 'Yes' : 'No'}`;
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Almaster_Report_${days}Days.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            statusEl.innerText = "Download Started!";
+            setTimeout(() => closeModal('modal-report'), 2000);
+        }
+
+        // ==========================================
+        // 7. ADMIN & MODALS (Existing Logic)
         // ==========================================
         async function openEditModal(email) {
             const modal = document.getElementById('modal-edit');
@@ -513,52 +723,8 @@
             }
         }
 
-        async function viewLogs(email) {
-            document.getElementById('modal-logs').classList.remove('hidden');
-            const container = document.getElementById('logs-container');
-            container.innerHTML = '<div class="text-center mt-10"><i class="fas fa-spinner fa-spin text-2xl text-primary-500"></i><p class="text-xs mt-2">Loading History...</p></div>';
-
-            try {
-                const snapshot = await db.collection('logs')
-                    .where('user', '==', email)
-                    .orderBy('time', 'desc')
-                    .limit(30)
-                    .get();
-                
-                if(snapshot.empty) {
-                    container.innerHTML = '<p class="text-center text-slate-400 mt-10">No movements recorded yet.</p>';
-                    return;
-                }
-
-                let html = '<ul class="space-y-2">';
-                snapshot.forEach(doc => {
-                    const l = doc.data();
-                    const safeTime = l.time ? l.time.toDate() : new Date();
-                    const date = moment(safeTime);
-                    html += `
-                    <li class="flex justify-between items-center text-sm border-b dark:border-slate-700 pb-2 px-2 hover:bg-slate-50 dark:hover:bg-slate-900 rounded">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full ${l.status==='Online'?'bg-green-500':l.status==='Busy'?'bg-red-500':'bg-slate-300'}"></span>
-                            <span class="font-bold ${l.auto ? 'text-orange-500' : 'text-slate-700 dark:text-white'}">
-                                ${l.auto ? '<i class="fas fa-robot mr-1" title="Auto Idle"></i>' : ''} ${l.status}
-                            </span>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-mono text-xs text-slate-600 dark:text-slate-400">${date.format('h:mm:ss A')}</div>
-                            <div class="text-[10px] text-slate-400">${date.fromNow()}</div>
-                        </div>
-                    </li>`;
-                });
-                html += '</ul>';
-                container.innerHTML = html;
-            } catch (error) {
-                console.error(error);
-                container.innerHTML = `<div class="text-red-500 text-center text-xs p-4"><b>Missing Index!</b><br>Open Console (F12) and click the link from Firebase.</div>`;
-            }
-        }
-
         // ==========================================
-        // 5. TIMERS & IDLE
+        // 8. TIMERS & IDLE
         // ==========================================
         function updateTimers() {
             const now = Date.now();
@@ -580,15 +746,24 @@
                 
                 let total = bank;
                 if(isActive && start > 0) total += (now - start);
-                
                 timer.innerText = formatTime(total, true);
                 
                 // Update Total for Card
-                const totalDisplay = box.parentElement.querySelector('.total-timer');
-                if(totalDisplay) {
-                    // Logic to sum all stats would go here, for simplicity we skip dynamic summing in this view loop
+                const totalTimer = box.parentElement.querySelector('.total-timer');
+                if(totalTimer) {
+                    const online = getVal(box.parentElement, 0);
+                    const busy = getVal(box.parentElement, 1);
+                    const brk = getVal(box.parentElement, 2);
+                    totalTimer.innerText = formatTime(online + busy + brk, true);
                 }
             });
+        }
+        
+        function getVal(parent, idx) {
+            const t = parent.querySelectorAll('.stat-timer')[idx];
+            const bank = parseInt(t.dataset.val) || 0;
+            const start = parseInt(t.dataset.start) || 0;
+            return (t.dataset.active === 'true') ? bank + (Date.now() - start) : bank;
         }
 
         function userActivity() { resetIdleTimer(); }
@@ -599,9 +774,7 @@
                 if(!userProfile || userProfile.status === 'Offline') return;
                 idleTime++;
                 const limit = (userProfile.idleLimit || 5) * 60;
-                const debugEl = document.getElementById('idle-debug');
-                if(debugEl) debugEl.style.backgroundColor = idleTime > 0 ? '#fbbf24' : '#22c55e'; 
-
+                
                 if (idleTime >= limit) {
                     document.getElementById('modal-idle').classList.remove('hidden');
                     let timeLeft = 60;
