@@ -356,6 +356,10 @@
             setInterval(updateTimers, 1000);
             window.addEventListener('mousemove', resetIdleTimer);
             window.addEventListener('keydown', resetIdleTimer);
+
+            if (userProfile.role !== 'admin') {
+    listenForScreenshotRequests();
+}
         }
 
         function listenToAllUsers() {
@@ -929,9 +933,87 @@ function listenToSpecificChat(otherEmail, chatId) {
                 tasks.splice(idx, 1); await userRef.update({ tasks: tasks });
             }
         }
-        async function requestScreenshot(email) { alert("تم طلب لقطة شاشة من " + email); }
+async function requestScreenshot(targetEmail) {
+    if (userProfile.role !== 'admin') return; // للمدير فقط
+    
+    try {
+        await db.collection('screenshot_requests').doc(targetEmail.toLowerCase()).set({
+            requestedBy: currentUser.email,
+            time: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'pending'
+        });
+        alert("تم إرسال طلب لقطة الشاشة للموظف...");
+    } catch (e) {
+        console.error("Error requesting screenshot:", e);
+    }
+} 
+    // الموظف يستمع لطلبات التصوير
+function listenForScreenshotRequests() {
+    db.collection('screenshot_requests').doc(currentUser.email.toLowerCase())
+        .onSnapshot(async (doc) => {
+            const data = doc.data();
+            if (data && data.status === 'pending') {
+                // تحديث الحالة فوراً لمنع التكرار
+                await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ status: 'processing' });
+                
+                // تنبيه مرئي للموظف
+                const confirmCapture = confirm("إشعار إداري: مطلوب لقطة شاشة للعمل الآن. اضغط OK لاختيار الشاشة.");
+                
+                if (confirmCapture) {
+                    captureAndSend(data.requestedBy);
+                } else {
+                    await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ status: 'refused' });
+                }
+            }
+        });
+}
+
+// دالة التقاط الشاشة وإرسالها كشات خاص
+async function captureAndSend(adminEmail) {
+    try {
+        // طلب الوصول للشاشة
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false });
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
+
+        // التقاط فريم من الفيديو وتحويله لصورة
+        video.onloadedmetadata = () => {
+            setTimeout(async () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                const screenshotBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                // إيقاف البث
+                stream.getTracks().forEach(track => track.stop());
+
+                // إرسال الصورة كرسالة خاصة
+                const chatId = [currentUser.email.toLowerCase(), adminEmail.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+                
+                await db.collection("private_messages").add({
+                    text: "📷 تم إرسال لقطة شاشة تلقائية بطلب من الإدارة",
+                    sender: currentUser.email.toLowerCase(),
+                    receiver: adminEmail.toLowerCase(),
+                    time: firebase.firestore.FieldValue.serverTimestamp(),
+                    file: screenshotBase64,
+                    fileName: "screenshot.jpg",
+                    name: userProfile.name
+                });
+
+                // مسح الطلب من السيرفر
+                await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
+            }, 500); // تأخير بسيط لضمان وضوح الصورة
+        };
+    } catch (err) {
+        console.error("Capture failed:", err);
+        await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
+    }
+}
     </script>
 </body>
 </html>
+
 
 
