@@ -897,16 +897,97 @@ function listenToSpecificChat(otherEmail, chatId) {
         async function deleteUser(){ if(confirm("هل أنت متأكد من حذف هذا الموظف نهائياً؟")){ await db.collection("users").doc(document.getElementById("edit-email").value).delete(); closeModal("modal-edit"); } }
         function openReportModal(){ document.getElementById("modal-report").classList.remove("hidden"); }
         function updateReportDropdown(){ const e=document.getElementById("report-user-select"),v=e.value; e.innerHTML='<option value="all">-- جميع الموظفين --</option>'; allUsersData.forEach(u=>{e.innerHTML+=`<option value="${u.email}">${u.name}</option>`}); e.value=v; }
-        async function downloadReport(d){
-            const t=document.getElementById("export-status"),u=document.getElementById("report-user-select").value; t.innerText="جاري المعالجة...";
-            const r=new Date(); r.setDate(r.getDate()-d); r.setHours(0,0,0,0);
-            let q=db.collection("logs").where("end_time",">=",r).orderBy("end_time","desc");
-            if(u!=="all") q=q.where("user","==",u);
-            const snap=await q.get(); if(snap.empty){t.innerText="لا توجد سجلات.";return;}
-            let s="Name,Action,Start,End,Duration,Type\n";
-            snap.forEach(doc=>{ const data=doc.data(); const et=data.end_time?data.end_time.toDate():new Date(); s+=`${data.name},"${data.from_status}->${data.to_status}",${moment(et).format("YYYY-MM-DD HH:mm:ss")},${formatTime(data.duration_ms||0)},${data.auto?"Auto":"Manual"}\n`; });
-            const b=new Blob([s],{type:"text/csv"}),l=document.createElement("a"); l.href=URL.createObjectURL(b); l.download=`Report_${moment().format('YYYYMMDD')}.csv`; l.click(); t.innerText="تم التحميل!";
+        async function downloadReport(days) {
+    const statusEl = document.getElementById("export-status");
+    const userSelect = document.getElementById("report-user-select").value;
+    statusEl.innerText = "جاري تجميع البيانات وتحليل الأوقات...";
+
+    // 1. تحديد النطاق الزمني
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    try {
+        // 2. جلب السجلات من قاعدة البيانات
+        let query = db.collection("logs").where("end_time", ">=", startDate).orderBy("end_time", "desc");
+        if (userSelect !== "all") {
+            query = query.where("user", "==", userSelect);
         }
+
+        const snapshot = await query.get();
+        if (snapshot.empty) {
+            statusEl.innerText = "لا توجد سجلات لهذه الفترة.";
+            return;
+        }
+
+        // 3. هيكل البيانات لتجميع الأوقات
+        // الموظف -> { حالة1: مجموع_الوقت, حالة2: مجموع_الوقت ... }
+        const summary = {};
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const userEmail = data.user;
+            const userName = data.name || userEmail;
+            const status = data.to_status; // الحالة التي انتقل إليها (والتي استغرق فيها الوقت)
+            const duration = data.duration_ms || 0;
+
+            if (!summary[userEmail]) {
+                summary[userEmail] = { name: userName, Online: 0, Break: 0, Meeting: 0, Idle: 0, total: 0 };
+            }
+
+            // إضافة المدة للحالة المحددة
+            if (summary[userEmail].hasOwnProperty(status)) {
+                summary[userEmail][status] += duration;
+                summary[userEmail].total += duration;
+            }
+        });
+
+        // 4. بناء محتوى ملف CSV
+        let csvContent = "\ufeff"; // إضافة BOM لدعم اللغة العربية في Excel
+        csvContent += "الاسم,وقت العمل (Online),وقت الاستراحة (Break),وقت الاجتماعات (Meeting),وقت الخمول (Idle),إجمالي الوقت المسجل\n";
+
+        for (const email in summary) {
+            const row = summary[email];
+            csvContent += `${row.name},` +
+                `${formatDuration(row.Online)},` +
+                `${formatDuration(row.Break)},` +
+                `${formatDuration(row.Meeting)},` +
+                `${formatDuration(row.Idle)},` +
+                `${formatDuration(row.total)}\n`;
+        }
+
+        // 5. تحميل الملف
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const fileName = `Performance_Report_${moment().format('YYYY-MM-DD')}.csv`;
+        
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        statusEl.innerText = "تم تصدير التقرير التحليلي بنجاح!";
+    } catch (error) {
+        console.error("Export Error:", error);
+        statusEl.innerText = "حدث خطأ أثناء التصدير.";
+    }
+}
+
+// دالة مساعدة لتحويل الملي ثانية إلى تنسيق HH:MM:SS بدقة
+function formatDuration(ms) {
+    if (!ms || ms < 0) return "00:00:00";
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return [
+        hours.toString().padStart(2, '0'),
+        minutes.toString().padStart(2, '0'),
+        seconds.toString().padStart(2, '0')
+    ].join(':');
+}
 
         async function viewLogs(email) {
             const modal = document.getElementById('modal-logs');
@@ -1089,6 +1170,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
