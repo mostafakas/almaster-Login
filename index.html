@@ -283,14 +283,6 @@
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=';
 
         window.addEventListener('keydown', resetIdleTimer); 
-        
-        document.addEventListener('visibilitychange', () => {
-            if(currentUser && userProfile && userProfile.status !== 'Offline') {
-                const isFocused = !document.hidden;
-                db.collection('users').doc(currentUser.email).update({ isFocused: isFocused });
-            }
-        });
-
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
@@ -298,7 +290,6 @@
                 if(doc.exists) {
                     userProfile = doc.data();
                     await setStatus(user.email, 'Online', true);
-                    db.collection('users').doc(user.email).update({ isFocused: true });
                     initSystem();
                 } else {
                     alert("Account not configured.");
@@ -419,14 +410,6 @@
                 const idleBank = u.idleBank || 0;
                 const safeStart = getMillis(u.lastChange);
 
-                const focusDot = u.isFocused 
-                    ? '<span class="flex h-3 w-3 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>' 
-                    : '<span class="h-3 w-3 rounded-full bg-slate-300 inline-block border-2 border-white"></span>';
-
-                const focusText = u.isFocused 
-                    ? '<span class="text-[10px] text-green-600 font-bold ml-1">داخل السيستم</span>' 
-                    : '<span class="text-[10px] text-slate-400 font-bold ml-1">خارج التبويب</span>';
-
                 let cardClass = `user-card bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-lg relative border-l-4 ${colors.border} ${isMe ? 'ring-2 ring-primary-200' : ''}`;
                 if(isOffline) cardClass += ' opacity-70 grayscale';
 
@@ -451,17 +434,12 @@
                         <div class="flex items-center gap-3 mb-3">
                             <div class="relative">
                                 <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm bg-slate-100">
-                                <div class="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-0.5 shadow-sm">
-                                    ${focusDot}
                                 </div>
                             </div>
                             <div class="overflow-hidden">
                                 <div class="flex items-center">
                                     <h3 class="font-bold text-base dark:text-white truncate">${u.name}</h3>
                                     ${isMe ? '<span class="ml-1 text-[10px] text-primary-500 font-bold">(أنت)</span>' : ''}
-                                </div>
-                                <div class="flex items-center">
-                                    ${focusText}
                                 </div>
                             </div>
                         </div>
@@ -593,3 +571,4 @@
     </script>
 </body>
 </html>
+
