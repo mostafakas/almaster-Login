@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster - Professional Dashboard</title>
+    <title>Almaster - Professional Dashboard v1</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -337,30 +337,74 @@
             auth.signOut().then(() => location.reload());
         }
 
-        function initSystem() {
-            document.getElementById('loader').classList.add('hidden-section');
-            document.getElementById('view-login').classList.add('hidden-section');
-            document.getElementById('view-system').classList.remove('hidden-section');
-            document.getElementById('chat-fab').classList.remove('hidden-section');
+        async function initSystem() {
+    // 1. إظهار الواجهات وإخفاء اللودر
+    document.getElementById('loader').classList.add('hidden-section');
+    document.getElementById('view-login').classList.add('hidden-section');
+    document.getElementById('view-system').classList.remove('hidden-section');
+    document.getElementById('chat-fab').classList.remove('hidden-section');
 
-            document.getElementById('sb-name').innerText = userProfile.name;
-            document.getElementById('sb-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
-            document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
+    // 2. تحديث بيانات الشريط الجانبي
+    document.getElementById('sb-name').innerText = userProfile.name;
+    document.getElementById('sb-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
+    document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
 
-            if(userProfile.role === 'admin') document.getElementById('admin-menu').classList.remove('hidden-section');
-            
-            listenToAllUsers();
-            initChat();
-            listenToPrivateMessages(); // بدء الاستماع للرسائل الخاصة
-            startIdleTracker();
-            setInterval(updateTimers, 1000);
-            window.addEventListener('mousemove', resetIdleTimer);
-            window.addEventListener('keydown', resetIdleTimer);
+    // 3. إظهار قائمة المدير إذا كان المستخدم مديراً
+    if(userProfile.role === 'admin') {
+        document.getElementById('admin-menu').classList.remove('hidden-section');
+    }
+    
+    // --- [إضافة تصفير العدادات تلقائياً] ---
+    await checkAndResetCounters(); 
 
-            if (userProfile.role !== 'admin') {
-    listenForScreenshotRequests();
+    // 4. تشغيل الأنظمة الفرعية
+    listenToAllUsers();
+    initChat();
+    listenToPrivateMessages(); 
+    startIdleTracker();
+    setInterval(updateTimers, 1000);
+    
+    // 5. مراقبة حركة المستخدم
+    window.addEventListener('mousemove', resetIdleTimer);
+    window.addEventListener('keydown', resetIdleTimer);
+
+    // 6. تشغيل رادار لقطات الشاشة للموظفين فقط
+    if (userProfile.role !== 'admin') {
+        listenForScreenshotRequests();
+    }
 }
+
+// دالة فحص اليوم الجديد وتصفير البيانات (ضعها تحت دالة initSystem)
+async function checkAndResetCounters() {
+    const today = moment().format('YYYY-MM-DD');
+    try {
+        const settingsDoc = await db.collection('system_settings').doc('daily_reset').get();
+        const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
+
+        if (lastResetDate !== today) {
+            console.log("يوم جديد: جاري تصفير عدادات الوقت والمهام...");
+            
+            const usersSnapshot = await db.collection('users').get();
+            const batch = db.batch();
+            
+            usersSnapshot.forEach((doc) => {
+                const userRef = db.collection('users').doc(doc.id);
+                batch.update(userRef, {
+                    'timeBank': {},     // تصفير بنك الوقت (Online, Break, Meeting)
+                    'idleBank': 0,      // تصفير وقت الخمول
+                    'tasks': [],        // مسح مهام اليوم السابق (اختياري، يمكنك حذف هذا السطر لو أردت بقاء المهام)
+                    'lastChange': firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            // تحديث تاريخ التصفير
+            batch.set(db.collection('system_settings').doc('daily_reset'), { lastDate: today }, { merge: true });
+            await batch.commit();
         }
+    } catch (e) {
+        console.error("Reset Error:", e);
+    }
+}
 
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
@@ -1045,6 +1089,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
