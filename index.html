@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster - Professional Dashboard v2</title>
+    <title>Almaster - Professional Dashboard v3</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -876,38 +876,43 @@ function listenToSpecificChat(otherEmail, chatId) {
 }
         // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
         // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
-        function listenToPrivateMessages() {
-            // نقوم بإنشاء متغير لتسجيل وقت البدء لتجنب فتح الرسائل القديمة جداً عند التحميل
-            const startTime = new Date();
-        
-            db.collection("private_messages")
-                .where("receiver", "==", currentUser.email.toLowerCase())
-                .where("time", ">", startTime) // مراقبة الرسائل التي تصل "الآن" فقط
-                .onSnapshot(s => {
-                    s.docChanges().forEach(change => {
-                        if(change.type === "added") {
-                            const m = change.doc.data();
-                            
-                            // إذا كانت نافذة الشات لهذا الشخص غير مفتوحة، نقوم بفتحها تلقائياً
-                            if(!openPrivateChats[m.sender]) {
-                                // جلب اسم المرسل من بيانات الرسالة وفتح النافذة
-                                openPrivateChat(m.sender, m.name || "رسالة جديدة");
-                                
-                                // تشغيل صوت التنبيه لضمان الانتباه
-                                playNotification();
-        
-                                // إظهار إشعار ويندوز إذا كانت الصفحة في الخلفية
-                                if (Notification.permission === "granted") {
-                                    new Notification(`رسالة خاصة من ${m.name}`, {
-                                        body: m.text,
-                                        icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
-                                    });
-                                }
-                            }
+        // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
+function listenToPrivateMessages() {
+    // نستخدم وقت التحميل مع طرح دقيقة واحدة لضمان عدم ضياع أي رسالة وصلت لحظة الدخول
+    const sessionStartTime = new Date(Date.now() - 60000); 
+
+    db.collection("private_messages")
+        .where("receiver", "==", currentUser.email.toLowerCase())
+        .where("time", ">", sessionStartTime)
+        .onSnapshot(s => {
+            s.docChanges().forEach(change => {
+                if(change.type === "added") {
+                    const m = change.doc.data();
+                    
+                    // نتحقق أن الرسالة ليست من المستخدم نفسه (لتجنب فتح نافذة عند الإرسال)
+                    if (m.sender !== currentUser.email.toLowerCase()) {
+                        
+                        // 1. فتح نافذة الشات تلقائياً إذا كانت مغلقة
+                        if(!openPrivateChats[m.sender]) {
+                            openPrivateChat(m.sender, m.name || "زميل العمل");
                         }
-                    });
-                });
-        }
+                        
+                        // 2. تشغيل صوت التنبيه
+                        playNotification();
+
+                        // 3. إظهار إشعار ويندوز (Desktop Notification)
+                        if (Notification.permission === "granted") {
+                            new Notification(`رسالة من ${m.name}`, {
+                                body: m.text || "أرسل لك ملفاً أو صورة",
+                                icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
+                                tag: change.doc.id // لمنع تكرار الإشعار لنفس الرسالة
+                            });
+                        }
+                    }
+                }
+            });
+        });
+}
         function makeDraggable(el) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             const header = el.querySelector(".chat-header");
@@ -1271,6 +1276,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
