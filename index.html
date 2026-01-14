@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster - Professional Dashboard v1</title>
+    <title>Almaster - Professional Dashboard v2</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -875,23 +875,39 @@ function listenToSpecificChat(otherEmail, chatId) {
         });
 }
         // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
+        // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
         function listenToPrivateMessages() {
+            // نقوم بإنشاء متغير لتسجيل وقت البدء لتجنب فتح الرسائل القديمة جداً عند التحميل
+            const startTime = new Date();
+        
             db.collection("private_messages")
-                .where("receiver", "==", currentUser.email)
-                .where("time", ">", new Date())
+                .where("receiver", "==", currentUser.email.toLowerCase())
+                .where("time", ">", startTime) // مراقبة الرسائل التي تصل "الآن" فقط
                 .onSnapshot(s => {
                     s.docChanges().forEach(change => {
                         if(change.type === "added") {
                             const m = change.doc.data();
+                            
+                            // إذا كانت نافذة الشات لهذا الشخص غير مفتوحة، نقوم بفتحها تلقائياً
                             if(!openPrivateChats[m.sender]) {
-                                openPrivateChat(m.sender, m.name);
+                                // جلب اسم المرسل من بيانات الرسالة وفتح النافذة
+                                openPrivateChat(m.sender, m.name || "رسالة جديدة");
+                                
+                                // تشغيل صوت التنبيه لضمان الانتباه
+                                playNotification();
+        
+                                // إظهار إشعار ويندوز إذا كانت الصفحة في الخلفية
+                                if (Notification.permission === "granted") {
+                                    new Notification(`رسالة خاصة من ${m.name}`, {
+                                        body: m.text,
+                                        icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
+                                    });
+                                }
                             }
                         }
                     });
                 });
         }
-
-        // وظيفة السحب (Drag and Drop)
         function makeDraggable(el) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             const header = el.querySelector(".chat-header");
@@ -1255,6 +1271,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
