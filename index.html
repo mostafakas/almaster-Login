@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster - Professional Dashboard v3</title>
+    <title>Almaster - Professional Dashboard v1</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -878,40 +878,43 @@ function listenToSpecificChat(otherEmail, chatId) {
         // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
         // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
 function listenToPrivateMessages() {
-    // نستخدم وقت التحميل مع طرح دقيقة واحدة لضمان عدم ضياع أي رسالة وصلت لحظة الدخول
-    const sessionStartTime = new Date(Date.now() - 60000); 
+    // تسجيل وقت بداية الجلسة لمنع فتح الرسائل القديمة عند تحديث الصفحة
+    const sessionStart = Date.now();
 
+    // الاستماع لرسائل الشخص الحالي فقط
     db.collection("private_messages")
         .where("receiver", "==", currentUser.email.toLowerCase())
-        .where("time", ">", sessionStartTime)
         .onSnapshot(s => {
             s.docChanges().forEach(change => {
-                if(change.type === "added") {
+                // نركز فقط على الرسائل المضافة حديثاً (Added)
+                if (change.type === "added") {
                     const m = change.doc.data();
                     
-                    // نتحقق أن الرسالة ليست من المستخدم نفسه (لتجنب فتح نافذة عند الإرسال)
-                    if (m.sender !== currentUser.email.toLowerCase()) {
+                    // تحويل وقت الرسالة من Firebase Timestamp إلى Milliseconds للمقارنة
+                    const msgTime = m.time ? m.time.toMillis() : Date.now();
+
+                    // الشرط: الرسالة وصلت بعد فتح الصفحة + ليست من المرسل نفسه
+                    if (msgTime > sessionStart && m.sender !== currentUser.email.toLowerCase()) {
                         
-                        // 1. فتح نافذة الشات تلقائياً إذا كانت مغلقة
-                        if(!openPrivateChats[m.sender]) {
-                            openPrivateChat(m.sender, m.name || "زميل العمل");
-                        }
-                        
-                        // 2. تشغيل صوت التنبيه
+                        // 1. تشغيل صوت التنبيه فوراً
                         playNotification();
 
-                        // 3. إظهار إشعار ويندوز (Desktop Notification)
+                        // 2. إظهار إشعار ويندوز (Desktop Notification)
                         if (Notification.permission === "granted") {
-                            new Notification(`رسالة من ${m.name}`, {
-                                body: m.text || "أرسل لك ملفاً أو صورة",
-                                icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
-                                tag: change.doc.id // لمنع تكرار الإشعار لنفس الرسالة
+                            new Notification(`رسالة جديدة من ${m.name || 'زميل'}`, {
+                                body: m.text || "أرسل لك مرفقاً...",
+                                icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
                             });
+                        }
+
+                        // 3. فتح نافذة الشات تلقائياً إذا كانت مغلقة
+                        if (!openPrivateChats[m.sender]) {
+                            openPrivateChat(m.sender, m.name || "مستخدم");
                         }
                     }
                 }
             });
-        });
+        }, err => console.error("Private Messages Error:", err));
 }
         function makeDraggable(el) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
@@ -1276,6 +1279,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
