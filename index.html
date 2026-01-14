@@ -1023,7 +1023,7 @@ function listenToPrivateMessages() {
         return;
     }
 
-    statusEl.innerText = "جاري استخراج البيانات وفحص السجلات...";
+    statusEl.innerText = "جاري تحليل سجلات الحركات بدقة...";
     resultsArea.classList.add('hidden');
 
     const start = new Date(dateFrom);
@@ -1032,10 +1032,10 @@ function listenToPrivateMessages() {
     end.setHours(23, 59, 59, 999);
 
     try {
+        // نعتمد على جدول logs حصرياً لأنه يسجل الحركات الفعلية بالوقت والتاريخ
         let query = db.collection("logs")
             .where("end_time", ">=", start)
-            .where("end_time", "<=", end)
-            .orderBy("end_time", "desc");
+            .where("end_time", "<=", end);
 
         if (userEmail !== "all") {
             query = query.where("user", "==", userEmail);
@@ -1043,7 +1043,7 @@ function listenToPrivateMessages() {
 
         const snapshot = await query.get();
         if (snapshot.empty) {
-            statusEl.innerText = "لا توجد سجلات لهذه الفترة الزمنية.";
+            statusEl.innerText = "لا توجد حركات مسجلة لهذا الموظف في هذه الفترة.";
             return;
         }
 
@@ -1053,19 +1053,31 @@ function listenToPrivateMessages() {
             const d = doc.data();
             const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
             const userName = d.name || d.user;
-            const status = d.to_status;
-            const duration = d.duration_ms || 0;
+            // نأخذ الحالة التي "كان فيها" الموظف قبل التغيير (from_status) 
+            // لأن duration_ms محسوب للفترة التي قضاها في الحالة السابقة
+            const status = d.from_status; 
+            const duration = parseInt(d.duration_ms) || 0;
+
+            // تجاهل أوقات Offline لأنها لا تحسب كوقت عمل أو استراحة
+            if (status === 'Offline') return;
 
             if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
             if (!dataGrouped[dateKey][userName]) {
                 dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
             }
 
+            // إضافة الوقت للحالة الصحيحة (بشرط أن تكون ضمن الحالات الأربعة)
             if (dataGrouped[dateKey][userName].hasOwnProperty(status)) {
                 dataGrouped[dateKey][userName][status] += duration;
                 dataGrouped[dateKey][userName].Total += duration;
             }
         });
+
+        // التحقق من وجود بيانات بعد الفلترة
+        if (Object.keys(dataGrouped).length === 0) {
+            statusEl.innerText = "لم يتم العثور على ساعات عمل فعلية (بخلاف Offline).";
+            return;
+        }
 
         resultsArea.classList.remove('hidden');
         summaryCards.innerHTML = "";
@@ -1088,45 +1100,43 @@ function listenToPrivateMessages() {
         Object.keys(statusLabels).forEach(key => {
             summaryCards.innerHTML += `
                 <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 text-center">
-                    <p class="text-[10px] font-black text-slate-400 mb-1 uppercase">${statusLabels[key]}</p>
+                    <p class="text-[10px] font-black text-slate-400 mb-1">${statusLabels[key]}</p>
                     <p class="text-sm font-black ${colors[key]}">${formatDuration(grandTotals[key])}</p>
                 </div>`;
         });
 
         totalDurationText.innerText = formatDuration(grandTotals.Total);
 
-        // تحميل ملف الـ Excel
         downloadDetailedExcel(dataGrouped, dateFrom, dateTo);
-        statusEl.innerText = "تم استخراج التقرير وتحميل ملف Excel بنجاح.";
+        statusEl.innerText = "تم استخراج التقرير الفعلي بنجاح.";
 
     } catch (error) {
-        console.error("Report Error:", error);
-        statusEl.innerText = "حدث خطأ: يرجى فحص الـ Console.";
+        console.error(error);
+        statusEl.innerText = "خطأ في الحساب: يرجى التأكد من استقرار الإنترنت.";
     }
 }
-
-function downloadDetailedExcel(dataGrouped, from, to) {
-    let csvContent = "\ufeff"; 
-    csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
-
-    const sortedDates = Object.keys(dataGrouped).sort().reverse();
-
-    sortedDates.forEach(date => {
-        Object.keys(dataGrouped[date]).forEach(user => {
-            const d = dataGrouped[date][user];
-            csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
-        });
-    });
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-// دالة مساعدة لتحويل الملي ثانية إلى تنسيق HH:MM:SS بدقة
+                function downloadDetailedExcel(dataGrouped, from, to) {
+                    let csvContent = "\ufeff"; 
+                    csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
+                
+                    const sortedDates = Object.keys(dataGrouped).sort().reverse();
+                
+                    sortedDates.forEach(date => {
+                        Object.keys(dataGrouped[date]).forEach(user => {
+                            const d = dataGrouped[date][user];
+                            csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
+                        });
+                    });
+                
+                    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+                // دالة مساعدة لتحويل الملي ثانية إلى تنسيق HH:MM:SS بدقة
 function formatDuration(ms) {
     if (!ms || ms < 0) return "00:00:00";
     const totalSeconds = Math.floor(ms / 1000);
@@ -1343,6 +1353,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
