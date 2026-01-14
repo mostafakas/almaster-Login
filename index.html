@@ -68,6 +68,7 @@
 <body class="min-h-screen text-slate-800 dark:text-slate-100 selection:bg-primary-500 selection:text-white">
 
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
+    <audio id="status-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
@@ -410,37 +411,37 @@ async function checkAndResetCounters() {
     }
 }
 
-        function listenToAllUsers() {
-    db.collection('users').onSnapshot(snapshot => {
-        let hasStatusChange = false;
-
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "modified") {
-                const oldData = allUsersData.find(u => u.email === change.doc.data().email);
-                const newData = change.doc.data();
-                
-                // التأكد أن التغيير في "الحالة" وليس مجرد عداد الوقت
-                if (oldData && oldData.status !== newData.status) {
-                    hasStatusChange = true;
-                }
+                    function listenToAllUsers() {
+                db.collection('users').onSnapshot(snapshot => {
+                    let hasStatusChange = false;
+            
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === "modified") {
+                            const newData = change.doc.data();
+                            // نبحث عن البيانات القديمة في المصفوفة قبل تحديثها
+                            const oldData = allUsersData.find(u => u.email === newData.email);
+                            
+                            // إذا تغيرت الحالة فعلياً وليس مجرد عداد الوقت
+                            if (oldData && oldData.status !== newData.status) {
+                                hasStatusChange = true;
+                            }
+                        }
+                    });
+            
+                    // تشغيل صوت الحالات المخصص للمدير
+                    if (hasStatusChange && userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) {
+                        playStatusNotification(); 
+                    }
+            
+                    // تحديث المصفوفة بالبيانات الجديدة
+                    allUsersData = [];
+                    snapshot.forEach(doc => allUsersData.push(doc.data()));
+                    
+                    renderGrid();
+                    updateReportDropdown();
+                    if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
+                });
             }
-        });
-
-        // تشغيل الصوت للمدير إذا تغيرت حالة أي موظف
-        if (hasStatusChange && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) {
-            playNotification();
-        }
-
-        // تحديث البيانات في المصفوفة
-        allUsersData = [];
-        snapshot.forEach(doc => allUsersData.push(doc.data()));
-        
-        // إعادة بناء الواجهة
-        renderGrid();
-        updateReportDropdown();
-        if(userProfile.role === 'admin') renderAdminAlerts();
-    });
-}
 
         function renderGrid() {
             const grid = document.getElementById('grid-users');
@@ -557,27 +558,46 @@ async function checkAndResetCounters() {
     const userRef = db.collection('users').doc(targetEmail);
     const snapshot = await userRef.get();
     const uData = snapshot.data();
+    
+    // إذا لم تكن هناك بيانات أو الحالة هي نفسها الحالية (وليس تغييراً تلقائياً)، لا نفعل شيئاً
     if(!uData || (uData.status === newStatus && !isAuto)) return;
 
-    // تشغيل الصوت فوراً عند الموظف الذي يغير حالته
-    playNotification(); 
+    // --- [التعديل هنا] ---
+    // تشغيل صوت تنبيه تغيير الحالة الجديد بدلاً من صوت الدردشة
+    playStatusNotification(); 
 
     const now = Date.now();
     const lastTime = getMillis(uData.lastChange);
     const duration = now - lastTime;
+    
     let timeBank = uData.timeBank || {};
     const oldStatus = uData.status || 'Offline';
+    
     if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
     timeBank[oldStatus] += duration;
+    
     const timestamp = firebase.firestore.FieldValue.serverTimestamp();
 
+    // تسجيل العملية في سجل اللوج (Logs)
     await db.collection('logs').add({ 
-        user: targetEmail, name: uData.name, from_status: oldStatus, to_status: newStatus, 
-        start_time: uData.lastChange || timestamp, end_time: timestamp, duration_ms: duration, auto: isAuto 
+        user: targetEmail, 
+        name: uData.name, 
+        from_status: oldStatus, 
+        to_status: newStatus, 
+        start_time: uData.lastChange || timestamp, 
+        end_time: timestamp, 
+        duration_ms: duration, 
+        auto: isAuto 
     });
-    await userRef.update({ status: newStatus, lastChange: timestamp, timeBank: timeBank, isIdle: false });
-}
 
+    // تحديث حالة المستخدم في قاعدة البيانات وتصفير عداد الخمول
+    await userRef.update({ 
+        status: newStatus, 
+        lastChange: timestamp, 
+        timeBank: timeBank, 
+        isIdle: false 
+    });
+}
         // -- العدادات --
         function updateTimers() {
             const now = Date.now();
@@ -639,11 +659,21 @@ async function checkAndResetCounters() {
         // -- نظام الدردشة المطور --
 
         // إشعار صوتي
-        function playNotification() {
-            const sound = document.getElementById('notification-sound');
-            sound.currentTime = 0;
-            sound.play().catch(e => console.log("Audio play blocked"));
-        }
+      // اترك هذه كما هي لرسائل الدردشة
+            function playNotification() {
+                const sound = document.getElementById('notification-sound');
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Audio play blocked"));
+            }
+            
+            // أضف هذه تحتها مباشرة لتنبيهات تغيير الحالة
+            function playStatusNotification() {
+                const sound = document.getElementById('status-sound');
+                if (sound) {
+                    sound.currentTime = 0;
+                    sound.play().catch(e => console.log("Audio status sound blocked"));
+                }
+            }
 
         // اختيار ملف
         function handleFileSelect(input) {
@@ -1225,6 +1255,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
