@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster - Professional Dashboard v1</title>
+    <title>Almaster - Professional Dashboard v5</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -151,6 +151,26 @@
             </header>
 
             <div class="flex-1 overflow-auto p-6 md:p-8">
+                <div class="mb-6 flex flex-wrap gap-2 justify-end px-2" dir="ltr">
+    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
+        <span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline
+    </button>
+    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-red-50 border border-slate-200 shadow-sm transition-all">
+        <span class="w-2 h-2 rounded-full bg-red-500 inline-block ml-1"></span> Idle
+    </button>
+    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-blue-50 border border-slate-200 shadow-sm transition-all">
+        <span class="w-2 h-2 rounded-full bg-blue-500 inline-block ml-1"></span> Meeting
+    </button>
+    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-orange-50 border border-slate-200 shadow-sm transition-all">
+        <span class="w-2 h-2 rounded-full bg-orange-500 inline-block ml-1"></span> Break
+    </button>
+    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-green-50 border border-slate-200 shadow-sm transition-all">
+        <span class="w-2 h-2 rounded-full bg-green-500 inline-block ml-1"></span> Online
+    </button>
+    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all">
+        الكل
+    </button>
+</div>
                 <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
                 <div id="empty-state" class="hidden text-center text-slate-400 mt-20">
                     <i class="fas fa-user-slash text-4xl mb-3"></i>
@@ -319,6 +339,7 @@
         let userProfile = null;
         let lastActionTime = Date.now();
         let allUsersData = [];
+        let currentFilter = 'all'; // متغير لتخزين الفلتر الحالي
         let attachedFileBase64 = null;
         let attachedFileName = "";
         let openPrivateChats = {}; // تتبع نوافذ الشات المفتوحة
@@ -467,107 +488,142 @@ async function checkAndResetCounters() {
                 });
             }
 
-        function renderGrid() {
-            const grid = document.getElementById('grid-users');
-            grid.innerHTML = '';
-            const showOffline = document.getElementById('show-offline-toggle').checked;
-            const isAdmin = userProfile.role === 'admin';
-            
-            allUsersData.forEach(u => {
-                const isOffline = (u.status === 'Offline' || !u.status);
-                if(isOffline && !showOffline) return;
+        // --- دالة تغيير الفلتر ---
+function setFilter(status) {
+    currentFilter = status;
+    
+    // تغيير ألوان الأزرار لتوضيح النشط
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-100 border border-slate-200 shadow-sm transition-all";
+    });
+    
+    const activeBtn = document.getElementById(`filter-${status}`);
+    if(activeBtn) {
+        // تمييز الزر النشط بلون مختلف
+        activeBtn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all transform scale-105";
+    }
+    
+    renderGrid(); // إعادة رسم الشبكة
+}
 
-                const isMe = (currentUser.email === u.email);
-                const colors = getStatusColor(u.status, u.isFocused, u.isIdle);
-                const tb = u.timeBank || {};
-                const safeStart = getMillis(u.lastChange);
-                
-                let pulseClass = "";
-                if(u.status === 'Online') pulseClass = "pulse-green bg-green-500";
-                else if(u.status === 'Break') pulseClass = "pulse-orange bg-orange-500";
-                else if(u.status === 'Meeting') pulseClass = "pulse-blue bg-blue-500";
-                else if(u.isIdle) pulseClass = "pulse-red bg-red-500";
-                else pulseClass = "bg-slate-400";
+// --- دالة رسم الشبكة المعدلة ---
+function renderGrid() {
+    const grid = document.getElementById('grid-users');
+    grid.innerHTML = '';
+    const showOffline = document.getElementById('show-offline-toggle').checked;
+    const isAdmin = userProfile.role === 'admin';
+    
+    let displayedCount = 0; // عداد للمستخدمين المعروضين
 
-                const card = `
-                <div class="user-card bg-white dark:bg-slate-800 rounded-[2rem] shadow-xl overflow-hidden border border-slate-100 dark:border-slate-700 relative">
-                    <div class="p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="relative">
-                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-20 h-20 rounded-full object-cover ring-4 ring-slate-50 dark:ring-slate-700 shadow-xl">
-                                <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-white dark:border-slate-800 ${pulseClass}"></div>
-                            </div>
-                            <div class="flex flex-wrap gap-2 max-w-[120px] justify-end">
-                                ${isAdmin ? `<button onclick="openEditModal('${u.email}')" class="action-icon-btn"><i class="fas fa-cog"></i></button>` : ''}
-                                ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="action-icon-btn"><i class="fas fa-comment"></i></button>` : ''}
-                                <button onclick="viewLogs('${u.email}')" class="action-icon-btn"><i class="fas fa-history"></i></button>
-                                <button onclick="requestScreenshot('${u.email}')" class="action-icon-btn"><i class="fas fa-camera"></i></button>
-                            </div>
-                        </div>
-                        <div class="text-right mb-5">
-                            <h3 class="font-bold text-xl dark:text-white truncate">${u.name} ${isMe ? '<span class="text-xs text-primary-500 font-bold">(أنت)</span>' : ''}</h3>
-                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">${u.department || 'إدارة العمليات'}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 mb-4 border border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                            <div class="text-right">
-                                <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">الحالة الحالية</p>
-                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${colors.bg} ${colors.text}">${u.status || 'Offline'}</span>
-                            </div>
-                            <div class="font-mono text-2xl font-bold text-slate-700 dark:text-white main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
-                        </div>
-                        <div class="grid grid-cols-4 gap-2 mb-6">
-                            <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
-                                <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Online</p>
-                                <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
-                            </div>
-                        
-                            <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
-                                <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Break</p>
-                                <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
-                            </div>
-                        
-                            <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
-                                <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Meeting</p>
-                                <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
-                            </div>
-                        
-                            <div class="bg-red-50 dark:bg-red-900/20 p-2 rounded-xl text-center border border-red-100 dark:border-red-900/30">
-                                <p class="text-[11px] font-black text-red-600 mb-1 uppercase">Idle</p>
-                                <p class="text-[13px] font-mono font-black text-red-700 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
-                            </div>
-                        </div>                       
-                        <div class="mb-6 bg-slate-50 dark:bg-slate-900/40 rounded-2xl p-4 border border-dashed border-slate-200 dark:border-slate-700">
-                            <div class="flex justify-between items-center mb-3">
-                                ${(isAdmin || isMe) ? `<button onclick="addTask('${u.email}')" class="text-primary-500 hover:text-primary-600 text-[10px] font-bold">+ إضافة مهمة</button>` : '<span></span>'}
-                                <p class="text-[10px] font-bold text-slate-400 uppercase">قائمة المهام</p>
-                            </div>
-                            <div class="space-y-2 max-h-32 overflow-y-auto text-right">
-                                ${(u.tasks || []).length === 0 ? '<p class="text-[10px] text-slate-400 text-center py-2">لا توجد مهام نشطة</p>' : ''}
-                                ${(u.tasks || []).map((t, idx) => `
-                                    <div class="flex items-center gap-2 group">
-                                        ${isAdmin ? `<button onclick="deleteTask('${u.email}', ${idx})" class="opacity-0 group-hover:opacity-100 text-red-400 text-[10px] transition"><i class="fas fa-trash"></i></button>` : ''}
-                                        <span class="flex-1 text-xs ${t.done ? 'line-through text-slate-400' : 'text-slate-600 dark:text-slate-300'}">${t.text}</span>
-                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" class="w-4 h-4 rounded-md border-slate-300 text-primary-600 focus:ring-primary-500" ${(!isMe && !isAdmin) ? 'disabled' : ''}>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                        ${(isMe || isAdmin) ? `
-                        <div class="grid grid-cols-2 gap-2 mt-4">
-                            <button onclick="setStatus('${u.email}', 'Online')" class="py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">ONLINE</button>
-                            <button onclick="setStatus('${u.email}', 'Break')" class="py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">BREAK</button>
-                            <button onclick="setStatus('${u.email}', 'Meeting')" class="py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">MEETING</button>
-                            <button onclick="setStatus('${u.email}', 'Offline')" class="py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">OFFLINE</button>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>`;
-                grid.innerHTML += card;
-            });
-            if(allUsersData.length === 0) document.getElementById('empty-state').classList.remove('hidden');
+    allUsersData.forEach(u => {
+        // --- منطق الفلترة الجديد ---
+        let effectiveStatus = u.status || 'Offline';
+        // لو المستخدم خامل، نعتبر حالته "Idle" عشان الفلتر، حتى لو هو أونلاين
+        if (u.isIdle) effectiveStatus = 'Idle'; 
+
+        // تطبيق الفلتر
+        if (currentFilter !== 'all') {
+            // لو الفلتر مش "الكل"، لازم الحالة تطابق الفلتر المختار
+            if (effectiveStatus !== currentFilter && u.status !== currentFilter) return;
+            // استثناء خاص لفلتر Idle لأنه يعتمد على property مختلفة
+            if (currentFilter === 'Idle' && !u.isIdle) return;
+        } else {
+            // لو الفلتر "الكل"، نطبق بس شرط إخفاء الاوفلاين القديم
+            const isOffline = (effectiveStatus === 'Offline');
+            if(isOffline && !showOffline) return;
         }
+        // ---------------------------
 
-        // -- إدارة الحالات (Status Logic) --
+        displayedCount++; // تزويد العداد لأننا هنعرض الكارت ده
+
+        const isMe = (currentUser.email === u.email);
+        const colors = getStatusColor(u.status, u.isFocused, u.isIdle);
+        const tb = u.timeBank || {};
+        const safeStart = getMillis(u.lastChange);
+        
+        let pulseClass = "";
+        if(u.status === 'Online') pulseClass = "pulse-green bg-green-500";
+        else if(u.status === 'Break') pulseClass = "pulse-orange bg-orange-500";
+        else if(u.status === 'Meeting') pulseClass = "pulse-blue bg-blue-500";
+        else if(u.isIdle) pulseClass = "pulse-red bg-red-500";
+        else pulseClass = "bg-slate-400";
+
+        const card = `
+        <div class="user-card bg-white dark:bg-slate-800 rounded-[2rem] shadow-xl overflow-hidden border border-slate-100 dark:border-slate-700 relative">
+            <div class="p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="relative">
+                        <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-20 h-20 rounded-full object-cover ring-4 ring-slate-50 dark:ring-slate-700 shadow-xl">
+                        <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-white dark:border-slate-800 ${pulseClass}"></div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 max-w-[120px] justify-end">
+                        ${isAdmin ? `<button onclick="openEditModal('${u.email}')" class="action-icon-btn"><i class="fas fa-cog"></i></button>` : ''}
+                        ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="action-icon-btn"><i class="fas fa-comment"></i></button>` : ''}
+                        <button onclick="viewLogs('${u.email}')" class="action-icon-btn"><i class="fas fa-history"></i></button>
+                        <button onclick="requestScreenshot('${u.email}')" class="action-icon-btn"><i class="fas fa-camera"></i></button>
+                    </div>
+                </div>
+                <div class="text-right mb-5">
+                    <h3 class="font-bold text-xl dark:text-white truncate">${u.name} ${isMe ? '<span class="text-xs text-primary-500 font-bold">(أنت)</span>' : ''}</h3>
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">${u.department || 'إدارة العمليات'}</p>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 mb-4 border border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                    <div class="text-right">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">الحالة الحالية</p>
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${colors.bg} ${colors.text}">${u.status || 'Offline'}</span>
+                    </div>
+                    <div class="font-mono text-2xl font-bold text-slate-700 dark:text-white main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
+                </div>
+                <div class="grid grid-cols-4 gap-2 mb-6">
+                    <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
+                        <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Online</p>
+                        <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
+                        <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Break</p>
+                        <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
+                        <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Meeting</p>
+                        <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
+                    </div>
+                    <div class="bg-red-50 dark:bg-red-900/20 p-2 rounded-xl text-center border border-red-100 dark:border-red-900/30">
+                        <p class="text-[11px] font-black text-red-600 mb-1 uppercase">Idle</p>
+                        <p class="text-[13px] font-mono font-black text-red-700 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
+                    </div>
+                </div>                        
+                <div class="mb-6 bg-slate-50 dark:bg-slate-900/40 rounded-2xl p-4 border border-dashed border-slate-200 dark:border-slate-700">
+                    <div class="flex justify-between items-center mb-3">
+                        ${(isAdmin || isMe) ? `<button onclick="addTask('${u.email}')" class="text-primary-500 hover:text-primary-600 text-[10px] font-bold">+ إضافة مهمة</button>` : '<span></span>'}
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">قائمة المهام</p>
+                    </div>
+                    <div class="space-y-2 max-h-32 overflow-y-auto text-right">
+                        ${(u.tasks || []).length === 0 ? '<p class="text-[10px] text-slate-400 text-center py-2">لا توجد مهام نشطة</p>' : ''}
+                        ${(u.tasks || []).map((t, idx) => `
+                            <div class="flex items-center gap-2 group">
+                                ${isAdmin ? `<button onclick="deleteTask('${u.email}', ${idx})" class="opacity-0 group-hover:opacity-100 text-red-400 text-[10px] transition"><i class="fas fa-trash"></i></button>` : ''}
+                                <span class="flex-1 text-xs ${t.done ? 'line-through text-slate-400' : 'text-slate-600 dark:text-slate-300'}">${t.text}</span>
+                                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" class="w-4 h-4 rounded-md border-slate-300 text-primary-600 focus:ring-primary-500" ${(!isMe && !isAdmin) ? 'disabled' : ''}>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ${(isMe || isAdmin) ? `
+                <div class="grid grid-cols-2 gap-2 mt-4">
+                    <button onclick="setStatus('${u.email}', 'Online')" class="py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">ONLINE</button>
+                    <button onclick="setStatus('${u.email}', 'Break')" class="py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">BREAK</button>
+                    <button onclick="setStatus('${u.email}', 'Meeting')" class="py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">MEETING</button>
+                    <button onclick="setStatus('${u.email}', 'Offline')" class="py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">OFFLINE</button>
+                </div>
+                ` : ''}
+            </div>
+        </div>`;
+        grid.innerHTML += card;
+    });
+
+    if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
+    else document.getElementById('empty-state').classList.add('hidden');
+}
         function getStatusColor(s, isFocus, isIdle) {
             if(s==='Offline') return { border:'border-slate-400', text:'text-slate-500', bg:'bg-slate-200' };
             if(isIdle) return { border:'border-red-500', text:'text-red-600', bg:'bg-red-100' };
@@ -1353,6 +1409,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
