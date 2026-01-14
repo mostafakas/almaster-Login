@@ -337,43 +337,47 @@
             auth.signOut().then(() => location.reload());
         }
 
-        async function initSystem() {
-    // 1. إظهار الواجهات وإخفاء اللودر
+   async function initSystem() {
+    // 1. طلب إذن الإشعارات فوراً عند الدخول (أفضل مكان)
+    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+    }
+
+    // 2. إظهار الواجهات وإخفاء اللودر
     document.getElementById('loader').classList.add('hidden-section');
     document.getElementById('view-login').classList.add('hidden-section');
     document.getElementById('view-system').classList.remove('hidden-section');
     document.getElementById('chat-fab').classList.remove('hidden-section');
 
-    // 2. تحديث بيانات الشريط الجانبي
+    // 3. تحديث بيانات الشريط الجانبي
     document.getElementById('sb-name').innerText = userProfile.name;
     document.getElementById('sb-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
     document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
 
-    // 3. إظهار قائمة المدير إذا كان المستخدم مديراً
+    // 4. إظهار قائمة المدير إذا كان المستخدم مديراً
     if(userProfile.role === 'admin') {
         document.getElementById('admin-menu').classList.remove('hidden-section');
     }
     
-    // --- [إضافة تصفير العدادات تلقائياً] ---
+    // 5. تصفير العدادات اليومية
     await checkAndResetCounters(); 
 
-    // 4. تشغيل الأنظمة الفرعية
+    // 6. تشغيل الأنظمة الفرعية
     listenToAllUsers();
     initChat();
     listenToPrivateMessages(); 
     startIdleTracker();
     setInterval(updateTimers, 1000);
     
-    // 5. مراقبة حركة المستخدم
+    // 7. مراقبة حركة المستخدم
     window.addEventListener('mousemove', resetIdleTimer);
     window.addEventListener('keydown', resetIdleTimer);
 
-    // 6. تشغيل رادار لقطات الشاشة للموظفين فقط
+    // 8. تشغيل رادار لقطات الشاشة للموظفين فقط
     if (userProfile.role !== 'admin') {
         listenForScreenshotRequests();
     }
 }
-
 // دالة فحص اليوم الجديد وتصفير البيانات (ضعها تحت دالة initSystem)
 async function checkAndResetCounters() {
     const today = moment().format('YYYY-MM-DD');
@@ -1077,21 +1081,42 @@ async function requestScreenshot(targetEmail) {
     }
 } 
     // الموظف يستمع لطلبات التصوير
+// الموظف يستمع لطلبات التصوير مع إشعارات ويندوز وصوت
 function listenForScreenshotRequests() {
     db.collection('screenshot_requests').doc(currentUser.email.toLowerCase())
         .onSnapshot(async (doc) => {
             const data = doc.data();
+            
+            // نتحقق أن الطلب جديد وحالته "قيد الانتظار"
             if (data && data.status === 'pending') {
-                // تحديث الحالة فوراً لمنع التكرار
-                await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ status: 'processing' });
                 
-                // تنبيه مرئي للموظف
-                const confirmCapture = confirm("إشعار إداري: مطلوب لقطة شاشة للعمل الآن. اضغط OK لاختيار الشاشة.");
+                // 1. تشغيل التنبيه الصوتي فوراً
+                playNotification();
+
+                // 2. إرسال إشعار ويندوز (Desktop Notification)
+                if (Notification.permission === "granted") {
+                    new Notification("تنبيه من Almaster", {
+                        body: "المدير يطلب لقطة شاشة لسطح المكتب الآن.",
+                        icon: "https://cdn-icons-png.flaticon.com/512/681/681498.png",
+                        tag: "screenshot-alert" // لمنع تكرار الإشعار
+                    });
+                }
+
+                // 3. تحديث الحالة في قاعدة البيانات لمنع التكرار
+                await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
+                    status: 'processing' 
+                });
+                
+                // 4. إظهار نافذة التأكيد للموظف
+                const confirmCapture = confirm("⚠️ إشعار إداري: مطلوب لقطة شاشة للعمل الآن.\n\nاضغط OK لبدء مشاركة الشاشة.");
                 
                 if (confirmCapture) {
                     captureAndSend(data.requestedBy);
                 } else {
-                    await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ status: 'refused' });
+                    // في حال الرفض نحدث الحالة
+                    await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
+                        status: 'refused' 
+                    });
                 }
             }
         });
@@ -1170,6 +1195,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
