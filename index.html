@@ -230,23 +230,47 @@
         </div>
     </div>
 
-    <div id="modal-report" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden text-right">
-            <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center bg-primary-50 dark:bg-primary-900/10">
-                <h3 class="text-lg font-bold dark:text-white">تصدير تقارير الأداء</h3>
-                <button onclick="closeModal('modal-report')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-6">
-                <div class="mb-6">
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-2">اختر الموظف</label>
+<div id="modal-report" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden text-right flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center bg-primary-50 dark:bg-primary-900/10">
+            <h3 class="text-lg font-bold dark:text-white">تقارير الأداء الاحترافية</h3>
+            <button onclick="closeModal('modal-report')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">الموظف</label>
                     <select id="report-user-select" class="form-input font-bold"></select>
                 </div>
-                <div class="grid gap-3">
-                    <button onclick="downloadReport(1)" class="w-full py-4 bg-slate-50 hover:bg-primary-50 text-slate-700 hover:text-primary-600 font-bold rounded-2xl border border-slate-200 transition flex justify-between items-center px-5">
-                        <i class="fas fa-download text-sm opacity-50"></i> <span>تقرير اليوم</span></button>
-                    <button onclick="downloadReport(7)" class="w-full py-4 bg-slate-50 hover:bg-primary-50 text-slate-700 hover:text-primary-600 font-bold rounded-2xl border border-slate-200 transition flex justify-between items-center px-5">
-                        <i class="fas fa-download text-sm opacity-50"></i> <span>تقرير آخر 7 أيام</span></button>
+                <div>
+                    <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">من تاريخ</label>
+                    <input type="date" id="report-date-from" class="form-input">
                 </div>
+                <div>
+                    <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">إلى تاريخ</label>
+                    <input type="date" id="report-date-to" class="form-input">
+                </div>
+            </div>
+            
+            <button onclick="generateProfessionalReport()" class="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] mb-6">
+                <i class="fas fa-search-dollar ml-2"></i> استخراج التقرير وتوليد ملف Excel
+            </button>
+
+            <div id="report-results-area" class="hidden border-t dark:border-slate-700 pt-6">
+                <h4 class="text-sm font-black mb-4 text-primary-600 border-r-4 border-primary-600 pr-2">ملخص الأداء للفترة المحددة:</h4>
+                <div id="daily-summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    </div>
+                <div id="total-day-box" class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-2xl text-center border border-primary-100 dark:border-primary-800">
+                    <p class="text-xs font-bold text-primary-600">إجمالي الوقت المسجل للموظف</p>
+                    <p id="total-duration-text" class="text-2xl font-black text-primary-700 dark:text-primary-400">00:00:00</p>
+                </div>
+            </div>
+            
+            <p id="export-status" class="text-center text-[11px] font-bold text-slate-400 mt-4"></p>
+        </div>
+    </div>
+</div>
                 <p id="export-status" class="text-center text-xs text-slate-400 mt-4"></p>
             </div>
         </div>
@@ -985,83 +1009,123 @@ function listenToPrivateMessages() {
         async function deleteUser(){ if(confirm("هل أنت متأكد من حذف هذا الموظف نهائياً؟")){ await db.collection("users").doc(document.getElementById("edit-email").value).delete(); closeModal("modal-edit"); } }
         function openReportModal(){ document.getElementById("modal-report").classList.remove("hidden"); }
         function updateReportDropdown(){ const e=document.getElementById("report-user-select"),v=e.value; e.innerHTML='<option value="all">-- جميع الموظفين --</option>'; allUsersData.forEach(u=>{e.innerHTML+=`<option value="${u.email}">${u.name}</option>`}); e.value=v; }
-        async function downloadReport(days) {
+        async function generateProfessionalReport() {
+    const userEmail = document.getElementById("report-user-select").value;
+    const dateFrom = document.getElementById("report-date-from").value;
+    const dateTo = document.getElementById("report-date-to").value;
     const statusEl = document.getElementById("export-status");
-    const userSelect = document.getElementById("report-user-select").value;
-    statusEl.innerText = "جاري تجميع البيانات وتحليل الأوقات...";
+    const resultsArea = document.getElementById("report-results-area");
+    const summaryCards = document.getElementById("daily-summary-cards");
+    const totalDurationText = document.getElementById("total-duration-text");
 
-    // 1. تحديد النطاق الزمني
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-    startDate.setHours(0, 0, 0, 0);
+    if (!dateFrom || !dateTo) {
+        alert("يرجى تحديد الفترة الزمنية (من وإلى)");
+        return;
+    }
+
+    statusEl.innerText = "جاري استخراج البيانات وفحص السجلات...";
+    resultsArea.classList.add('hidden');
+
+    const start = new Date(dateFrom);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(dateTo);
+    end.setHours(23, 59, 59, 999);
 
     try {
-        // 2. جلب السجلات من قاعدة البيانات
-        let query = db.collection("logs").where("end_time", ">=", startDate).orderBy("end_time", "desc");
-        if (userSelect !== "all") {
-            query = query.where("user", "==", userSelect);
+        let query = db.collection("logs")
+            .where("end_time", ">=", start)
+            .where("end_time", "<=", end)
+            .orderBy("end_time", "desc");
+
+        if (userEmail !== "all") {
+            query = query.where("user", "==", userEmail);
         }
 
         const snapshot = await query.get();
         if (snapshot.empty) {
-            statusEl.innerText = "لا توجد سجلات لهذه الفترة.";
+            statusEl.innerText = "لا توجد سجلات لهذه الفترة الزمنية.";
             return;
         }
 
-        // 3. هيكل البيانات لتجميع الأوقات
-        // الموظف -> { حالة1: مجموع_الوقت, حالة2: مجموع_الوقت ... }
-        const summary = {};
+        const dataGrouped = {};
 
         snapshot.forEach(doc => {
-            const data = doc.data();
-            const userEmail = data.user;
-            const userName = data.name || userEmail;
-            const status = data.to_status; // الحالة التي انتقل إليها (والتي استغرق فيها الوقت)
-            const duration = data.duration_ms || 0;
+            const d = doc.data();
+            const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
+            const userName = d.name || d.user;
+            const status = d.to_status;
+            const duration = d.duration_ms || 0;
 
-            if (!summary[userEmail]) {
-                summary[userEmail] = { name: userName, Online: 0, Break: 0, Meeting: 0, Idle: 0, total: 0 };
+            if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
+            if (!dataGrouped[dateKey][userName]) {
+                dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
             }
 
-            // إضافة المدة للحالة المحددة
-            if (summary[userEmail].hasOwnProperty(status)) {
-                summary[userEmail][status] += duration;
-                summary[userEmail].total += duration;
+            if (dataGrouped[dateKey][userName].hasOwnProperty(status)) {
+                dataGrouped[dateKey][userName][status] += duration;
+                dataGrouped[dateKey][userName].Total += duration;
             }
         });
 
-        // 4. بناء محتوى ملف CSV
-        let csvContent = "\ufeff"; // إضافة BOM لدعم اللغة العربية في Excel
-        csvContent += "الاسم,وقت العمل (Online),وقت الاستراحة (Break),وقت الاجتماعات (Meeting),وقت الخمول (Idle),إجمالي الوقت المسجل\n";
-
-        for (const email in summary) {
-            const row = summary[email];
-            csvContent += `${row.name},` +
-                `${formatDuration(row.Online)},` +
-                `${formatDuration(row.Break)},` +
-                `${formatDuration(row.Meeting)},` +
-                `${formatDuration(row.Idle)},` +
-                `${formatDuration(row.total)}\n`;
-        }
-
-        // 5. تحميل الملف
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        const fileName = `Performance_Report_${moment().format('YYYY-MM-DD')}.csv`;
+        resultsArea.classList.remove('hidden');
+        summaryCards.innerHTML = "";
         
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", fileName);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        let grandTotals = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+        
+        Object.values(dataGrouped).forEach(day => {
+            Object.values(day).forEach(userStats => {
+                grandTotals.Online += userStats.Online;
+                grandTotals.Break += userStats.Break;
+                grandTotals.Meeting += userStats.Meeting;
+                grandTotals.Idle += userStats.Idle;
+                grandTotals.Total += userStats.Total;
+            });
+        });
 
-        statusEl.innerText = "تم تصدير التقرير التحليلي بنجاح!";
+        const statusLabels = { Online: 'العمل', Break: 'استراحة', Meeting: 'اجتماع', Idle: 'خمول' };
+        const colors = { Online: 'text-green-600', Break: 'text-orange-500', Meeting: 'text-blue-500', Idle: 'text-red-500' };
+
+        Object.keys(statusLabels).forEach(key => {
+            summaryCards.innerHTML += `
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 text-center">
+                    <p class="text-[10px] font-black text-slate-400 mb-1 uppercase">${statusLabels[key]}</p>
+                    <p class="text-sm font-black ${colors[key]}">${formatDuration(grandTotals[key])}</p>
+                </div>`;
+        });
+
+        totalDurationText.innerText = formatDuration(grandTotals.Total);
+
+        // تحميل ملف الـ Excel
+        downloadDetailedExcel(dataGrouped, dateFrom, dateTo);
+        statusEl.innerText = "تم استخراج التقرير وتحميل ملف Excel بنجاح.";
+
     } catch (error) {
-        console.error("Export Error:", error);
-        statusEl.innerText = "حدث خطأ أثناء التصدير.";
+        console.error("Report Error:", error);
+        statusEl.innerText = "حدث خطأ: يرجى فحص الـ Console.";
     }
 }
 
+function downloadDetailedExcel(dataGrouped, from, to) {
+    let csvContent = "\ufeff"; 
+    csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
+
+    const sortedDates = Object.keys(dataGrouped).sort().reverse();
+
+    sortedDates.forEach(date => {
+        Object.keys(dataGrouped[date]).forEach(user => {
+            const d = dataGrouped[date][user];
+            csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
+        });
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 // دالة مساعدة لتحويل الملي ثانية إلى تنسيق HH:MM:SS بدقة
 function formatDuration(ms) {
     if (!ms || ms < 0) return "00:00:00";
@@ -1279,6 +1343,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
