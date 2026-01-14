@@ -411,14 +411,36 @@ async function checkAndResetCounters() {
 }
 
         function listenToAllUsers() {
-            db.collection('users').onSnapshot(snapshot => {
-                allUsersData = [];
-                snapshot.forEach(doc => allUsersData.push(doc.data()));
-                renderGrid();
-                updateReportDropdown();
-                if(userProfile.role === 'admin') renderAdminAlerts();
-            });
+    db.collection('users').onSnapshot(snapshot => {
+        let hasStatusChange = false;
+
+        snapshot.docChanges().forEach(change => {
+            if (change.type === "modified") {
+                const oldData = allUsersData.find(u => u.email === change.doc.data().email);
+                const newData = change.doc.data();
+                
+                // التأكد أن التغيير في "الحالة" وليس مجرد عداد الوقت
+                if (oldData && oldData.status !== newData.status) {
+                    hasStatusChange = true;
+                }
+            }
+        });
+
+        // تشغيل الصوت للمدير إذا تغيرت حالة أي موظف
+        if (hasStatusChange && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) {
+            playNotification();
         }
+
+        // تحديث البيانات في المصفوفة
+        allUsersData = [];
+        snapshot.forEach(doc => allUsersData.push(doc.data()));
+        
+        // إعادة بناء الواجهة
+        renderGrid();
+        updateReportDropdown();
+        if(userProfile.role === 'admin') renderAdminAlerts();
+    });
+}
 
         function renderGrid() {
             const grid = document.getElementById('grid-users');
@@ -532,24 +554,29 @@ async function checkAndResetCounters() {
         }
 
         async function setStatus(targetEmail, newStatus, isAuto = false) {
-            const userRef = db.collection('users').doc(targetEmail);
-            const snapshot = await userRef.get();
-            const uData = snapshot.data();
-            if(!uData || (uData.status === newStatus && !isAuto)) return;
-            const now = Date.now();
-            const lastTime = getMillis(uData.lastChange);
-            const duration = now - lastTime;
-            let timeBank = uData.timeBank || {};
-            const oldStatus = uData.status || 'Offline';
-            if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
-            timeBank[oldStatus] += duration;
-            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-            await db.collection('logs').add({ 
-                user: targetEmail, name: uData.name, from_status: oldStatus, to_status: newStatus, 
-                start_time: uData.lastChange || timestamp, end_time: timestamp, duration_ms: duration, auto: isAuto 
-            });
-            await userRef.update({ status: newStatus, lastChange: timestamp, timeBank: timeBank, isIdle: false });
-        }
+    const userRef = db.collection('users').doc(targetEmail);
+    const snapshot = await userRef.get();
+    const uData = snapshot.data();
+    if(!uData || (uData.status === newStatus && !isAuto)) return;
+
+    // تشغيل الصوت فوراً عند الموظف الذي يغير حالته
+    playNotification(); 
+
+    const now = Date.now();
+    const lastTime = getMillis(uData.lastChange);
+    const duration = now - lastTime;
+    let timeBank = uData.timeBank || {};
+    const oldStatus = uData.status || 'Offline';
+    if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
+    timeBank[oldStatus] += duration;
+    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+    await db.collection('logs').add({ 
+        user: targetEmail, name: uData.name, from_status: oldStatus, to_status: newStatus, 
+        start_time: uData.lastChange || timestamp, end_time: timestamp, duration_ms: duration, auto: isAuto 
+    });
+    await userRef.update({ status: newStatus, lastChange: timestamp, timeBank: timeBank, isIdle: false });
+}
 
         // -- العدادات --
         function updateTimers() {
@@ -1198,6 +1225,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
