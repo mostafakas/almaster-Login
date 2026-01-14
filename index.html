@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster - Professional Dashboard v5</title>
+    <title>Almaster - Dashboard</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -339,6 +339,7 @@
         let userProfile = null;
         let lastActionTime = Date.now();
         let allUsersData = [];
+        let dismissedAlerts = []; // قائمة لتخزين الموظفين الذين قام المدير بإغلاق تنبيههم
         let currentFilter = 'all'; // متغير لتخزين الفلتر الحالي
         let attachedFileBase64 = null;
         let attachedFileName = "";
@@ -416,7 +417,7 @@
     setInterval(updateTimers, 1000);
     
     // 7. مراقبة حركة المستخدم
-    window.addEventListener('mousemove', resetIdleTimer);
+    //window.addEventListener('mousemove', resetIdleTimer);//
     window.addEventListener('keydown', resetIdleTimer);
 
     // 8. تشغيل رادار لقطات الشاشة للموظفين فقط
@@ -1236,26 +1237,63 @@ function formatDuration(ms) {
         }
 
         function renderAdminAlerts() {
-            const container = document.getElementById('admin-alerts-container');
-            allUsersData.forEach(u => {
-                if(u.isIdle) {
-                    let activeAlert = document.getElementById(`alert-active-${u.email}`);
-                    if(!activeAlert) {
-                        const div = document.createElement('div');
-                        div.id = `alert-active-${u.email}`;
-                        div.className = 'bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border-l-4 border-red-500 flex items-center gap-4 animate-bounce pulse-red pointer-events-auto w-72';
-                        div.innerHTML = `<div class="bg-red-100 p-2 rounded-full text-red-600"><i class="fas fa-exclamation-triangle"></i></div>
-                            <div><p class="text-[10px] font-bold text-red-500 uppercase">تنبيه خمول</p>
-                            <p class="text-xs font-bold dark:text-white">${u.name} متوقف</p></div>`;
-                        container.appendChild(div);
-                    }
-                } else {
-                    let activeAlert = document.getElementById(`alert-active-${u.email}`);
-                    if(activeAlert) activeAlert.remove();
-                }
-            });
-        }
+    const container = document.getElementById('admin-alerts-container');
+    
+    allUsersData.forEach(u => {
+        // التحقق من الخمول
+        if(u.isIdle) {
+            // لو المدير قفل الإشعار ده قبل كده، منرسموش تاني
+            if (dismissedAlerts.includes(u.email)) return;
 
+            let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
+            
+            if(!activeAlert) {
+                const div = document.createElement('div');
+                // معرف فريد خالي من الرموز الخاصة
+                const safeId = u.email.replace(/[@.]/g, "_");
+                div.id = `alert-active-${safeId}`;
+                
+                // التصميم مع زر الإغلاق الجديد
+                div.className = 'bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border-l-4 border-red-500 flex items-center justify-between gap-4 animate-bounce pulse-red pointer-events-auto w-80 relative';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="bg-red-100 p-2 rounded-full text-red-600">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-red-500 uppercase">تنبيه خمول (كيبورد)</p>
+                            <p class="text-xs font-bold dark:text-white">${u.name} متوقف</p>
+                        </div>
+                    </div>
+                    <button onclick="closeAdminAlert('${u.email}')" class="text-slate-400 hover:text-red-500 transition px-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+                
+                // تشغيل صوت تنبيه عند ظهور الإشعار لأول مرة
+                playNotification(); 
+            }
+        } else {
+            // الموظف رجع اشتغل؟ نمسح الإشعار ونشيله من قائمة التجاهل عشان لو نام تاني يظهر
+            let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
+            if(activeAlert) activeAlert.remove();
+            
+            // إزالة الموظف من قائمة المغلقين عشان لو بقى خامل تاني يظهر تنبيه جديد
+            dismissedAlerts = dismissedAlerts.filter(e => e !== u.email);
+        }
+    });
+}
+
+// دالة إغلاق الإشعار يدوياً
+function closeAdminAlert(email) {
+    // إضافة الإيميل لقائمة التجاهل
+    dismissedAlerts.push(email);
+    // مسح العنصر من الشاشة فوراً
+    const safeId = email.replace(/[@.]/g, "_");
+    const el = document.getElementById(`alert-active-${safeId}`);
+    if(el) el.remove();
+}
         async function addTask(email) {
             const txt = prompt("أدخل تفاصيل المهمة الجديدة:");
             if(txt && txt.trim()) {
@@ -1409,6 +1447,7 @@ window.addEventListener('keydown', (e) => {
 </div>
 </body>
 </html>
+
 
 
 
