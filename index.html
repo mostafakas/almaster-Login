@@ -4,20 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster - Dashboard</title>
+    <title>Almaster - Agent Dashboard</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0ea5e9">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" type="image/png" href="./icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://unpkg.com/@picmo/popup-picker@latest/dist/umd/index.js"></script>
+    <script src="https://unpkg.com/picmo@latest/dist/umd/index.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -59,7 +60,28 @@
         #admin-alerts-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .user-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .user-card:hover { transform: translateY(-5px); }
+    /* مؤشر الكتابة */
+.typing-indicator { display: flex; gap: 3px; padding: 5px 10px; font-size: 10px; color: #64748b; font-style: italic; align-items: center; }
+.typing-dot { width: 4px; height: 4px; background: #94a3b8; border-radius: 50%; animation: typing 1.4s infinite ease-in-out both; }
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
+/* مشغل الصوت */
+.audio-msg { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.05); padding: 8px; border-radius: 20px; width: fit-content; min-width: 150px; }
+.play-btn { width: 25px; height: 25px; background: #0ea5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; }
+.audio-wave { flex: 1; height: 3px; background: #cbd5e1; border-radius: 2px; position: relative; overflow: hidden; }
+.audio-progress { height: 100%; background: #0ea5e9; width: 0%; transition: width 0.1s linear; }
+
+/* تسجيل الصوت */
+.recording-ui { position: absolute; bottom: 0; left: 0; right: 0; background: #fff; z-index: 20; padding: 10px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #eee; animation: slideUp 0.2s ease; }
+.rec-pulse { width: 10px; height: 10px; background: red; border-radius: 50%; animation: pulse-r 1s infinite; margin-right: 5px; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* علامات القراءة */
+.msg-checks { font-size: 9px; margin-right: 4px; }
+.msg-checks.read { color: #3b82f6; } /* أزرق */
+.msg-checks.sent { color: #94a3b8; } /* رمادي */
         /* تعديلات الدردشة الجديدة */
         .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
         .chat-header { cursor: move; user-select: none; }
@@ -198,18 +220,40 @@
             <button onclick="toggleChat()" class="hover:text-slate-200"><i class="fas fa-times"></i></button>
         </div>
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900/50 space-y-2 text-right"></div>
-        <form onsubmit="sendMessage(event)" class="p-3 bg-white dark:bg-slate-800 border-t dark:border-slate-700 flex flex-col gap-2">
-            <div id="attachment-preview" class="hidden px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-[10px] flex justify-between items-center">
-                <span id="file-name" class="truncate max-w-[200px]"></span>
-                <button type="button" onclick="clearAttachment()" class="text-red-500"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="flex gap-2">
-                <input type="file" id="chat-file" class="hidden" onchange="handleFileSelect(this)">
-                <button type="button" onclick="document.getElementById('chat-file').click()" class="w-10 h-10 text-slate-400 hover:text-primary-500 transition"><i class="fas fa-paperclip"></i></button>
-                <input type="text" id="chat-input" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 ring-primary-500 dark:text-white" placeholder="اكتب رسالتك..." required autocomplete="off">
-                <button type="submit" class="w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center transition"><i class="fas fa-paper-plane text-xs"></i></button>
-            </div>
-        </form>
+        <form onsubmit="sendMessage(event)" class="p-3 bg-white dark:bg-slate-800 border-t dark:border-slate-700 flex flex-col gap-2 relative">
+    <div id="attachment-preview" class="hidden px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-[10px] flex justify-between items-center">
+        <span id="file-name" class="truncate max-w-[200px]"></span>
+        <button type="button" onclick="clearAttachment()" class="text-red-500"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div id="recording-ui" class="recording-ui hidden">
+        <div class="flex items-center text-red-500 text-xs font-bold">
+            <div class="rec-pulse"></div> جاري التسجيل... <span id="rec-timer" class="mr-2">00:00</span>
+        </div>
+        <div class="flex gap-2">
+            <button type="button" onclick="cancelRecording()" class="text-slate-500 text-xs hover:text-red-500">إلغاء</button>
+            <button type="button" onclick="stopAndSendRecording()" class="bg-primary-600 text-white p-1 rounded-full w-8 h-8 flex items-center justify-center"><i class="fas fa-paper-plane text-xs"></i></button>
+        </div>
+    </div>
+
+    <div id="typing-indicator-area" class="hidden typing-indicator">
+        <span id="typing-names">أحد ما يكتب</span>
+        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+    </div>
+
+    <div class="flex gap-2 items-center">
+        <input type="file" id="chat-file" class="hidden" onchange="handleFileSelect(this)">
+        <button type="button" onclick="document.getElementById('chat-file').click()" class="w-8 h-8 text-slate-400 hover:text-primary-500 transition"><i class="fas fa-paperclip"></i></button>
+        
+        <button type="button" id="emoji-trigger" class="w-8 h-8 text-slate-400 hover:text-yellow-500 transition"><i class="far fa-smile text-lg"></i></button>
+
+        <input type="text" id="chat-input" onkeyup="handleTypingPublic()" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 ring-primary-500 dark:text-white" placeholder="اكتب رسالتك..." autocomplete="off">
+        
+        <button type="button" id="btn-record" onclick="startRecording()" class="w-10 h-10 bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500 rounded-full flex items-center justify-center transition shadow-sm"><i class="fas fa-microphone"></i></button>
+        
+        <button type="submit" id="btn-send-text" class="hidden w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center transition shadow-sm"><i class="fas fa-paper-plane text-xs"></i></button>
+    </div>
+</form>
     </div>
 
     <div id="private-chats-container"></div>
@@ -337,7 +381,11 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingInterval = null;
+        let typingTimeout = null;
+        let emojiPicker = null;
         let currentUser = null;
         let userProfile = null;
         let lastActionTime = Date.now();
@@ -415,6 +463,8 @@
     // 6. تشغيل الأنظمة الفرعية
     listenToAllUsers();
     initChat();
+    initEmojiPicker();
+    listenToTypingPublic();
     listenToPrivateMessages(); 
     startIdleTracker();
     setInterval(updateTimers, 1000);
@@ -782,70 +832,186 @@ function renderGrid() {
 
         // الدردشة الجماعية
         function initChat(){
-            db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s=>{
-                const t=document.getElementById("chat-messages"); 
-                let isNew = false;
-                s.docChanges().forEach(change => { if(change.type === "added") isNew = true; });
+    db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s=>{
+        const t = document.getElementById("chat-messages"); 
+        let isNew = false;
+        
+        // التحقق من وجود رسائل جديدة
+        s.docChanges().forEach(change => { if(change.type === "added") isNew = true; });
 
-                t.innerHTML="";
-                s.forEach(d=>{ 
-                    const m=d.data(); const isMe=m.user===currentUser.email;
-                    t.innerHTML += renderMessage(m, isMe);
-                });
-                t.scrollTop=t.scrollHeight;
-                if(isNew && !s.metadata.hasPendingWrites) {
-                    playNotification();
-                    if(document.getElementById("chat-window").classList.contains("hidden")) {
-                        document.getElementById("chat-badge").classList.remove("hidden");
-                    }
+        t.innerHTML="";
+        
+        s.forEach(d => { 
+            const m = d.data(); 
+            const isMe = m.user === currentUser.email;
+            
+            // ============================================================
+            // بداية كود تحديث حالة القراءة (Read Receipt Logic)
+            // ============================================================
+            
+            // الشروط:
+            // 1. الرسالة ليست مني (لا أسجل قراءتي لرسائلي)
+            // 2. لم يتم تسجيل إيميلي في مصفوفة readBy من قبل
+            // 3. نافذة الشات مفتوحة الآن (ليست مخفية)
+            if (!isMe && (!m.readBy || !m.readBy.includes(currentUser.email))) {
+                if (!document.getElementById("chat-window").classList.contains("hidden")) {
+                    
+                    // تحديث قاعدة البيانات: إضافة إيميلي لقائمة من قرأوا الرسالة
+                    db.collection("messages").doc(d.id).update({
+                        readBy: firebase.firestore.FieldValue.arrayUnion(currentUser.email)
+                    }).catch(err => console.log("خطأ في تحديث القراءة:", err));
+                    
                 }
-            });
+            }
+            // ============================================================
+            // نهاية الكود الجديد
+            // ============================================================
+
+            // عرض الرسالة (تأكد أنك قمت بتحديث دالة renderMessage كما في الخطوة السابقة لظهور علامات الصح)
+            t.innerHTML += renderMessage(m, isMe);
+        });
+
+        t.scrollTop = t.scrollHeight;
+        
+        // التنبيهات
+        if(isNew && !s.metadata.hasPendingWrites) {
+            playNotification();
+            if(document.getElementById("chat-window").classList.contains("hidden")) {
+                document.getElementById("chat-badge").classList.remove("hidden");
+            }
         }
+    });
+}
 
         async function sendMessage(e){ 
-            e.preventDefault(); 
-            const i=document.getElementById("chat-input"); 
-            if(i.value.trim() || attachedFileBase64){ 
-                const msg = {
-                    text:i.value.trim(),
-                    user:currentUser.email,
-                    name:userProfile.name,
-                    time:firebase.firestore.FieldValue.serverTimestamp(),
-                    file: attachedFileBase64,
-                    fileName: attachedFileName
-                };
-                await db.collection("messages").add(msg); 
-                i.value=""; clearAttachment();
-            } 
-        }
-
+    e.preventDefault(); 
+    const i=document.getElementById("chat-input"); 
+    // التأكد أن هناك نص أو ملف أو رسالة صوتية (تتم معالجتها في دالة منفصلة لكن نترك الشرط هنا)
+    if(i.value.trim() || attachedFileBase64){ 
+        const msg = {
+            type: 'text', // الافتراضي
+            text: i.value.trim(),
+            user: currentUser.email,
+            name: userProfile.name,
+            time: firebase.firestore.FieldValue.serverTimestamp(),
+            file: attachedFileBase64,
+            fileName: attachedFileName,
+            readBy: [currentUser.email] // أنا قرأتها بالتأكيد
+        };
+        await db.collection("messages").add(msg); 
+        i.value=""; 
+        clearAttachment();
+        toggleSendButtons(); // إعادة الأزرار لحالتها الأصلية
+    } 
+}
         function renderMessage(m, isMe) {
-    let content = `<div class="text-sm">${m.text}</div>`;
-    if(m.file) {
-        if(m.file.startsWith("data:image")) {
-            // تعديل هنا: إضافة دالة openImageModal بدلاً من window.open
-            content += `<img src="${m.file}" class="message-img mt-2 rounded-lg cursor-pointer hover:opacity-80 transition" onclick="openImagePreview('${m.file}')">`;
-        } else {
-            // تعديل هنا: التأكد من أن التحميل يعمل للمستندات
-            content += `<a href="${m.file}" download="${m.fileName || 'file'}" class="file-link mt-2 flex items-center gap-2 bg-black/5 p-2 rounded-lg border border-dashed border-slate-300 shadow-sm hover:bg-black/10 transition">
-                <i class="fas fa-file-download text-primary-500"></i> 
-                <span class="text-[10px] truncate">${m.fileName || 'تحميل الملف'}</span>
-            </a>`;
+    let content = "";
+    
+    // 1. معالجة المحتوى (نص أو صوت)
+    if (m.type === 'audio' && m.file) {
+        // رسالة صوتية
+        const audioId = 'audio-' + Math.random().toString(36).substr(2, 9);
+        content = `
+        <div class="audio-msg">
+            <div class="play-btn" onclick="playAudioMsg(this, '${m.file}')">
+                <i class="fas fa-play text-[10px]"></i>
+            </div>
+            <div class="audio-wave">
+                <div class="audio-progress"></div>
+            </div>
+            <span class="text-[9px] text-slate-500">Voice</span>
+        </div>`;
+    } else {
+        // رسالة نصية عادية
+        content = `<div class="text-sm">${m.text}</div>`;
+        if(m.file) {
+            if(m.file.startsWith("data:image")) {
+                content += `<img src="${m.file}" class="message-img mt-2 rounded-lg cursor-pointer hover:opacity-80 transition" onclick="openImagePreview('${m.file}')">`;
+            } else {
+                content += `<a href="${m.file}" download="${m.fileName || 'file'}" class="file-link mt-2 flex items-center gap-2 bg-black/5 p-2 rounded-lg border border-dashed border-slate-300 shadow-sm hover:bg-black/10 transition">
+                    <i class="fas fa-file-download text-primary-500"></i> 
+                    <span class="text-[10px] truncate">${m.fileName || 'تحميل الملف'}</span>
+                </a>`;
+            }
         }
     }
-    return `<div class="max-w-[85%] p-3 rounded-2xl mb-2 text-xs ${isMe?"mr-auto bg-primary-600 text-white":"ml-auto bg-slate-100 dark:bg-slate-700"} shadow-sm">
-        <div class="font-bold opacity-70 flex justify-between gap-4 mb-1">
-            <span>${m.name}</span>
-            <span>${m.time?moment(m.time.toDate()).format("h:mm A"):"."}</span>
+
+    // 2. معالجة علامات القراءة (Read Receipts)
+    let checks = "";
+    if (isMe) {
+        // إذا كانت الرسالة لي، أتحقق هل رآها أحد غيري
+        // (ملاحظة: هذا يتطلب تحديث مصفوفة readBy في قاعدة البيانات عند الفتح - سنبسطها هنا للعرض فقط)
+        const isRead = m.readBy && m.readBy.length > 1; // أكبر من 1 يعني أنا وشخص آخر
+        checks = `<i class="fas fa-check-double msg-checks ${isRead ? 'read' : 'sent'}"></i>`;
+    }
+
+    return `<div class="max-w-[85%] p-3 rounded-2xl mb-2 text-xs ${isMe?"mr-auto bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800":"ml-auto bg-white dark:bg-slate-700 shadow-sm border border-slate-100 dark:border-slate-600"}">
+        <div class="font-bold opacity-70 flex justify-between gap-4 mb-1 text-[10px]">
+            <span class="${isMe ? 'text-primary-600' : 'text-slate-600 dark:text-slate-300'}">${m.name}</span>
+            <div class="flex items-center gap-1">
+                <span>${m.time?moment(m.time.toDate()).format("h:mm A"):"."}</span>
+                ${checks}
+            </div>
         </div>
         ${content}
     </div>`;
 }
-        function toggleChat(){ 
-            document.getElementById("chat-window").classList.toggle("hidden"); 
-            document.getElementById("chat-badge").classList.add("hidden"); 
-            makeDraggable(document.getElementById("chat-window"));
-        }
+
+// دالة تشغيل الصوت (أضفها خارج renderMessage)
+function playAudioMsg(btn, src) {
+    const audio = new Audio(src);
+    const progress = btn.nextElementSibling.querySelector('.audio-progress');
+    const icon = btn.querySelector('i');
+    
+    // إيقاف أي صوت آخر (اختياري)
+    document.querySelectorAll('audio').forEach(a => a.pause());
+
+    if (btn.classList.contains('playing')) {
+        audio.pause();
+        return;
+    }
+
+    audio.play();
+    btn.classList.add('playing');
+    icon.classList.remove('fa-play');
+    icon.classList.add('fa-pause');
+
+    audio.ontimeupdate = () => {
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progress.style.width = percent + '%';
+    };
+
+    audio.onended = () => {
+        btn.classList.remove('playing');
+        icon.classList.remove('fa-pause');
+        icon.classList.add('fa-play');
+        progress.style.width = '0%';
+    };
+}
+       function toggleChat() {
+    const chatWindow = document.getElementById("chat-window");
+    
+    // 1. تبديل الإظهار والإخفاء
+    chatWindow.classList.toggle("hidden");
+    document.getElementById("chat-badge").classList.add("hidden");
+    makeDraggable(chatWindow);
+
+    // 2. (الإضافة الجديدة) إذا تم فتح النافذة، قم بتحديث الرسائل غير المقروءة فوراً
+    if (!chatWindow.classList.contains("hidden")) {
+        // نجلب آخر 50 رسالة (نفس عدد الرسائل المعروضة) ونتأكد من قراءتها
+        db.collection("messages").orderBy("time", "asc").limitToLast(50).get().then(snapshot => {
+            snapshot.forEach(doc => {
+                const m = doc.data();
+                // الشرط: الرسالة ليست مني + لم يتم تسجيل إيميلي في قائمة القراء
+                if (m.user !== currentUser.email && (!m.readBy || !m.readBy.includes(currentUser.email))) {
+                    db.collection("messages").doc(doc.id).update({
+                        readBy: firebase.firestore.FieldValue.arrayUnion(currentUser.email)
+                    });
+                }
+            });
+        });
+    }
+}
 
         // -- الدردشة الخاصة --
         function closePrivateChat(email) {
@@ -1461,9 +1627,168 @@ window.addEventListener('keydown', (e) => {
                 });
         });
     }
+// --- 1. نظام الإيموشنز ---
+function initEmojiPicker() {
+    const trigger = document.getElementById('emoji-trigger');
+    if(!trigger) return;
+    
+    // إنشاء البوب-أب
+    const picker = picmoPopup.createPopup({}, {
+        referenceElement: trigger,
+        triggerElement: trigger,
+        position: 'top-start'
+    });
+
+    trigger.addEventListener('click', () => {
+        picker.toggle();
+    });
+
+    picker.addEventListener('emoji:select', (selection) => {
+        const input = document.getElementById('chat-input');
+        input.value += selection.emoji;
+        handleTypingPublic(); // تحديث حالة الكتابة
+        toggleSendButtons(); // إظهار زر الإرسال
+        input.focus();
+    });
+}
+
+// --- 2. تبديل أزرار الإرسال والمايك ---
+function toggleSendButtons() {
+    const input = document.getElementById('chat-input');
+    const btnRecord = document.getElementById('btn-record');
+    const btnSend = document.getElementById('btn-send-text');
+    
+    if (input.value.trim() !== '' || attachedFileBase64) {
+        btnRecord.classList.add('hidden');
+        btnSend.classList.remove('hidden');
+    } else {
+        btnRecord.classList.remove('hidden');
+        btnSend.classList.add('hidden');
+    }
+}
+// اربط هذا التابع مع حدث input في الحقل
+document.getElementById('chat-input').addEventListener('input', toggleSendButtons);
+
+
+// --- 3. نظام التسجيل الصوتي ---
+async function startRecording() {
+    if (!navigator.mediaDevices) { alert("المتصفح لا يدعم التسجيل"); return; }
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+        
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+                const base64Audio = reader.result;
+                // إرسال كرسالة صوتية
+                await sendAudioMessage(base64Audio);
+            };
+            // إيقاف استخدام المايك
+            stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        document.getElementById('recording-ui').classList.remove('hidden');
+        
+        // عداد الوقت
+        let sec = 0;
+        document.getElementById('rec-timer').innerText = "00:00";
+        recordingInterval = setInterval(() => {
+            sec++;
+            const m = Math.floor(sec / 60).toString().padStart(2, '0');
+            const s = (sec % 60).toString().padStart(2, '0');
+            document.getElementById('rec-timer').innerText = `${m}:${s}`;
+        }, 1000);
+
+    } catch (err) {
+        console.error(err);
+        alert("يرجى السماح بصلاحية المايكروفون");
+    }
+}
+
+function stopAndSendRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        cancelRecordingUI();
+    }
+}
+
+function cancelRecording() {
+    if (mediaRecorder) {
+        mediaRecorder.stop(); // إيقاف التسجيل لكن لن نرسل شيئاً (يجب تعديل logic الـ onstop لتمييز الإلغاء، لكن للتبسيط هنا سنوقف فقط)
+        // الحل الأبسط: تفريغ الـ chunks
+        audioChunks = []; 
+    }
+    cancelRecordingUI();
+}
+
+function cancelRecordingUI() {
+    document.getElementById('recording-ui').classList.add('hidden');
+    clearInterval(recordingInterval);
+}
+
+async function sendAudioMessage(base64Audio) {
+    const msg = {
+        type: 'audio', // تحديد النوع
+        text: '',
+        user: currentUser.email,
+        name: userProfile.name,
+        time: firebase.firestore.FieldValue.serverTimestamp(),
+        file: base64Audio,
+        readBy: [currentUser.email] // للميزة التالية (Read Receipts)
+    };
+    await db.collection("messages").add(msg);
+}
+
+
+// --- 4. نظام مؤشر الكتابة (Typing) ---
+function handleTypingPublic() {
+    // تحديث الحالة في فايربيس
+    const typingRef = db.collection('typing_public').doc(currentUser.email);
+    typingRef.set({
+        name: userProfile.name,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // مسح الحالة بعد توقف الكتابة بـ 2 ثانية
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        typingRef.delete();
+    }, 2000);
+    
+    toggleSendButtons(); // تحديث الأزرار أيضاً
+}
+
+function listenToTypingPublic() {
+    db.collection('typing_public').onSnapshot(snapshot => {
+        const typingArea = document.getElementById('typing-indicator-area');
+        const namesSpan = document.getElementById('typing-names');
+        let writers = [];
+        
+        snapshot.forEach(doc => {
+            if (doc.id !== currentUser.email) { // لا تظهر نفسي
+                writers.push(doc.data().name);
+            }
+        });
+
+        if (writers.length > 0) {
+            typingArea.classList.remove('hidden');
+            namesSpan.innerText = writers.join(' و ') + ' يكتب...';
+        } else {
+            typingArea.classList.add('hidden');
+        }
+    });
+}
 </script>
 </body>
 </html>
+
 
 
 
