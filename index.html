@@ -185,12 +185,17 @@
 
     <div id="admin-alerts-container"></div>
 
-    <div id="chat-fab" class="hidden-section fixed bottom-6 left-6 z-50">
-        <button onclick="toggleChat()" class="bg-primary-600 hover:bg-primary-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 relative pulse-green">
-            <i class="fas fa-users text-2xl"></i>
-            <span id="chat-badge" class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold hidden border-2 border-white">!</span>
-        </button>
-    </div>
+   <div id="fab-container" class="fixed bottom-6 left-6 z-50 flex flex-col gap-3 items-center">
+    <button onclick="startVideoMeeting()" class="bg-red-500 hover:bg-red-600 text-white w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 tooltip-btn group relative">
+        <i class="fas fa-video"></i>
+        <span class="absolute left-14 bg-black/70 text-white text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">اجتماع فيديو</span>
+    </button>
+
+    <button onclick="toggleChat()" class="bg-primary-600 hover:bg-primary-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 relative pulse-green">
+        <i class="fas fa-users text-2xl"></i>
+        <span id="chat-badge" class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold hidden border-2 border-white">!</span>
+    </button>
+</div>
 
     <div id="chat-window" class="fixed bottom-24 left-6 w-80 md:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl z-50 hidden border border-slate-200 dark:border-slate-700 flex flex-col h-[500px]">
         <div class="p-4 bg-primary-600 text-white rounded-t-2xl flex justify-between items-center shadow-md chat-header">
@@ -388,7 +393,7 @@
         }
 
    async function initSystem() {
-    // 1. طلب إذن الإشعارات فوراً عند الدخول (أفضل مكان)
+    // 1. طلب إذن الإشعارات
     if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
         Notification.requestPermission();
     }
@@ -397,19 +402,20 @@
     document.getElementById('loader').classList.add('hidden-section');
     document.getElementById('view-login').classList.add('hidden-section');
     document.getElementById('view-system').classList.remove('hidden-section');
-    document.getElementById('chat-fab').classList.remove('hidden-section');
+    document.getElementById('chat-fab').classList.add('hidden-section'); // لاحظ هنا قمنا بإخفاء الزر القديم لأننا وضعنا كونتينر جديد
+    document.getElementById('fab-container').classList.remove('hidden-section'); // إظهار الأزرار الجديدة
 
     // 3. تحديث بيانات الشريط الجانبي
     document.getElementById('sb-name').innerText = userProfile.name;
     document.getElementById('sb-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
     document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
 
-    // 4. إظهار قائمة المدير إذا كان المستخدم مديراً
+    // 4. إظهار قائمة المدير
     if(userProfile.role === 'admin') {
         document.getElementById('admin-menu').classList.remove('hidden-section');
     }
     
-    // 5. تصفير العدادات اليومية
+    // 5. تصفير العدادات
     await checkAndResetCounters(); 
 
     // 6. تشغيل الأنظمة الفرعية
@@ -419,14 +425,16 @@
     startIdleTracker();
     setInterval(updateTimers, 1000);
     
-    // 7. مراقبة حركة المستخدم
-    //window.addEventListener('mousemove', resetIdleTimer);//
+    // 7. مراقبة الحركة
     window.addEventListener('keydown', resetIdleTimer);
 
-    // 8. تشغيل رادار لقطات الشاشة للموظفين فقط
+    // 8. تشغيل رادار لقطات الشاشة
     if (userProfile.role !== 'admin') {
         listenForScreenshotRequests();
     }
+
+    // 9. تشغيل مستمع الاجتماعات (هذا هو السطر الجديد المهم)
+    listenForMeetingInvites();
 }
 // دالة فحص اليوم الجديد وتصفير البيانات (ضعها تحت دالة initSystem)
 async function checkAndResetCounters() {
@@ -1461,6 +1469,92 @@ window.addEventListener('keydown', (e) => {
                 });
         });
     }
+// 1. دالة بدء الاجتماع (للمدير أو الموظف)
+// --- نظام اجتماعات الفيديو (Jitsi Meet) ---
+
+// 1. دالة بدء الاجتماع (للمدير أو الموظف)
+async function startVideoMeeting() {
+    // إنشاء اسم غرفة فريد ومعقد لضمان الخصوصية
+    const roomName = "Almaster_Meeting_" + Math.random().toString(36).substring(7);
+    
+    // إذا كان المستخدم مديراً، نسأله إذا كان يريد استدعاء الجميع
+    if (userProfile.role === 'admin') {
+        const summonAll = confirm("هل تريد إرسال إشعار 'استدعاء' لجميع الموظفين للانضمام فوراً؟");
+        if (summonAll) {
+            try {
+                // تسجيل حدث الاجتماع في فايربيس ليسمع به الجميع
+                await db.collection('system_events').doc('active_meeting').set({
+                    roomId: roomName,
+                    startedBy: userProfile.name,
+                    startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    active: true
+                });
+                alert("تم إرسال الدعوة للجميع!");
+            } catch (e) {
+                console.error("Error starting meeting:", e);
+            }
+        }
+    }
+
+    // فتح الاجتماع في تبويب جديد
+    openJitsiRoom(roomName);
+}
+
+// 2. دالة فتح رابط الاجتماع
+function openJitsiRoom(roomName) {
+    // استخدام سيرفر Jitsi العام المجاني
+    const domain = "https://meet.jit.si/";
+    const options = `config.prejoinPageEnabled=false`; // تخطي صفحة الانتظار إن أمكن
+    const meetingUrl = `${domain}${roomName}#${options}`;
+    
+    window.open(meetingUrl, '_blank');
+}
+
+// 3. الاستماع للدعوات (تعمل عند الجميع)
+function listenForMeetingInvites() {
+    // متغير لتخزين آخر اجتماع تم التعامل معه لمنع تكرار النوافذ
+    let lastProcessedMeetingTime = 0;
+
+    db.collection('system_events').doc('active_meeting')
+        .onSnapshot(doc => {
+            const data = doc.data();
+            if (!data || !data.active || !data.startedAt) return;
+
+            // تحويل وقت البدء إلى مللي ثانية
+            const meetingTime = data.startedAt.toMillis ? data.startedAt.toMillis() : Date.now();
+            const now = Date.now();
+
+            // الشروط: الاجتماع جديد (بدأ في آخر 5 دقائق) + لم ننضم إليه بعد + لست أنا من بدأه
+            const isNewMeeting = (now - meetingTime) < 5 * 60 * 1000; // 5 دقائق صلاحية الدعوة
+            const notProcessed = meetingTime > lastProcessedMeetingTime;
+            const notMe = data.startedBy !== userProfile.name;
+
+            if (isNewMeeting && notProcessed && notMe) {
+                lastProcessedMeetingTime = meetingTime; // تحديث حتى لا يظهر التنبيه مرة أخرى لنفس الاجتماع
+                
+                // تشغيل الصوت
+                playNotification();
+
+                // إظهار تنبيه الويندوز
+                if (Notification.permission === "granted") {
+                    new Notification("دعوة لاجتماع طارئ", {
+                        body: `قام ${data.startedBy} ببدء اجتماع فيديو ويطلب انضمامك.`,
+                        icon: "https://cdn-icons-png.flaticon.com/512/3845/3845808.png"
+                    });
+                }
+
+                // إظهار نافذة تأكيد داخل الموقع
+                // نستخدم setTimeout لضمان عدم تعارض الـ confirm مع عمليات أخرى
+                setTimeout(() => {
+                    const join = confirm(`📞 دعوة اجتماع فيديو!\n\nقام المدير (${data.startedBy}) بطلب حضورك في اجتماع فيديو الآن.\n\nهل تريد الانضمام؟`);
+                    if (join) {
+                        openJitsiRoom(data.roomId);
+                    }
+                }, 500);
+            }
+        });
+}
 </script>
 </body>
 </html>
+
