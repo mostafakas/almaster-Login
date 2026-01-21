@@ -54,8 +54,25 @@
         .pulse-red { animation: pulse-r 2s infinite; }
         @keyframes pulse-r { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        .action-icon-btn { @apply w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-primary-500 hover:text-white transition-all duration-200 text-xs; }
-        
+.action-icon-btn { 
+    width: 2rem; 
+    height: 2rem; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border-radius: 9999px; 
+    background-color: #f1f5f9; 
+    color: #64748b; 
+    transition: all 0.2s; 
+    font-size: 0.75rem;
+}
+.dark-mode .action-icon-btn {
+    background-color: #334155;
+}
+.action-icon-btn:hover { 
+    background-color: #0ea5e9; 
+    color: white; 
+}        
         #admin-alerts-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .user-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .user-card:hover { transform: translateY(-5px); }
@@ -67,8 +84,10 @@
         .file-link { display: flex; align-items: center; gap: 5px; background: rgba(0,0,0,0.05); padding: 5px 10px; border-radius: 5px; margin-top: 5px; font-size: 11px; }
 
         /* --- شاشة الترحيب الجديدة --- */
+/* --- التعديل هنا: خلفية أغمق جداً --- */
 #view-intro {
-    background: radial-gradient(circle at 50% 50%, #0f172a 0%, #000000 100%);
+    /* تم تغيير الألوان لدرجات قريبة جداً من الأسود */
+    background: radial-gradient(circle at 50% 50%, #020617 0%, #000000 100%);
     background-size: 150% 150%;
     animation: gradientMove 15s ease infinite;
     position: fixed;
@@ -116,23 +135,19 @@
         <div class="absolute inset-0 bg-blue-900/10 backdrop-blur-3xl pointer-events-none"></div>
         
         <div id="intro-container" class="intro-content flex flex-col items-center">
-            <img src="./MASTER LOGO WH PNG.png" id="intro-logo" class="w-64 mb-6 drop-shadow-2xl" alt="Almaster Logo">
+            <img src="./MASTER LOGO WH PNG.png" id="intro-logo" class="w-96 md:w-[30rem] mb-10 drop-shadow-2xl" alt="Almaster Logo">
             
-            <h1 class="text-4xl md:text-6xl font-black text-white tracking-tighter mb-2" style="font-family: 'Outfit', sans-serif;">
-                ALMASTER
-            </h1>
-            <p class="text-slate-400 text-sm md:text-lg font-light tracking-[0.2em] uppercase mb-10 text-center px-4">
+            <p class="text-slate-400 text-sm md:text-lg font-light tracking-[0.2em] uppercase mb-16 text-center px-4">
                 Regular performance, sustainable results. Start now.
             </p>
 
-            <button onclick="enterLoginScreen()" class="group relative px-8 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-full transition-all duration-300 hover:scale-105 hover:border-primary-500 overflow-hidden cursor-pointer z-50">
+            <button onclick="enterLoginScreen()" class="group relative px-8 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-full transition-all duration-300 hover:scale-105 hover:border-primary-500 overflow-hidden cursor-pointer z-50 shadow-lg">
                 <span class="relative z-10 font-bold tracking-widest text-xs flex items-center gap-2">
                     LOG IN TO SYSTEM <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                 </span>
                 <div class="absolute inset-0 bg-gradient-to-r from-primary-600/0 via-primary-600/20 to-primary-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
             </button>
         </div>
-    </div>
     
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
     <audio id="status-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
@@ -459,6 +474,7 @@
 
     // 2. إظهار الواجهات وإخفاء اللودر
     document.getElementById('loader').classList.add('hidden-section');
+    document.getElementById('view-intro').classList.add('hidden-section'); // <--- أضف هذا السطر هنا للأمان
     document.getElementById('view-login').classList.add('hidden-section');
     document.getElementById('view-system').classList.remove('hidden-section');
     document.getElementById('chat-fab').classList.remove('hidden-section');
@@ -1525,31 +1541,48 @@ window.addEventListener('keydown', (e) => {
                 });
         });
     }
-        function enterLoginScreen() {
-    // 1. إخفاء الزر والنص فوراً
-    document.getElementById('intro-container').classList.add('hide-content');
-    
-    // 2. تطبيق تأثير الزووم على اللوجو فقط ليملأ الشاشة
-    const logo = document.getElementById('intro-logo');
-    // نخرجه برا الكونتينر عشان يكبر بحرية
-    logo.style.position = 'fixed';
-    logo.style.top = '50%';
-    logo.style.left = '50%';
-    logo.style.transform = 'translate(-50%, -50%)';
-    logo.style.zIndex = '500';
-    
-    // تأخير بسيط جداً عشان المتصفح يلاحظ التغيير
-    setTimeout(() => {
-        logo.classList.add('zoom-transition');
-    }, 50);
+       // ================= دالة تشغيل حركة الزووم =================
+    function enterLoginScreen() {
+        console.log("Button Clicked, Starting Zoom sequence..."); // للتجربة في الكونسول
 
-    // 3. بعد ثانية (لما الزووم يخلص) افتح اللوجن
-    setTimeout(() => {
-        document.getElementById('view-intro').classList.add('hidden-section');
-        document.getElementById('view-login').classList.remove('hidden-section');
-    }, 1000);
-}
+        // 1. إخفاء الزر والنص فوراً
+        const container = document.getElementById('intro-container');
+        container.style.transition = 'opacity 0.5s, transform 0.5s';
+        container.style.opacity = '0';
+        container.style.transform = 'translateY(50px)';
+        
+        // 2. تجهيز اللوجو للزووم
+        const logo = document.getElementById('intro-logo');
+        
+        // نثبت اللوجو في نصف الشاشة بالظبط عشان يكبر منها
+        logo.style.position = 'fixed';
+        logo.style.top = '50%';
+        logo.style.left = '50%';
+        logo.style.transform = 'translate(-50%, -50%)';
+        logo.style.zIndex = '500';
+        // نتأكد إن الـ transition شغال عليه
+        logo.style.transition = 'all 1.5s cubic-bezier(0.7, 0, 0.3, 1)';
+        
+        // 3. تنفيذ الزووم بعد لحظة قصيرة جداً
+        setTimeout(() => {
+             // تكبير هائل + اختفاء تدريجي + بلور
+            logo.style.transform = 'translate(-50%, -50%) scale(60)';
+            logo.style.opacity = '0';
+            logo.style.filter = 'blur(30px)';
+        }, 50);
+
+        // 4. بعد انتهاء الحركة، نخفي شاشة الترحيب ونظهر اللوجن
+        setTimeout(() => {
+            document.getElementById('view-intro').classList.add('hidden-section');
+            document.getElementById('view-login').classList.remove('hidden-section');
+            
+            // إعادة اللوجو لحالته الأصلية عشان لو عملنا logout ورجعنا تاني
+            logo.style = ""; 
+            container.style = "";
+        }, 1500); // ننتظر ثانية ونصف مدة الحركة
+    }
 </script>
 </body>
 </html>
+
 
