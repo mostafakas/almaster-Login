@@ -377,11 +377,16 @@
             const errEl = document.getElementById('login-error');
 
             try {
-                // 1. قبل تسجيل الدخول، نفحص هل المستخدم نشط حالياً؟
+                // 1. تسجيل الدخول أولاً (للحصول على صلاحية قراءة البيانات)
+                // هذا هو التعديل الذي سيحل المشكلة
+                await auth.signInWithEmailAndPassword(email, pass);
+
+                // 2. الآن بعد الدخول، نفحص هل المستخدم كان نشطاً من قبل؟
                 const userDoc = await db.collection('users').doc(email).get();
                 
                 if (userDoc.exists) {
                     const userData = userDoc.data();
+                    
                     // إذا كان المستخدم أونلاين بالفعل، نرسل إنذار للمدير
                     if (userData.status === 'Online') {
                         // تسجيل محاولة اختراق/تعدد دخول في السجلات
@@ -397,7 +402,27 @@
                         });
                     }
                 }
+                
+                // 3. إنشاء بصمة الجلسة الجديدة (Session ID)
+                const newSessionId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('my_session_id', newSessionId);
 
+                // 4. حفظ البصمة في قاعدة البيانات
+                await db.collection('users').doc(email).update({
+                    sessionId: newSessionId
+                });
+
+                // لا داعي لـ reload لأن auth.onAuthStateChanged ستقوم بالمهمة
+
+            } catch (err) {
+                console.error(err);
+                errEl.innerText = "خطأ في الدخول: تأكد من صحة البريد وكلمة المرور";
+                errEl.classList.remove('hidden');
+                
+                // في حالة الخطأ، نضمن خروج المستخدم (للتنظيف)
+                auth.signOut();
+            }
+        }
                 // 2. إتمام عملية الدخول
                 await auth.signInWithEmailAndPassword(email, pass);
                 
@@ -1520,6 +1545,7 @@ window.addEventListener('keydown', (e) => {
 </script>
 </body>
 </html>
+
 
 
 
