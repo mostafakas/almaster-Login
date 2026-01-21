@@ -54,25 +54,26 @@
         .pulse-red { animation: pulse-r 2s infinite; }
         @keyframes pulse-r { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-.action-icon-btn { 
-    width: 2rem; 
-    height: 2rem; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    border-radius: 9999px; 
-    background-color: #f1f5f9; 
-    color: #64748b; 
-    transition: all 0.2s; 
-    font-size: 0.75rem;
-}
-.dark-mode .action-icon-btn {
-    background-color: #334155;
-}
-.action-icon-btn:hover { 
-    background-color: #0ea5e9; 
-    color: white; 
-}        
+        .action-icon-btn { 
+            width: 2rem; 
+            height: 2rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 9999px; 
+            background-color: #f1f5f9; 
+            color: #64748b; 
+            transition: all 0.2s; 
+            font-size: 0.75rem;
+        }
+        .dark-mode .action-icon-btn {
+            background-color: #334155;
+        }
+        .action-icon-btn:hover { 
+            background-color: #0ea5e9; 
+            color: white; 
+        }        
+        
         #admin-alerts-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .user-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .user-card:hover { transform: translateY(-5px); }
@@ -84,58 +85,52 @@
         .file-link { display: flex; align-items: center; gap: 5px; background: rgba(0,0,0,0.05); padding: 5px 10px; border-radius: 5px; margin-top: 5px; font-size: 11px; }
 
         /* --- شاشة الترحيب الجديدة --- */
-/* --- التعديل هنا: خلفية أغمق جداً --- */
-#view-intro {
-    /* تم تغيير الألوان لدرجات قريبة جداً من الأسود */
-    background: radial-gradient(circle at 50% 50%, #020617 0%, #000000 100%);
-    background-size: 150% 150%;
-    animation: gradientMove 15s ease infinite;
-    position: fixed;
-    inset: 0;
-    z-index: 300;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
+        #view-intro {
+            background: radial-gradient(circle at 50% 50%, #020617 0%, #000000 100%);
+            background-size: 150% 150%;
+            animation: gradientMove 15s ease infinite;
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
 
-/* حركة الخلفية الهادئة */
-@keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
-/* تأثير الزووم الخارق عند الدخول */
-.zoom-transition {
-    transform: scale(50); /* تكبير اللوجو 50 ضعف */
-    opacity: 0;
-    filter: blur(20px);
-    transition: all 1.2s cubic-bezier(0.7, 0, 0.3, 1);
-}
+        .zoom-transition {
+            transform: scale(50);
+            opacity: 0;
+            filter: blur(20px);
+            transition: all 1.2s cubic-bezier(0.7, 0, 0.3, 1);
+        }
 
-/* تنسيق اللوجو والنصوص */
-.intro-content {
-    text-align: center;
-    transition: opacity 0.5s;
-    z-index: 10;
-}
+        .intro-content {
+            text-align: center;
+            transition: opacity 0.5s;
+            z-index: 10;
+        }
 
-.hide-content {
-    opacity: 0;
-    transform: translateY(20px);
-}
+        .hide-content {
+            opacity: 0;
+            transform: translateY(20px);
+        }
     </style>
 </head>
 
 <body class="min-h-screen text-slate-800 dark:text-slate-100 selection:bg-primary-500 selection:text-white">
 
-<div id="view-intro" class="hidden-section">
+    <div id="view-intro" class="hidden-section">
         <div class="absolute inset-0 bg-blue-900/10 backdrop-blur-3xl pointer-events-none"></div>
-        
         <div id="intro-container" class="intro-content flex flex-col items-center">
-            <img src="./MASTER LOGO WH PNG.png" id="intro-logo" class="w-96 md:w-[30rem] mb-10 drop-shadow-2xl" alt="Almaster Logo">
+            <img src="./MASTER_LOGO_WH.png" id="intro-logo" class="w-96 md:w-[30rem] mb-10 drop-shadow-2xl" alt="Almaster Logo" onerror="this.style.display='none'; alert('تنبيه: صورة اللوجو غير موجودة، تأكد من تسمية الملف MASTER_LOGO_WH.png')">
             
             <p class="text-slate-400 text-sm md:text-lg font-light tracking-[0.2em] uppercase mb-16 text-center px-4">
                 Regular performance, sustainable results. Start now.
@@ -148,6 +143,7 @@
                 <div class="absolute inset-0 bg-gradient-to-r from-primary-600/0 via-primary-600/20 to-primary-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
             </button>
         </div>
+    </div>
     
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
     <audio id="status-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
@@ -234,25 +230,25 @@
 
             <div class="flex-1 overflow-auto p-6 md:p-8">
                 <div class="mb-6 flex flex-wrap gap-2 justify-end px-2" dir="ltr">
-    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
-        <span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline
-    </button>
-    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-red-50 border border-slate-200 shadow-sm transition-all">
-        <span class="w-2 h-2 rounded-full bg-red-500 inline-block ml-1"></span> Idle
-    </button>
-    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-blue-50 border border-slate-200 shadow-sm transition-all">
-        <span class="w-2 h-2 rounded-full bg-blue-500 inline-block ml-1"></span> Meeting
-    </button>
-    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-orange-50 border border-slate-200 shadow-sm transition-all">
-        <span class="w-2 h-2 rounded-full bg-orange-500 inline-block ml-1"></span> Break
-    </button>
-    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-green-50 border border-slate-200 shadow-sm transition-all">
-        <span class="w-2 h-2 rounded-full bg-green-500 inline-block ml-1"></span> Online
-    </button>
-    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all">
-        الكل
-    </button>
-</div>
+                    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline
+                    </button>
+                    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-red-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-red-500 inline-block ml-1"></span> Idle
+                    </button>
+                    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-blue-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 inline-block ml-1"></span> Meeting
+                    </button>
+                    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-orange-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-orange-500 inline-block ml-1"></span> Break
+                    </button>
+                    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-green-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-green-500 inline-block ml-1"></span> Online
+                    </button>
+                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all">
+                        الكل
+                    </button>
+                </div>
                 <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
                 <div id="empty-state" class="hidden text-center text-slate-400 mt-20">
                     <i class="fas fa-user-slash text-4xl mb-3"></i>
@@ -332,48 +328,44 @@
         </div>
     </div>
 
-<div id="modal-report" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden text-right flex flex-col max-h-[90vh]">
-        <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center bg-primary-50 dark:bg-primary-900/10">
-            <h3 class="text-lg font-bold dark:text-white">تقارير الأداء الاحترافية</h3>
-            <button onclick="closeModal('modal-report')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
-        </div>
-        
-        <div class="p-6 overflow-y-auto">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div>
-                    <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">الموظف</label>
-                    <select id="report-user-select" class="form-input font-bold"></select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">من تاريخ</label>
-                    <input type="date" id="report-date-from" class="form-input">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">إلى تاريخ</label>
-                    <input type="date" id="report-date-to" class="form-input">
-                </div>
+    <div id="modal-report" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden text-right flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center bg-primary-50 dark:bg-primary-900/10">
+                <h3 class="text-lg font-bold dark:text-white">تقارير الأداء الاحترافية</h3>
+                <button onclick="closeModal('modal-report')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
             </div>
             
-            <button onclick="generateProfessionalReport()" class="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] mb-6">
-                <i class="fas fa-search-dollar ml-2"></i> استخراج التقرير وتوليد ملف Excel
-            </button>
-
-            <div id="report-results-area" class="hidden border-t dark:border-slate-700 pt-6">
-                <h4 class="text-sm font-black mb-4 text-primary-600 border-r-4 border-primary-600 pr-2">ملخص الأداء للفترة المحددة:</h4>
-                <div id="daily-summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div class="p-6 overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">الموظف</label>
+                        <select id="report-user-select" class="form-input font-bold"></select>
                     </div>
-                <div id="total-day-box" class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-2xl text-center border border-primary-100 dark:border-primary-800">
-                    <p class="text-xs font-bold text-primary-600">إجمالي الوقت المسجل للموظف</p>
-                    <p id="total-duration-text" class="text-2xl font-black text-primary-700 dark:text-primary-400">00:00:00</p>
+                    <div>
+                        <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">من تاريخ</label>
+                        <input type="date" id="report-date-from" class="form-input">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">إلى تاريخ</label>
+                        <input type="date" id="report-date-to" class="form-input">
+                    </div>
                 </div>
-            </div>
-            
-            <p id="export-status" class="text-center text-[11px] font-bold text-slate-400 mt-4"></p>
-        </div>
-    </div>
-</div>
-                <p id="export-status" class="text-center text-xs text-slate-400 mt-4"></p>
+                
+                <button onclick="generateProfessionalReport()" class="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] mb-6">
+                    <i class="fas fa-search-dollar ml-2"></i> استخراج التقرير وتوليد ملف Excel
+                </button>
+
+                <div id="report-results-area" class="hidden border-t dark:border-slate-700 pt-6">
+                    <h4 class="text-sm font-black mb-4 text-primary-600 border-r-4 border-primary-600 pr-2">ملخص الأداء للفترة المحددة:</h4>
+                    <div id="daily-summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    </div>
+                    <div id="total-day-box" class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-2xl text-center border border-primary-100 dark:border-primary-800">
+                        <p class="text-xs font-bold text-primary-600">إجمالي الوقت المسجل للموظف</p>
+                        <p id="total-duration-text" class="text-2xl font-black text-primary-700 dark:text-primary-400">00:00:00</p>
+                    </div>
+                </div>
+                
+                <p id="export-status" class="text-center text-[11px] font-bold text-slate-400 mt-4"></p>
             </div>
         </div>
     </div>
@@ -403,6 +395,16 @@
         </div>
     </div>
 
+    <div id="image-preview-modal" class="hidden fixed inset-0 z-[1000] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
+        <button onclick="closeImagePreview()" class="absolute top-5 right-5 text-white text-3xl hover:text-red-500 transition"><i class="fas fa-times"></i></button>
+        <img id="preview-img-target" src="" class="max-w-full max-h-full rounded-lg shadow-2xl border-4 border-white/10">
+        <div class="absolute bottom-5 flex gap-4">
+            <a id="download-link-target" href="" download="image.jpg" class="bg-primary-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-primary-700 transition">
+                <i class="fas fa-download ml-2"></i> تحميل الصورة
+            </a>
+        </div>
+    </div>
+
     <script>
         // -- الأساسيات --
         const firebaseConfig = {
@@ -413,7 +415,10 @@
             messagingSenderId: "884142036232",
             appId: "1:884142036232:web:eeb6677d988565653a08bd"
         };
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+        } catch (e) { console.error("Firebase init error:", e); }
+        
         const db = firebase.firestore();
         const auth = firebase.auth();
 
@@ -421,34 +426,36 @@
         let userProfile = null;
         let lastActionTime = Date.now();
         let allUsersData = [];
-        let dismissedAlerts = []; // قائمة لتخزين الموظفين الذين قام المدير بإغلاق تنبيههم
-        let currentFilter = 'all'; // متغير لتخزين الفلتر الحالي
+        let dismissedAlerts = []; 
+        let currentFilter = 'all'; 
         let attachedFileBase64 = null;
         let attachedFileName = "";
-        let openPrivateChats = {}; // تتبع نوافذ الشات المفتوحة
+        let openPrivateChats = {}; 
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
 
         // -- إدارة الجلسة --
         auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        // ... (الكود القديم بتاعك زي ما هو للمستخدم المسجل) ...
-        currentUser = user;
-        const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
-        if(doc.exists) {
-            userProfile = doc.data();
-            await setStatus(user.email, 'Online', true);
-            initSystem();
-        }
-    } else {
-        // --- التعديل هنا ---
-        document.getElementById('loader').classList.add('hidden-section'); // نخفي اللودر
-        document.getElementById('view-system').classList.add('hidden-section'); // نخفي السيستم
-        document.getElementById('view-login').classList.add('hidden-section'); // نخفي اللوجن العادي مؤقتاً
-        
-        // نظهر شاشة الـ Intro الجديدة
-        document.getElementById('view-intro').classList.remove('hidden-section');
-    }
-});
+            if (user) {
+                currentUser = user;
+                const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
+                if(doc.exists) {
+                    userProfile = doc.data();
+                    await setStatus(user.email, 'Online', true);
+                    initSystem();
+                } else {
+                    console.error("User doc not found!");
+                }
+            } else {
+                // إخفاء كل شيء وإظهار شاشة الترحيب
+                document.getElementById('loader').classList.add('hidden-section'); 
+                document.getElementById('view-system').classList.add('hidden-section'); 
+                document.getElementById('view-login').classList.add('hidden-section'); 
+                
+                // نظهر شاشة الـ Intro الجديدة
+                document.getElementById('view-intro').classList.remove('hidden-section');
+            }
+        });
+
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('login-email').value.toLowerCase().trim();
@@ -466,248 +473,221 @@
             auth.signOut().then(() => location.reload());
         }
 
-   async function initSystem() {
-    // 1. طلب إذن الإشعارات فوراً عند الدخول (أفضل مكان)
-    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-        Notification.requestPermission();
-    }
-
-    // 2. إظهار الواجهات وإخفاء اللودر
-    document.getElementById('loader').classList.add('hidden-section');
-    document.getElementById('view-intro').classList.add('hidden-section'); // <--- أضف هذا السطر هنا للأمان
-    document.getElementById('view-login').classList.add('hidden-section');
-    document.getElementById('view-system').classList.remove('hidden-section');
-    document.getElementById('chat-fab').classList.remove('hidden-section');
-
-    // 3. تحديث بيانات الشريط الجانبي
-    document.getElementById('sb-name').innerText = userProfile.name;
-    document.getElementById('sb-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
-    document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
-
-    // 4. إظهار قائمة المدير إذا كان المستخدم مديراً
-    if(userProfile.role === 'admin') {
-        document.getElementById('admin-menu').classList.remove('hidden-section');
-    }
-    
-    // 5. تصفير العدادات اليومية
-    await checkAndResetCounters(); 
-
-    // 6. تشغيل الأنظمة الفرعية
-    listenToAllUsers();
-    initChat();
-    listenToPrivateMessages(); 
-    startIdleTracker();
-    setInterval(updateTimers, 1000);
-    
-    // 7. مراقبة حركة المستخدم
-    //window.addEventListener('mousemove', resetIdleTimer);//
-    window.addEventListener('keydown', resetIdleTimer);
-
-    // 8. تشغيل رادار لقطات الشاشة للموظفين فقط
-    if (userProfile.role !== 'admin') {
-        listenForScreenshotRequests();
-    }
-}
-// دالة فحص اليوم الجديد وتصفير البيانات (ضعها تحت دالة initSystem)
-async function checkAndResetCounters() {
-    const today = moment().format('YYYY-MM-DD');
-    try {
-        const settingsDoc = await db.collection('system_settings').doc('daily_reset').get();
-        const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
-
-        if (lastResetDate !== today) {
-            console.log("يوم جديد: جاري تصفير عدادات الوقت والمهام...");
-            
-            const usersSnapshot = await db.collection('users').get();
-            const batch = db.batch();
-            
-            usersSnapshot.forEach((doc) => {
-                const userRef = db.collection('users').doc(doc.id);
-                batch.update(userRef, {
-                    'timeBank': {},     // تصفير بنك الوقت (Online, Break, Meeting)
-                    'idleBank': 0,      // تصفير وقت الخمول
-                    'tasks': [],        // مسح مهام اليوم السابق (اختياري، يمكنك حذف هذا السطر لو أردت بقاء المهام)
-                    'lastChange': firebase.firestore.FieldValue.serverTimestamp()
-                });
-            });
-
-            // تحديث تاريخ التصفير
-            batch.set(db.collection('system_settings').doc('daily_reset'), { lastDate: today }, { merge: true });
-            await batch.commit();
-        }
-    } catch (e) {
-        console.error("Reset Error:", e);
-    }
-}
-
-                    function listenToAllUsers() {
-                db.collection('users').onSnapshot(snapshot => {
-                    let hasStatusChange = false;
-            
-                    snapshot.docChanges().forEach(change => {
-                        if (change.type === "modified") {
-                            const newData = change.doc.data();
-                            // نبحث عن البيانات القديمة في المصفوفة قبل تحديثها
-                            const oldData = allUsersData.find(u => u.email === newData.email);
-                            
-                            // إذا تغيرت الحالة فعلياً وليس مجرد عداد الوقت
-                            if (oldData && oldData.status !== newData.status) {
-                                hasStatusChange = true;
-                            }
-                        }
-                    });
-            
-                    // تشغيل صوت الحالات المخصص للمدير
-                    if (hasStatusChange && userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) {
-                        playStatusNotification(); 
-                    }
-            
-                    // تحديث المصفوفة بالبيانات الجديدة
-                    allUsersData = [];
-                    snapshot.forEach(doc => allUsersData.push(doc.data()));
-                    
-                    renderGrid();
-                    updateReportDropdown();
-                    if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
-                });
+        async function initSystem() {
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                Notification.requestPermission();
             }
 
-        // --- دالة تغيير الفلتر ---
-function setFilter(status) {
-    currentFilter = status;
-    
-    // تغيير ألوان الأزرار لتوضيح النشط
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-100 border border-slate-200 shadow-sm transition-all";
-    });
-    
-    const activeBtn = document.getElementById(`filter-${status}`);
-    if(activeBtn) {
-        // تمييز الزر النشط بلون مختلف
-        activeBtn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all transform scale-105";
-    }
-    
-    renderGrid(); // إعادة رسم الشبكة
-}
+            // إظهار السيستم وإخفاء الباقي
+            document.getElementById('loader').classList.add('hidden-section');
+            document.getElementById('view-intro').classList.add('hidden-section'); 
+            document.getElementById('view-login').classList.add('hidden-section');
+            document.getElementById('view-system').classList.remove('hidden-section');
+            document.getElementById('chat-fab').classList.remove('hidden-section');
 
-// --- دالة رسم الشبكة المعدلة ---
-function renderGrid() {
-    const grid = document.getElementById('grid-users');
-    grid.innerHTML = '';
-    const showOffline = document.getElementById('show-offline-toggle').checked;
-    const isAdmin = userProfile.role === 'admin';
-    
-    let displayedCount = 0; // عداد للمستخدمين المعروضين
+            document.getElementById('sb-name').innerText = userProfile.name;
+            document.getElementById('sb-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
+            document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
 
-    allUsersData.forEach(u => {
-        // --- منطق الفلترة الجديد ---
-        let effectiveStatus = u.status || 'Offline';
-        // لو المستخدم خامل، نعتبر حالته "Idle" عشان الفلتر، حتى لو هو أونلاين
-        if (u.isIdle) effectiveStatus = 'Idle'; 
+            if(userProfile.role === 'admin') {
+                document.getElementById('admin-menu').classList.remove('hidden-section');
+            }
+            
+            await checkAndResetCounters(); 
 
-        // تطبيق الفلتر
-        if (currentFilter !== 'all') {
-            // لو الفلتر مش "الكل"، لازم الحالة تطابق الفلتر المختار
-            if (effectiveStatus !== currentFilter && u.status !== currentFilter) return;
-            // استثناء خاص لفلتر Idle لأنه يعتمد على property مختلفة
-            if (currentFilter === 'Idle' && !u.isIdle) return;
-        } else {
-            // لو الفلتر "الكل"، نطبق بس شرط إخفاء الاوفلاين القديم
-            const isOffline = (effectiveStatus === 'Offline');
-            if(isOffline && !showOffline) return;
+            listenToAllUsers();
+            initChat();
+            listenToPrivateMessages(); 
+            startIdleTracker();
+            setInterval(updateTimers, 1000);
+            
+            window.addEventListener('keydown', resetIdleTimer);
+
+            if (userProfile.role !== 'admin') {
+                listenForScreenshotRequests();
+            }
         }
-        // ---------------------------
 
-        displayedCount++; // تزويد العداد لأننا هنعرض الكارت ده
+        async function checkAndResetCounters() {
+            const today = moment().format('YYYY-MM-DD');
+            try {
+                const settingsDoc = await db.collection('system_settings').doc('daily_reset').get();
+                const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
 
-        const isMe = (currentUser.email === u.email);
-        const colors = getStatusColor(u.status, u.isFocused, u.isIdle);
-        const tb = u.timeBank || {};
-        const safeStart = getMillis(u.lastChange);
+                if (lastResetDate !== today) {
+                    console.log("يوم جديد: جاري تصفير عدادات الوقت والمهام...");
+                    
+                    const usersSnapshot = await db.collection('users').get();
+                    const batch = db.batch();
+                    
+                    usersSnapshot.forEach((doc) => {
+                        const userRef = db.collection('users').doc(doc.id);
+                        batch.update(userRef, {
+                            'timeBank': {}, 
+                            'idleBank': 0, 
+                            'tasks': [], 
+                            'lastChange': firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    });
+
+                    batch.set(db.collection('system_settings').doc('daily_reset'), { lastDate: today }, { merge: true });
+                    await batch.commit();
+                }
+            } catch (e) {
+                console.error("Reset Error:", e);
+            }
+        }
+
+        function listenToAllUsers() {
+            db.collection('users').onSnapshot(snapshot => {
+                let hasStatusChange = false;
         
-        let pulseClass = "";
-        if(u.status === 'Online') pulseClass = "pulse-green bg-green-500";
-        else if(u.status === 'Break') pulseClass = "pulse-orange bg-orange-500";
-        else if(u.status === 'Meeting') pulseClass = "pulse-blue bg-blue-500";
-        else if(u.isIdle) pulseClass = "pulse-red bg-red-500";
-        else pulseClass = "bg-slate-400";
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "modified") {
+                        const newData = change.doc.data();
+                        const oldData = allUsersData.find(u => u.email === newData.email);
+                        if (oldData && oldData.status !== newData.status) {
+                            hasStatusChange = true;
+                        }
+                    }
+                });
+        
+                if (hasStatusChange && userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) {
+                    playStatusNotification(); 
+                }
+        
+                allUsersData = [];
+                snapshot.forEach(doc => allUsersData.push(doc.data()));
+                
+                renderGrid();
+                updateReportDropdown();
+                if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
+            });
+        }
 
-        const card = `
-        <div class="user-card bg-white dark:bg-slate-800 rounded-[2rem] shadow-xl overflow-hidden border border-slate-100 dark:border-slate-700 relative">
-            <div class="p-6">
-                <div class="flex items-start justify-between mb-4">
-                    <div class="relative">
-                        <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-20 h-20 rounded-full object-cover ring-4 ring-slate-50 dark:ring-slate-700 shadow-xl">
-                        <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-white dark:border-slate-800 ${pulseClass}"></div>
-                    </div>
-                    <div class="flex flex-wrap gap-2 max-w-[120px] justify-end">
-                        ${isAdmin ? `<button onclick="openEditModal('${u.email}')" class="action-icon-btn"><i class="fas fa-cog"></i></button>` : ''}
-                        ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="action-icon-btn"><i class="fas fa-comment"></i></button>` : ''}
-                        <button onclick="viewLogs('${u.email}')" class="action-icon-btn"><i class="fas fa-history"></i></button>
-                        <button onclick="requestScreenshot('${u.email}')" class="action-icon-btn"><i class="fas fa-camera"></i></button>
-                    </div>
-                </div>
-                <div class="text-right mb-5">
-                    <h3 class="font-bold text-xl dark:text-white truncate">${u.name} ${isMe ? '<span class="text-xs text-primary-500 font-bold">(أنت)</span>' : ''}</h3>
-                    <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">${u.department || 'إدارة العمليات'}</p>
-                </div>
-                <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 mb-4 border border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                    <div class="text-right">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">الحالة الحالية</p>
-                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${colors.bg} ${colors.text}">${u.status || 'Offline'}</span>
-                    </div>
-                    <div class="font-mono text-2xl font-bold text-slate-700 dark:text-white main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
-                </div>
-                <div class="grid grid-cols-4 gap-2 mb-6">
-                    <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
-                        <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Online</p>
-                        <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
-                    </div>
-                    <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
-                        <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Break</p>
-                        <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
-                    </div>
-                    <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
-                        <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Meeting</p>
-                        <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
-                    </div>
-                    <div class="bg-red-50 dark:bg-red-900/20 p-2 rounded-xl text-center border border-red-100 dark:border-red-900/30">
-                        <p class="text-[11px] font-black text-red-600 mb-1 uppercase">Idle</p>
-                        <p class="text-[13px] font-mono font-black text-red-700 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
-                    </div>
-                </div>                        
-                <div class="mb-6 bg-slate-50 dark:bg-slate-900/40 rounded-2xl p-4 border border-dashed border-slate-200 dark:border-slate-700">
-                    <div class="flex justify-between items-center mb-3">
-                        ${(isAdmin || isMe) ? `<button onclick="addTask('${u.email}')" class="text-primary-500 hover:text-primary-600 text-[10px] font-bold">+ إضافة مهمة</button>` : '<span></span>'}
-                        <p class="text-[10px] font-bold text-slate-400 uppercase">قائمة المهام</p>
-                    </div>
-                    <div class="space-y-2 max-h-32 overflow-y-auto text-right">
-                        ${(u.tasks || []).length === 0 ? '<p class="text-[10px] text-slate-400 text-center py-2">لا توجد مهام نشطة</p>' : ''}
-                        ${(u.tasks || []).map((t, idx) => `
-                            <div class="flex items-center gap-2 group">
-                                ${isAdmin ? `<button onclick="deleteTask('${u.email}', ${idx})" class="opacity-0 group-hover:opacity-100 text-red-400 text-[10px] transition"><i class="fas fa-trash"></i></button>` : ''}
-                                <span class="flex-1 text-xs ${t.done ? 'line-through text-slate-400' : 'text-slate-600 dark:text-slate-300'}">${t.text}</span>
-                                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" class="w-4 h-4 rounded-md border-slate-300 text-primary-600 focus:ring-primary-500" ${(!isMe && !isAdmin) ? 'disabled' : ''}>
+        function setFilter(status) {
+            currentFilter = status;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-100 border border-slate-200 shadow-sm transition-all";
+            });
+            const activeBtn = document.getElementById(`filter-${status}`);
+            if(activeBtn) {
+                activeBtn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all transform scale-105";
+            }
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid-users');
+            grid.innerHTML = '';
+            const showOffline = document.getElementById('show-offline-toggle').checked;
+            const isAdmin = userProfile.role === 'admin';
+            
+            let displayedCount = 0;
+
+            allUsersData.forEach(u => {
+                let effectiveStatus = u.status || 'Offline';
+                if (u.isIdle) effectiveStatus = 'Idle'; 
+
+                if (currentFilter !== 'all') {
+                    if (effectiveStatus !== currentFilter && u.status !== currentFilter) return;
+                    if (currentFilter === 'Idle' && !u.isIdle) return;
+                } else {
+                    const isOffline = (effectiveStatus === 'Offline');
+                    if(isOffline && !showOffline) return;
+                }
+
+                displayedCount++; 
+
+                const isMe = (currentUser.email === u.email);
+                const colors = getStatusColor(u.status, u.isFocused, u.isIdle);
+                const tb = u.timeBank || {};
+                const safeStart = getMillis(u.lastChange);
+                
+                let pulseClass = "";
+                if(u.status === 'Online') pulseClass = "pulse-green bg-green-500";
+                else if(u.status === 'Break') pulseClass = "pulse-orange bg-orange-500";
+                else if(u.status === 'Meeting') pulseClass = "pulse-blue bg-blue-500";
+                else if(u.isIdle) pulseClass = "pulse-red bg-red-500";
+                else pulseClass = "bg-slate-400";
+
+                const card = `
+                <div class="user-card bg-white dark:bg-slate-800 rounded-[2rem] shadow-xl overflow-hidden border border-slate-100 dark:border-slate-700 relative">
+                    <div class="p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="relative">
+                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-20 h-20 rounded-full object-cover ring-4 ring-slate-50 dark:ring-slate-700 shadow-xl">
+                                <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-white dark:border-slate-800 ${pulseClass}"></div>
                             </div>
-                        `).join('')}
+                            <div class="flex flex-wrap gap-2 max-w-[120px] justify-end">
+                                ${isAdmin ? `<button onclick="openEditModal('${u.email}')" class="action-icon-btn"><i class="fas fa-cog"></i></button>` : ''}
+                                ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="action-icon-btn"><i class="fas fa-comment"></i></button>` : ''}
+                                <button onclick="viewLogs('${u.email}')" class="action-icon-btn"><i class="fas fa-history"></i></button>
+                                <button onclick="requestScreenshot('${u.email}')" class="action-icon-btn"><i class="fas fa-camera"></i></button>
+                            </div>
+                        </div>
+                        <div class="text-right mb-5">
+                            <h3 class="font-bold text-xl dark:text-white truncate">${u.name} ${isMe ? '<span class="text-xs text-primary-500 font-bold">(أنت)</span>' : ''}</h3>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">${u.department || 'إدارة العمليات'}</p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 mb-4 border border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                            <div class="text-right">
+                                <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">الحالة الحالية</p>
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${colors.bg} ${colors.text}">${u.status || 'Offline'}</span>
+                            </div>
+                            <div class="font-mono text-2xl font-bold text-slate-700 dark:text-white main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 mb-6">
+                            <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
+                                <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Online</p>
+                                <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
+                                <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Break</p>
+                                <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl text-center border border-slate-100 dark:border-slate-700">
+                                <p class="text-[11px] font-black text-slate-500 mb-1 uppercase">Meeting</p>
+                                <p class="text-[13px] font-mono font-black text-slate-900 dark:text-white stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
+                            </div>
+                            <div class="bg-red-50 dark:bg-red-900/20 p-2 rounded-xl text-center border border-red-100 dark:border-red-900/30">
+                                <p class="text-[11px] font-black text-red-600 mb-1 uppercase">Idle</p>
+                                <p class="text-[13px] font-mono font-black text-red-700 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
+                            </div>
+                        </div>                        
+                        <div class="mb-6 bg-slate-50 dark:bg-slate-900/40 rounded-2xl p-4 border border-dashed border-slate-200 dark:border-slate-700">
+                            <div class="flex justify-between items-center mb-3">
+                                ${(isAdmin || isMe) ? `<button onclick="addTask('${u.email}')" class="text-primary-500 hover:text-primary-600 text-[10px] font-bold">+ إضافة مهمة</button>` : '<span></span>'}
+                                <p class="text-[10px] font-bold text-slate-400 uppercase">قائمة المهام</p>
+                            </div>
+                            <div class="space-y-2 max-h-32 overflow-y-auto text-right">
+                                ${(u.tasks || []).length === 0 ? '<p class="text-[10px] text-slate-400 text-center py-2">لا توجد مهام نشطة</p>' : ''}
+                                ${(u.tasks || []).map((t, idx) => `
+                                    <div class="flex items-center gap-2 group">
+                                        ${isAdmin ? `<button onclick="deleteTask('${u.email}', ${idx})" class="opacity-0 group-hover:opacity-100 text-red-400 text-[10px] transition"><i class="fas fa-trash"></i></button>` : ''}
+                                        <span class="flex-1 text-xs ${t.done ? 'line-through text-slate-400' : 'text-slate-600 dark:text-slate-300'}">${t.text}</span>
+                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" class="w-4 h-4 rounded-md border-slate-300 text-primary-600 focus:ring-primary-500" ${(!isMe && !isAdmin) ? 'disabled' : ''}>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ${(isMe || isAdmin) ? `
+                        <div class="grid grid-cols-2 gap-2 mt-4">
+                            <button onclick="setStatus('${u.email}', 'Online')" class="py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">ONLINE</button>
+                            <button onclick="setStatus('${u.email}', 'Break')" class="py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">BREAK</button>
+                            <button onclick="setStatus('${u.email}', 'Meeting')" class="py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">MEETING</button>
+                            <button onclick="setStatus('${u.email}', 'Offline')" class="py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">OFFLINE</button>
+                        </div>
+                        ` : ''}
                     </div>
-                </div>
-                ${(isMe || isAdmin) ? `
-                <div class="grid grid-cols-2 gap-2 mt-4">
-                    <button onclick="setStatus('${u.email}', 'Online')" class="py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">ONLINE</button>
-                    <button onclick="setStatus('${u.email}', 'Break')" class="py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">BREAK</button>
-                    <button onclick="setStatus('${u.email}', 'Meeting')" class="py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">MEETING</button>
-                    <button onclick="setStatus('${u.email}', 'Offline')" class="py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-xl text-[10px] font-bold transition shadow-md">OFFLINE</button>
-                </div>
-                ` : ''}
-            </div>
-        </div>`;
-        grid.innerHTML += card;
-    });
+                </div>`;
+                grid.innerHTML += card;
+            });
 
-    if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
-    else document.getElementById('empty-state').classList.add('hidden');
-}
+            if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
+            else document.getElementById('empty-state').classList.add('hidden');
+        }
+
         function getStatusColor(s, isFocus, isIdle) {
             if(s==='Offline') return { border:'border-slate-400', text:'text-slate-500', bg:'bg-slate-200' };
             if(isIdle) return { border:'border-red-500', text:'text-red-600', bg:'bg-red-100' };
@@ -719,50 +699,45 @@ function renderGrid() {
         }
 
         async function setStatus(targetEmail, newStatus, isAuto = false) {
-    const userRef = db.collection('users').doc(targetEmail);
-    const snapshot = await userRef.get();
-    const uData = snapshot.data();
-    
-    // إذا لم تكن هناك بيانات أو الحالة هي نفسها الحالية (وليس تغييراً تلقائياً)، لا نفعل شيئاً
-    if(!uData || (uData.status === newStatus && !isAuto)) return;
+            const userRef = db.collection('users').doc(targetEmail);
+            const snapshot = await userRef.get();
+            const uData = snapshot.data();
+            
+            if(!uData || (uData.status === newStatus && !isAuto)) return;
 
-    // --- [التعديل هنا] ---
-    // تشغيل صوت تنبيه تغيير الحالة الجديد بدلاً من صوت الدردشة
-    playStatusNotification(); 
+            playStatusNotification(); 
 
-    const now = Date.now();
-    const lastTime = getMillis(uData.lastChange);
-    const duration = now - lastTime;
-    
-    let timeBank = uData.timeBank || {};
-    const oldStatus = uData.status || 'Offline';
-    
-    if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
-    timeBank[oldStatus] += duration;
-    
-    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+            const now = Date.now();
+            const lastTime = getMillis(uData.lastChange);
+            const duration = now - lastTime;
+            
+            let timeBank = uData.timeBank || {};
+            const oldStatus = uData.status || 'Offline';
+            
+            if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
+            timeBank[oldStatus] += duration;
+            
+            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
 
-    // تسجيل العملية في سجل اللوج (Logs)
-    await db.collection('logs').add({ 
-        user: targetEmail, 
-        name: uData.name, 
-        from_status: oldStatus, 
-        to_status: newStatus, 
-        start_time: uData.lastChange || timestamp, 
-        end_time: timestamp, 
-        duration_ms: duration, 
-        auto: isAuto 
-    });
+            await db.collection('logs').add({ 
+                user: targetEmail, 
+                name: uData.name, 
+                from_status: oldStatus, 
+                to_status: newStatus, 
+                start_time: uData.lastChange || timestamp, 
+                end_time: timestamp, 
+                duration_ms: duration, 
+                auto: isAuto 
+            });
 
-    // تحديث حالة المستخدم في قاعدة البيانات وتصفير عداد الخمول
-    await userRef.update({ 
-        status: newStatus, 
-        lastChange: timestamp, 
-        timeBank: timeBank, 
-        isIdle: false 
-    });
-}
-        // -- العدادات --
+            await userRef.update({ 
+                status: newStatus, 
+                lastChange: timestamp, 
+                timeBank: timeBank, 
+                isIdle: false 
+            });
+        }
+
         function updateTimers() {
             const now = Date.now();
             document.querySelectorAll('.main-timer').forEach(el => { 
@@ -778,6 +753,7 @@ function renderGrid() {
                 t.innerText = formatTimeSmall((t.dataset.isidle==='true')?b+(now-s):b); 
             });
         }
+
         function formatTime(ms) {
             if(isNaN(ms) || ms < 0) return "00:00:00";
             const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
@@ -797,7 +773,6 @@ function renderGrid() {
             return Date.now();
         }
 
-        // -- الخمول (Idle Tracker) --
         function resetIdleTimer() {
             lastActionTime = Date.now();
             if(userProfile && userProfile.isIdle) {
@@ -820,26 +795,19 @@ function renderGrid() {
             }, 3000);
         }
 
-        // -- نظام الدردشة المطور --
-
-        // إشعار صوتي
-      // اترك هذه كما هي لرسائل الدردشة
-            function playNotification() {
-                const sound = document.getElementById('notification-sound');
+        function playNotification() {
+            const sound = document.getElementById('notification-sound');
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("Audio play blocked"));
+        }
+        function playStatusNotification() {
+            const sound = document.getElementById('status-sound');
+            if (sound) {
                 sound.currentTime = 0;
-                sound.play().catch(e => console.log("Audio play blocked"));
+                sound.play().catch(e => console.log("Audio status sound blocked"));
             }
-            
-            // أضف هذه تحتها مباشرة لتنبيهات تغيير الحالة
-            function playStatusNotification() {
-                const sound = document.getElementById('status-sound');
-                if (sound) {
-                    sound.currentTime = 0;
-                    sound.play().catch(e => console.log("Audio status sound blocked"));
-                }
-            }
+        }
 
-        // اختيار ملف
         function handleFileSelect(input) {
             const file = input.files[0];
             if(!file) return;
@@ -860,7 +828,6 @@ function renderGrid() {
             document.getElementById('chat-file').value = "";
         }
 
-        // الدردشة الجماعية
         function initChat(){
             db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s=>{
                 const t=document.getElementById("chat-messages"); 
@@ -900,34 +867,32 @@ function renderGrid() {
         }
 
         function renderMessage(m, isMe) {
-    let content = `<div class="text-sm">${m.text}</div>`;
-    if(m.file) {
-        if(m.file.startsWith("data:image")) {
-            // تعديل هنا: إضافة دالة openImageModal بدلاً من window.open
-            content += `<img src="${m.file}" class="message-img mt-2 rounded-lg cursor-pointer hover:opacity-80 transition" onclick="openImagePreview('${m.file}')">`;
-        } else {
-            // تعديل هنا: التأكد من أن التحميل يعمل للمستندات
-            content += `<a href="${m.file}" download="${m.fileName || 'file'}" class="file-link mt-2 flex items-center gap-2 bg-black/5 p-2 rounded-lg border border-dashed border-slate-300 shadow-sm hover:bg-black/10 transition">
-                <i class="fas fa-file-download text-primary-500"></i> 
-                <span class="text-[10px] truncate">${m.fileName || 'تحميل الملف'}</span>
-            </a>`;
+            let content = `<div class="text-sm">${m.text}</div>`;
+            if(m.file) {
+                if(m.file.startsWith("data:image")) {
+                    content += `<img src="${m.file}" class="message-img mt-2 rounded-lg cursor-pointer hover:opacity-80 transition" onclick="openImagePreview('${m.file}')">`;
+                } else {
+                    content += `<a href="${m.file}" download="${m.fileName || 'file'}" class="file-link mt-2 flex items-center gap-2 bg-black/5 p-2 rounded-lg border border-dashed border-slate-300 shadow-sm hover:bg-black/10 transition">
+                        <i class="fas fa-file-download text-primary-500"></i> 
+                        <span class="text-[10px] truncate">${m.fileName || 'تحميل الملف'}</span>
+                    </a>`;
+                }
+            }
+            return `<div class="max-w-[85%] p-3 rounded-2xl mb-2 text-xs ${isMe?"mr-auto bg-primary-600 text-white":"ml-auto bg-slate-100 dark:bg-slate-700"} shadow-sm">
+                <div class="font-bold opacity-70 flex justify-between gap-4 mb-1">
+                    <span>${m.name}</span>
+                    <span>${m.time?moment(m.time.toDate()).format("h:mm A"):"."}</span>
+                </div>
+                ${content}
+            </div>`;
         }
-    }
-    return `<div class="max-w-[85%] p-3 rounded-2xl mb-2 text-xs ${isMe?"mr-auto bg-primary-600 text-white":"ml-auto bg-slate-100 dark:bg-slate-700"} shadow-sm">
-        <div class="font-bold opacity-70 flex justify-between gap-4 mb-1">
-            <span>${m.name}</span>
-            <span>${m.time?moment(m.time.toDate()).format("h:mm A"):"."}</span>
-        </div>
-        ${content}
-    </div>`;
-}
+
         function toggleChat(){ 
             document.getElementById("chat-window").classList.toggle("hidden"); 
             document.getElementById("chat-badge").classList.add("hidden"); 
             makeDraggable(document.getElementById("chat-window"));
         }
 
-        // -- الدردشة الخاصة --
         function closePrivateChat(email) {
             const chatId = [currentUser.email, email].sort().join("_").replace(/[@.]/g, "_");
             const el = document.getElementById(`chat-priv-${chatId}`);
@@ -948,138 +913,119 @@ function renderGrid() {
             };
             reader.readAsDataURL(file);
         }
-// 1. دالة فتح نافذة الدردشة الخاصة
-function openPrivateChat(otherEmail, otherName) {
-    if(openPrivateChats[otherEmail]) return;
-    
-    // توحيد شكل المعرف لسهولة البحث
-    const chatId = [currentUser.email.toLowerCase(), otherEmail.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
-    const windowId = `chat-priv-${chatId}`;
-    
-    const chatHtml = `
-    <div id="${windowId}" class="chat-window w-72 h-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-primary-100 dark:border-slate-700 overflow-hidden" style="bottom: 100px; left: 350px;">
-        <div class="p-3 bg-slate-800 text-white flex justify-between items-center chat-header">
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                <span class="text-xs font-bold">${otherName}</span>
-            </div>
-            <button onclick="closePrivateChat('${otherEmail}')" class="text-xs opacity-70 hover:opacity-100"><i class="fas fa-times"></i></button>
-        </div>
-        <div id="messages-${chatId}" class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50 dark:bg-slate-900/50 text-right"></div>
-        <form onsubmit="sendPrivateMessage(event, '${otherEmail}', '${chatId}')" class="p-2 border-t dark:border-slate-700 bg-white dark:bg-slate-800 flex gap-1">
-            <input type="file" id="file-${chatId}" class="hidden" onchange="handlePrivateFile(this, '${chatId}')">
-            <button type="button" onclick="document.getElementById('file-${chatId}').click()" class="text-slate-400 p-1"><i class="fas fa-paperclip text-xs"></i></button>
-            <input type="text" id="input-${chatId}" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-3 py-1 text-xs outline-none dark:text-white" placeholder="رسالة خاصة..." required>
-            <button type="submit" class="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center"><i class="fas fa-paper-plane text-[10px]"></i></button>
-        </form>
-        <div id="preview-${chatId}" class="hidden px-2 py-1 bg-primary-50 text-[9px] truncate text-primary-700"></div>
-    </div>`;
-    
-    document.getElementById('private-chats-container').insertAdjacentHTML('beforeend', chatHtml);
-    openPrivateChats[otherEmail] = { file: null, fileName: "" };
-    
-    makeDraggable(document.getElementById(windowId));
-    listenToSpecificChat(otherEmail, chatId);
-}
 
-// 2. دالة إرسال الرسالة الخاصة
-async function sendPrivateMessage(e, otherEmail, chatId) {
-    e.preventDefault();
-    const input = document.getElementById(`input-${chatId}`);
-    const fileData = openPrivateChats[otherEmail];
-    
-    if(input.value.trim() || (fileData && fileData.file)) {
-        const msg = {
-            text: input.value.trim(),
-            sender: currentUser.email.toLowerCase(),
-            receiver: otherEmail.toLowerCase(),
-            time: firebase.firestore.FieldValue.serverTimestamp(),
-            file: fileData ? fileData.file : null,
-            fileName: fileData ? fileData.fileName : "",
-            name: userProfile.name
-        };
-        
-        try {
-            await db.collection("private_messages").add(msg);
-            input.value = "";
-            if(fileData) { fileData.file = null; fileData.fileName = ""; }
-            document.getElementById(`preview-${chatId}`).classList.add('hidden');
-        } catch(err) {
-            console.error("Error:", err);
-        }
-    }
-}
-
-// 3. دالة الاستماع للرسائل (تعمل بفلترة برمجية لضمان الظهور)
-function listenToSpecificChat(otherEmail, chatId) {
-    db.collection("private_messages")
-        .orderBy("time", "asc")
-        .onSnapshot(s => {
-            const container = document.getElementById(`messages-${chatId}`);
-            if(!container) return;
+        function openPrivateChat(otherEmail, otherName) {
+            if(openPrivateChats[otherEmail]) return;
             
-            container.innerHTML = "";
-            s.forEach(d => {
-                const m = d.data();
-                const myEmail = currentUser.email.toLowerCase();
-                const targetEmail = otherEmail.toLowerCase();
+            const chatId = [currentUser.email.toLowerCase(), otherEmail.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+            const windowId = `chat-priv-${chatId}`;
+            
+            const chatHtml = `
+            <div id="${windowId}" class="chat-window w-72 h-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-primary-100 dark:border-slate-700 overflow-hidden" style="bottom: 100px; left: 350px;">
+                <div class="p-3 bg-slate-800 text-white flex justify-between items-center chat-header">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                        <span class="text-xs font-bold">${otherName}</span>
+                    </div>
+                    <button onclick="closePrivateChat('${otherEmail}')" class="text-xs opacity-70 hover:opacity-100"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="messages-${chatId}" class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50 dark:bg-slate-900/50 text-right"></div>
+                <form onsubmit="sendPrivateMessage(event, '${otherEmail}', '${chatId}')" class="p-2 border-t dark:border-slate-700 bg-white dark:bg-slate-800 flex gap-1">
+                    <input type="file" id="file-${chatId}" class="hidden" onchange="handlePrivateFile(this, '${chatId}')">
+                    <button type="button" onclick="document.getElementById('file-${chatId}').click()" class="text-slate-400 p-1"><i class="fas fa-paperclip text-xs"></i></button>
+                    <input type="text" id="input-${chatId}" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-3 py-1 text-xs outline-none dark:text-white" placeholder="رسالة خاصة..." required>
+                    <button type="submit" class="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center"><i class="fas fa-paper-plane text-[10px]"></i></button>
+                </form>
+                <div id="preview-${chatId}" class="hidden px-2 py-1 bg-primary-50 text-[9px] truncate text-primary-700"></div>
+            </div>`;
+            
+            document.getElementById('private-chats-container').insertAdjacentHTML('beforeend', chatHtml);
+            openPrivateChats[otherEmail] = { file: null, fileName: "" };
+            
+            makeDraggable(document.getElementById(windowId));
+            listenToSpecificChat(otherEmail, chatId);
+        }
+
+        async function sendPrivateMessage(e, otherEmail, chatId) {
+            e.preventDefault();
+            const input = document.getElementById(`input-${chatId}`);
+            const fileData = openPrivateChats[otherEmail];
+            
+            if(input.value.trim() || (fileData && fileData.file)) {
+                const msg = {
+                    text: input.value.trim(),
+                    sender: currentUser.email.toLowerCase(),
+                    receiver: otherEmail.toLowerCase(),
+                    time: firebase.firestore.FieldValue.serverTimestamp(),
+                    file: fileData ? fileData.file : null,
+                    fileName: fileData ? fileData.fileName : "",
+                    name: userProfile.name
+                };
                 
-                // التأكد أن الرسالة تخص الطرفين الحاليين فقط
-                const isSentByMe = (m.sender === myEmail && m.receiver === targetEmail);
-                const isReceivedByMe = (m.sender === targetEmail && m.receiver === myEmail);
-                
-                if(isSentByMe || isReceivedByMe) {
-                    container.innerHTML += renderMessage(m, isSentByMe);
+                try {
+                    await db.collection("private_messages").add(msg);
+                    input.value = "";
+                    if(fileData) { fileData.file = null; fileData.fileName = ""; }
+                    document.getElementById(`preview-${chatId}`).classList.add('hidden');
+                } catch(err) {
+                    console.error("Error:", err);
                 }
-            });
-            container.scrollTop = container.scrollHeight;
-            if(!s.metadata.hasPendingWrites && s.docChanges().some(c => c.type === "added")) {
-                playNotification();
             }
-        });
-}
-        // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
-        // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
-        // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
-function listenToPrivateMessages() {
-    // تسجيل وقت بداية الجلسة لمنع فتح الرسائل القديمة عند تحديث الصفحة
-    const sessionStart = Date.now();
+        }
 
-    // الاستماع لرسائل الشخص الحالي فقط
-    db.collection("private_messages")
-        .where("receiver", "==", currentUser.email.toLowerCase())
-        .onSnapshot(s => {
-            s.docChanges().forEach(change => {
-                // نركز فقط على الرسائل المضافة حديثاً (Added)
-                if (change.type === "added") {
-                    const m = change.doc.data();
+        function listenToSpecificChat(otherEmail, chatId) {
+            db.collection("private_messages")
+                .orderBy("time", "asc")
+                .onSnapshot(s => {
+                    const container = document.getElementById(`messages-${chatId}`);
+                    if(!container) return;
                     
-                    // تحويل وقت الرسالة من Firebase Timestamp إلى Milliseconds للمقارنة
-                    const msgTime = m.time ? m.time.toMillis() : Date.now();
-
-                    // الشرط: الرسالة وصلت بعد فتح الصفحة + ليست من المرسل نفسه
-                    if (msgTime > sessionStart && m.sender !== currentUser.email.toLowerCase()) {
+                    container.innerHTML = "";
+                    s.forEach(d => {
+                        const m = d.data();
+                        const myEmail = currentUser.email.toLowerCase();
+                        const targetEmail = otherEmail.toLowerCase();
                         
-                        // 1. تشغيل صوت التنبيه فوراً
+                        const isSentByMe = (m.sender === myEmail && m.receiver === targetEmail);
+                        const isReceivedByMe = (m.sender === targetEmail && m.receiver === myEmail);
+                        
+                        if(isSentByMe || isReceivedByMe) {
+                            container.innerHTML += renderMessage(m, isSentByMe);
+                        }
+                    });
+                    container.scrollTop = container.scrollHeight;
+                    if(!s.metadata.hasPendingWrites && s.docChanges().some(c => c.type === "added")) {
                         playNotification();
-
-                        // 2. إظهار إشعار ويندوز (Desktop Notification)
-                        if (Notification.permission === "granted") {
-                            new Notification(`رسالة جديدة من ${m.name || 'زميل'}`, {
-                                body: m.text || "أرسل لك مرفقاً...",
-                                icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
-                            });
-                        }
-
-                        // 3. فتح نافذة الشات تلقائياً إذا كانت مغلقة
-                        if (!openPrivateChats[m.sender]) {
-                            openPrivateChat(m.sender, m.name || "مستخدم");
-                        }
                     }
-                }
-            });
-        }, err => console.error("Private Messages Error:", err));
-}
+                });
+        }
+
+        function listenToPrivateMessages() {
+            const sessionStart = Date.now();
+            db.collection("private_messages")
+                .where("receiver", "==", currentUser.email.toLowerCase())
+                .onSnapshot(s => {
+                    s.docChanges().forEach(change => {
+                        if (change.type === "added") {
+                            const m = change.doc.data();
+                            const msgTime = m.time ? m.time.toMillis() : Date.now();
+                            if (msgTime > sessionStart && m.sender !== currentUser.email.toLowerCase()) {
+                                playNotification();
+                                if (Notification.permission === "granted") {
+                                    new Notification(`رسالة جديدة من ${m.name || 'زميل'}`, {
+                                        body: m.text || "أرسل لك مرفقاً...",
+                                        icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
+                                    });
+                                }
+                                if (!openPrivateChats[m.sender]) {
+                                    openPrivateChat(m.sender, m.name || "مستخدم");
+                                }
+                            }
+                        }
+                    });
+                }, err => console.error("Private Messages Error:", err));
+        }
+
         function makeDraggable(el) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             const header = el.querySelector(".chat-header");
@@ -1111,7 +1057,6 @@ function listenToPrivateMessages() {
             }
         }
 
-        // -- إدارة البيانات (Edit & Reports) --
         async function openEditModal(e){
             document.getElementById("modal-edit").classList.remove("hidden"); const t=document.getElementById("edit-email");
             if(e==="new"){ document.getElementById("form-edit").reset(); t.readOnly=false; t.setAttribute("data-mode","new"); document.getElementById("edit-preview").src=DEFAULT_PHOTO+"New"; }
@@ -1127,6 +1072,7 @@ function listenToPrivateMessages() {
                 document.getElementById("edit-preview").src=d.photo||DEFAULT_PHOTO+d.name; 
             }
         }
+
         async function saveUserChanges(e){
             e.preventDefault(); const em=document.getElementById("edit-email").value.toLowerCase().trim();
             const data={ 
@@ -1144,152 +1090,139 @@ function listenToPrivateMessages() {
             else await db.collection("users").doc(em).update(data);
             closeModal("modal-edit");
         }
+
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
         function handleImageUpload(el){ if(el.files && el.files[0]){ const r=new FileReader(); r.onload=function(e){ const i=new Image(); i.src=e.target.result; i.onload=function(){ const c=document.createElement("canvas"),ctx=c.getContext("2d"),s=300/i.width; c.width=300; c.height=i.height*s; ctx.drawImage(i,0,0,c.width,c.height); const b=c.toDataURL("image/jpeg",.7); document.getElementById("edit-preview").src=b; document.getElementById("edit-photo-base64").value=b; }; }; r.readAsDataURL(el.files[0]); } }
+        
         async function deleteUser(){ if(confirm("هل أنت متأكد من حذف هذا الموظف نهائياً؟")){ await db.collection("users").doc(document.getElementById("edit-email").value).delete(); closeModal("modal-edit"); } }
+        
         function openReportModal(){ document.getElementById("modal-report").classList.remove("hidden"); }
+        
         function updateReportDropdown(){ const e=document.getElementById("report-user-select"),v=e.value; e.innerHTML='<option value="all">-- جميع الموظفين --</option>'; allUsersData.forEach(u=>{e.innerHTML+=`<option value="${u.email}">${u.name}</option>`}); e.value=v; }
+        
         async function generateProfessionalReport() {
-    const userEmail = document.getElementById("report-user-select").value;
-    const dateFrom = document.getElementById("report-date-from").value;
-    const dateTo = document.getElementById("report-date-to").value;
-    const statusEl = document.getElementById("export-status");
-    const resultsArea = document.getElementById("report-results-area");
-    const summaryCards = document.getElementById("daily-summary-cards");
-    const totalDurationText = document.getElementById("total-duration-text");
+            const userEmail = document.getElementById("report-user-select").value;
+            const dateFrom = document.getElementById("report-date-from").value;
+            const dateTo = document.getElementById("report-date-to").value;
+            const statusEl = document.getElementById("export-status");
+            const resultsArea = document.getElementById("report-results-area");
+            const summaryCards = document.getElementById("daily-summary-cards");
+            const totalDurationText = document.getElementById("total-duration-text");
 
-    if (!dateFrom || !dateTo) {
-        alert("يرجى تحديد الفترة الزمنية (من وإلى)");
-        return;
-    }
-
-    statusEl.innerText = "جاري تحليل سجلات الحركات بدقة...";
-    resultsArea.classList.add('hidden');
-
-    const start = new Date(dateFrom);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(dateTo);
-    end.setHours(23, 59, 59, 999);
-
-    try {
-        // نعتمد على جدول logs حصرياً لأنه يسجل الحركات الفعلية بالوقت والتاريخ
-        let query = db.collection("logs")
-            .where("end_time", ">=", start)
-            .where("end_time", "<=", end);
-
-        if (userEmail !== "all") {
-            query = query.where("user", "==", userEmail);
-        }
-
-        const snapshot = await query.get();
-        if (snapshot.empty) {
-            statusEl.innerText = "لا توجد حركات مسجلة لهذا الموظف في هذه الفترة.";
-            return;
-        }
-
-        const dataGrouped = {};
-
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
-            const userName = d.name || d.user;
-            // نأخذ الحالة التي "كان فيها" الموظف قبل التغيير (from_status) 
-            // لأن duration_ms محسوب للفترة التي قضاها في الحالة السابقة
-            const status = d.from_status; 
-            const duration = parseInt(d.duration_ms) || 0;
-
-            // تجاهل أوقات Offline لأنها لا تحسب كوقت عمل أو استراحة
-            if (status === 'Offline') return;
-
-            if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
-            if (!dataGrouped[dateKey][userName]) {
-                dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+            if (!dateFrom || !dateTo) {
+                alert("يرجى تحديد الفترة الزمنية (من وإلى)");
+                return;
             }
 
-            // إضافة الوقت للحالة الصحيحة (بشرط أن تكون ضمن الحالات الأربعة)
-            if (dataGrouped[dateKey][userName].hasOwnProperty(status)) {
-                dataGrouped[dateKey][userName][status] += duration;
-                dataGrouped[dateKey][userName].Total += duration;
-            }
-        });
+            statusEl.innerText = "جاري تحليل سجلات الحركات بدقة...";
+            resultsArea.classList.add('hidden');
 
-        // التحقق من وجود بيانات بعد الفلترة
-        if (Object.keys(dataGrouped).length === 0) {
-            statusEl.innerText = "لم يتم العثور على ساعات عمل فعلية (بخلاف Offline).";
-            return;
-        }
+            const start = new Date(dateFrom);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(dateTo);
+            end.setHours(23, 59, 59, 999);
 
-        resultsArea.classList.remove('hidden');
-        summaryCards.innerHTML = "";
-        
-        let grandTotals = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
-        
-        Object.values(dataGrouped).forEach(day => {
-            Object.values(day).forEach(userStats => {
-                grandTotals.Online += userStats.Online;
-                grandTotals.Break += userStats.Break;
-                grandTotals.Meeting += userStats.Meeting;
-                grandTotals.Idle += userStats.Idle;
-                grandTotals.Total += userStats.Total;
-            });
-        });
+            try {
+                let query = db.collection("logs")
+                    .where("end_time", ">=", start)
+                    .where("end_time", "<=", end);
 
-        const statusLabels = { Online: 'العمل', Break: 'استراحة', Meeting: 'اجتماع', Idle: 'خمول' };
-        const colors = { Online: 'text-green-600', Break: 'text-orange-500', Meeting: 'text-blue-500', Idle: 'text-red-500' };
-
-        Object.keys(statusLabels).forEach(key => {
-            summaryCards.innerHTML += `
-                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 text-center">
-                    <p class="text-[10px] font-black text-slate-400 mb-1">${statusLabels[key]}</p>
-                    <p class="text-sm font-black ${colors[key]}">${formatDuration(grandTotals[key])}</p>
-                </div>`;
-        });
-
-        totalDurationText.innerText = formatDuration(grandTotals.Total);
-
-        downloadDetailedExcel(dataGrouped, dateFrom, dateTo);
-        statusEl.innerText = "تم استخراج التقرير الفعلي بنجاح.";
-
-    } catch (error) {
-        console.error(error);
-        statusEl.innerText = "خطأ في الحساب: يرجى التأكد من استقرار الإنترنت.";
-    }
-}
-                function downloadDetailedExcel(dataGrouped, from, to) {
-                    let csvContent = "\ufeff"; 
-                    csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
-                
-                    const sortedDates = Object.keys(dataGrouped).sort().reverse();
-                
-                    sortedDates.forEach(date => {
-                        Object.keys(dataGrouped[date]).forEach(user => {
-                            const d = dataGrouped[date][user];
-                            csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
-                        });
-                    });
-                
-                    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                if (userEmail !== "all") {
+                    query = query.where("user", "==", userEmail);
                 }
-                // دالة مساعدة لتحويل الملي ثانية إلى تنسيق HH:MM:SS بدقة
-function formatDuration(ms) {
-    if (!ms || ms < 0) return "00:00:00";
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    return [
-        hours.toString().padStart(2, '0'),
-        minutes.toString().padStart(2, '0'),
-        seconds.toString().padStart(2, '0')
-    ].join(':');
-}
+
+                const snapshot = await query.get();
+                if (snapshot.empty) {
+                    statusEl.innerText = "لا توجد حركات مسجلة لهذا الموظف في هذه الفترة.";
+                    return;
+                }
+
+                const dataGrouped = {};
+
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
+                    const userName = d.name || d.user;
+                    const status = d.from_status; 
+                    const duration = parseInt(d.duration_ms) || 0;
+
+                    if (status === 'Offline') return;
+
+                    if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
+                    if (!dataGrouped[dateKey][userName]) {
+                        dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+                    }
+
+                    if (dataGrouped[dateKey][userName].hasOwnProperty(status)) {
+                        dataGrouped[dateKey][userName][status] += duration;
+                        dataGrouped[dateKey][userName].Total += duration;
+                    }
+                });
+
+                if (Object.keys(dataGrouped).length === 0) {
+                    statusEl.innerText = "لم يتم العثور على ساعات عمل فعلية (بخلاف Offline).";
+                    return;
+                }
+
+                resultsArea.classList.remove('hidden');
+                summaryCards.innerHTML = "";
+                
+                let grandTotals = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+                
+                Object.values(dataGrouped).forEach(day => {
+                    Object.values(day).forEach(userStats => {
+                        grandTotals.Online += userStats.Online;
+                        grandTotals.Break += userStats.Break;
+                        grandTotals.Meeting += userStats.Meeting;
+                        grandTotals.Idle += userStats.Idle;
+                        grandTotals.Total += userStats.Total;
+                    });
+                });
+
+                const statusLabels = { Online: 'العمل', Break: 'استراحة', Meeting: 'اجتماع', Idle: 'خمول' };
+                const colors = { Online: 'text-green-600', Break: 'text-orange-500', Meeting: 'text-blue-500', Idle: 'text-red-500' };
+
+                Object.keys(statusLabels).forEach(key => {
+                    summaryCards.innerHTML += `
+                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 text-center">
+                            <p class="text-[10px] font-black text-slate-400 mb-1">${statusLabels[key]}</p>
+                            <p class="text-sm font-black ${colors[key]}">${formatDuration(grandTotals[key])}</p>
+                        </div>`;
+                });
+
+                totalDurationText.innerText = formatDuration(grandTotals.Total);
+
+                downloadDetailedExcel(dataGrouped, dateFrom, dateTo);
+                statusEl.innerText = "تم استخراج التقرير الفعلي بنجاح.";
+
+            } catch (error) {
+                console.error(error);
+                statusEl.innerText = "خطأ في الحساب: يرجى التأكد من استقرار الإنترنت.";
+            }
+        }
+
+        function downloadDetailedExcel(dataGrouped, from, to) {
+            let csvContent = "\ufeff"; 
+            csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
+            
+            const sortedDates = Object.keys(dataGrouped).sort().reverse();
+            
+            sortedDates.forEach(date => {
+                Object.keys(dataGrouped[date]).forEach(user => {
+                    const d = dataGrouped[date][user];
+                    csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
+                });
+            });
+            
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
 
         async function viewLogs(email) {
             const modal = document.getElementById('modal-logs');
@@ -1320,63 +1253,52 @@ function formatDuration(ms) {
         }
 
         function renderAdminAlerts() {
-    const container = document.getElementById('admin-alerts-container');
-    
-    allUsersData.forEach(u => {
-        // التحقق من الخمول
-        if(u.isIdle) {
-            // لو المدير قفل الإشعار ده قبل كده، منرسموش تاني
-            if (dismissedAlerts.includes(u.email)) return;
+            const container = document.getElementById('admin-alerts-container');
+            
+            allUsersData.forEach(u => {
+                if(u.isIdle) {
+                    if (dismissedAlerts.includes(u.email)) return;
 
-            let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
-            
-            if(!activeAlert) {
-                const div = document.createElement('div');
-                // معرف فريد خالي من الرموز الخاصة
-                const safeId = u.email.replace(/[@.]/g, "_");
-                div.id = `alert-active-${safeId}`;
-                
-                // التصميم مع زر الإغلاق الجديد
-                div.className = 'bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border-l-4 border-red-500 flex items-center justify-between gap-4 animate-bounce pulse-red pointer-events-auto w-80 relative';
-                div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="bg-red-100 p-2 rounded-full text-red-600">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-red-500 uppercase">تنبيه خمول (كيبورد)</p>
-                            <p class="text-xs font-bold dark:text-white">${u.name} متوقف</p>
-                        </div>
-                    </div>
-                    <button onclick="closeAdminAlert('${u.email}')" class="text-slate-400 hover:text-red-500 transition px-2">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                container.appendChild(div);
-                
-                // تشغيل صوت تنبيه عند ظهور الإشعار لأول مرة
-                playNotification(); 
-            }
-        } else {
-            // الموظف رجع اشتغل؟ نمسح الإشعار ونشيله من قائمة التجاهل عشان لو نام تاني يظهر
-            let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
-            if(activeAlert) activeAlert.remove();
-            
-            // إزالة الموظف من قائمة المغلقين عشان لو بقى خامل تاني يظهر تنبيه جديد
-            dismissedAlerts = dismissedAlerts.filter(e => e !== u.email);
+                    let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
+                    
+                    if(!activeAlert) {
+                        const div = document.createElement('div');
+                        const safeId = u.email.replace(/[@.]/g, "_");
+                        div.id = `alert-active-${safeId}`;
+                        
+                        div.className = 'bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border-l-4 border-red-500 flex items-center justify-between gap-4 animate-bounce pulse-red pointer-events-auto w-80 relative';
+                        div.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <div class="bg-red-100 p-2 rounded-full text-red-600">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-red-500 uppercase">تنبيه خمول (كيبورد)</p>
+                                    <p class="text-xs font-bold dark:text-white">${u.name} متوقف</p>
+                                </div>
+                            </div>
+                            <button onclick="closeAdminAlert('${u.email}')" class="text-slate-400 hover:text-red-500 transition px-2">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        container.appendChild(div);
+                        playNotification(); 
+                    }
+                } else {
+                    let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
+                    if(activeAlert) activeAlert.remove();
+                    dismissedAlerts = dismissedAlerts.filter(e => e !== u.email);
+                }
+            });
         }
-    });
-}
 
-// دالة إغلاق الإشعار يدوياً
-function closeAdminAlert(email) {
-    // إضافة الإيميل لقائمة التجاهل
-    dismissedAlerts.push(email);
-    // مسح العنصر من الشاشة فوراً
-    const safeId = email.replace(/[@.]/g, "_");
-    const el = document.getElementById(`alert-active-${safeId}`);
-    if(el) el.remove();
-}
+        function closeAdminAlert(email) {
+            dismissedAlerts.push(email);
+            const safeId = email.replace(/[@.]/g, "_");
+            const el = document.getElementById(`alert-active-${safeId}`);
+            if(el) el.remove();
+        }
+
         async function addTask(email) {
             const txt = prompt("أدخل تفاصيل المهمة الجديدة:");
             if(txt && txt.trim()) {
@@ -1387,12 +1309,14 @@ function closeAdminAlert(email) {
                 await userRef.update({ tasks: tasks });
             }
         }
+
         async function toggleTask(email, idx, done) {
             const userRef = db.collection('users').doc(email);
             const doc = await userRef.get();
             const tasks = doc.data().tasks || [];
             if(tasks[idx]) { tasks[idx].done = done; await userRef.update({ tasks: tasks }); }
         }
+
         async function deleteTask(email, idx) {
             if(confirm("هل تريد حذف هذه المهمة؟")) {
                 const userRef = db.collection('users').doc(email);
@@ -1401,188 +1325,137 @@ function closeAdminAlert(email) {
                 tasks.splice(idx, 1); await userRef.update({ tasks: tasks });
             }
         }
-async function requestScreenshot(targetEmail) {
-    if (userProfile.role !== 'admin') return; // للمدير فقط
-    
-    try {
-        await db.collection('screenshot_requests').doc(targetEmail.toLowerCase()).set({
-            requestedBy: currentUser.email,
-            time: firebase.firestore.FieldValue.serverTimestamp(),
-            status: 'pending'
-        });
-        alert("تم إرسال طلب لقطة الشاشة للموظف...");
-    } catch (e) {
-        console.error("Error requesting screenshot:", e);
-    }
-} 
-    // الموظف يستمع لطلبات التصوير
-// الموظف يستمع لطلبات التصوير مع إشعارات ويندوز وصوت
-function listenForScreenshotRequests() {
-    db.collection('screenshot_requests').doc(currentUser.email.toLowerCase())
-        .onSnapshot(async (doc) => {
-            const data = doc.data();
-            
-            // نتحقق أن الطلب جديد وحالته "قيد الانتظار"
-            if (data && data.status === 'pending') {
-                
-                // 1. تشغيل التنبيه الصوتي فوراً
-                playNotification();
 
-                // 2. إرسال إشعار ويندوز (Desktop Notification)
-                if (Notification.permission === "granted") {
-                    new Notification("تنبيه من Almaster", {
-                        body: "المدير يطلب لقطة شاشة لسطح المكتب الآن.",
-                        icon: "https://cdn-icons-png.flaticon.com/512/681/681498.png",
-                        tag: "screenshot-alert" // لمنع تكرار الإشعار
-                    });
-                }
-
-                // 3. تحديث الحالة في قاعدة البيانات لمنع التكرار
-                await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
-                    status: 'processing' 
-                });
-                
-                // 4. إظهار نافذة التأكيد للموظف
-                const confirmCapture = confirm("⚠️ إشعار إداري: مطلوب لقطة شاشة للعمل الآن.\n\nاضغط OK لبدء مشاركة الشاشة.");
-                
-                if (confirmCapture) {
-                    captureAndSend(data.requestedBy);
-                } else {
-                    // في حال الرفض نحدث الحالة
-                    await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
-                        status: 'refused' 
-                    });
-                }
-            }
-        });
-}
-
-// دالة التقاط الشاشة وإرسالها كشات خاص
-async function captureAndSend(adminEmail) {
-    try {
-        // طلب الوصول للشاشة
-        const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false });
-        const video = document.createElement('video');
-        video.srcObject = stream;
-        video.play();
-
-        // التقاط فريم من الفيديو وتحويله لصورة
-        video.onloadedmetadata = () => {
-            setTimeout(async () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                const screenshotBase64 = canvas.toDataURL('image/jpeg', 0.7);
-
-                // إيقاف البث
-                stream.getTracks().forEach(track => track.stop());
-
-                // إرسال الصورة كرسالة خاصة
-                const chatId = [currentUser.email.toLowerCase(), adminEmail.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
-                
-                await db.collection("private_messages").add({
-                    text: "📷 تم إرسال لقطة شاشة تلقائية بطلب من الإدارة",
-                    sender: currentUser.email.toLowerCase(),
-                    receiver: adminEmail.toLowerCase(),
+        async function requestScreenshot(targetEmail) {
+            if (userProfile.role !== 'admin') return; 
+            try {
+                await db.collection('screenshot_requests').doc(targetEmail.toLowerCase()).set({
+                    requestedBy: currentUser.email,
                     time: firebase.firestore.FieldValue.serverTimestamp(),
-                    file: screenshotBase64,
-                    fileName: "screenshot.jpg",
-                    name: userProfile.name
+                    status: 'pending'
                 });
+                alert("تم إرسال طلب لقطة الشاشة للموظف...");
+            } catch (e) {
+                console.error("Error requesting screenshot:", e);
+            }
+        } 
 
-                // مسح الطلب من السيرفر
+        function listenForScreenshotRequests() {
+            db.collection('screenshot_requests').doc(currentUser.email.toLowerCase())
+                .onSnapshot(async (doc) => {
+                    const data = doc.data();
+                    if (data && data.status === 'pending') {
+                        playNotification();
+                        if (Notification.permission === "granted") {
+                            new Notification("تنبيه من Almaster", {
+                                body: "المدير يطلب لقطة شاشة لسطح المكتب الآن.",
+                                icon: "https://cdn-icons-png.flaticon.com/512/681/681498.png",
+                                tag: "screenshot-alert" 
+                            });
+                        }
+                        await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
+                            status: 'processing' 
+                        });
+                        const confirmCapture = confirm("⚠️ إشعار إداري: مطلوب لقطة شاشة للعمل الآن.\n\nاضغط OK لبدء مشاركة الشاشة.");
+                        if (confirmCapture) {
+                            captureAndSend(data.requestedBy);
+                        } else {
+                            await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
+                                status: 'refused' 
+                            });
+                        }
+                    }
+                });
+        }
+
+        async function captureAndSend(adminEmail) {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                video.onloadedmetadata = () => {
+                    setTimeout(async () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        canvas.getContext('2d').drawImage(video, 0, 0);
+                        const screenshotBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        stream.getTracks().forEach(track => track.stop());
+                        const chatId = [currentUser.email.toLowerCase(), adminEmail.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+                        await db.collection("private_messages").add({
+                            text: "📷 تم إرسال لقطة شاشة تلقائية بطلب من الإدارة",
+                            sender: currentUser.email.toLowerCase(),
+                            receiver: adminEmail.toLowerCase(),
+                            time: firebase.firestore.FieldValue.serverTimestamp(),
+                            file: screenshotBase64,
+                            fileName: "screenshot.jpg",
+                            name: userProfile.name
+                        });
+                        await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
+                    }, 500); 
+                };
+            } catch (err) {
+                console.error("Capture failed:", err);
                 await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
-            }, 500); // تأخير بسيط لضمان وضوح الصورة
-        };
-    } catch (err) {
-        console.error("Capture failed:", err);
-        await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
-    }
-}
+            }
+        }
+
         function openImagePreview(src) {
-    const modal = document.getElementById('image-preview-modal');
-    const img = document.getElementById('preview-img-target');
-    const downloadLink = document.getElementById('download-link-target');
-    
-    img.src = src;
-    downloadLink.href = src;
-    modal.classList.remove('hidden');
-}
+            const modal = document.getElementById('image-preview-modal');
+            const img = document.getElementById('preview-img-target');
+            const downloadLink = document.getElementById('download-link-target');
+            img.src = src;
+            downloadLink.href = src;
+            modal.classList.remove('hidden');
+        }
 
-function closeImagePreview() {
-    document.getElementById('image-preview-modal').classList.add('hidden');
-}
+        function closeImagePreview() {
+            document.getElementById('image-preview-modal').classList.add('hidden');
+        }
 
-// لإغلاق النافذة عند الضغط على مفتاح Escape
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeImagePreview();
-});
-    </script>
-    <div id="image-preview-modal" class="hidden fixed inset-0 z-[1000] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
-    <button onclick="closeImagePreview()" class="absolute top-5 right-5 text-white text-3xl hover:text-red-500 transition"><i class="fas fa-times"></i></button>
-    <img id="preview-img-target" src="" class="max-w-full max-h-full rounded-lg shadow-2xl border-4 border-white/10">
-    <div class="absolute bottom-5 flex gap-4">
-        <a id="download-link-target" href="" download="image.jpg" class="bg-primary-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-primary-700 transition">
-            <i class="fas fa-download ml-2"></i> تحميل الصورة
-        </a>
-    </div>
-</div>
-    <script>
-    // تسجيل Service Worker لتحويل الموقع لتطبيق
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(registration => {
-                    console.log('PWA Ready:', registration.scope);
-                })
-                .catch(err => {
-                    console.log('PWA Failed:', err);
-                });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeImagePreview();
         });
-    }
-       // ================= دالة تشغيل حركة الزووم =================
-    function enterLoginScreen() {
-        console.log("Button Clicked, Starting Zoom sequence..."); // للتجربة في الكونسول
 
-        // 1. إخفاء الزر والنص فوراً
-        const container = document.getElementById('intro-container');
-        container.style.transition = 'opacity 0.5s, transform 0.5s';
-        container.style.opacity = '0';
-        container.style.transform = 'translateY(50px)';
-        
-        // 2. تجهيز اللوجو للزووم
-        const logo = document.getElementById('intro-logo');
-        
-        // نثبت اللوجو في نصف الشاشة بالظبط عشان يكبر منها
-        logo.style.position = 'fixed';
-        logo.style.top = '50%';
-        logo.style.left = '50%';
-        logo.style.transform = 'translate(-50%, -50%)';
-        logo.style.zIndex = '500';
-        // نتأكد إن الـ transition شغال عليه
-        logo.style.transition = 'all 1.5s cubic-bezier(0.7, 0, 0.3, 1)';
-        
-        // 3. تنفيذ الزووم بعد لحظة قصيرة جداً
-        setTimeout(() => {
-             // تكبير هائل + اختفاء تدريجي + بلور
-            logo.style.transform = 'translate(-50%, -50%) scale(60)';
-            logo.style.opacity = '0';
-            logo.style.filter = 'blur(30px)';
-        }, 50);
+        // ================= دالة تشغيل حركة الزووم =================
+        function enterLoginScreen() {
+            console.log("Button Clicked, Starting Zoom sequence..."); 
 
-        // 4. بعد انتهاء الحركة، نخفي شاشة الترحيب ونظهر اللوجن
-        setTimeout(() => {
-            document.getElementById('view-intro').classList.add('hidden-section');
-            document.getElementById('view-login').classList.remove('hidden-section');
+            const container = document.getElementById('intro-container');
+            container.style.transition = 'opacity 0.5s, transform 0.5s';
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(50px)';
             
-            // إعادة اللوجو لحالته الأصلية عشان لو عملنا logout ورجعنا تاني
-            logo.style = ""; 
-            container.style = "";
-        }, 1500); // ننتظر ثانية ونصف مدة الحركة
-    }
-</script>
+            const logo = document.getElementById('intro-logo');
+            logo.style.position = 'fixed';
+            logo.style.top = '50%';
+            logo.style.left = '50%';
+            logo.style.transform = 'translate(-50%, -50%)';
+            logo.style.zIndex = '500';
+            logo.style.transition = 'all 1.5s cubic-bezier(0.7, 0, 0.3, 1)';
+            
+            setTimeout(() => {
+                logo.style.transform = 'translate(-50%, -50%) scale(60)';
+                logo.style.opacity = '0';
+                logo.style.filter = 'blur(30px)';
+            }, 50);
+
+            setTimeout(() => {
+                document.getElementById('view-intro').classList.add('hidden-section');
+                document.getElementById('view-login').classList.remove('hidden-section');
+                logo.style = ""; 
+                container.style = "";
+            }, 1500); 
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => { console.log('PWA Ready:', registration.scope); })
+                    .catch(err => { console.log('PWA Failed:', err); });
+            });
+        }
+    </script>
 </body>
 </html>
-
-
