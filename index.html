@@ -374,10 +374,45 @@
             e.preventDefault();
             const email = document.getElementById('login-email').value.toLowerCase().trim();
             const pass = document.getElementById('login-pass').value;
-            try { await auth.signInWithEmailAndPassword(email, pass); } 
-            catch (err) { 
-                const errEl = document.getElementById('login-error');
-                errEl.innerText = "خطأ في الدخول: تأكد من البيانات";
+            const errEl = document.getElementById('login-error');
+
+            try {
+                // 1. قبل تسجيل الدخول، نفحص هل المستخدم نشط حالياً؟
+                const userDoc = await db.collection('users').doc(email).get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    // إذا كان المستخدم أونلاين بالفعل، نرسل إنذار للمدير
+                    if (userData.status === 'Online') {
+                        // تسجيل محاولة اختراق/تعدد دخول في السجلات
+                        await db.collection('logs').add({
+                            user: email,
+                            name: userData.name || email,
+                            from_status: 'Security Alert',
+                            to_status: 'Multi-Login',
+                            start_time: firebase.firestore.FieldValue.serverTimestamp(),
+                            end_time: firebase.firestore.FieldValue.serverTimestamp(),
+                            duration_ms: 0,
+                            auto: true 
+                        });
+                    }
+                }
+
+                // 2. إتمام عملية الدخول
+                await auth.signInWithEmailAndPassword(email, pass);
+                
+                // 3. إنشاء بصمة الجلسة الجديدة (Session ID)
+                const newSessionId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('my_session_id', newSessionId);
+
+                // 4. حفظ البصمة في قاعدة البيانات
+                await db.collection('users').doc(email).update({
+                    sessionId: newSessionId
+                });
+
+            } catch (err) {
+                console.error(err);
+                errEl.innerText = "خطأ في الدخول: تأكد من البيانات أو الشبكة";
                 errEl.classList.remove('hidden');
             }
         }
@@ -461,36 +496,47 @@ async function checkAndResetCounters() {
 }
 
                     function listenToAllUsers() {
-                db.collection('users').onSnapshot(snapshot => {
-                    let hasStatusChange = false;
+            db.collection('users').onSnapshot(snapshot => {
+                let hasStatusChange = false;
             
-                    snapshot.docChanges().forEach(change => {
-                        if (change.type === "modified") {
-                            const newData = change.doc.data();
-                            // نبحث عن البيانات القديمة في المصفوفة قبل تحديثها
-                            const oldData = allUsersData.find(u => u.email === newData.email);
-                            
-                            // إذا تغيرت الحالة فعلياً وليس مجرد عداد الوقت
-                            if (oldData && oldData.status !== newData.status) {
-                                hasStatusChange = true;
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "modified") {
+                        const newData = change.doc.data();
+                        const oldData = allUsersData.find(u => u.email === newData.email);
+                        
+                        if (oldData && oldData.status !== newData.status) {
+                            hasStatusChange = true;
+                        }
+
+                        // --- [جديد] كود الحماية (Security Check) ---
+                        // إذا كانت البيانات تخصني (أنا المستخدم الحالي)
+                        if (currentUser && newData.email === currentUser.email) {
+                            const localSession = localStorage.getItem('my_session_id');
+                            // لو فيه بصمة في الداتابيز، والبصمة دي مش هي اللي عندي عالجهاز
+                            // معناه ان فيه حد تاني عمل لوجن من جهاز تاني
+                            if (newData.sessionId && newData.sessionId !== localSession) {
+                                alert("⚠️ تنبيه أمني:\nتم تسجيل الدخول إلى حسابك من جهاز آخر.\nسيتم تسجيل الخروج من هذا الجهاز الآن.");
+                                logout(); // طرد المستخدم فوراً
                             }
                         }
-                    });
-            
-                    // تشغيل صوت الحالات المخصص للمدير
-                    if (hasStatusChange && userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) {
-                        playStatusNotification(); 
+                        // -------------------------------------------
                     }
-            
-                    // تحديث المصفوفة بالبيانات الجديدة
-                    allUsersData = [];
-                    snapshot.forEach(doc => allUsersData.push(doc.data()));
-                    
-                    renderGrid();
-                    updateReportDropdown();
-                    if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
                 });
-            }
+            
+                // تشغيل صوت الحالات المخصص للمدير
+                if (hasStatusChange && userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) {
+                    playStatusNotification(); 
+                }
+            
+                // تحديث المصفوفة بالبيانات الجديدة
+                allUsersData = [];
+                snapshot.forEach(doc => allUsersData.push(doc.data()));
+                
+                renderGrid();
+                updateReportDropdown();
+                if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
+            });
+        }
 
         // --- دالة تغيير الفلتر ---
 function setFilter(status) {
@@ -1474,6 +1520,7 @@ window.addEventListener('keydown', (e) => {
 </script>
 </body>
 </html>
+
 
 
 
