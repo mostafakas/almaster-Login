@@ -599,109 +599,102 @@ function renderGrid() {
                 const colors = getStatusColor(u.status, u.isFocused, u.isIdle);
                 const tb = u.timeBank || {};
                 const safeStart = getMillis(u.lastChange);
+                const canControl = (isAdmin || isMe);
                 
+                // تحديد الألوان النشطة وغير النشطة لكل ويدجت
+                // دالة مساعدة لتوليد كلاسات الألوان بناءً على هل الحالة نشطة أم لا
+                const getWidgetStyle = (type, colorName, isActive) => {
+                    if (isActive) {
+                        return `bg-${colorName}-500 text-white shadow-lg shadow-${colorName}-500/30 border-${colorName}-600 transform scale-105 ring-2 ring-${colorName}-200`;
+                    }
+                    return `bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100 hover:border-slate-300`;
+                };
+
+                // حالة النبض للصورة
                 let pulseClass = "bg-slate-400"; 
                 if (u.isIdle) pulseClass = "pulse-red bg-red-600";
                 else if (u.status === 'Online') pulseClass = "pulse-green bg-green-500";
                 else if (u.status === 'Break') pulseClass = "pulse-orange bg-yellow-500";
                 else if (u.status === 'Meeting') pulseClass = "pulse-blue bg-blue-500";
 
-                const canControl = (isAdmin || isMe);
-
                 const card = `
-                <div class="user-card ${colors.cardBg} rounded-2xl ${colors.shadow} border border-slate-200 dark:border-slate-700 ${colors.border} relative transition-all duration-300 hover:-translate-y-1 flex flex-col">
+                <div class="user-card bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 relative transition-all duration-300 hover:-translate-y-1 flex flex-col overflow-hidden group">
                     
-                    <div class="p-4 flex-1">
-                        
-                        <div class="flex items-start gap-3 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
-                            <div class="relative flex-shrink-0">
-                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-14 h-14 rounded-xl object-cover ring-4 ring-white shadow-md">
-                                <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${pulseClass}"></div>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="mb-2">
-                                    <h3 class="font-black text-sm dark:text-white leading-tight mb-0.5 whitespace-normal">
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5 ${u.isIdle ? 'bg-red-500' : (u.status === 'Online' ? 'bg-green-500' : (u.status === 'Meeting' ? 'bg-blue-500' : (u.status === 'Break' ? 'bg-yellow-500' : 'bg-slate-300')))}"></div>
+
+                    <div class="p-5 flex-1 pl-6"> <div class="flex items-center justify-between mb-5">
+                            <div class="flex items-center gap-3">
+                                <div class="relative">
+                                    <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-12 h-12 rounded-2xl object-cover ring-2 ring-slate-50 shadow-sm">
+                                    <div class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${pulseClass}"></div>
+                                </div>
+                                <div>
+                                    <h3 class="font-black text-base dark:text-white leading-tight">
                                         ${u.name}
-                                        ${isMe ? '<span class="text-[9px] text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded ml-1 align-middle">(أنت)</span>' : ''}
                                     </h3>
-                                    <p class="text-[10px] font-bold text-slate-400 truncate">${u.department || 'Member'}</p>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${u.department || 'Member'}</p>
                                 </div>
-                                <div class="flex items-center gap-1">
-                                    ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="h-6 px-2 rounded bg-slate-100 hover:bg-primary-100 text-slate-500 hover:text-primary-600 transition border border-slate-200" title="محادثة"><i class="fas fa-comment-dots text-xs"></i></button>` : ''}
-                                    <button onclick="viewLogs('${u.email}')" class="h-6 px-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition border border-slate-200" title="السجل"><i class="fas fa-history text-xs"></i></button>
-                                    ${(isAdmin && !isMe) ? `<button onclick="requestScreenshot('${u.email}')" class="h-6 px-2 rounded bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 transition border border-slate-200" title="لقطة شاشة"><i class="fas fa-camera text-xs"></i></button>` : ''}
-                                    ${(isAdmin) ? `<button onclick="openEditModal('${u.email}')" class="h-6 px-2 rounded bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-blue-600 transition border border-slate-200" title="إعدادات"><i class="fas fa-cog text-xs"></i></button>` : ''}
-                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="text-slate-300 hover:text-primary-600 transition"><i class="fas fa-comment-dots text-lg"></i></button>` : ''}
+                                <button onclick="viewLogs('${u.email}')" class="text-slate-300 hover:text-slate-600 transition"><i class="fas fa-history text-lg"></i></button>
+                                ${(isAdmin) ? `<button onclick="openEditModal('${u.email}')" class="text-slate-300 hover:text-blue-600 transition"><i class="fas fa-cog text-lg"></i></button>` : ''}
                             </div>
                         </div>
 
-                        <div class="flex justify-between items-center mb-4 bg-white/50 p-2 rounded-lg border border-slate-200/60">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${colors.badge}">${u.isIdle ? 'IDLE' : (u.status || 'Offline')}</span>
-                            <div class="font-mono text-xl font-black ${colors.text} main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
+                        <div class="text-center mb-6">
+                            <div class="font-mono text-4xl font-black text-slate-800 dark:text-white tracking-tight main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
+                            <span class="inline-block mt-1 px-3 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 uppercase tracking-widest border border-slate-200">
+                                ${u.isIdle ? '⚠️ متوقف عن العمل' : u.status}
+                            </span>
                         </div>
 
-                        <div class="flex gap-2 mb-4 h-28">
+                        <div class="grid grid-cols-4 gap-2 mb-5">
                             
-                            <div class="w-1/2 flex flex-col gap-1">
-                                <p class="text-[8px] font-black text-slate-400 uppercase text-center mb-0.5">تغيير الحالة</p>
-                                ${canControl ? `
-                                <div class="grid grid-cols-2 gap-1 h-full">
-                                    <button onclick="setStatus('${u.email}', 'Online')" class="rounded-lg bg-green-100 hover:bg-green-600 hover:text-white text-green-800 text-[10px] font-black transition shadow-sm flex flex-col items-center justify-center gap-1 border border-green-200">
-                                        <i class="fas fa-play text-[8px]"></i> Online
-                                    </button>
-                                    <button onclick="setStatus('${u.email}', 'Break')" class="rounded-lg bg-yellow-100 hover:bg-yellow-500 hover:text-white text-yellow-800 text-[10px] font-black transition shadow-sm flex flex-col items-center justify-center gap-1 border border-yellow-200">
-                                        <i class="fas fa-coffee text-[8px]"></i> Break
-                                    </button>
-                                    <button onclick="setStatus('${u.email}', 'Meeting')" class="rounded-lg bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-800 text-[10px] font-black transition shadow-sm flex flex-col items-center justify-center gap-1 border border-blue-200">
-                                        <i class="fas fa-users text-[8px]"></i> Meet
-                                    </button>
-                                    <button onclick="setStatus('${u.email}', 'Offline')" class="rounded-lg bg-slate-200 hover:bg-slate-600 hover:text-white text-slate-700 text-[10px] font-black transition shadow-sm flex flex-col items-center justify-center gap-1 border border-slate-300">
-                                        <i class="fas fa-power-off text-[8px]"></i> Stop
-                                    </button>
-                                </div>
-                                ` : `
-                                <div class="h-full bg-slate-50 rounded-lg border border-dashed border-slate-200 flex items-center justify-center text-[10px] text-slate-400 font-bold">
-                                    للمشاهدة فقط
-                                </div>
-                                `}
+                            <div onclick="${canControl ? `setStatus('${u.email}', 'Online')` : ''}" 
+                                 class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${getWidgetStyle('Online', 'green', u.status === 'Online' && !u.isIdle)}">
+                                <i class="fas fa-play text-[10px] mb-1 opacity-70"></i>
+                                <span class="text-[9px] font-black uppercase mb-1">Online</span>
+                                <span class="font-mono font-bold text-[10px] stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</span>
                             </div>
 
-                            <div class="w-1/2 flex flex-col gap-1">
-                                <p class="text-[8px] font-black text-slate-400 uppercase text-center mb-0.5">السجلات اليومية</p>
-                                <div class="grid grid-cols-2 gap-1 h-full">
-                                    <div class="bg-green-50 rounded-lg border border-green-100 flex flex-col items-center justify-center">
-                                        <span class="text-[8px] font-bold text-green-700">Online</span>
-                                        <span class="font-mono font-black text-slate-700 text-[10px] stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</span>
-                                    </div>
-                                    <div class="bg-yellow-50 rounded-lg border border-yellow-100 flex flex-col items-center justify-center">
-                                        <span class="text-[8px] font-bold text-yellow-700">Break</span>
-                                        <span class="font-mono font-black text-slate-700 text-[10px] stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</span>
-                                    </div>
-                                    <div class="bg-blue-50 rounded-lg border border-blue-100 flex flex-col items-center justify-center">
-                                        <span class="text-[8px] font-bold text-blue-700">Meeting</span>
-                                        <span class="font-mono font-black text-slate-700 text-[10px] stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</span>
-                                    </div>
-                                    <div class="bg-red-50 rounded-lg border border-red-100 flex flex-col items-center justify-center">
-                                        <span class="text-[8px] font-bold text-red-700">Idle</span>
-                                        <span class="font-mono font-black text-red-700 text-[10px] stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</span>
-                                    </div>
-                                </div>
+                            <div onclick="${canControl ? `setStatus('${u.email}', 'Break')` : ''}" 
+                                 class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${getWidgetStyle('Break', 'yellow', u.status === 'Break' && !u.isIdle)}">
+                                <i class="fas fa-coffee text-[10px] mb-1 opacity-70"></i>
+                                <span class="text-[9px] font-black uppercase mb-1">Break</span>
+                                <span class="font-mono font-bold text-[10px] stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</span>
+                            </div>
+
+                            <div onclick="${canControl ? `setStatus('${u.email}', 'Meeting')` : ''}" 
+                                 class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${getWidgetStyle('Meeting', 'blue', u.status === 'Meeting' && !u.isIdle)}">
+                                <i class="fas fa-users text-[10px] mb-1 opacity-70"></i>
+                                <span class="text-[9px] font-black uppercase mb-1">Meet</span>
+                                <span class="font-mono font-bold text-[10px] stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</span>
+                            </div>
+
+                            <div onclick="${canControl ? `setStatus('${u.email}', 'Offline')` : ''}" 
+                                 class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${u.isIdle ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 border-red-600 ring-2 ring-red-200 scale-105' : (u.status === 'Offline' ? 'bg-slate-700 text-white shadow-lg' : 'bg-slate-50 text-slate-400 border-slate-100 hover:bg-red-50 hover:text-red-500')}">
+                                <i class="fas fa-power-off text-[10px] mb-1 opacity-70"></i>
+                                <span class="text-[9px] font-black uppercase mb-1">${u.isIdle ? 'Idle!' : 'Stop'}</span>
+                                <span class="font-mono font-bold text-[10px] stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</span>
                             </div>
 
                         </div>
 
-                        <div class="bg-white dark:bg-slate-900 rounded-lg p-2 border border-slate-200 dark:border-slate-700 h-24 overflow-hidden relative">
-                            <div class="flex justify-between items-center mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10 pb-1 border-b border-slate-50">
-                                <span class="text-[9px] font-black text-slate-400 uppercase">قائمة المهام</span>
-                                ${(isAdmin || isMe) ? `<button onclick="addTask('${u.email}')" class="text-[9px] text-primary-600 hover:bg-primary-50 px-1 rounded font-bold transition">+ إضافة</button>` : ''}
+                        <div class="border-t border-dashed border-slate-200 pt-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase">Tasks List</span>
+                                ${(isAdmin || isMe) ? `<button onclick="addTask('${u.email}')" class="text-slate-400 hover:text-primary-600 transition"><i class="fas fa-plus-circle"></i></button>` : ''}
                             </div>
                             <div class="space-y-1 max-h-16 overflow-y-auto custom-scrollbar text-right">
-                                ${(u.tasks || []).length === 0 ? '<p class="text-[9px] text-slate-300 text-center mt-4">لا توجد مهام</p>' : ''}
+                                ${(u.tasks || []).length === 0 ? '<p class="text-[9px] text-slate-300 text-center">لا توجد مهام</p>' : ''}
                                 ${(u.tasks || []).map((t, idx) => `
-                                    <div class="flex items-center gap-1 group bg-slate-50 p-1 rounded border border-slate-100">
-                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" class="w-3 h-3 rounded border-slate-300 text-primary-600 cursor-pointer" ${(!isMe && !isAdmin) ? 'disabled' : ''}>
-                                        <span class="flex-1 text-[10px] truncate ${t.done ? 'line-through text-slate-400' : 'text-slate-700'}">${t.text}</span>
-                                        ${isAdmin ? `<button onclick="deleteTask('${u.email}', ${idx})" class="text-red-400 opacity-0 group-hover:opacity-100 text-[10px]"><i class="fas fa-times"></i></button>` : ''}
+                                    <div class="flex items-center gap-2 group">
+                                        <div class="w-1.5 h-1.5 rounded-full ${t.done ? 'bg-slate-300' : 'bg-primary-500'}"></div>
+                                        <span class="flex-1 text-[10px] truncate ${t.done ? 'line-through text-slate-300' : 'text-slate-600'}">${t.text}</span>
+                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" class="w-3 h-3 rounded border-slate-300 text-primary-600 opacity-0 group-hover:opacity-100 transition" ${(!isMe && !isAdmin) ? 'disabled' : ''}>
+                                        ${isAdmin ? `<button onclick="deleteTask('${u.email}', ${idx})" class="text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 text-[10px]"><i class="fas fa-times"></i></button>` : ''}
                                     </div>
                                 `).join('')}
                             </div>
@@ -1778,6 +1771,7 @@ async function deleteDocsInBatches(docs, colName, title) {
     </script>
 </body>
 </html>
+
 
 
 
