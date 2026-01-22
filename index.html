@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster - Dashboard</title>
+    <title>Almaster1 - Dashboard</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0ea5e9">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -1546,10 +1546,10 @@ async function archivePublicChat() {
     try {
         const zip = new JSZip();
         const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - 30); // 30 يوم
+        cutoffDate.setDate(cutoffDate.getDate() - 0); // 30 يوم
 
+                // نأتي بكل الرسائل بلا استثناء
         const snapshot = await db.collection("messages")
-            .where("time", "<", firebase.firestore.Timestamp.fromDate(cutoffDate))
             .orderBy("time", "asc")
             .get();
 
@@ -1611,9 +1611,9 @@ async function coreArchivePrivate(zipName, specificEmail) {
     try {
         const zip = new JSZip();
         const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - 30);
 
-        let query = db.collection("private_messages").where("time", "<", firebase.firestore.Timestamp.fromDate(cutoffDate));
+        // هذا سيجلب كل الرسائل الخاصة الموجودة في النظام
+        let query = db.collection("private_messages");
         
         // لو حددنا إيميل، نجيب رسايله بس (للشات الشخصي)
         // ملحوظة: في فايربيز لازم نعمل 2 كويري ونجمعهم لو بنبحث عن Sender OR Receiver
@@ -1622,7 +1622,6 @@ async function coreArchivePrivate(zipName, specificEmail) {
         if (specificEmail) {
             const sent = await db.collection("private_messages")
                 .where("sender", "==", specificEmail)
-                .where("time", "<", firebase.firestore.Timestamp.fromDate(cutoffDate)).get();
             const received = await db.collection("private_messages")
                 .where("receiver", "==", specificEmail)
                 .where("time", "<", firebase.firestore.Timestamp.fromDate(cutoffDate)).get();
@@ -1717,3 +1716,4 @@ async function deleteDocsInBatches(docs, colName, title) {
     </script>
 </body>
 </html>
+
