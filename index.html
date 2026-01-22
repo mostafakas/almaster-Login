@@ -979,76 +979,72 @@ function renderGrid() {
         }
 
        function renderMessage(m, isMe) {
-            // تنسيق الوقت والتاريخ
+            // تنسيق الوقت
             const timeFull = m.time ? moment(m.time.toDate()).format("D/M/YYYY h:mm A") : "...";
-            
-            // توليد صورة افتراضية للمرسل (لأننا لا نخزن صورته في الرسالة، نستخدم اسمه لتوليدها)
             const senderAvatar = DEFAULT_PHOTO + encodeURIComponent(m.name || 'User');
 
-            // محتوى الرسالة (نص + مرفقات)
+            // محتوى الرسالة
             let content = "";
             
             // 1. النص
             if (m.text) {
-                content += `<p class="leading-relaxed whitespace-pre-wrap ${isMe ? 'text-white' : 'text-slate-700 dark:text-slate-200'}">${m.text}</p>`;
+                content += `<p class="text-sm leading-relaxed whitespace-pre-wrap ${isMe ? 'text-white' : 'text-slate-800 dark:text-slate-200'}">${m.text}</p>`;
             }
 
-            // 2. المرفقات
+            // 2. المرفقات (تصميم بطاقة ملف احترافية)
             if (m.file) {
-                const mt = m.text ? "mt-2" : ""; // مسافة لو فيه نص
+                const mt = m.text ? "mt-3" : ""; 
                 if (m.file.startsWith("data:image")) {
                     content += `
-                    <div class="${mt} relative group overflow-hidden rounded-lg border ${isMe ? 'border-white/20' : 'border-slate-200 dark:border-slate-600'}">
-                        <img src="${m.file}" class="max-w-[200px] max-h-[200px] object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105" onclick="openImagePreview(this.src)">
+                    <div class="${mt} relative overflow-hidden rounded-lg border ${isMe ? 'border-white/20' : 'border-slate-200 dark:border-slate-600'}">
+                        <img src="${m.file}" class="max-w-[220px] max-h-[200px] object-cover cursor-pointer hover:scale-105 transition-transform duration-500" onclick="openImagePreview(this.src)">
                     </div>`;
                 } else {
                     content += `
-                    <a href="${m.file}" download="${m.fileName || 'file'}" class="${mt} flex items-center gap-3 p-3 rounded-lg ${isMe ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200'} transition border border-transparent hover:border-current">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center bg-white/20 shrink-0">
-                            <i class="fas fa-file-download text-lg"></i>
+                    <a href="${m.file}" download="${m.fileName || 'file'}" class="${mt} flex items-center gap-3 p-2.5 rounded-lg border ${isMe ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-50'} transition group">
+                        <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-slate-600 text-primary-600 dark:text-primary-400">
+                            <i class="fas fa-file-alt text-base"></i>
                         </div>
-                        <div class="overflow-hidden">
-                            <p class="text-[10px] font-bold truncate w-32">${m.fileName || 'ملف مرفق'}</p>
-                            <p class="text-[9px] opacity-70">اضغط للتحميل</p>
+                        <div class="flex-1 overflow-hidden">
+                            <p class="text-[11px] font-bold truncate w-32 group-hover:underline">${m.fileName || 'مرفق'}</p>
+                            <p class="text-[9px] opacity-70">انقر للتحميل</p>
                         </div>
                     </a>`;
                 }
             }
 
-            // --- بناء الهيكل الكامل للرسالة ---
+            // --- التصميم المؤسسي (Corporate Design) ---
             
             if (isMe) {
-                // تصميم رسائلي (أنا) - تظهر على اليسار (أو اليمين حسب اتجاه الصفحة)
-                // في RTL: رسائلي تظهر على اليسار
+                // رسائلي (أنا) - تظهر على اليسار (في RTL)
+                // لون موحد (Primary Solid) بدون تدرجات + ظل خفيف
                 return `
-                <div class="flex items-end gap-2 justify-end mb-4 group animate-fade-in">
+                <div class="flex items-end gap-3 justify-end mb-5 pl-2 animate-fade-in">
                     <div class="flex flex-col items-end max-w-[80%]">
-                        <div class="relative px-4 py-3 rounded-2xl rounded-bl-none bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-md text-sm">
+                        <div class="bg-primary-600 text-white px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm border border-primary-700">
                             ${content}
-                            
-                            <div class="text-[9px] text-primary-100 mt-1 text-left flex items-center justify-end gap-1 opacity-80 font-mono">
-                                <span>${timeFull}</span>
-                                <i class="fas fa-check-double text-[8px]"></i>
-                            </div>
                         </div>
+                        <span class="text-[9px] text-slate-400 mt-1 mr-1 flex items-center gap-1 font-mono">
+                            ${timeFull} <i class="fas fa-check text-primary-500"></i>
+                        </span>
                     </div>
-                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-white dark:border-slate-700 self-end mb-1">
+                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-700 shadow-sm self-end mb-4">
                 </div>`;
             } else {
-                // تصميم رسائل الآخرين - تظهر على اليمين
+                // رسائل الآخرين - تظهر على اليمين
+                // خلفية رمادية فاتحة جداً (Slate-100) + اسم المرسل خارج الفقاعة
                 return `
-                <div class="flex items-end gap-2 justify-start mb-4 animate-fade-in">
-                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-slate-100 dark:border-slate-700 self-end mb-1">
+                <div class="flex items-start gap-3 justify-start mb-5 pr-2 animate-fade-in">
+                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-700 shadow-sm mt-1">
                     
                     <div class="flex flex-col items-start max-w-[80%]">
-                        <span class="text-[10px] font-bold text-slate-500 mb-1 mr-2 px-1">${m.name}</span>
+                        <div class="flex items-baseline gap-2 mb-1 mr-1">
+                            <span class="text-[11px] font-black text-slate-700 dark:text-slate-300">${m.name}</span>
+                            <span class="text-[9px] text-slate-400 font-mono">${timeFull}</span>
+                        </div>
                         
-                        <div class="relative px-4 py-3 rounded-2xl rounded-br-none bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-sm shadow-sm">
+                        <div class="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl rounded-tr-sm border border-slate-200 dark:border-slate-700 shadow-sm text-slate-800 dark:text-slate-200">
                             ${content}
-                            
-                            <div class="text-[9px] text-slate-400 mt-1 text-right font-mono">
-                                ${timeFull}
-                            </div>
                         </div>
                     </div>
                 </div>`;
@@ -1894,5 +1890,6 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
 
