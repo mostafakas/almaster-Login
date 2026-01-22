@@ -600,7 +600,6 @@ function renderGrid() {
                 const tb = u.timeBank || {};
                 const safeStart = getMillis(u.lastChange);
                 
-                // لون النقطة (Pulse)
                 let pulseClass = "bg-slate-400"; 
                 if (u.isIdle) pulseClass = "pulse-red bg-red-600";
                 else if (u.status === 'Online') pulseClass = "pulse-green bg-green-500";
@@ -613,26 +612,42 @@ function renderGrid() {
                 <div class="user-card ${colors.cardBg} rounded-2xl ${colors.shadow} border border-slate-200 dark:border-slate-700 ${colors.border} relative transition-all duration-300 hover:-translate-y-1 flex flex-col">
                     
                     <div class="p-4 flex-1">
-                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-700 pb-3">
-                            <div class="flex items-center gap-3">
-                                <div class="relative">
-                                    <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-md">
-                                    <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${pulseClass}"></div>
-                                </div>
-                                <div>
-                                    <h3 class="font-black text-sm dark:text-white truncate max-w-[100px]">
+                        
+                        <div class="flex items-start gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+                            <div class="relative flex-shrink-0">
+                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-xl object-cover ring-4 ring-white shadow-md">
+                                <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${pulseClass}"></div>
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <div class="mb-2">
+                                    <h3 class="font-black text-sm dark:text-white leading-tight mb-0.5 whitespace-normal">
                                         ${u.name}
-                                        ${isMe ? '<span class="text-[9px] text-primary-600 bg-primary-50 px-1 rounded ml-1">(أنت)</span>' : ''}
+                                        ${isMe ? '<span class="text-[9px] text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded ml-1 align-middle">(أنت)</span>' : ''}
                                     </h3>
                                     <p class="text-[10px] font-bold text-slate-400 truncate">${u.department || 'Member'}</p>
                                 </div>
-                            </div>
 
-                            <div class="flex items-center gap-1">
-                                ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="w-7 h-7 rounded-full bg-slate-50 hover:bg-primary-100 text-slate-400 hover:text-primary-600 transition flex items-center justify-center"><i class="fas fa-comment-dots text-xs"></i></button>` : ''}
-                                <button onclick="viewLogs('${u.email}')" class="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition flex items-center justify-center"><i class="fas fa-history text-xs"></i></button>
-                                ${(isAdmin && !isMe) ? `<button onclick="requestScreenshot('${u.email}')" class="w-7 h-7 rounded-full bg-slate-50 hover:bg-red-100 text-slate-400 hover:text-red-600 transition flex items-center justify-center"><i class="fas fa-camera text-xs"></i></button>` : ''}
-                                ${(isAdmin) ? `<button onclick="openEditModal('${u.email}')" class="w-7 h-7 rounded-full bg-slate-50 hover:bg-blue-100 text-slate-400 hover:text-blue-600 transition flex items-center justify-center"><i class="fas fa-cog text-xs"></i></button>` : ''}
+                                <div class="flex items-center gap-1">
+                                    ${!isMe ? `
+                                    <button onclick="openPrivateChat('${u.email}', '${u.name}')" class="h-7 px-3 rounded-lg bg-slate-100 hover:bg-primary-100 text-slate-500 hover:text-primary-600 transition flex items-center justify-center border border-slate-200" title="محادثة">
+                                        <i class="fas fa-comment-dots text-xs"></i>
+                                    </button>` : ''}
+                                    
+                                    <button onclick="viewLogs('${u.email}')" class="h-7 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition flex items-center justify-center border border-slate-200" title="السجل">
+                                        <i class="fas fa-history text-xs"></i>
+                                    </button>
+                                    
+                                    ${(isAdmin && !isMe) ? `
+                                    <button onclick="requestScreenshot('${u.email}')" class="h-7 px-3 rounded-lg bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 transition flex items-center justify-center border border-slate-200" title="لقطة شاشة">
+                                        <i class="fas fa-camera text-xs"></i>
+                                    </button>` : ''}
+                                    
+                                    ${(isAdmin) ? `
+                                    <button onclick="openEditModal('${u.email}')" class="h-7 px-3 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-blue-600 transition flex items-center justify-center border border-slate-200" title="إعدادات">
+                                        <i class="fas fa-cog text-xs"></i>
+                                    </button>` : ''}
+                                </div>
                             </div>
                         </div>
 
@@ -1759,6 +1774,7 @@ async function deleteDocsInBatches(docs, colName, title) {
     </script>
 </body>
 </html>
+
 
 
 
