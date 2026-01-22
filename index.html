@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster1 - Dashboard</title>
+    <title>Almaster - Dashboard</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0ea5e9">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -377,19 +377,17 @@
             const errEl = document.getElementById('login-error');
 
             try {
-                // 1. تسجيل الدخول أولاً (للحصول على صلاحية قراءة البيانات)
-                // هذا هو التعديل الذي سيحل المشكلة
+                // 1. تسجيل الدخول أولاً
                 await auth.signInWithEmailAndPassword(email, pass);
 
-                // 2. الآن بعد الدخول، نفحص هل المستخدم كان نشطاً من قبل؟
+                // 2. فحص حالة المستخدم (هل هو أونلاين من قبل؟)
                 const userDoc = await db.collection('users').doc(email).get();
                 
                 if (userDoc.exists) {
                     const userData = userDoc.data();
                     
-                    // إذا كان المستخدم أونلاين بالفعل، نرسل إنذار للمدير
+                    // إذا كان المستخدم أونلاين بالفعل، نرسل إنذار
                     if (userData.status === 'Online') {
-                        // تسجيل محاولة اختراق/تعدد دخول في السجلات
                         await db.collection('logs').add({
                             user: email,
                             name: userData.name || email,
@@ -403,42 +401,20 @@
                     }
                 }
                 
-                // 3. إنشاء بصمة الجلسة الجديدة (Session ID)
+                // 3. إنشاء بصمة الجلسة
                 const newSessionId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
                 localStorage.setItem('my_session_id', newSessionId);
 
-                // 4. حفظ البصمة في قاعدة البيانات
+                // 4. حفظ البصمة
                 await db.collection('users').doc(email).update({
                     sessionId: newSessionId
                 });
-
-                // لا داعي لـ reload لأن auth.onAuthStateChanged ستقوم بالمهمة
 
             } catch (err) {
                 console.error(err);
                 errEl.innerText = "خطأ في الدخول: تأكد من صحة البريد وكلمة المرور";
                 errEl.classList.remove('hidden');
-                
-                // في حالة الخطأ، نضمن خروج المستخدم (للتنظيف)
                 auth.signOut();
-            }
-        }
-                // 2. إتمام عملية الدخول
-                await auth.signInWithEmailAndPassword(email, pass);
-                
-                // 3. إنشاء بصمة الجلسة الجديدة (Session ID)
-                const newSessionId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('my_session_id', newSessionId);
-
-                // 4. حفظ البصمة في قاعدة البيانات
-                await db.collection('users').doc(email).update({
-                    sessionId: newSessionId
-                });
-
-            } catch (err) {
-                console.error(err);
-                errEl.innerText = "خطأ في الدخول: تأكد من البيانات أو الشبكة";
-                errEl.classList.remove('hidden');
             }
         }
 
@@ -446,7 +422,6 @@
             if(currentUser) await setStatus(currentUser.email, 'Offline', true);
             auth.signOut().then(() => location.reload());
         }
-
    async function initSystem() {
     // 1. طلب إذن الإشعارات فوراً عند الدخول (أفضل مكان)
     if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
@@ -1545,6 +1520,7 @@ window.addEventListener('keydown', (e) => {
     </script>
 </body>
 </html>
+
 
 
 
