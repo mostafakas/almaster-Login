@@ -13,7 +13,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -75,7 +76,7 @@
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
-        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER V13.1</h2>
+        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER DASHBOARD</h2>
     </div>
 
     <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
@@ -121,6 +122,20 @@
                 </button>
                 
                 <div id="admin-menu" class="hidden-section pt-4 mt-2 border-t border-slate-700">
+                    <hr class="border-slate-700 my-2 opacity-50">
+                        <p class="hidden md:block px-3 text-[10px] text-slate-500 uppercase font-bold mb-2">الأرشفة والنسخ الاحتياطي</p>
+                        
+                        <button onclick="archivePublicChat()" class="w-full text-right p-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3">
+                            <i class="fas fa-users text-yellow-500"></i> <span class="hidden md:block text-sm">أرشفة الشات العام</span>
+                        </button>
+                        
+                        <button onclick="archivePrivateChats()" class="w-full text-right p-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3">
+                            <i class="fas fa-comment-dots text-blue-400"></i> <span class="hidden md:block text-sm">شاتي الخاص (نسختي)</span>
+                        </button>
+                        
+                        <button onclick="archiveAllEmployeesPrivateChats()" class="w-full text-right p-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3">
+                            <i class="fas fa-database text-red-500"></i> <span class="hidden md:block text-sm">أرشفة شاملة (كل الموظفين)</span>
+                        </button>
                     <p class="hidden md:block px-3 text-[10px] text-slate-500 uppercase font-bold mb-2">إدارة النظام</p>
                     <button onclick="openEditModal('new')" class="w-full text-right p-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center md:justify-start gap-3">
                         <i class="fas fa-user-plus"></i> <span class="hidden md:block text-sm">إضافة موظف</span>
@@ -1517,13 +1532,188 @@ window.addEventListener('keydown', (e) => {
                 });
         });
     }
+        // ============================================================
+//  نظام الأرشفة المتقدم (V2) - يدعم ZIP والصور وتقارير Excel
+// ============================================================
+
+// 1. أرشفة الشات العام
+async function archivePublicChat() {
+    if (!confirm("هل تريد أرشفة الشات العام؟\n\nسيتم تحميل ملف ZIP يحتوي على سجل Excel + الصور.")) return;
+    
+    const loader = document.getElementById('loader');
+    loader.classList.remove('hidden-section');
+
+    try {
+        const zip = new JSZip();
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 30); // 30 يوم
+
+        const snapshot = await db.collection("messages")
+            .where("time", "<", firebase.firestore.Timestamp.fromDate(cutoffDate))
+            .orderBy("time", "asc")
+            .get();
+
+        if (snapshot.empty) {
+            alert("لا توجد رسائل عامة قديمة للأرشفة.");
+            loader.classList.add('hidden-section');
+            return;
+        }
+
+        let csvContent = "\ufeffالتاريخ,الاسم,الرسالة,اسم الملف المرفق\n";
+        const mediaFolder = zip.folder("Media_Files");
+
+        snapshot.docs.forEach((doc, index) => {
+            const m = doc.data();
+            const time = m.time ? moment(m.time.toDate()).format('YYYY-MM-DD HH:mm:ss') : '-';
+            const safeText = (m.text || "").replace(/,/g, "،").replace(/\n/g, " ");
+            let fileName = "لا يوجد";
+
+            if (m.file) {
+                let extension = "bin";
+                if (m.file.includes("image/jpeg")) extension = "jpg";
+                else if (m.file.includes("image/png")) extension = "png";
+                else if (m.file.includes("application/pdf")) extension = "pdf";
+                
+                fileName = `File_${index}_${moment().format('HHmmss')}.${extension}`;
+                const base64Data = m.file.split(',')[1];
+                if(base64Data) mediaFolder.file(fileName, base64Data, {base64: true});
+            }
+            csvContent += `${time},${m.name},${safeText},${fileName}\n`;
+        });
+
+        zip.file("Public_Chat_Log.csv", csvContent);
+        const content = await zip.generateAsync({type:"blob"});
+        saveAs(content, `Public_Chat_Archive_${moment().format('YYYY-MM-DD')}.zip`);
+        
+        await deleteDocsInBatches(snapshot.docs, "messages", "الشات العام");
+
+    } catch (e) { console.error(e); alert("حدث خطأ."); } 
+    finally { loader.classList.add('hidden-section'); }
+}
+
+// 2. أرشفة الشات الخاص (الشخصي)
+async function archivePrivateChats() {
+    await coreArchivePrivate("MY_CHATS", currentUser.email.toLowerCase());
+}
+
+// 3. أرشفة شاملة لكل الموظفين (للأدمن)
+async function archiveAllEmployeesPrivateChats() {
+    await coreArchivePrivate("FULL_DB_ARCHIVE", null); // null يعني هات الكل
+}
+
+// --- المحرك الأساسي للأرشفة الخاصة (مشترك للدالتين) ---
+async function coreArchivePrivate(zipName, specificEmail) {
+    if (!confirm("هل أنت متأكد من بدء الأرشفة؟\n\nسيتم تحميل ملف ZIP منظم وتفريغ المساحة.")) return;
+
+    const loader = document.getElementById('loader');
+    loader.classList.remove('hidden-section');
+
+    try {
+        const zip = new JSZip();
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 30);
+
+        let query = db.collection("private_messages").where("time", "<", firebase.firestore.Timestamp.fromDate(cutoffDate));
+        
+        // لو حددنا إيميل، نجيب رسايله بس (للشات الشخصي)
+        // ملحوظة: في فايربيز لازم نعمل 2 كويري ونجمعهم لو بنبحث عن Sender OR Receiver
+        let allDocs = [];
+        
+        if (specificEmail) {
+            const sent = await db.collection("private_messages")
+                .where("sender", "==", specificEmail)
+                .where("time", "<", firebase.firestore.Timestamp.fromDate(cutoffDate)).get();
+            const received = await db.collection("private_messages")
+                .where("receiver", "==", specificEmail)
+                .where("time", "<", firebase.firestore.Timestamp.fromDate(cutoffDate)).get();
+            allDocs = [...sent.docs, ...received.docs];
+        } else {
+            // لو مفيش إيميل محدد (أدمن)، هات الكل
+            const snapshot = await query.get();
+            allDocs = snapshot.docs;
+        }
+
+        // إزالة التكرار (لأن الـ merge ممكن يكرر رسائل)
+        const uniqueDocs = Array.from(new Set(allDocs.map(a => a.id))).map(id => allDocs.find(a => a.id === id));
+
+        if (uniqueDocs.length === 0) {
+            alert("لا توجد بيانات قديمة للأرشفة.");
+            loader.classList.add('hidden-section');
+            return;
+        }
+
+        // تجميع الرسائل في مجلدات (أحمد_مع_محمد)
+        let conversations = {};
+        uniqueDocs.forEach(doc => {
+            const m = doc.data();
+            const p1 = m.sender || "unknown";
+            const p2 = m.receiver || "unknown";
+            // ترتيب الأسماء أبجدياً عشان المحادثة تدخل نفس الفولدر
+            const convKey = [p1, p2].sort().join("_WITH_").replace(/[@.]/g, "_");
+            
+            if (!conversations[convKey]) conversations[convKey] = [];
+            conversations[convKey].push(m);
+        });
+
+        // بناء ملف الـ ZIP
+        Object.keys(conversations).forEach(folderName => {
+            const folder = zip.folder(folderName);
+            const mediaBox = folder.folder("Attachments");
+            
+            // ترتيب زمني
+            const msgs = conversations[folderName].sort((a, b) => (a.time?.seconds || 0) - (b.time?.seconds || 0));
+            
+            let csv = "\ufeffالتاريخ,المرسل,المستقبل,الرسالة,اسم الملف\n";
+            
+            msgs.forEach((m, idx) => {
+                const time = m.time ? moment(m.time.toDate()).format('YYYY-MM-DD HH:mm:ss') : '-';
+                const safeText = (m.text || "").replace(/,/g, "،").replace(/\n/g, " ");
+                let fName = "لا يوجد";
+
+                if (m.file) {
+                    let ext = "bin";
+                    if (m.file.includes("image")) ext = "jpg";
+                    else if (m.file.includes("pdf")) ext = "pdf";
+                    
+                    fName = `Att_${idx}_${moment().format('ss')}.${ext}`;
+                    const b64 = m.file.split(',')[1];
+                    if(b64) mediaBox.file(fName, b64, {base64:true});
+                }
+                csv += `${time},${m.sender},${m.receiver},${safeText},${fName}\n`;
+            });
+            
+            folder.file("Chat_History.csv", csv);
+        });
+
+        const content = await zip.generateAsync({type:"blob"});
+        saveAs(content, `${zipName}_${moment().format('YYYY-MM-DD')}.zip`);
+
+        await deleteDocsInBatches(uniqueDocs, "private_messages", "الرسائل الخاصة");
+
+    } catch (e) {
+        console.error(e);
+        if(e.code === 'permission-denied') alert("خطأ صلاحيات: تأكد من تحديث Rules في فايربيز.");
+        else alert("حدث خطأ.");
+    } finally {
+        loader.classList.add('hidden-section');
+    }
+}
+
+// دالة الحذف (مشتركة)
+async function deleteDocsInBatches(docs, colName, title) {
+    if (!confirm(`تم تجهيز الأرشيف (${title}) بعدد ${docs.length} رسالة.\n\nهل تريد حذفهم من السيرفر الآن؟`)) return;
+    
+    const batchSize = 400; 
+    const chunks = [];
+    for (let i = 0; i < docs.length; i += batchSize) chunks.push(docs.slice(i, i + batchSize));
+    
+    for (const chunk of chunks) {
+        const batch = db.batch();
+        chunk.forEach(d => batch.delete(db.collection(colName).doc(d.id)));
+        await batch.commit();
+    }
+    alert("تم التنظيف بنجاح! ✅");
+}
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
