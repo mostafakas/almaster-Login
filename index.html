@@ -1690,104 +1690,104 @@ async function archiveAllEmployeesPrivateChats() {
 }
 
 // --- المحرك الأساسي للأرشفة الخاصة (مشترك للدالتين) ---
-async function coreArchivePrivate(zipName, specificEmail) {
-    if (!confirm("هل أنت متأكد من بدء الأرشفة؟\n\nسيتم تحميل ملف ZIP منظم وتفريغ المساحة.")) return;
+// --- المحرك الأساسي للأرشفة الخاصة (مصحح) ---
+        async function coreArchivePrivate(zipName, specificEmail) {
+            if (!confirm("هل أنت متأكد من بدء الأرشفة؟\n\nسيتم تحميل ملف ZIP وحذف الرسائل المؤرشفة من السيرفر.")) return;
 
-    const loader = document.getElementById('loader');
-    loader.classList.remove('hidden-section');
+            const loader = document.getElementById('loader');
+            loader.classList.remove('hidden-section');
 
-    try {
-        const zip = new JSZip();
-        const cutoffDate = new Date();
+            try {
+                const zip = new JSZip();
+                
+                // هذا سيجلب كل الرسائل الخاصة الموجودة في النظام
+                let allDocs = [];
+                
+                if (specificEmail) {
+                    // 1. الرسائل التي أرسلتها أنت (تم إصلاح الخطأ هنا بإضافة .get())
+                    const sent = await db.collection("private_messages")
+                        .where("sender", "==", specificEmail)
+                        .get(); 
 
-        // هذا سيجلب كل الرسائل الخاصة الموجودة في النظام
-        let query = db.collection("private_messages");
-        
-        // لو حددنا إيميل، نجيب رسايله بس (للشات الشخصي)
-        // ملحوظة: في فايربيز لازم نعمل 2 كويري ونجمعهم لو بنبحث عن Sender OR Receiver
-        let allDocs = [];
-        
-        if (specificEmail) {
-            const sent = await db.collection("private_messages")
-                .where("sender", "==", specificEmail)
-            const received = await db.collection("private_messages")
-                .where("receiver", "==", specificEmail)
-                .where("time", "<", firebase.firestore.Timestamp.fromDate(cutoffDate)).get();
-            allDocs = [...sent.docs, ...received.docs];
-        } else {
-            // لو مفيش إيميل محدد (أدمن)، هات الكل
-            const snapshot = await query.get();
-            allDocs = snapshot.docs;
-        }
+                    // 2. الرسائل التي استقبلتها أنت
+                    const received = await db.collection("private_messages")
+                        .where("receiver", "==", specificEmail)
+                        .get();
 
-        // إزالة التكرار (لأن الـ merge ممكن يكرر رسائل)
-        const uniqueDocs = Array.from(new Set(allDocs.map(a => a.id))).map(id => allDocs.find(a => a.id === id));
-
-        if (uniqueDocs.length === 0) {
-            alert("لا توجد بيانات قديمة للأرشفة.");
-            loader.classList.add('hidden-section');
-            return;
-        }
-
-        // تجميع الرسائل في مجلدات (أحمد_مع_محمد)
-        let conversations = {};
-        uniqueDocs.forEach(doc => {
-            const m = doc.data();
-            const p1 = m.sender || "unknown";
-            const p2 = m.receiver || "unknown";
-            // ترتيب الأسماء أبجدياً عشان المحادثة تدخل نفس الفولدر
-            const convKey = [p1, p2].sort().join("_WITH_").replace(/[@.]/g, "_");
-            
-            if (!conversations[convKey]) conversations[convKey] = [];
-            conversations[convKey].push(m);
-        });
-
-        // بناء ملف الـ ZIP
-        Object.keys(conversations).forEach(folderName => {
-            const folder = zip.folder(folderName);
-            const mediaBox = folder.folder("Attachments");
-            
-            // ترتيب زمني
-            const msgs = conversations[folderName].sort((a, b) => (a.time?.seconds || 0) - (b.time?.seconds || 0));
-            
-            let csv = "\ufeffالتاريخ,المرسل,المستقبل,الرسالة,اسم الملف\n";
-            
-            msgs.forEach((m, idx) => {
-                const time = m.time ? moment(m.time.toDate()).format('YYYY-MM-DD HH:mm:ss') : '-';
-                const safeText = (m.text || "").replace(/,/g, "،").replace(/\n/g, " ");
-                let fName = "لا يوجد";
-
-                if (m.file) {
-                    let ext = "bin";
-                    if (m.file.includes("image")) ext = "jpg";
-                    else if (m.file.includes("pdf")) ext = "pdf";
-                    
-                    fName = `Att_${idx}_${moment().format('ss')}.${ext}`;
-                    const b64 = m.file.split(',')[1];
-                    if(b64) mediaBox.file(fName, b64, {base64:true});
+                    // دمج الاثنين
+                    allDocs = [...sent.docs, ...received.docs];
+                } else {
+                    // لو مفيش إيميل محدد (أدمن)، هات الكل
+                    const snapshot = await db.collection("private_messages").get();
+                    allDocs = snapshot.docs;
                 }
-                csv += `${time},${m.sender},${m.receiver},${safeText},${fName}\n`;
-            });
-            
-            folder.file("Chat_History.csv", csv);
-        });
 
-        const content = await zip.generateAsync({type:"blob"});
-        saveAs(content, `${zipName}_${moment().format('YYYY-MM-DD')}.zip`);
+                // إزالة التكرار (لأن الـ merge قد يكرر رسائل المحادثة الذاتية إن وجدت)
+                const uniqueDocs = Array.from(new Set(allDocs.map(a => a.id))).map(id => allDocs.find(a => a.id === id));
 
-        await deleteDocsInBatches(uniqueDocs, "private_messages", "الرسائل الخاصة");
+                if (uniqueDocs.length === 0) {
+                    alert("لا توجد رسائل قديمة للأرشفة.");
+                    loader.classList.add('hidden-section');
+                    return;
+                }
 
-    } catch (e) {
-        console.error(e);
-        if(e.code === 'permission-denied') alert("خطأ صلاحيات: تأكد من تحديث Rules في فايربيز.");
-        else alert("حدث خطأ.");
-    } finally {
-        loader.classList.add('hidden-section');
-    }
-}
+                // تجميع الرسائل في مجلدات (أحمد_مع_محمد)
+                let conversations = {};
+                uniqueDocs.forEach(doc => {
+                    const m = doc.data();
+                    const p1 = m.sender || "unknown";
+                    const p2 = m.receiver || "unknown";
+                    // ترتيب الأسماء أبجدياً لتوحيد اسم المجلد
+                    const convKey = [p1, p2].sort().join("_WITH_").replace(/[@.]/g, "_");
+                    
+                    if (!conversations[convKey]) conversations[convKey] = [];
+                    conversations[convKey].push(m);
+                });
 
-// دالة الحذف (مشتركة)
-async function deleteDocsInBatches(docs, colName, title) {
+                // بناء ملف الـ ZIP
+                Object.keys(conversations).forEach(folderName => {
+                    const folder = zip.folder(folderName);
+                    const mediaBox = folder.folder("Attachments");
+                    
+                    // ترتيب زمني
+                    const msgs = conversations[folderName].sort((a, b) => (a.time?.seconds || 0) - (b.time?.seconds || 0));
+                    
+                    let csv = "\ufeffالتاريخ,المرسل,المستقبل,الرسالة,اسم الملف\n";
+                    
+                    msgs.forEach((m, idx) => {
+                        const time = m.time ? moment(m.time.toDate()).format('YYYY-MM-DD HH:mm:ss') : '-';
+                        const safeText = (m.text || "").replace(/,/g, "،").replace(/\n/g, " ");
+                        let fName = "لا يوجد";
+
+                        if (m.file) {
+                            let ext = "bin";
+                            if (m.file.includes("image")) ext = "jpg";
+                            else if (m.file.includes("pdf")) ext = "pdf";
+                            
+                            fName = `Att_${idx}_${moment().format('ss')}.${ext}`;
+                            const b64 = m.file.split(',')[1];
+                            if(b64) mediaBox.file(fName, b64, {base64:true});
+                        }
+                        csv += `${time},${m.sender},${m.receiver},${safeText},${fName}\n`;
+                    });
+                    
+                    folder.file("Chat_History.csv", csv);
+                });
+
+                const content = await zip.generateAsync({type:"blob"});
+                saveAs(content, `${zipName}_${moment().format('YYYY-MM-DD')}.zip`);
+
+                // حذف الرسائل بعد التحميل
+                await deleteDocsInBatches(uniqueDocs, "private_messages", "الرسائل الخاصة");
+
+            } catch (e) {
+                console.error(e);
+                alert("حدث خطأ أثناء الأرشفة: " + e.message);
+            } finally {
+                loader.classList.add('hidden-section');
+            }
+        }
+        async function deleteDocsInBatches(docs, colName, title) {
     if (!confirm(`تم تجهيز الأرشيف (${title}) بعدد ${docs.length} رسالة.\n\nهل تريد حذفهم من السيرفر الآن؟`)) return;
     
     const batchSize = 400; 
@@ -1839,6 +1839,7 @@ async function deleteDocsInBatches(docs, colName, title) {
     </script>
 </body>
 </html>
+
 
 
 
