@@ -979,27 +979,80 @@ function renderGrid() {
         }
 
        function renderMessage(m, isMe) {
-            let content = `<div class="text-sm">${m.text}</div>`;
+            // تنسيق الوقت والتاريخ
+            const timeFull = m.time ? moment(m.time.toDate()).format("D/M/YYYY h:mm A") : "...";
             
-            // معالجة المرفقات (صور أو ملفات)
-            if(m.file) {
-                if(m.file.startsWith("data:image")) {
-                    content += `<img src="${m.file}" class="message-img mt-2 rounded-lg cursor-pointer hover:opacity-80 transition" onclick="openImagePreview(this.src)">`;
+            // توليد صورة افتراضية للمرسل (لأننا لا نخزن صورته في الرسالة، نستخدم اسمه لتوليدها)
+            const senderAvatar = DEFAULT_PHOTO + encodeURIComponent(m.name || 'User');
+
+            // محتوى الرسالة (نص + مرفقات)
+            let content = "";
+            
+            // 1. النص
+            if (m.text) {
+                content += `<p class="leading-relaxed whitespace-pre-wrap ${isMe ? 'text-white' : 'text-slate-700 dark:text-slate-200'}">${m.text}</p>`;
+            }
+
+            // 2. المرفقات
+            if (m.file) {
+                const mt = m.text ? "mt-2" : ""; // مسافة لو فيه نص
+                if (m.file.startsWith("data:image")) {
+                    content += `
+                    <div class="${mt} relative group overflow-hidden rounded-lg border ${isMe ? 'border-white/20' : 'border-slate-200 dark:border-slate-600'}">
+                        <img src="${m.file}" class="max-w-[200px] max-h-[200px] object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105" onclick="openImagePreview(this.src)">
+                    </div>`;
                 } else {
-                    content += `<a href="${m.file}" download="${m.fileName || 'file'}" class="file-link mt-2 flex items-center gap-2 bg-black/5 p-2 rounded-lg border border-dashed border-slate-300 shadow-sm hover:bg-black/10 transition">
-                        <i class="fas fa-file-download text-primary-500"></i> 
-                        <span class="text-[10px] truncate">${m.fileName || 'تحميل الملف'}</span>
+                    content += `
+                    <a href="${m.file}" download="${m.fileName || 'file'}" class="${mt} flex items-center gap-3 p-3 rounded-lg ${isMe ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200'} transition border border-transparent hover:border-current">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center bg-white/20 shrink-0">
+                            <i class="fas fa-file-download text-lg"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <p class="text-[10px] font-bold truncate w-32">${m.fileName || 'ملف مرفق'}</p>
+                            <p class="text-[9px] opacity-70">اضغط للتحميل</p>
+                        </div>
                     </a>`;
                 }
             }
 
-            return `<div class="max-w-[85%] p-3 rounded-2xl mb-2 text-xs ${isMe ? "mr-auto bg-primary-600 text-white" : "ml-auto bg-slate-100 dark:bg-slate-700"} shadow-sm">
-                <div class="font-bold opacity-70 flex justify-between gap-4 mb-1">
-                    <span>${m.name}</span>
-                    <span dir="ltr">${m.time ? moment(m.time.toDate()).format("D/M/YYYY h:mm A") : "."}</span>
-                </div>
-                ${content}
-            </div>`;
+            // --- بناء الهيكل الكامل للرسالة ---
+            
+            if (isMe) {
+                // تصميم رسائلي (أنا) - تظهر على اليسار (أو اليمين حسب اتجاه الصفحة)
+                // في RTL: رسائلي تظهر على اليسار
+                return `
+                <div class="flex items-end gap-2 justify-end mb-4 group animate-fade-in">
+                    <div class="flex flex-col items-end max-w-[80%]">
+                        <div class="relative px-4 py-3 rounded-2xl rounded-bl-none bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-md text-sm">
+                            ${content}
+                            
+                            <div class="text-[9px] text-primary-100 mt-1 text-left flex items-center justify-end gap-1 opacity-80 font-mono">
+                                <span>${timeFull}</span>
+                                <i class="fas fa-check-double text-[8px]"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-white dark:border-slate-700 self-end mb-1">
+                </div>`;
+            } else {
+                // تصميم رسائل الآخرين - تظهر على اليمين
+                return `
+                <div class="flex items-end gap-2 justify-start mb-4 animate-fade-in">
+                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-slate-100 dark:border-slate-700 self-end mb-1">
+                    
+                    <div class="flex flex-col items-start max-w-[80%]">
+                        <span class="text-[10px] font-bold text-slate-500 mb-1 mr-2 px-1">${m.name}</span>
+                        
+                        <div class="relative px-4 py-3 rounded-2xl rounded-br-none bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-sm shadow-sm">
+                            ${content}
+                            
+                            <div class="text-[9px] text-slate-400 mt-1 text-right font-mono">
+                                ${timeFull}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }
         }
         
         function toggleChat(){ 
@@ -1841,4 +1894,5 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
