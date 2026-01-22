@@ -1083,40 +1083,43 @@ function renderGrid() {
             reader.readAsDataURL(file);
         }
 // 1. دالة فتح نافذة الدردشة الخاصة
-function openPrivateChat(otherEmail, otherName) {
-    if(openPrivateChats[otherEmail]) return;
-    
-    // توحيد شكل المعرف لسهولة البحث
-    const chatId = [currentUser.email.toLowerCase(), otherEmail.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
-    const windowId = `chat-priv-${chatId}`;
-    
-    const chatHtml = `
-    <div id="${windowId}" class="chat-window w-72 h-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-primary-100 dark:border-slate-700 overflow-hidden" style="bottom: 100px; left: 350px;">
-        <div class="p-3 bg-slate-800 text-white flex justify-between items-center chat-header">
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                <span class="text-xs font-bold">${otherName}</span>
-            </div>
-            <button onclick="closePrivateChat('${otherEmail}')" class="text-xs opacity-70 hover:opacity-100"><i class="fas fa-times"></i></button>
-        </div>
-        <div id="messages-${chatId}" class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50 dark:bg-slate-900/50 text-right"></div>
-        <form onsubmit="sendPrivateMessage(event, '${otherEmail}', '${chatId}')" class="p-2 border-t dark:border-slate-700 bg-white dark:bg-slate-800 flex gap-1">
-            <input type="file" id="file-${chatId}" class="hidden" onchange="handlePrivateFile(this, '${chatId}')">
-            <button type="button" onclick="document.getElementById('file-${chatId}').click()" class="text-slate-400 p-1"><i class="fas fa-paperclip text-xs"></i></button>
-            <input type="text" id="input-${chatId}" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-3 py-1 text-xs outline-none dark:text-white" placeholder="رسالة خاصة..." required>
-            <button type="submit" class="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center"><i class="fas fa-paper-plane text-[10px]"></i></button>
-        </form>
-        <div id="preview-${chatId}" class="hidden px-2 py-1 bg-primary-50 text-[9px] truncate text-primary-700"></div>
-    </div>`;
-    
-    document.getElementById('private-chats-container').insertAdjacentHTML('beforeend', chatHtml);
-    openPrivateChats[otherEmail] = { file: null, fileName: "" };
-    
-    makeDraggable(document.getElementById(windowId));
-    listenToSpecificChat(otherEmail, chatId);
-}
-
-// 2. دالة إرسال الرسالة الخاصة
+async function sendPrivateMessage(e, otherEmail, chatId) {
+            e.preventDefault();
+            const input = document.getElementById(`input-${chatId}`);
+            // تنظيف الإيميلات
+            const myEmail = currentUser.email.toLowerCase().trim();
+            const targetEmail = otherEmail.toLowerCase().trim();
+            
+            const fileData = openPrivateChats[targetEmail]; // استخدام targetEmail الموحد
+            
+            if(input.value.trim() || (fileData && fileData.file)) {
+                const msg = {
+                    text: input.value.trim(),
+                    sender: myEmail,      // حفظ كـ lowercase
+                    receiver: targetEmail, // حفظ كـ lowercase
+                    time: firebase.firestore.FieldValue.serverTimestamp(),
+                    file: fileData ? fileData.file : null,
+                    fileName: fileData ? fileData.fileName : "",
+                    name: userProfile.name
+                };
+                
+                try {
+                    // إضافة الرسالة للداتابيز
+                    await db.collection("private_messages").add(msg);
+                    
+                    // تنظيف الحقل والمرفقات
+                    input.value = "";
+                    if(fileData) { fileData.file = null; fileData.fileName = ""; }
+                    const preview = document.getElementById(`preview-${chatId}`);
+                    if(preview) preview.classList.add('hidden');
+                    
+                } catch(err) {
+                    console.error("Error sending:", err);
+                    alert("تعذر الإرسال، تحقق من الاتصال.");
+                }
+            }
+        }
+        // 2. دالة إرسال الرسالة الخاصة
 async function sendPrivateMessage(e, otherEmail, chatId) {
             e.preventDefault();
             const input = document.getElementById(`input-${chatId}`);
@@ -1148,39 +1151,52 @@ async function sendPrivateMessage(e, otherEmail, chatId) {
         }
 // 3. دالة الاستماع للرسائل (تعمل بفلترة برمجية لضمان الظهور)
 function listenToSpecificChat(otherEmail, chatId) {
+            // تنظيف الإيميلات للمقارنة
+            const myEmail = currentUser.email.toLowerCase().trim();
+            const targetEmail = otherEmail.toLowerCase().trim();
+
+            // الاستماع للرسائل مرتبة بالوقت
             db.collection("private_messages")
                 .orderBy("time", "asc")
                 .onSnapshot(s => {
                     const container = document.getElementById(`messages-${chatId}`);
+                    
+                    // إذا أغلقت النافذة، نوقف التحديث لتجنب الأخطاء
                     if(!container) return;
                     
-                    container.innerHTML = "";
+                    container.innerHTML = ""; // تفريغ لإعادة الرسم
                     
                     s.forEach(d => {
                         const m = d.data();
-                        // توحيد الأحرف الصغيرة لضمان المقارنة الصحيحة
-                        const myEmail = currentUser.email.toLowerCase();
-                        const targetEmail = otherEmail.toLowerCase();
-                        const sender = (m.sender || "").toLowerCase();
-                        const receiver = (m.receiver || "").toLowerCase();
                         
-                        // التأكد أن الرسالة تخص الطرفين الحاليين فقط
-                        const isSentByMe = (sender === myEmail && receiver === targetEmail);
-                        const isReceivedByMe = (sender === targetEmail && receiver === myEmail);
+                        // تجهيز بيانات الرسالة للمقارنة
+                        const msgSender = (m.sender || "").toLowerCase().trim();
+                        const msgReceiver = (m.receiver || "").toLowerCase().trim();
                         
-                        if(isSentByMe || isReceivedByMe) {
-                            container.innerHTML += renderMessage(m, isSentByMe);
+                        // السيناريو 1: أنا أرسلت لـ أحمد (تظهر عندي)
+                        const iSentIt = (msgSender === myEmail && msgReceiver === targetEmail);
+                        
+                        // السيناريو 2: أحمد أرسل لي (تظهر عندي)
+                        const iReceivedIt = (msgSender === targetEmail && msgReceiver === myEmail);
+                        
+                        // إذا تحقق أي من الشرطين، ارسم الرسالة
+                        if (iSentIt || iReceivedIt) {
+                            // نمرر iSentIt لدالة الرسم لتلوين الرسالة (أزرق لي، رمادي له)
+                            container.innerHTML += renderMessage(m, iSentIt);
                         }
                     });
                     
+                    // التمرير لأسفل تلقائياً
                     container.scrollTop = container.scrollHeight;
                     
-                    // تشغيل الصوت فقط إذا كانت الرسالة جديدة وليست أنا من أرسلها
+                    // تشغيل صوت فقط للرسائل الجديدة الواردة (وليس رسائلي)
                     if(!s.metadata.hasPendingWrites) {
                         s.docChanges().forEach(change => {
                             if (change.type === "added") {
-                                const m = change.doc.data();
-                                if (m.sender !== currentUser.email.toLowerCase()) {
+                                const newData = change.doc.data();
+                                const sender = (newData.sender || "").toLowerCase();
+                                // لو الرسالة جاية لي (مش أنا اللي باعتها) وفي هذا الشات المفتوح
+                                if (sender === targetEmail && sender !== myEmail) {
                                     playNotification();
                                 }
                             }
@@ -1188,8 +1204,7 @@ function listenToSpecificChat(otherEmail, chatId) {
                     }
                 });
         }
-        // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
-function listenToPrivateMessages() {
+        function listenToPrivateMessages() {
     // تسجيل وقت بداية الجلسة لمنع فتح الرسائل القديمة عند تحديث الصفحة
     const sessionStart = Date.now();
 
@@ -1908,6 +1923,7 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
 
 
