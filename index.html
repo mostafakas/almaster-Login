@@ -585,6 +585,7 @@ function renderGrid() {
                 let effectiveStatus = u.status || 'Offline';
                 if (u.isIdle) effectiveStatus = 'Idle'; 
 
+                // منطق الفلترة (إخفاء/إظهار)
                 if (!isMe) {
                     if (currentFilter !== 'all') {
                         if (effectiveStatus !== currentFilter && u.status !== currentFilter) return;
@@ -600,41 +601,49 @@ function renderGrid() {
                 const tb = u.timeBank || {};
                 const safeStart = getMillis(u.lastChange);
                 
-                // منطق النبض (Pulse)
+                // لون النقطة (Pulse)
                 let pulseClass = "bg-slate-400"; 
                 if (u.isIdle) pulseClass = "pulse-red bg-red-600";
                 else if (u.status === 'Online') pulseClass = "pulse-green bg-green-500";
                 else if (u.status === 'Break') pulseClass = "pulse-orange bg-yellow-500";
                 else if (u.status === 'Meeting') pulseClass = "pulse-blue bg-blue-500";
 
-                // تحديد هل نعرض الأزرار (تفاعلية) أم مجرد ملصقات (للمشاهد فقط)
+                // هل يمتلك صلاحية التحكم في الأزرار؟ (أدمن أو صاحب الكارت)
                 const canControl = (isAdmin || isMe);
 
                 const card = `
                 <div class="user-card ${colors.cardBg} rounded-2xl ${colors.shadow} border border-slate-200 dark:border-slate-700 ${colors.border} relative transition-all duration-300 hover:-translate-y-1 flex flex-col">
                     
                     <div class="p-5 flex-1">
-                        <div class="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
-                            <div class="relative">
-                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-full object-cover ring-4 ring-white shadow-md">
-                                <div class="absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-white ${pulseClass}"></div>
+                        <div class="flex items-start justify-between gap-3 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+                            
+                            <div class="relative pt-1">
+                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-14 h-14 rounded-full object-cover ring-4 ring-white shadow-md">
+                                <div class="absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${pulseClass}"></div>
                             </div>
-                            <div class="flex-1 overflow-hidden text-right">
+
+                            <div class="flex-1 overflow-hidden text-right pt-2">
                                 <h3 class="font-black text-lg dark:text-white truncate flex items-center gap-2">
                                     ${u.name}
                                     ${isMe ? '<span class="text-[9px] bg-slate-800 text-white px-2 py-0.5 rounded-full font-bold">ME</span>' : ''}
                                 </h3>
                                 <p class="text-xs font-bold text-slate-500 truncate">${u.department || 'Team Member'}</p>
                             </div>
-                            <div class="flex flex-col gap-2">
-                                ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="text-slate-400 hover:text-primary-600 transition"><i class="fas fa-comment-dots text-lg"></i></button>` : ''}
-                                ${(isAdmin) ? `<button onclick="openEditModal('${u.email}')" class="text-slate-400 hover:text-blue-600 transition"><i class="fas fa-cog text-lg"></i></button>` : ''}
+
+                            <div class="flex flex-col gap-1 items-end">
+                                ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="text-slate-400 hover:text-primary-600 transition p-1" title="محادثة خاصة"><i class="fas fa-comment-dots text-lg"></i></button>` : ''}
+                                
+                                <button onclick="viewLogs('${u.email}')" class="text-slate-400 hover:text-slate-600 transition p-1" title="سجل الحركات"><i class="fas fa-history text-lg"></i></button>
+                                
+                                ${(isAdmin && !isMe) ? `<button onclick="requestScreenshot('${u.email}')" class="text-slate-400 hover:text-red-500 transition p-1" title="طلب لقطة شاشة"><i class="fas fa-camera text-lg"></i></button>` : ''}
+                                
+                                ${(isAdmin) ? `<button onclick="openEditModal('${u.email}')" class="text-slate-400 hover:text-blue-600 transition p-1" title="تعديل الموظف"><i class="fas fa-cog text-lg"></i></button>` : ''}
                             </div>
                         </div>
 
                         <div class="${colors.innerGlow} rounded-2xl p-4 mb-5 border flex justify-between items-center backdrop-blur-sm shadow-sm">
                             <div class="text-right">
-                                <p class="text-[9px] font-black text-slate-500 uppercase mb-1">Current Status</p>
+                                <p class="text-[9px] font-black text-slate-500 uppercase mb-1">الحالة الحالية</p>
                                 <span class="px-3 py-1 rounded-lg text-[12px] font-black uppercase ${colors.badge} shadow-sm inline-block min-w-[80px] text-center">${u.isIdle ? 'IDLE' : (u.status || 'Offline')}</span>
                             </div>
                             <div class="font-mono text-3xl font-black ${colors.text} main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
@@ -681,9 +690,9 @@ function renderGrid() {
                             <div class="flex items-center justify-between bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
                                 ${canControl ? 
                                 `<button onclick="setStatus('${u.email}', 'Offline')" class="flex-1 text-right px-3 py-2 rounded-lg bg-slate-100 hover:bg-red-500 hover:text-white text-slate-600 font-bold text-xs transition-all duration-200 group flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-slate-400 group-hover:bg-white"></span> Offline (Stop)
+                                    <span class="w-2 h-2 rounded-full bg-slate-400 group-hover:bg-white"></span> Stop / Idle
                                  </button>` : 
-                                `<div class="flex-1 text-right px-3 py-2 text-slate-500 font-bold text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span> Idle Time</div>`}
+                                `<div class="flex-1 text-right px-3 py-2 text-slate-500 font-bold text-xs flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span> Stop / Idle</div>`}
                                 
                                 <div class="bg-red-50/50 px-3 py-1 rounded-lg border border-red-100 min-w-[80px] text-center">
                                     <span class="font-mono font-black text-red-600 text-sm stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</span>
@@ -694,7 +703,7 @@ function renderGrid() {
 
                         <div class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 border-t-2 border-slate-200 border-dashed">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"><i class="fas fa-tasks mr-1"></i> المهام المطلوبة</span>
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"><i class="fas fa-tasks mr-1"></i> المهام</span>
                                 ${(isAdmin || isMe) ? `<button onclick="addTask('${u.email}')" class="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded hover:bg-primary-50 text-primary-600 font-bold transition shadow-sm">+ جديد</button>` : ''}
                             </div>
                             <div class="space-y-1 max-h-24 overflow-y-auto text-right custom-scrollbar">
@@ -1780,6 +1789,7 @@ async function deleteDocsInBatches(docs, colName, title) {
     </script>
 </body>
 </html>
+
 
 
 
