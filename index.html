@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster - Dashboard</title>
+    <title>ALMASTER</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0ea5e9">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -982,27 +982,28 @@ function renderGrid() {
             // تنسيق الوقت
             const timeFull = m.time ? moment(m.time.toDate()).format("D/M/YYYY h:mm A") : "...";
             
-            // --- تصحيح الصور: البحث عن الصورة الحقيقية للمرسل ---
-            let senderAvatar = DEFAULT_PHOTO + encodeURIComponent(m.name || 'User'); // افتراضي
+            // --- تحديد حقل الإيميل الصحيح (user للعام أو sender للخاص) ---
+            const senderEmail = m.user || m.sender || 'unknown';
+            // -------------------------------------------------------
+
+            // البحث عن صورة المرسل
+            let senderAvatar = DEFAULT_PHOTO + encodeURIComponent(m.name || 'User'); 
             
-            // البحث في بيانات الموظفين المحملة عن صاحب هذا الإيميل
             if (typeof allUsersData !== 'undefined') {
-                const senderData = allUsersData.find(u => u.email === m.user);
+                // نبحث باستخدام الإيميل الصحيح بغض النظر عن حالة الأحرف
+                const senderData = allUsersData.find(u => u.email.toLowerCase() === senderEmail.toLowerCase());
                 if (senderData && senderData.photo) {
                     senderAvatar = senderData.photo;
                 }
             }
-            // -------------------------------------------------------
 
             // محتوى الرسالة
             let content = "";
             
-            // 1. النص
             if (m.text) {
                 content += `<p class="text-sm leading-relaxed whitespace-pre-wrap ${isMe ? 'text-white' : 'text-slate-800 dark:text-slate-200'}">${m.text}</p>`;
             }
 
-            // 2. المرفقات
             if (m.file) {
                 const mt = m.text ? "mt-3" : ""; 
                 if (m.file.startsWith("data:image")) {
@@ -1024,8 +1025,6 @@ function renderGrid() {
                 }
             }
 
-            // --- التصميم المؤسسي (مع الصور الحقيقية) ---
-            
             if (isMe) {
                 return `
                 <div class="flex items-end gap-3 justify-end mb-5 pl-2 animate-fade-in">
@@ -1043,13 +1042,11 @@ function renderGrid() {
                 return `
                 <div class="flex items-start gap-3 justify-start mb-5 pr-2 animate-fade-in">
                     <img src="${senderAvatar}" class="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-700 shadow-sm mt-1 object-cover bg-white">
-                    
                     <div class="flex flex-col items-start max-w-[80%]">
                         <div class="flex items-baseline gap-2 mb-1 mr-1">
-                            <span class="text-[11px] font-black text-slate-700 dark:text-slate-300">${m.name}</span>
+                            <span class="text-[11px] font-black text-slate-700 dark:text-slate-300">${m.name || 'User'}</span>
                             <span class="text-[9px] text-slate-400 font-mono">${timeFull}</span>
                         </div>
-                        
                         <div class="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl rounded-tr-sm border border-slate-200 dark:border-slate-700 shadow-sm text-slate-800 dark:text-slate-200">
                             ${content}
                         </div>
@@ -1121,62 +1118,76 @@ function openPrivateChat(otherEmail, otherName) {
 
 // 2. دالة إرسال الرسالة الخاصة
 async function sendPrivateMessage(e, otherEmail, chatId) {
-    e.preventDefault();
-    const input = document.getElementById(`input-${chatId}`);
-    const fileData = openPrivateChats[otherEmail];
-    
-    if(input.value.trim() || (fileData && fileData.file)) {
-        const msg = {
-            text: input.value.trim(),
-            sender: currentUser.email.toLowerCase(),
-            receiver: otherEmail.toLowerCase(),
-            time: firebase.firestore.FieldValue.serverTimestamp(),
-            file: fileData ? fileData.file : null,
-            fileName: fileData ? fileData.fileName : "",
-            name: userProfile.name
-        };
-        
-        try {
-            await db.collection("private_messages").add(msg);
-            input.value = "";
-            if(fileData) { fileData.file = null; fileData.fileName = ""; }
-            document.getElementById(`preview-${chatId}`).classList.add('hidden');
-        } catch(err) {
-            console.error("Error:", err);
+            e.preventDefault();
+            const input = document.getElementById(`input-${chatId}`);
+            const fileData = openPrivateChats[otherEmail];
+            
+            if(input.value.trim() || (fileData && fileData.file)) {
+                const msg = {
+                    text: input.value.trim(),
+                    sender: currentUser.email.toLowerCase(), // ضمان الحروف الصغيرة
+                    receiver: otherEmail.toLowerCase(),      // ضمان الحروف الصغيرة
+                    time: firebase.firestore.FieldValue.serverTimestamp(),
+                    file: fileData ? fileData.file : null,
+                    fileName: fileData ? fileData.fileName : "",
+                    name: userProfile.name
+                };
+                
+                try {
+                    await db.collection("private_messages").add(msg);
+                    input.value = "";
+                    if(fileData) { fileData.file = null; fileData.fileName = ""; }
+                    document.getElementById(`preview-${chatId}`).classList.add('hidden');
+                    
+                    // (اختياري) يمكنك إضافة الرسالة يدوياً هنا للسرعة، لكن السيرفر سيعيدها تلقائياً
+                } catch(err) {
+                    console.error("Error:", err);
+                    alert("فشل الإرسال، تحقق من الإنترنت");
+                }
+            }
         }
-    }
-}
-
 // 3. دالة الاستماع للرسائل (تعمل بفلترة برمجية لضمان الظهور)
 function listenToSpecificChat(otherEmail, chatId) {
-    db.collection("private_messages")
-        .orderBy("time", "asc")
-        .onSnapshot(s => {
-            const container = document.getElementById(`messages-${chatId}`);
-            if(!container) return;
-            
-            container.innerHTML = "";
-            s.forEach(d => {
-                const m = d.data();
-                const myEmail = currentUser.email.toLowerCase();
-                const targetEmail = otherEmail.toLowerCase();
-                
-                // التأكد أن الرسالة تخص الطرفين الحاليين فقط
-                const isSentByMe = (m.sender === myEmail && m.receiver === targetEmail);
-                const isReceivedByMe = (m.sender === targetEmail && m.receiver === myEmail);
-                
-                if(isSentByMe || isReceivedByMe) {
-                    container.innerHTML += renderMessage(m, isSentByMe);
-                }
-            });
-            container.scrollTop = container.scrollHeight;
-            if(!s.metadata.hasPendingWrites && s.docChanges().some(c => c.type === "added")) {
-                playNotification();
-            }
-        });
-}
-        // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
-        // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
+            db.collection("private_messages")
+                .orderBy("time", "asc")
+                .onSnapshot(s => {
+                    const container = document.getElementById(`messages-${chatId}`);
+                    if(!container) return;
+                    
+                    container.innerHTML = "";
+                    
+                    s.forEach(d => {
+                        const m = d.data();
+                        // توحيد الأحرف الصغيرة لضمان المقارنة الصحيحة
+                        const myEmail = currentUser.email.toLowerCase();
+                        const targetEmail = otherEmail.toLowerCase();
+                        const sender = (m.sender || "").toLowerCase();
+                        const receiver = (m.receiver || "").toLowerCase();
+                        
+                        // التأكد أن الرسالة تخص الطرفين الحاليين فقط
+                        const isSentByMe = (sender === myEmail && receiver === targetEmail);
+                        const isReceivedByMe = (sender === targetEmail && receiver === myEmail);
+                        
+                        if(isSentByMe || isReceivedByMe) {
+                            container.innerHTML += renderMessage(m, isSentByMe);
+                        }
+                    });
+                    
+                    container.scrollTop = container.scrollHeight;
+                    
+                    // تشغيل الصوت فقط إذا كانت الرسالة جديدة وليست أنا من أرسلها
+                    if(!s.metadata.hasPendingWrites) {
+                        s.docChanges().forEach(change => {
+                            if (change.type === "added") {
+                                const m = change.doc.data();
+                                if (m.sender !== currentUser.email.toLowerCase()) {
+                                    playNotification();
+                                }
+                            }
+                        });
+                    }
+                });
+        }
         // الاستماع للرسائل الخاصة الجديدة لفتح النافذة تلقائياً
 function listenToPrivateMessages() {
     // تسجيل وقت بداية الجلسة لمنع فتح الرسائل القديمة عند تحديث الصفحة
@@ -1897,6 +1908,7 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
 
 
