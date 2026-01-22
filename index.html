@@ -102,97 +102,89 @@
 
     <div id="view-system" class="hidden-section flex min-h-screen overflow-hidden">
         
-        <aside class="w-20 md:w-72 bg-[#0f172a] text-slate-300 flex flex-col shadow-2xl z-20 border-l border-slate-800 transition-all duration-300 relative group">
+        <aside id="main-sidebar" class="w-72 bg-[#0f172a] text-slate-300 flex flex-col shadow-2xl z-50 border-l border-slate-800 transition-all duration-500 ease-in-out relative overflow-hidden group">
             
-            <div class="h-24 flex flex-col items-center justify-center border-b border-slate-800/50 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-purple-500 to-primary-500 opacity-50"></div>
-                
-                <h1 class="text-2xl font-black tracking-widest text-white md:block hidden font-[Outfit]">
-                    ALMASTER
-                    <span class="text-primary-500 text-xs block font-medium tracking-normal opacity-70 mt-1">Team Dashboard</span>
-                </h1>
-                <h1 class="text-2xl font-black text-primary-500 md:hidden block">A</h1>
+            <button onclick="toggleSidebar()" class="absolute top-6 left-[-12px] w-6 h-6 bg-primary-600 rounded-full text-white flex items-center justify-center shadow-lg hover:bg-primary-500 transition z-50 border-2 border-[#0f172a] cursor-pointer">
+                <i id="sidebar-icon" class="fas fa-chevron-right text-[10px] transition-transform duration-500"></i>
+            </button>
+
+            <div class="h-20 flex items-center gap-3 px-6 border-b border-slate-800/50">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white font-black shadow-lg shadow-primary-500/20 shrink-0">
+                    A
+                </div>
+                <div class="sidebar-text overflow-hidden transition-opacity duration-300">
+                    <h1 class="text-lg font-black tracking-widest text-white font-[Outfit]">ALMASTER</h1>
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Dashboard v14</span>
+                </div>
             </div>
             
-            <div class="p-6 border-b border-slate-800/50">
-                <div class="bg-slate-800/50 rounded-2xl p-3 flex items-center gap-3 border border-slate-700/50 hover:border-slate-600 transition group cursor-default">
-                    <img id="sb-img" src="" class="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-600 group-hover:ring-primary-500 transition">
-                    <div class="hidden md:block overflow-hidden flex-1 text-right">
-                        <p id="sb-name" class="font-bold text-sm text-white truncate leading-tight">User</p>
-                        <p id="sb-role" class="text-[10px] font-bold text-primary-400 uppercase tracking-wider mt-0.5">...</p>
+            <div class="p-4 border-b border-slate-800/50">
+                <div class="bg-slate-800/50 rounded-xl p-2 flex items-center gap-3 border border-slate-700/30 hover:border-primary-500/30 transition cursor-default group/profile">
+                    <img id="sb-img" src="" class="w-8 h-8 rounded-lg object-cover ring-2 ring-slate-700 group-hover/profile:ring-primary-500 transition shrink-0">
+                    <div class="sidebar-text overflow-hidden">
+                        <p id="sb-name" class="font-bold text-xs text-white truncate w-32">User</p>
+                        <p class="text-[9px] text-green-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> المتصل</p>
                     </div>
                 </div>
             </div>
 
-            <nav class="flex-1 px-4 py-6 space-y-6 overflow-y-auto custom-scrollbar">
+            <nav class="flex-1 py-4 px-3 space-y-2 overflow-y-auto custom-scrollbar">
                 
-                <div>
-                    <p class="hidden md:block px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">الرئيسية</p>
-                    <button class="w-full flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-900/20 hover:scale-[1.02] transition-all">
-                        <i class="fas fa-th-large text-lg w-6 text-center"></i>
-                        <span class="hidden md:block text-sm font-bold">لوحة التحكم</span>
-                    </button>
-                </div>
+                <button class="w-full flex items-center gap-4 p-3 rounded-xl bg-gradient-to-r from-primary-600/10 to-primary-600/5 text-primary-400 border border-primary-500/10 hover:bg-primary-600 hover:text-white transition-all group relative overflow-hidden">
+                    <i class="fas fa-th-large text-lg w-5 text-center shrink-0"></i>
+                    <span class="sidebar-text text-xs font-bold whitespace-nowrap transition-opacity duration-300">لوحة التحكم</span>
+                    <div class="absolute right-14 bg-slate-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none md:hidden sidebar-tooltip shadow-xl border border-slate-700">الرئيسية</div>
+                </button>
 
-                <div id="admin-menu" class="hidden-section space-y-6">
+                <div id="admin-menu" class="hidden-section pt-2 border-t border-slate-800/50 mt-2">
+                    <p class="sidebar-text px-2 text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">الإدارة</p>
                     
-                    <div>
-                        <p class="hidden md:block px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">إدارة البيانات</p>
-                        <div class="space-y-1">
-                            <button onclick="archivePublicChat()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-yellow-500/20 group-hover:text-yellow-500 transition"><i class="fas fa-box-archive"></i></div>
-                                <span class="hidden md:block text-xs font-bold">أرشيف الشات العام</span>
-                            </button>
-                            
-                            <button onclick="archivePrivateChats()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-blue-500/20 group-hover:text-blue-500 transition"><i class="fas fa-comments"></i></div>
-                                <span class="hidden md:block text-xs font-bold">نسختي الخاصة</span>
-                            </button>
+                    <div class="space-y-1">
+                        <button onclick="archivePublicChat()" class="w-full flex items-center gap-4 p-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition group relative">
+                            <i class="fas fa-box-archive text-lg w-5 text-center shrink-0 group-hover:text-yellow-400 transition"></i>
+                            <span class="sidebar-text text-xs font-medium whitespace-nowrap">أرشيف الشات</span>
+                        </button>
+                        
+                        <button onclick="archivePrivateChats()" class="w-full flex items-center gap-4 p-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition group relative">
+                            <i class="fas fa-comments text-lg w-5 text-center shrink-0 group-hover:text-blue-400 transition"></i>
+                            <span class="sidebar-text text-xs font-medium whitespace-nowrap">نسختي الخاصة</span>
+                        </button>
 
-                            <button onclick="archiveAllEmployeesPrivateChats()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-red-500/20 group-hover:text-red-500 transition"><i class="fas fa-database"></i></div>
-                                <span class="hidden md:block text-xs font-bold text-red-400 group-hover:text-red-400">أرشفة شاملة (Full)</span>
-                            </button>
-                        </div>
+                        <button onclick="archiveAllEmployeesPrivateChats()" class="w-full flex items-center gap-4 p-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition group relative">
+                            <i class="fas fa-database text-lg w-5 text-center shrink-0 group-hover:text-red-400 transition"></i>
+                            <span class="sidebar-text text-xs font-medium whitespace-nowrap">أرشفة شاملة</span>
+                        </button>
+
+                        <button onclick="openEditModal('new')" class="w-full flex items-center gap-4 p-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition group relative">
+                            <i class="fas fa-user-plus text-lg w-5 text-center shrink-0 group-hover:text-green-400 transition"></i>
+                            <span class="sidebar-text text-xs font-medium whitespace-nowrap">إضافة موظف</span>
+                        </button>
+
+                        <button onclick="openReportModal()" class="w-full flex items-center gap-4 p-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition group relative">
+                            <i class="fas fa-chart-pie text-lg w-5 text-center shrink-0 group-hover:text-purple-400 transition"></i>
+                            <span class="sidebar-text text-xs font-medium whitespace-nowrap">التقارير</span>
+                        </button>
                     </div>
 
-                    <div>
-                        <p class="hidden md:block px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">الموظفين والتقارير</p>
-                        <div class="space-y-1">
-                            <button onclick="openEditModal('new')" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-green-500/20 group-hover:text-green-500 transition"><i class="fas fa-user-plus"></i></div>
-                                <span class="hidden md:block text-xs font-bold">إضافة موظف جديد</span>
-                            </button>
-
-                            <button onclick="openReportModal()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-purple-500/20 group-hover:text-purple-500 transition"><i class="fas fa-chart-pie"></i></div>
-                                <span class="hidden md:block text-xs font-bold">التقارير والإحصائيات</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-800/40 rounded-xl p-3 border border-slate-800 mt-2">
-                        <label class="flex items-center justify-between cursor-pointer group">
-                            <span class="hidden md:block text-[10px] font-bold text-slate-400 group-hover:text-white transition">عرض Offline</span>
+                    <div class="mt-4 px-2 sidebar-text">
+                        <label class="flex items-center justify-between cursor-pointer group p-2 rounded-lg hover:bg-slate-800/50 transition">
+                            <span class="text-[10px] font-bold text-slate-400 group-hover:text-white">إظهار Offline</span>
                             <div class="relative">
                                 <input type="checkbox" id="show-offline-toggle" onchange="renderGrid()" class="sr-only peer">
-                                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
+                                <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary-600"></div>
                             </div>
                         </label>
                     </div>
-
                 </div>
             </nav>
             
             <div class="p-4 border-t border-slate-800 bg-[#0b1120]">
-                <button onclick="logout()" class="w-full flex items-center justify-center md:justify-start gap-3 p-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition group border border-transparent hover:border-red-500/20">
-                    <i class="fas fa-arrow-right-from-bracket text-lg transform group-hover:-translate-x-1 transition"></i>
-                    <span class="hidden md:block text-xs font-black">تسجيل الخروج</span>
+                <button onclick="logout()" class="w-full flex items-center gap-4 p-2 rounded-xl text-red-400 hover:bg-red-500/10 transition group justify-center md:justify-start">
+                    <i class="fas fa-arrow-right-from-bracket text-lg w-5 text-center shrink-0"></i>
+                    <span class="sidebar-text text-xs font-bold whitespace-nowrap">خروج</span>
                 </button>
-                <p class="hidden md:block text-[9px] text-slate-700 text-center mt-3 font-mono">v14.0 Pro Edition</p>
             </div>
         </aside>
-
         <main class="flex-1 bg-slate-100 dark:bg-slate-900 relative overflow-hidden flex flex-col">
             <header class="bg-white dark:bg-slate-800 h-16 shadow-sm flex items-center justify-between px-6 z-10">
                 <div class="flex items-center gap-3">
@@ -1836,20 +1828,39 @@ async function archiveAllEmployeesPrivateChats() {
             // إذا أردت إغلاقه أيضاً، أخبرني لأضيف سطر واحد هنا.
         }
     });
+        // ==========================================
+        //  وظيفة الشريط الجانبي الذكي (Collapse/Expand)
+        // ==========================================
+        let isSidebarOpen = true; // الحالة الافتراضية
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            const icon = document.getElementById('sidebar-icon');
+            const texts = document.querySelectorAll('.sidebar-text');
+            
+            isSidebarOpen = !isSidebarOpen;
+
+            if (isSidebarOpen) {
+                // حالة التوسيع (Expand)
+                sidebar.classList.remove('w-20');
+                sidebar.classList.add('w-72');
+                icon.classList.remove('rotate-180'); // السهم لليمين
+                
+                // إظهار النصوص بتأخير بسيط لجمالية الحركة
+                setTimeout(() => {
+                    texts.forEach(el => el.classList.remove('hidden', 'opacity-0'));
+                }, 150);
+                
+            } else {
+                // حالة الانكماش (Collapse)
+                sidebar.classList.remove('w-72');
+                sidebar.classList.add('w-20'); // عرض الأيقونات فقط
+                icon.classList.add('rotate-180'); // السهم لليسار
+                
+                // إخفاء النصوص فوراً
+                texts.forEach(el => el.classList.add('hidden', 'opacity-0'));
+            }
+        }
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
