@@ -613,12 +613,11 @@ function renderGrid() {
                     
                     <div class="p-4 flex-1">
                         
-                        <div class="flex items-start gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+                        <div class="flex items-start gap-3 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
                             <div class="relative flex-shrink-0">
-                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-xl object-cover ring-4 ring-white shadow-md">
+                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-14 h-14 rounded-xl object-cover ring-4 ring-white shadow-md">
                                 <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${pulseClass}"></div>
                             </div>
-
                             <div class="flex-1 min-w-0">
                                 <div class="mb-2">
                                     <h3 class="font-black text-sm dark:text-white leading-tight mb-0.5 whitespace-normal">
@@ -627,82 +626,87 @@ function renderGrid() {
                                     </h3>
                                     <p class="text-[10px] font-bold text-slate-400 truncate">${u.department || 'Member'}</p>
                                 </div>
-
                                 <div class="flex items-center gap-1">
-                                    ${!isMe ? `
-                                    <button onclick="openPrivateChat('${u.email}', '${u.name}')" class="h-7 px-3 rounded-lg bg-slate-100 hover:bg-primary-100 text-slate-500 hover:text-primary-600 transition flex items-center justify-center border border-slate-200" title="محادثة">
-                                        <i class="fas fa-comment-dots text-xs"></i>
-                                    </button>` : ''}
-                                    
-                                    <button onclick="viewLogs('${u.email}')" class="h-7 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition flex items-center justify-center border border-slate-200" title="السجل">
-                                        <i class="fas fa-history text-xs"></i>
-                                    </button>
-                                    
-                                    ${(isAdmin && !isMe) ? `
-                                    <button onclick="requestScreenshot('${u.email}')" class="h-7 px-3 rounded-lg bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 transition flex items-center justify-center border border-slate-200" title="لقطة شاشة">
-                                        <i class="fas fa-camera text-xs"></i>
-                                    </button>` : ''}
-                                    
-                                    ${(isAdmin) ? `
-                                    <button onclick="openEditModal('${u.email}')" class="h-7 px-3 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-blue-600 transition flex items-center justify-center border border-slate-200" title="إعدادات">
-                                        <i class="fas fa-cog text-xs"></i>
-                                    </button>` : ''}
+                                    ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="h-6 px-2 rounded bg-slate-100 hover:bg-primary-100 text-slate-500 hover:text-primary-600 transition border border-slate-200" title="محادثة"><i class="fas fa-comment-dots text-xs"></i></button>` : ''}
+                                    <button onclick="viewLogs('${u.email}')" class="h-6 px-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition border border-slate-200" title="السجل"><i class="fas fa-history text-xs"></i></button>
+                                    ${(isAdmin && !isMe) ? `<button onclick="requestScreenshot('${u.email}')" class="h-6 px-2 rounded bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 transition border border-slate-200" title="لقطة شاشة"><i class="fas fa-camera text-xs"></i></button>` : ''}
+                                    ${(isAdmin) ? `<button onclick="openEditModal('${u.email}')" class="h-6 px-2 rounded bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-blue-600 transition border border-slate-200" title="إعدادات"><i class="fas fa-cog text-xs"></i></button>` : ''}
                                 </div>
                             </div>
                         </div>
 
-                        <div class="${colors.innerGlow} rounded-xl p-3 mb-4 border flex justify-between items-center backdrop-blur-sm">
-                            <div class="text-right">
-                                <p class="text-[9px] font-black text-slate-500 uppercase">الحالة</p>
-                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${colors.badge}">${u.isIdle ? 'IDLE' : (u.status || 'Offline')}</span>
-                            </div>
-                            <div class="font-mono text-2xl font-black ${colors.text} main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
+                        <div class="flex justify-between items-center mb-4 bg-white/50 p-2 rounded-lg border border-slate-200/60">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${colors.badge}">${u.isIdle ? 'IDLE' : (u.status || 'Offline')}</span>
+                            <div class="font-mono text-xl font-black ${colors.text} main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
                         </div>
 
-                        <div class="grid grid-cols-4 gap-1 text-center mb-4 text-[9px]">
-                            <div class="bg-green-50 p-1.5 rounded-lg border border-green-100">
-                                <span class="block font-bold text-green-700">Online</span>
-                                <span class="font-mono font-black text-slate-700 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</span>
+                        <div class="flex gap-2 mb-4 h-28">
+                            
+                            <div class="w-1/2 flex flex-col gap-1">
+                                <p class="text-[8px] font-black text-slate-400 uppercase text-center mb-0.5">تغيير الحالة</p>
+                                ${canControl ? `
+                                <div class="grid grid-cols-2 gap-1 h-full">
+                                    <button onclick="setStatus('${u.email}', 'Online')" class="rounded-lg bg-green-100 hover:bg-green-600 hover:text-white text-green-800 text-[10px] font-black transition shadow-sm flex flex-col items-center justify-center gap-1 border border-green-200">
+                                        <i class="fas fa-play text-[8px]"></i> Online
+                                    </button>
+                                    <button onclick="setStatus('${u.email}', 'Break')" class="rounded-lg bg-yellow-100 hover:bg-yellow-500 hover:text-white text-yellow-800 text-[10px] font-black transition shadow-sm flex flex-col items-center justify-center gap-1 border border-yellow-200">
+                                        <i class="fas fa-coffee text-[8px]"></i> Break
+                                    </button>
+                                    <button onclick="setStatus('${u.email}', 'Meeting')" class="rounded-lg bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-800 text-[10px] font-black transition shadow-sm flex flex-col items-center justify-center gap-1 border border-blue-200">
+                                        <i class="fas fa-users text-[8px]"></i> Meet
+                                    </button>
+                                    <button onclick="setStatus('${u.email}', 'Offline')" class="rounded-lg bg-slate-200 hover:bg-slate-600 hover:text-white text-slate-700 text-[10px] font-black transition shadow-sm flex flex-col items-center justify-center gap-1 border border-slate-300">
+                                        <i class="fas fa-power-off text-[8px]"></i> Stop
+                                    </button>
+                                </div>
+                                ` : `
+                                <div class="h-full bg-slate-50 rounded-lg border border-dashed border-slate-200 flex items-center justify-center text-[10px] text-slate-400 font-bold">
+                                    للمشاهدة فقط
+                                </div>
+                                `}
                             </div>
-                            <div class="bg-yellow-50 p-1.5 rounded-lg border border-yellow-100">
-                                <span class="block font-bold text-yellow-700">Break</span>
-                                <span class="font-mono font-black text-slate-700 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</span>
+
+                            <div class="w-1/2 flex flex-col gap-1">
+                                <p class="text-[8px] font-black text-slate-400 uppercase text-center mb-0.5">السجلات اليومية</p>
+                                <div class="grid grid-cols-2 gap-1 h-full">
+                                    <div class="bg-green-50 rounded-lg border border-green-100 flex flex-col items-center justify-center">
+                                        <span class="text-[8px] font-bold text-green-700">Online</span>
+                                        <span class="font-mono font-black text-slate-700 text-[10px] stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</span>
+                                    </div>
+                                    <div class="bg-yellow-50 rounded-lg border border-yellow-100 flex flex-col items-center justify-center">
+                                        <span class="text-[8px] font-bold text-yellow-700">Break</span>
+                                        <span class="font-mono font-black text-slate-700 text-[10px] stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</span>
+                                    </div>
+                                    <div class="bg-blue-50 rounded-lg border border-blue-100 flex flex-col items-center justify-center">
+                                        <span class="text-[8px] font-bold text-blue-700">Meeting</span>
+                                        <span class="font-mono font-black text-slate-700 text-[10px] stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</span>
+                                    </div>
+                                    <div class="bg-red-50 rounded-lg border border-red-100 flex flex-col items-center justify-center">
+                                        <span class="text-[8px] font-bold text-red-700">Idle</span>
+                                        <span class="font-mono font-black text-red-700 text-[10px] stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="bg-blue-50 p-1.5 rounded-lg border border-blue-100">
-                                <span class="block font-bold text-blue-700">Meeting</span>
-                                <span class="font-mono font-black text-slate-700 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</span>
-                            </div>
-                            <div class="bg-red-50 p-1.5 rounded-lg border border-red-100">
-                                <span class="block font-bold text-red-700">Idle</span>
-                                <span class="font-mono font-black text-red-700 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</span>
-                            </div>
-                        </div>                        
-                        
-                        <div class="bg-white dark:bg-slate-900 rounded-lg p-2 border border-slate-100 dark:border-slate-700 mb-4 h-20 overflow-hidden relative">
+
+                        </div>
+
+                        <div class="bg-white dark:bg-slate-900 rounded-lg p-2 border border-slate-200 dark:border-slate-700 h-24 overflow-hidden relative">
                             <div class="flex justify-between items-center mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10 pb-1 border-b border-slate-50">
                                 <span class="text-[9px] font-black text-slate-400 uppercase">قائمة المهام</span>
                                 ${(isAdmin || isMe) ? `<button onclick="addTask('${u.email}')" class="text-[9px] text-primary-600 hover:bg-primary-50 px-1 rounded font-bold transition">+ إضافة</button>` : ''}
                             </div>
-                            <div class="space-y-1 max-h-14 overflow-y-auto custom-scrollbar text-right">
-                                ${(u.tasks || []).length === 0 ? '<p class="text-[9px] text-slate-300 text-center mt-2">لا توجد مهام</p>' : ''}
+                            <div class="space-y-1 max-h-16 overflow-y-auto custom-scrollbar text-right">
+                                ${(u.tasks || []).length === 0 ? '<p class="text-[9px] text-slate-300 text-center mt-4">لا توجد مهام</p>' : ''}
                                 ${(u.tasks || []).map((t, idx) => `
-                                    <div class="flex items-center gap-1 group">
-                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" class="w-3 h-3 rounded border-slate-300 text-primary-600" ${(!isMe && !isAdmin) ? 'disabled' : ''}>
-                                        <span class="flex-1 text-[10px] truncate ${t.done ? 'line-through text-slate-300' : 'text-slate-600'}">${t.text}</span>
+                                    <div class="flex items-center gap-1 group bg-slate-50 p-1 rounded border border-slate-100">
+                                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" class="w-3 h-3 rounded border-slate-300 text-primary-600 cursor-pointer" ${(!isMe && !isAdmin) ? 'disabled' : ''}>
+                                        <span class="flex-1 text-[10px] truncate ${t.done ? 'line-through text-slate-400' : 'text-slate-700'}">${t.text}</span>
                                         ${isAdmin ? `<button onclick="deleteTask('${u.email}', ${idx})" class="text-red-400 opacity-0 group-hover:opacity-100 text-[10px]"><i class="fas fa-times"></i></button>` : ''}
                                     </div>
                                 `).join('')}
                             </div>
                         </div>
 
-                        ${(isMe || isAdmin) ? `
-                        <div class="grid grid-cols-4 gap-1 mt-auto pt-2 border-t border-slate-100">
-                            <button onclick="setStatus('${u.email}', 'Online')" class="py-2 rounded-lg bg-green-100 hover:bg-green-600 hover:text-white text-green-800 text-[10px] font-black transition shadow-sm">Online</button>
-                            <button onclick="setStatus('${u.email}', 'Break')" class="py-2 rounded-lg bg-yellow-100 hover:bg-yellow-500 hover:text-white text-yellow-800 text-[10px] font-black transition shadow-sm">Break</button>
-                            <button onclick="setStatus('${u.email}', 'Meeting')" class="py-2 rounded-lg bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-800 text-[10px] font-black transition shadow-sm">Meet</button>
-                            <button onclick="setStatus('${u.email}', 'Offline')" class="py-2 rounded-lg bg-slate-200 hover:bg-slate-600 hover:text-white text-slate-700 text-[10px] font-black transition shadow-sm">Off</button>
-                        </div>
-                        ` : ''}
                     </div>
                 </div>`;
                 grid.innerHTML += card;
@@ -1774,6 +1778,7 @@ async function deleteDocsInBatches(docs, colName, title) {
     </script>
 </body>
 </html>
+
 
 
 
