@@ -981,7 +981,18 @@ function renderGrid() {
        function renderMessage(m, isMe) {
             // تنسيق الوقت
             const timeFull = m.time ? moment(m.time.toDate()).format("D/M/YYYY h:mm A") : "...";
-            const senderAvatar = DEFAULT_PHOTO + encodeURIComponent(m.name || 'User');
+            
+            // --- تصحيح الصور: البحث عن الصورة الحقيقية للمرسل ---
+            let senderAvatar = DEFAULT_PHOTO + encodeURIComponent(m.name || 'User'); // افتراضي
+            
+            // البحث في بيانات الموظفين المحملة عن صاحب هذا الإيميل
+            if (typeof allUsersData !== 'undefined') {
+                const senderData = allUsersData.find(u => u.email === m.user);
+                if (senderData && senderData.photo) {
+                    senderAvatar = senderData.photo;
+                }
+            }
+            // -------------------------------------------------------
 
             // محتوى الرسالة
             let content = "";
@@ -991,7 +1002,7 @@ function renderGrid() {
                 content += `<p class="text-sm leading-relaxed whitespace-pre-wrap ${isMe ? 'text-white' : 'text-slate-800 dark:text-slate-200'}">${m.text}</p>`;
             }
 
-            // 2. المرفقات (تصميم بطاقة ملف احترافية)
+            // 2. المرفقات
             if (m.file) {
                 const mt = m.text ? "mt-3" : ""; 
                 if (m.file.startsWith("data:image")) {
@@ -1013,11 +1024,9 @@ function renderGrid() {
                 }
             }
 
-            // --- التصميم المؤسسي (Corporate Design) ---
+            // --- التصميم المؤسسي (مع الصور الحقيقية) ---
             
             if (isMe) {
-                // رسائلي (أنا) - تظهر على اليسار (في RTL)
-                // لون موحد (Primary Solid) بدون تدرجات + ظل خفيف
                 return `
                 <div class="flex items-end gap-3 justify-end mb-5 pl-2 animate-fade-in">
                     <div class="flex flex-col items-end max-w-[80%]">
@@ -1028,14 +1037,12 @@ function renderGrid() {
                             ${timeFull} <i class="fas fa-check text-primary-500"></i>
                         </span>
                     </div>
-                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-700 shadow-sm self-end mb-4">
+                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-700 shadow-sm self-end mb-4 object-cover bg-white">
                 </div>`;
             } else {
-                // رسائل الآخرين - تظهر على اليمين
-                // خلفية رمادية فاتحة جداً (Slate-100) + اسم المرسل خارج الفقاعة
                 return `
                 <div class="flex items-start gap-3 justify-start mb-5 pr-2 animate-fade-in">
-                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-700 shadow-sm mt-1">
+                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-700 shadow-sm mt-1 object-cover bg-white">
                     
                     <div class="flex flex-col items-start max-w-[80%]">
                         <div class="flex items-baseline gap-2 mb-1 mr-1">
@@ -1890,6 +1897,7 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
 
 
