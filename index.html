@@ -621,7 +621,7 @@ function renderGrid() {
 
                     <div class="p-5 flex-1 pl-6">
                         
-                        <div class="flex items-center justify-between mb-5">
+                        <div class="flex items-start justify-between mb-5">
                             <div class="flex items-center gap-3">
                                 <div class="relative">
                                     <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-12 h-12 rounded-2xl object-cover ring-2 ring-slate-50 shadow-sm">
@@ -634,51 +634,46 @@ function renderGrid() {
                                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${u.department || 'Member'}</p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="text-slate-300 hover:text-primary-600 transition"><i class="fas fa-comment-dots text-lg"></i></button>` : ''}
-                                <button onclick="viewLogs('${u.email}')" class="text-slate-300 hover:text-slate-600 transition"><i class="fas fa-history text-lg"></i></button>
-                                ${(isAdmin) ? `<button onclick="openEditModal('${u.email}')" class="text-slate-300 hover:text-blue-600 transition"><i class="fas fa-cog text-lg"></i></button>` : ''}
+
+                            <div class="flex items-center gap-1">
+                                ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-primary-100 text-slate-400 hover:text-primary-600 transition flex items-center justify-center border border-slate-100" title="محادثة"><i class="fas fa-comment-dots text-sm"></i></button>` : ''}
+                                
+                                <button onclick="viewLogs('${u.email}')" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition flex items-center justify-center border border-slate-100" title="سجل الحركات"><i class="fas fa-history text-sm"></i></button>
+                                
+                                ${(isAdmin && !isMe) ? `<button onclick="requestScreenshot('${u.email}')" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-red-100 text-slate-400 hover:text-red-600 transition flex items-center justify-center border border-slate-100" title="طلب لقطة شاشة"><i class="fas fa-camera text-sm"></i></button>` : ''}
+                                
+                                ${(isAdmin) ? `<button onclick="openEditModal('${u.email}')" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-blue-100 text-slate-400 hover:text-blue-600 transition flex items-center justify-center border border-slate-100" title="إعدادات"><i class="fas fa-cog text-sm"></i></button>` : ''}
                             </div>
                         </div>
 
                         <div class="text-center mb-6">
                             <div class="font-mono text-4xl font-black text-slate-800 dark:text-white tracking-tight main-timer" data-start="${safeStart}" data-bank="${tb[u.status] || 0}">00:00:00</div>
-                            
                             <span class="inline-block mt-2 px-4 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border border-white/50 shadow-sm ${colors.badge}">
                                 ${u.isIdle ? '⚠️ متوقف عن العمل' : u.status}
                             </span>
                         </div>
 
                         <div class="grid grid-cols-4 gap-2 mb-5">
-                            
-                            <div onclick="${canControl ? `setStatus('${u.email}', 'Online')` : ''}" 
-                                 class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${getWidgetStyle('Online', 'green', u.status === 'Online' && !u.isIdle)}">
+                            <div onclick="${canControl ? `setStatus('${u.email}', 'Online')` : ''}" class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${getWidgetStyle('Online', 'green', u.status === 'Online' && !u.isIdle)}">
                                 <i class="fas fa-play text-[10px] mb-1 opacity-70"></i>
                                 <span class="text-[8px] font-black uppercase mb-0.5">Online</span>
                                 <span class="font-mono font-black text-xs stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</span>
                             </div>
-
-                            <div onclick="${canControl ? `setStatus('${u.email}', 'Break')` : ''}" 
-                                 class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${getWidgetStyle('Break', 'yellow', u.status === 'Break' && !u.isIdle)}">
+                            <div onclick="${canControl ? `setStatus('${u.email}', 'Break')` : ''}" class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${getWidgetStyle('Break', 'yellow', u.status === 'Break' && !u.isIdle)}">
                                 <i class="fas fa-coffee text-[10px] mb-1 opacity-70"></i>
                                 <span class="text-[8px] font-black uppercase mb-0.5">Break</span>
                                 <span class="font-mono font-black text-xs stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</span>
                             </div>
-
-                            <div onclick="${canControl ? `setStatus('${u.email}', 'Meeting')` : ''}" 
-                                 class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${getWidgetStyle('Meeting', 'blue', u.status === 'Meeting' && !u.isIdle)}">
+                            <div onclick="${canControl ? `setStatus('${u.email}', 'Meeting')` : ''}" class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${getWidgetStyle('Meeting', 'blue', u.status === 'Meeting' && !u.isIdle)}">
                                 <i class="fas fa-users text-[10px] mb-1 opacity-70"></i>
                                 <span class="text-[8px] font-black uppercase mb-0.5">Meet</span>
                                 <span class="font-mono font-black text-xs stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</span>
                             </div>
-
-                            <div onclick="${canControl ? `setStatus('${u.email}', 'Offline')` : ''}" 
-                                 class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${u.isIdle ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 border-red-600 ring-2 ring-red-200 scale-105' : (u.status === 'Offline' ? 'bg-slate-700 text-white shadow-lg' : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-red-50 hover:text-red-600 hover:border-red-200')}">
+                            <div onclick="${canControl ? `setStatus('${u.email}', 'Offline')` : ''}" class="cursor-pointer rounded-xl border p-2 flex flex-col items-center justify-center transition-all duration-200 ${u.isIdle ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 border-red-600 ring-2 ring-red-200 scale-105' : (u.status === 'Offline' ? 'bg-slate-700 text-white shadow-lg' : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-red-50 hover:text-red-500')}">
                                 <i class="fas fa-power-off text-[10px] mb-1 opacity-70"></i>
                                 <span class="text-[8px] font-black uppercase mb-0.5">${u.isIdle ? 'Idle!' : 'Stop'}</span>
                                 <span class="font-mono font-black text-xs stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</span>
                             </div>
-
                         </div>
 
                         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden flex flex-col h-28 shadow-sm">
@@ -686,14 +681,12 @@ function renderGrid() {
                                 <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest"><i class="fas fa-check-circle mr-1 text-primary-500"></i> المهام</span>
                                 ${(isAdmin || isMe) ? `<button onclick="addTask('${u.email}')" class="w-5 h-5 rounded flex items-center justify-center bg-white border border-slate-200 text-primary-600 hover:bg-primary-50 transition text-[10px] shadow-sm"><i class="fas fa-plus"></i></button>` : ''}
                             </div>
-                            
                             <div class="flex-1 overflow-y-auto custom-scrollbar p-1 space-y-1 bg-slate-50/50">
                                 ${(u.tasks || []).length === 0 ? 
                                     `<div class="h-full flex flex-col items-center justify-center text-slate-300">
                                         <i class="fas fa-clipboard-check text-2xl mb-1 opacity-20"></i>
                                         <p class="text-[8px] font-bold">لا مهام حالياً</p>
                                     </div>` : ''}
-                                
                                 ${(u.tasks || []).map((t, idx) => `
                                     <div class="flex items-center gap-2 group bg-white p-1.5 rounded border border-slate-100 hover:border-primary-200 hover:shadow-sm transition">
                                         <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${u.email}', ${idx}, this.checked)" class="w-3.5 h-3.5 rounded border-slate-300 text-primary-600 focus:ring-0 cursor-pointer" ${(!isMe && !isAdmin) ? 'disabled' : ''}>
@@ -1775,6 +1768,7 @@ async function deleteDocsInBatches(docs, colName, title) {
     </script>
 </body>
 </html>
+
 
 
 
