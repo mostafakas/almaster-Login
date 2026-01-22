@@ -1202,49 +1202,65 @@ function renderGrid() {
         }
 
         // 3. دالة الاستماع
+        // 3. دالة الاستماع وتحديث الشات (النسخة المصفحة)
         function listenToSpecificChat(otherEmail, chatId) {
             const myEmail = currentUser.email.toLowerCase().trim();
             const targetEmail = otherEmail.toLowerCase().trim();
 
+            // 1. نلغي الـ orderBy من هنا لتجنب مشاكل الفهرسة (Index)
             db.collection("private_messages")
-                .orderBy("time", "asc")
                 .onSnapshot(s => {
                     const container = document.getElementById(`messages-${chatId}`);
-                    if(!container) return;
+                    if(!container) return; // النافذة أغلقت
                     
                     const messages = [];
                     s.forEach(d => messages.push(d.data()));
                     
-                    // الفلترة الصحيحة
+                    // 2. الفلترة: نختار فقط الرسائل بيني وبين هذا الشخص
                     const filtered = messages.filter(m => {
                         const s = (m.sender || "").toLowerCase();
                         const r = (m.receiver || "").toLowerCase();
                         return (s === myEmail && r === targetEmail) || (s === targetEmail && r === myEmail);
                     });
 
-                    // الرسم
+                    // 3. الترتيب اليدوي (داخل الكود) لضمان التسلسل الصحيح
+                    filtered.sort((a, b) => {
+                        const t1 = a.time ? a.time.toMillis() : Date.now();
+                        const t2 = b.time ? b.time.toMillis() : Date.now();
+                        return t1 - t2;
+                    });
+
+                    // 4. الرسم
                     container.innerHTML = "";
                     if(filtered.length === 0) {
                         container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-300 opacity-50 space-y-2"><i class="fas fa-comments text-4xl"></i><p class="text-xs">لا توجد رسائل سابقة</p></div>`;
                     } else {
                         filtered.forEach(m => {
                             const isMe = (m.sender || "").toLowerCase() === myEmail;
-                            container.innerHTML += renderMessage(m, isMe); // هنا نستخدم دالة الرسم المتطورة
+                            container.innerHTML += renderMessage(m, isMe);
                         });
                     }
                     
+                    // 5. التمرير لأسفل
                     container.scrollTop = container.scrollHeight;
                     
+                    // 6. التنبيه الصوتي
                     if(!s.metadata.hasPendingWrites) {
                         s.docChanges().forEach(change => {
                             if (change.type === "added") {
                                 const m = change.doc.data();
-                                if ((m.sender || "").toLowerCase() === targetEmail) {
-                                    playNotification();
+                                const sender = (m.sender || "").toLowerCase();
+                                if (sender === targetEmail && sender !== myEmail) {
+                                    // نتأكد أن الرسالة تخص هذه المحادثة تحديداً قبل الرنين
+                                    const receiver = (m.receiver || "").toLowerCase();
+                                    if(receiver === myEmail) playNotification();
                                 }
                             }
                         });
                     }
+                }, error => {
+                    console.error("Chat Error:", error);
+                    // في حالة وجود خطأ، لا نعرض شيئاً للمستخدم لعدم إزعاجه، لكن نطبعه في الكونسول
                 });
         }
         function makeDraggable(el) {
@@ -1927,6 +1943,7 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
 
 
