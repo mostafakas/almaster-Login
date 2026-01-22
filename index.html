@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almaster1 - Dashboard</title>
+    <title>Almaster - Dashboard</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0ea5e9">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -708,50 +708,78 @@ function renderGrid() {
         }
 
         async function setStatus(targetEmail, newStatus, isAuto = false) {
-    const userRef = db.collection('users').doc(targetEmail);
-    const snapshot = await userRef.get();
-    const uData = snapshot.data();
-    
-    // إذا لم تكن هناك بيانات أو الحالة هي نفسها الحالية (وليس تغييراً تلقائياً)، لا نفعل شيئاً
-    if(!uData || (uData.status === newStatus && !isAuto)) return;
+            // تصفير العداد المحلي للمتصفح لمنع التداخل
+            if(targetEmail === currentUser.email) { lastActionTime = Date.now(); }
 
-    // --- [التعديل هنا] ---
-    // تشغيل صوت تنبيه تغيير الحالة الجديد بدلاً من صوت الدردشة
-    playStatusNotification(); 
+            const safeEmail = targetEmail.toLowerCase().trim();
+            const userRef = db.collection('users').doc(safeEmail);
+            
+            try {
+                const snapshot = await userRef.get();
+                if (!snapshot.exists) return;
+                
+                const uData = snapshot.data();
+                // لو الحالة هي هي ومش تغيير تلقائي، نوقف التنفيذ
+                if(!uData || (uData.status === newStatus && !isAuto && !uData.isIdle)) return;
 
-    const now = Date.now();
-    const lastTime = getMillis(uData.lastChange);
-    const duration = now - lastTime;
-    
-    let timeBank = uData.timeBank || {};
-    const oldStatus = uData.status || 'Offline';
-    
-    if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
-    timeBank[oldStatus] += duration;
-    
-    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+                playStatusNotification(); 
 
-    // تسجيل العملية في سجل اللوج (Logs)
-    await db.collection('logs').add({ 
-        user: targetEmail, 
-        name: uData.name, 
-        from_status: oldStatus, 
-        to_status: newStatus, 
-        start_time: uData.lastChange || timestamp, 
-        end_time: timestamp, 
-        duration_ms: duration, 
-        auto: isAuto 
-    });
+                const now = Date.now();
+                const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+                let updateData = {};
 
-    // تحديث حالة المستخدم في قاعدة البيانات وتصفير عداد الخمول
-    await userRef.update({ 
-        status: newStatus, 
-        lastChange: timestamp, 
-        timeBank: timeBank, 
-        isIdle: false 
-    });
-}
-        // -- العدادات --
+                // --- النقطة الجوهرية (التعامل مع الخمول) ---
+                if (uData.isIdle) {
+                    // 1. لو كان خامل، نحسب وقت الخمول ونضيفه للرصيد القديم
+                    const idleDuration = now - getMillis(uData.idleSince);
+                    const currentIdleBank = parseInt(uData.idleBank) || 0;
+                    
+                    updateData = {
+                        status: newStatus,
+                        lastChange: timestamp,
+                        isIdle: false,
+                        idleSince: null,
+                        idleBank: currentIdleBank + idleDuration, // تراكمي (القديم + الجديد)
+                        timeBank: uData.timeBank // الحفاظ على وقت الأونلاين كما هو
+                    };
+
+                    // تسجيل في اللوج أن الخمول انتهى
+                    await db.collection('logs').add({ 
+                        user: safeEmail, name: uData.name, from_status: 'Idle', to_status: newStatus, 
+                        start_time: uData.idleSince || timestamp, end_time: timestamp, duration_ms: idleDuration, auto: isAuto 
+                    });
+
+                } else {
+                    // 2. لو لم يكن خامل (تغيير حالة طبيعي)
+                    const lastTime = getMillis(uData.lastChange);
+                    const duration = now - lastTime;
+                    
+                    let timeBank = uData.timeBank || {};
+                    const oldStatus = uData.status || 'Offline';
+                    if (!timeBank[oldStatus]) timeBank[oldStatus] = 0;
+                    timeBank[oldStatus] += duration;
+
+                    updateData = {
+                        status: newStatus,
+                        lastChange: timestamp,
+                        timeBank: timeBank,
+                        isIdle: false
+                    };
+
+                    // تسجيل اللوج الطبيعي
+                    await db.collection('logs').add({ 
+                        user: safeEmail, name: uData.name, from_status: oldStatus, to_status: newStatus, 
+                        start_time: uData.lastChange || timestamp, end_time: timestamp, duration_ms: duration, auto: isAuto 
+                    });
+                }
+
+                // تنفيذ التحديث
+                await userRef.update(updateData);
+
+            } catch (error) { 
+                console.error("Error setting status:", error); 
+            }
+        } 
         function updateTimers() {
             const now = Date.now();
             document.querySelectorAll('.main-timer').forEach(el => { 
@@ -790,12 +818,34 @@ function renderGrid() {
 
         // -- الخمول (Idle Tracker) --
         function resetIdleTimer() {
+            // تحديث وقت آخر نشاط في المتصفح
             lastActionTime = Date.now();
+
+            // إذا كان المستخدم مسجلاً كـ "خامل" في قاعدة البيانات
             if(userProfile && userProfile.isIdle) {
                 const now = Date.now();
+                // حساب المدة التي قضاها خاملاً
                 const dur = now - getMillis(userProfile.idleSince);
+                // الرصيد القديم
+                const oldBank = parseInt(userProfile.idleBank) || 0;
+
+                // تحديث قاعدة البيانات: (الرصيد القديم + المدة الجديدة)
                 db.collection('users').doc(currentUser.email).update({ 
-                    isIdle: false, idleSince: null, idleBank: (userProfile.idleBank || 0) + dur
+                    isIdle: false, 
+                    idleSince: null, 
+                    idleBank: oldBank + dur 
+                }).then(() => {
+                    // تسجيل حركة في اللوج لتوثيق العودة من الخمول
+                    db.collection('logs').add({
+                        user: currentUser.email,
+                        name: userProfile.name,
+                        from_status: 'Idle',
+                        to_status: userProfile.status, // العودة للحالة الأصلية (أونلاين مثلاً)
+                        start_time: userProfile.idleSince,
+                        end_time: firebase.firestore.FieldValue.serverTimestamp(),
+                        duration_ms: dur,
+                        auto: true
+                    });
                 });
             }
         }
@@ -1716,4 +1766,5 @@ async function deleteDocsInBatches(docs, colName, title) {
     </script>
 </body>
 </html>
+
 
