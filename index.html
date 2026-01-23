@@ -295,6 +295,15 @@
                         </select>
                     </div>
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">حد الخمول (بالدقائق)</label><input type="number" id="edit-idle" class="form-input" min="1" value="5"></div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400">
+                            حد العمل في الخلفية (بالدقائق)
+                            <span class="text-xs text-primary-500 block font-normal">الوقت المسموح قبل طلب "إثبات التواجد"</span>
+                        </label>
+                        <input type="number" id="edit-background-limit" class="form-input" min="5" value="60">
+                    </div>
+                    <div class="md:col-span-2"><label class="text-[10px] font-bold uppercase text-slate-400">البريد الإلكتروني</label><input type="email" id="edit-email" class="form-input text-left" dir="ltr" readonly></div>
+                    
                     <div class="md:col-span-2"><label class="text-[10px] font-bold uppercase text-slate-400">البريد الإلكتروني</label><input type="email" id="edit-email" class="form-input text-left" dir="ltr" readonly></div>
                     <div class="md:col-span-2 pt-4 flex gap-3 border-t dark:border-slate-700 mt-2">
                         <button type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-primary-700 transition">حفظ التغييرات</button>
@@ -891,23 +900,97 @@ function renderGrid() {
                 });
             }
         }
+        // -- الخمول (Idle Tracker) - نظام فحص التواجد المتغير --
+        let presenceCheckActive = false; 
+
         function startIdleTracker() {
+            
+            // عند عودة الموظف للصفحة بأي طريقة، نلغي التحذير ونصفر العداد
+            const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'visibilitychange'];
+            
+            activityEvents.forEach(evt => {
+                document.addEventListener(evt, () => {
+                    // إذا كان هناك تحذير نشط أو الموظف عاد للصفحة
+                    if (presenceCheckActive || document.hidden === false) {
+                        lastActionTime = Date.now();
+                        presenceCheckActive = false; // إلغاء وضع التحذير
+                        
+                        // إخفاء أي إشعار ويندوز سابق (اختياري)
+                    }
+                }, true);
+            });
+
             setInterval(() => {
-                if(!userProfile || userProfile.status === 'Offline' || userProfile.role === 'admin') return;
-                const limit = (parseInt(userProfile.idleLimit)||5)*60*1000;
-                if ((Date.now() - lastActionTime) > limit && !userProfile.isIdle) {
-                    db.collection('users').doc(currentUser.email).update({ 
-                        isIdle: true, idleSince: firebase.firestore.FieldValue.serverTimestamp() 
-                    });
+                // 1. شروط عدم الاحتساب الأساسية
+                if(!userProfile || userProfile.status === 'Offline' || userProfile.role === 'admin' || userProfile.isIdle) return;
+
+                const now = Date.now();
+                const timeDiff = now - lastActionTime;
+                
+                // --- إعدادات الوقت (من بروفايل الموظف) ---
+                const activePageLimit = (parseInt(userProfile.idleLimit) || 5); // والصفحة مفتوحة (افتراضي 5)
+                
+                // هنا نستخدم الرقم الذي حدده المدير، أو 60 دقيقة كاحتياطي
+                const backgroundPageLimit = (parseInt(userProfile.backgroundLimit) || 60); 
+                
+                const warningDuration = 5 * 60 * 1000; // مهلة 5 دقايق للرد على التنبيه (ثابتة)
+
+                // تحديد الحد المسموح بناءً على حالة الصفحة
+                let currentLimit = document.hidden ? (backgroundPageLimit * 60 * 1000) : (activePageLimit * 60 * 1000);
+
+                // 2. المرحلة الأولى: تجاوز الوقت المسموح (بدء التحذير - فحص التواجد)
+                if (timeDiff > currentLimit && !presenceCheckActive) {
+                    presenceCheckActive = true; 
+                    
+                    // تشغيل صوت التنبيه الجديد (Alert Sound) ليكون مميزاً
+                    const alertSound = document.getElementById('alert-sound');
+                    if (alertSound) {
+                        alertSound.currentTime = 0;
+                        alertSound.play().catch(e => console.log("Sound blocked"));
+                    } else {
+                        playNotification(); // بديل لو الصوت الجديد مش موجود
+                    }
+
+                    // إرسال إشعار للموظف
+                    if (Notification.permission === "granted") {
+                        const n = new Notification("⏳ فحص التواجد", {
+                            body: `لقد مرت ${document.hidden ? backgroundPageLimit : activePageLimit} دقيقة دون نشاط. اضغط هنا لتأكيد أنك مازلت تعمل.`,
+                            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png",
+                            requireInteraction: true,
+                            tag: "presence-check"
+                        });
+                        
+                        n.onclick = function() {
+                            window.focus();
+                            this.close();
+                            lastActionTime = Date.now();
+                            presenceCheckActive = false;
+                        };
+                    }
                 }
-            }, 3000);
+
+                // 3. المرحلة الثانية: تجاوز وقت التحذير (لم يرد الموظف) -> تحويل لـ Idle
+                if (presenceCheckActive && timeDiff > (currentLimit + warningDuration)) {
+                    
+                    db.collection('users').doc(currentUser.email).update({ 
+                        isIdle: true, 
+                        idleSince: firebase.firestore.FieldValue.serverTimestamp() 
+                    });
+
+                    presenceCheckActive = false; 
+                    
+                    if (Notification.permission === "granted") {
+                        new Notification("⚠️ تم تغيير الحالة", {
+                            body: "لعدم الرد على فحص التواجد، تم تحويل حالتك إلى خمول.",
+                            icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
+                        });
+                    }
+                }
+
+            }, 5000); 
         }
-
-        // -- نظام الدردشة المطور --
-
-        // إشعار صوتي
-      // اترك هذه كما هي لرسائل الدردشة
-            function playNotification() {
+        
+        function playNotification() {
                 const sound = document.getElementById('notification-sound');
                 sound.currentTime = 0;
                 sound.play().catch(e => console.log("Audio play blocked"));
@@ -1353,36 +1436,68 @@ function renderGrid() {
         }
 
         // -- إدارة البيانات (Edit & Reports) --
+       // 1. فتح نافذة التعديل (مع الحقل الجديد)
         async function openEditModal(e){
-            document.getElementById("modal-edit").classList.remove("hidden"); const t=document.getElementById("edit-email");
-            if(e==="new"){ document.getElementById("form-edit").reset(); t.readOnly=false; t.setAttribute("data-mode","new"); document.getElementById("edit-preview").src=DEFAULT_PHOTO+"New"; }
+            document.getElementById("modal-edit").classList.remove("hidden"); 
+            const t = document.getElementById("edit-email");
+            
+            if(e === "new"){ 
+                document.getElementById("form-edit").reset(); 
+                t.readOnly = false; 
+                t.setAttribute("data-mode", "new"); 
+                document.getElementById("edit-preview").src = DEFAULT_PHOTO + "New"; 
+                // القيمة الافتراضية للموظف الجديد
+                document.getElementById("edit-background-limit").value = 60; 
+            }
             else { 
-                const d=(await db.collection("users").doc(e).get()).data(); 
-                t.readOnly=true; t.value=d.email; t.setAttribute("data-mode","edit"); 
-                document.getElementById("edit-name").value=d.name; 
-                document.getElementById("edit-title").value=d.title||""; 
-                document.getElementById("edit-dept").value=d.department||"";
-                document.getElementById("edit-role").value=d.role||"employee"; 
-                document.getElementById("edit-idle").value=d.idleLimit||5; 
-                document.getElementById("edit-photo-base64").value=d.photo||""; 
-                document.getElementById("edit-preview").src=d.photo||DEFAULT_PHOTO+d.name; 
+                const d = (await db.collection("users").doc(e).get()).data(); 
+                t.readOnly = true; 
+                t.value = d.email; 
+                t.setAttribute("data-mode", "edit"); 
+                
+                document.getElementById("edit-name").value = d.name; 
+                document.getElementById("edit-title").value = d.title || ""; 
+                document.getElementById("edit-dept").value = d.department || "";
+                document.getElementById("edit-role").value = d.role || "employee"; 
+                document.getElementById("edit-idle").value = d.idleLimit || 5; 
+                
+                // --- الحقل الجديد: قراءة القيمة أو وضع 60 كافتراضي ---
+                document.getElementById("edit-background-limit").value = d.backgroundLimit || 60;
+                // ---------------------------------------------------
+
+                document.getElementById("edit-photo-base64").value = d.photo || ""; 
+                document.getElementById("edit-preview").src = d.photo || DEFAULT_PHOTO + d.name; 
             }
         }
+
+        // 2. حفظ التغييرات (مع الحقل الجديد)
         async function saveUserChanges(e){
-            e.preventDefault(); const em=document.getElementById("edit-email").value.toLowerCase().trim();
-            const data={ 
-                name:document.getElementById("edit-name").value, 
-                title:document.getElementById("edit-title").value, 
-                department:document.getElementById("edit-dept").value,
-                role:document.getElementById("edit-role").value, 
-                idleLimit:parseInt(document.getElementById("edit-idle").value)||5, 
-                photo:document.getElementById("edit-photo-base64").value 
+            e.preventDefault(); 
+            const em = document.getElementById("edit-email").value.toLowerCase().trim();
+            
+            const data = { 
+                name: document.getElementById("edit-name").value, 
+                title: document.getElementById("edit-title").value, 
+                department: document.getElementById("edit-dept").value,
+                role: document.getElementById("edit-role").value, 
+                idleLimit: parseInt(document.getElementById("edit-idle").value) || 5, 
+                
+                // --- حفظ الحقل الجديد ---
+                backgroundLimit: parseInt(document.getElementById("edit-background-limit").value) || 60,
+                // -----------------------
+
+                photo: document.getElementById("edit-photo-base64").value 
             };
-            if(document.getElementById("edit-email").getAttribute("data-mode")==="new"){ 
-                data.email=em; data.status="Offline"; data.timeBank={}; data.tasks=[];
+
+            if(document.getElementById("edit-email").getAttribute("data-mode") === "new"){ 
+                data.email = em; 
+                data.status = "Offline"; 
+                data.timeBank = {}; 
+                data.tasks = [];
                 await db.collection("users").doc(em).set(data); 
             }
             else await db.collection("users").doc(em).update(data);
+            
             closeModal("modal-edit");
         }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -2017,6 +2132,7 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
 
 
