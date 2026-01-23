@@ -73,6 +73,7 @@
 
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
     <audio id="status-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
@@ -1658,46 +1659,47 @@ async function requestScreenshot(targetEmail) {
     // الموظف يستمع لطلبات التصوير
 // الموظف يستمع لطلبات التصوير مع إشعارات ويندوز وصوت
 // الموظف يستمع لطلبات التصوير مع إشعارات ويندوز وصوت (محسن)
+// الموظف يستمع لطلبات التصوير (مع نغمة تحذير خاصة)
 function listenForScreenshotRequests() {
     db.collection('screenshot_requests').doc(currentUser.email.toLowerCase())
         .onSnapshot(async (doc) => {
             const data = doc.data();
             
-            // نتحقق أن الطلب جديد وحالته "قيد الانتظار"
             if (data && data.status === 'pending') {
                 
-                // 1. تشغيل التنبيه الصوتي فوراً
-                playNotification();
+                // 1. تشغيل نغمة التحذير الجديدة (بدلاً من playNotification)
+                const alertSound = document.getElementById('alert-sound');
+                if (alertSound) {
+                    alertSound.currentTime = 0;
+                    alertSound.play().catch(e => console.log("Sound blocked"));
+                }
 
-                // 2. إرسال إشعار ويندوز (Desktop Notification)
+                // 2. إرسال إشعار ويندوز
                 if (Notification.permission === "granted") {
-                    const notification = new Notification("⚠️ طلب لقطة شاشة", {
-                        body: "المدير يطلب لقطة شاشة لسطح المكتب الآن. اضغط هنا للموافقة.",
+                    const notification = new Notification("⚠️ تنبيه إداري", {
+                        body: "مطلوب لقطة شاشة حالاً. اضغط للموافقة.",
                         icon: "https://cdn-icons-png.flaticon.com/512/681/681498.png",
-                        requireInteraction: true, // الإشعار يفضل ثابت لحد ما يدوس عليه
+                        requireInteraction: true,
                         tag: "screenshot-alert"
                     });
 
-                    // عند الضغط على الإشعار، نفتح النافذة للموظف
                     notification.onclick = function() {
                         window.focus();
                         this.close();
                     };
                 }
 
-                // 3. تحديث الحالة في قاعدة البيانات لمنع التكرار (Processing)
+                // 3. تحديث الحالة
                 await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
                     status: 'processing' 
                 });
                 
-                // 4. إظهار نافذة التأكيد للموظف (بتأخير بسيط لضمان أن المتصفح نشط)
+                // 4. إظهار النافذة
                 setTimeout(() => {
-                    const confirmCapture = confirm("⚠️ إشعار إداري: مطلوب لقطة شاشة للعمل الآن.\n\nاضغط OK لبدء مشاركة الشاشة.");
-                    
+                    const confirmCapture = confirm("⚠️ تنبيه: الإدارة تطلب لقطة شاشة لسطح المكتب.\n\nاضغط OK للموافقة والإرسال.");
                     if (confirmCapture) {
                         captureAndSend(data.requestedBy);
                     } else {
-                        // في حال الرفض نحدث الحالة
                         db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
                             status: 'refused' 
                         });
@@ -1706,7 +1708,7 @@ function listenForScreenshotRequests() {
             }
         });
 }
-// دالة التقاط الشاشة وإرسالها كشات خاص
+        // دالة التقاط الشاشة وإرسالها كشات خاص
 async function captureAndSend(adminEmail) {
     try {
         // طلب الوصول للشاشة
@@ -2015,6 +2017,7 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
 
 
