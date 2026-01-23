@@ -255,11 +255,37 @@
                 <span id="file-name" class="truncate max-w-[200px]"></span>
                 <button type="button" onclick="clearAttachment()" class="text-red-500"><i class="fas fa-times"></i></button>
             </div>
-            <div class="flex gap-2">
+            <div id="chat-input-area" class="flex gap-2 items-center">
                 <input type="file" id="chat-file" class="hidden" onchange="handleFileSelect(this)">
                 <button type="button" onclick="document.getElementById('chat-file').click()" class="w-10 h-10 text-slate-400 hover:text-primary-500 transition"><i class="fas fa-paperclip"></i></button>
-                <input type="text" id="chat-input" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 ring-primary-500 dark:text-white" placeholder="اكتب رسالتك..." required autocomplete="off">
+                
+                <input type="text" id="chat-input" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 ring-primary-500 dark:text-white" placeholder="اكتب رسالتك..." autocomplete="off">
+                
+                <button type="button" onclick="startRecording('public')" class="w-10 h-10 text-slate-400 hover:text-red-500 transition"><i class="fas fa-microphone"></i></button>
+                
                 <button type="submit" class="w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center transition"><i class="fas fa-paper-plane text-xs"></i></button>
+            </div>
+
+            <div id="chat-recording-area" class="hidden flex gap-3 items-center justify-between bg-red-50 dark:bg-red-900/20 p-2 rounded-full border border-red-100 dark:border-red-900">
+                <div class="flex items-center gap-2 text-red-600 px-2">
+                    <span class="animate-pulse text-xs font-bold">● جاري التسجيل...</span>
+                    <span id="recording-timer-public" class="font-mono text-xs">00:00</span>
+                </div>
+                <div class="flex gap-1">
+                    <button type="button" onclick="cancelRecording()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs"><i class="fas fa-times"></i></button>
+                    <button type="button" onclick="stopAndSendRecording('public')" class="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+
+            <div id="chat-recording-area" class="hidden flex gap-3 items-center justify-between bg-red-50 dark:bg-red-900/20 p-2 rounded-full border border-red-100 dark:border-red-900">
+                <div class="flex items-center gap-2 text-red-600 px-2">
+                    <span class="animate-pulse text-xs font-bold">● جاري التسجيل...</span>
+                    <span id="recording-timer-public" class="font-mono text-xs">00:00</span>
+                </div>
+                <div class="flex gap-1">
+                    <button type="button" onclick="cancelRecording()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs"><i class="fas fa-times"></i></button>
+                    <button type="button" onclick="stopAndSendRecording('public')" class="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs"><i class="fas fa-paper-plane"></i></button>
+                </div>
             </div>
         </form>
     </div>
@@ -1099,6 +1125,133 @@ function renderGrid() {
                 }, err => console.log("Listener Warning")); 
         }
 
+        // --- نظام تسجيل الصوت ---
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingTimer = null;
+        let recordingSeconds = 0;
+        let currentRecordChatId = null; // لتحديد نحن نسجل في العام أم الخاص
+
+        async function startRecording(chatId, targetEmail = null) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                currentRecordChatId = chatId;
+
+                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+
+                // تبديل الواجهة
+                toggleRecordUI(chatId, true);
+
+                // بدء المؤقت
+                recordingSeconds = 0;
+                updateRecordTimer(chatId);
+                recordingTimer = setInterval(() => {
+                    recordingSeconds++;
+                    updateRecordTimer(chatId);
+                }, 1000);
+
+                mediaRecorder.start();
+
+            } catch (err) {
+                alert("يرجى السماح بصلاحية المايكروفون للتسجيل.");
+                console.error(err);
+            }
+        }
+
+        function stopAndSendRecording(chatId, targetEmail = null) {
+            if (!mediaRecorder) return;
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = async () => {
+                    const base64Audio = reader.result;
+                    
+                    // إرسال الصوت
+                    if (chatId === 'public') {
+                        // إرسال للشات العام
+                        await db.collection("messages").add({
+                            user: currentUser.email,
+                            name: userProfile.name,
+                            text: "", // نص فارغ
+                            file: base64Audio, // الصوت يعامل كملف
+                            fileName: "voice_note.webm",
+                            type: "voice", // علامة لتمييزه
+                            time: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } else {
+                        // إرسال للشات الخاص
+                        // نحتاج للإيميلين (المرسل والمستقبل)
+                        // sender هو أنا، receiver هو targetEmail الممرر
+                        if(targetEmail) {
+                            await db.collection("private_messages").add({
+                                sender: currentUser.email.toLowerCase(),
+                                receiver: targetEmail.toLowerCase(),
+                                text: "",
+                                file: base64Audio,
+                                fileName: "voice_note.webm",
+                                type: "voice",
+                                time: firebase.firestore.FieldValue.serverTimestamp(),
+                                name: userProfile.name
+                            });
+                        }
+                    }
+                    
+                    cleanupRecording(chatId);
+                };
+            };
+
+            mediaRecorder.stop();
+        }
+
+        function cancelRecording(chatId = currentRecordChatId) {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                mediaRecorder = null;
+            }
+            cleanupRecording(chatId);
+        }
+
+        function cleanupRecording(chatId) {
+            clearInterval(recordingTimer);
+            if(mediaRecorder) mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            toggleRecordUI(chatId, false);
+            audioChunks = [];
+        }
+
+        function toggleRecordUI(chatId, isRecording) {
+            if (chatId === 'public') {
+                const inputArea = document.getElementById('chat-input-area');
+                const recordArea = document.getElementById('chat-recording-area');
+                if(isRecording) { inputArea.classList.add('hidden'); recordArea.classList.remove('hidden'); }
+                else { inputArea.classList.remove('hidden'); recordArea.classList.add('hidden'); }
+            } else {
+                const inputArea = document.getElementById(`input-area-${chatId}`);
+                const recordArea = document.getElementById(`record-area-${chatId}`);
+                if (inputArea && recordArea) {
+                    if(isRecording) { inputArea.classList.add('hidden'); recordArea.classList.remove('hidden'); }
+                    else { inputArea.classList.remove('hidden'); recordArea.classList.add('hidden'); }
+                }
+            }
+        }
+
+        function updateRecordTimer(chatId) {
+            const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+            const secs = (recordingSeconds % 60).toString().padStart(2, '0');
+            const timeString = `${mins}:${secs}`;
+            
+            if (chatId === 'public') {
+                const el = document.getElementById('recording-timer-public');
+                if(el) el.innerText = timeString;
+            } else {
+                const el = document.getElementById(`timer-${chatId}`);
+                if(el) el.innerText = timeString;
+            }
+        }
+
         async function sendMessage(e){ 
             e.preventDefault(); 
             const i=document.getElementById("chat-input"); 
@@ -1117,39 +1270,48 @@ function renderGrid() {
         }
 
        function renderMessage(m, isMe) {
-            // تنسيق الوقت
             const timeFull = m.time ? moment(m.time.toDate()).format("D/M/YYYY h:mm A") : "...";
             
-            // --- تحديد حقل الإيميل الصحيح (user للعام أو sender للخاص) ---
+            // تحديد الصورة الرمزية
             const senderEmail = m.user || m.sender || 'unknown';
-            // -------------------------------------------------------
-
-            // البحث عن صورة المرسل
             let senderAvatar = DEFAULT_PHOTO + encodeURIComponent(m.name || 'User'); 
-            
             if (typeof allUsersData !== 'undefined') {
-                // نبحث باستخدام الإيميل الصحيح بغض النظر عن حالة الأحرف
                 const senderData = allUsersData.find(u => u.email.toLowerCase() === senderEmail.toLowerCase());
-                if (senderData && senderData.photo) {
-                    senderAvatar = senderData.photo;
-                }
+                if (senderData && senderData.photo) senderAvatar = senderData.photo;
             }
 
-            // محتوى الرسالة
             let content = "";
             
+            // 1. عرض النص إن وجد
             if (m.text) {
                 content += `<p class="text-sm leading-relaxed whitespace-pre-wrap ${isMe ? 'text-white' : 'text-slate-800 dark:text-slate-200'}">${m.text}</p>`;
             }
 
+            // 2. معالجة الملفات (صور أو صوت أو ملفات عادية)
             if (m.file) {
                 const mt = m.text ? "mt-3" : ""; 
-                if (m.file.startsWith("data:image")) {
+                
+                // حالة 1: تسجيل صوتي (Voice Note)
+                if (m.type === 'voice' || m.file.startsWith("data:audio") || (m.fileName && m.fileName.endsWith('webm'))) {
+                    content += `
+                    <div class="${mt} flex items-center gap-2 min-w-[200px]">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center ${isMe ? 'bg-white/20' : 'bg-primary-100 text-primary-600'}">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                        <audio controls controlsList="nodownload" class="h-8 w-48 rounded-lg opacity-90">
+                            <source src="${m.file}" type="audio/webm">
+                        </audio>
+                    </div>`;
+                } 
+                // حالة 2: صورة
+                else if (m.file.startsWith("data:image")) {
                     content += `
                     <div class="${mt} relative overflow-hidden rounded-lg border ${isMe ? 'border-white/20' : 'border-slate-200 dark:border-slate-600'}">
                         <img src="${m.file}" class="max-w-[220px] max-h-[200px] object-cover cursor-pointer hover:scale-105 transition-transform duration-500" onclick="openImagePreview(this.src)">
                     </div>`;
-                } else {
+                } 
+                // حالة 3: ملف عادي
+                else {
                     content += `
                     <a href="${m.file}" download="${m.fileName || 'file'}" class="${mt} flex items-center gap-3 p-2.5 rounded-lg border ${isMe ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-50'} transition group">
                         <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-slate-600 text-primary-600 dark:text-primary-400">
@@ -1163,10 +1325,11 @@ function renderGrid() {
                 }
             }
 
+            // القالب النهائي (يمين أو يسار)
             if (isMe) {
                 return `
                 <div class="flex items-end gap-3 justify-end mb-5 pl-2 animate-fade-in">
-                    <div class="flex flex-col items-end max-w-[80%]">
+                    <div class="flex flex-col items-end max-w-[85%]">
                         <div class="bg-primary-600 text-white px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm border border-primary-700">
                             ${content}
                         </div>
@@ -1180,7 +1343,7 @@ function renderGrid() {
                 return `
                 <div class="flex items-start gap-3 justify-start mb-5 pr-2 animate-fade-in">
                     <img src="${senderAvatar}" class="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-700 shadow-sm mt-1 object-cover bg-white">
-                    <div class="flex flex-col items-start max-w-[80%]">
+                    <div class="flex flex-col items-start max-w-[85%]">
                         <div class="flex items-baseline gap-2 mb-1 mr-1">
                             <span class="text-[11px] font-black text-slate-700 dark:text-slate-300">${m.name || 'User'}</span>
                             <span class="text-[9px] text-slate-400 font-mono">${timeFull}</span>
@@ -1273,18 +1436,37 @@ function renderGrid() {
                     <button type="button" onclick="cancelPrivateFile('${targetEmail}', '${chatId}')" class="text-red-500 hover:bg-red-100 p-1 rounded-full"><i class="fas fa-times"></i></button>
                 </div>
 
-                <form onsubmit="sendPrivateMessage(event, '${targetEmail}', '${chatId}')" class="p-3 border-t dark:border-slate-700 bg-white dark:bg-slate-800 flex gap-2 items-center">
-                    <input type="file" id="file-${chatId}" class="hidden" onchange="handlePrivateFile(this, '${targetEmail}')">
+                // ... داخل chatHtml في دالة openPrivateChat ...
+                <form onsubmit="sendPrivateMessage(event, '${targetEmail}', '${chatId}')" class="p-3 border-t dark:border-slate-700 bg-white dark:bg-slate-800">
                     
-                    <button type="button" onclick="document.getElementById('file-${chatId}').click()" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-primary-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-                        <i class="fas fa-paperclip text-sm"></i>
-                    </button>
-                    
-                    <input type="text" id="input-${chatId}" class="flex-1 bg-slate-100 dark:bg-slate-700/50 border border-transparent focus:border-primary-500 focus:bg-white dark:focus:bg-slate-700 rounded-xl px-4 py-2 text-xs outline-none dark:text-white transition-all placeholder:text-slate-400" placeholder="اكتب رسالتك..." required autocomplete="off">
-                    
-                    <button type="submit" class="w-9 h-9 bg-primary-600 hover:bg-primary-700 text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/30 transition transform hover:scale-105">
-                        <i class="fas fa-paper-plane text-xs"></i>
-                    </button>
+                    <div id="input-area-${chatId}" class="flex gap-2 items-center">
+                        <input type="file" id="file-${chatId}" class="hidden" onchange="handlePrivateFile(this, '${targetEmail}')">
+                        
+                        <button type="button" onclick="document.getElementById('file-${chatId}').click()" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-primary-600 transition">
+                            <i class="fas fa-paperclip text-sm"></i>
+                        </button>
+                        
+                        <input type="text" id="input-${chatId}" class="flex-1 bg-slate-100 dark:bg-slate-700/50 border border-transparent focus:border-primary-500 rounded-xl px-4 py-2 text-xs outline-none dark:text-white transition-all placeholder:text-slate-400" placeholder="اكتب..." autocomplete="off">
+                        
+                        <button type="button" onclick="startRecording('${chatId}', '${targetEmail}')" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-red-500 transition">
+                            <i class="fas fa-microphone text-sm"></i>
+                        </button>
+
+                        <button type="submit" class="w-9 h-9 bg-primary-600 hover:bg-primary-700 text-white rounded-xl flex items-center justify-center shadow-lg transition hover:scale-105">
+                            <i class="fas fa-paper-plane text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div id="record-area-${chatId}" class="hidden flex items-center justify-between bg-red-50 dark:bg-red-900/20 p-1.5 rounded-xl border border-red-100">
+                        <div class="flex items-center gap-2 text-red-600 px-2">
+                            <span class="animate-pulse text-[10px] font-bold">● تسجيل</span>
+                            <span id="timer-${chatId}" class="font-mono text-[10px]">00:00</span>
+                        </div>
+                        <div class="flex gap-1">
+                            <button type="button" onclick="cancelRecording('${chatId}')" class="w-7 h-7 rounded-full bg-white text-slate-500 hover:text-red-500 shadow-sm flex items-center justify-center"><i class="fas fa-times text-xs"></i></button>
+                            <button type="button" onclick="stopAndSendRecording('${chatId}', '${targetEmail}')" class="w-7 h-7 rounded-full bg-red-500 text-white shadow-sm flex items-center justify-center"><i class="fas fa-arrow-up text-xs"></i></button>
+                        </div>
+                    </div>
                 </form>
             </div>`;
             
@@ -2135,6 +2317,7 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
 
 
