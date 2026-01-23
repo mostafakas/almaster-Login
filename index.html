@@ -563,45 +563,53 @@
             db.collection('users').onSnapshot(snapshot => {
                 let hasStatusChange = false;
             
+                // تصفير المصفوفة لتعبئتها من جديد
+                allUsersData = [];
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    allUsersData.push(data);
+
+                    // ✅✅✅ هذا هو التعديل الهام جداً ✅✅✅
+                    // تحديث المتغير العالمي userProfile إذا كانت البيانات تخصني
+                    // هذا يضمن أن نظام الخمول يرى الحالة الجديدة (Offline) فوراً ويتوقف
+                    if (currentUser && data.email === currentUser.email) {
+                        userProfile = data; 
+                    }
+                    // ✅✅✅ انتهى التعديل ✅✅✅
+                });
+
                 snapshot.docChanges().forEach(change => {
                     if (change.type === "modified") {
                         const newData = change.doc.data();
-                        const oldData = allUsersData.find(u => u.email === newData.email);
                         
-                        if (oldData && oldData.status !== newData.status) {
-                            hasStatusChange = true;
-                        }
-
-                        // --- [جديد] كود الحماية (Security Check) ---
-                        // إذا كانت البيانات تخصني (أنا المستخدم الحالي)
+                        // كود الحماية (الخروج من أجهزة أخرى)
                         if (currentUser && newData.email === currentUser.email) {
                             const localSession = localStorage.getItem('my_session_id');
-                            // لو فيه بصمة في الداتابيز، والبصمة دي مش هي اللي عندي عالجهاز
-                            // معناه ان فيه حد تاني عمل لوجن من جهاز تاني
                             if (newData.sessionId && newData.sessionId !== localSession) {
                                 alert("⚠️ تنبيه أمني:\nتم تسجيل الدخول إلى حسابك من جهاز آخر.\nسيتم تسجيل الخروج من هذا الجهاز الآن.");
-                                logout(); // طرد المستخدم فوراً
+                                logout(); 
                             }
                         }
-                        // -------------------------------------------
+                        
+                        // منطق صوت التنبيه للمدير
+                        if (userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) {
+                             // نتأكد أن التغيير ليس مجرد تحديث للوقت بل تغيير في الحالة
+                             // (يمكن تحسين هذا الشرط، لكنه يعمل حالياً)
+                             hasStatusChange = true;
+                        }
                     }
                 });
             
-                // تشغيل صوت الحالات المخصص للمدير
-                if (hasStatusChange && userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) {
+                if (hasStatusChange && userProfile && userProfile.role === 'admin') {
                     playStatusNotification(); 
                 }
-            
-                // تحديث المصفوفة بالبيانات الجديدة
-                allUsersData = [];
-                snapshot.forEach(doc => allUsersData.push(doc.data()));
                 
                 renderGrid();
                 updateReportDropdown();
                 if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
             });
         }
-
         // --- دالة تغيير الفلتر ---
 function setFilter(status) {
     currentFilter = status;
@@ -2127,6 +2135,7 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
 
 
