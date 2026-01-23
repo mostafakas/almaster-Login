@@ -960,6 +960,33 @@ function renderGrid() {
                 }
             });
         }
+        // --- هذه الدالة كانت مفقودة وتسبب الخطأ في الكونسول ---
+        function listenToPrivateMessages() {
+            // الاستماع للرسائل الواردة للمستخدم الحالي فقط
+            db.collection("private_messages")
+                .where("receiver", "==", currentUser.email.toLowerCase())
+                .onSnapshot(s => {
+                    if(!s.metadata.hasPendingWrites) { // تجاهل ما قمت أنا بكتابته محلياً
+                        s.docChanges().forEach(change => {
+                            if (change.type === "added") {
+                                const m = change.doc.data();
+                                const msgTime = m.time ? m.time.toMillis() : Date.now();
+                                
+                                // إذا كانت الرسالة جديدة (وصلت بعد فتح الصفحة)
+                                // نستخدم lastActionTime كمرجع تقريبي لوقت فتح الصفحة
+                                if (msgTime > (lastActionTime - 10000)) { 
+                                    playNotification();
+                                    
+                                    // لو الشات مش مفتوح، نفتحه
+                                    if (!openPrivateChats[m.sender]) {
+                                        openPrivateChat(m.sender, m.name || "مستخدم");
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+        }
 
         async function sendMessage(e){ 
             e.preventDefault(); 
@@ -1943,6 +1970,7 @@ async function archiveAllEmployeesPrivateChats() {
     </script>
 </body>
 </html>
+
 
 
 
