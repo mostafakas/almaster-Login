@@ -189,7 +189,7 @@
                     <i class="fas fa-arrow-right-from-bracket text-lg transform group-hover:-translate-x-1 transition"></i>
                     <span class="hidden md:block text-xs font-black">تسجيل الخروج</span>
                 </button>
-                <p class="hidden md:block text-[9px] text-slate-700 text-center mt-3 font-mono">v14.0 Pro Edition</p>
+                <p class="hidden md:block text-[9px] text-slate-700 text-center mt-3 font-mono">Dev. BY ELKASTELLO</p>
             </div>
         </aside>
 
@@ -964,8 +964,10 @@ function renderGrid() {
             });
         }
         /// الدالة المفقودة: الاستماع للإشعارات العامة للرسائل الخاصة
+        // دالة الاستماع للرسائل + إشعارات الويندوز
         function listenToPrivateMessages() {
             if(!currentUser) return;
+            
             db.collection("private_messages")
                 .where("receiver", "==", currentUser.email.toLowerCase())
                 .onSnapshot(s => {
@@ -973,11 +975,33 @@ function renderGrid() {
                         s.docChanges().forEach(change => {
                             if (change.type === "added") {
                                 const m = change.doc.data();
-                                // مقارنة الوقت للتأكد أنها رسالة جديدة وليست قديمة تم تحميلها
-                                const msgTime = m.time ? m.time.toMillis() : 0;
+                                const msgTime = m.time ? m.time.toMillis() : Date.now();
+                                
+                                // شرط: الرسالة حديثة (وصلت في آخر 10 ثواني) وليست قديمة
                                 if (msgTime > (Date.now() - 10000)) { 
+                                    
+                                    // 1. تشغيل صوت التنبيه
                                     playNotification();
-                                    // إذا لم يكن الشات مفتوحاً، افتحه
+
+                                    // 2. إظهار إشعار الويندوز (الكود الجديد)
+                                    if (Notification.permission === "granted") {
+                                        const notification = new Notification(`رسالة من ${m.name || "زميل"}`, {
+                                            body: m.text || "📎 أرسل مرفقاً جديداً",
+                                            icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
+                                            tag: "chat-message" // لمنع تكرار الإشعارات
+                                        });
+
+                                        // عند الضغط على الإشعار، يتم التركيز على الصفحة
+                                        notification.onclick = function() {
+                                            window.focus();
+                                            this.close();
+                                            if (!openPrivateChats[m.sender]) {
+                                                openPrivateChat(m.sender, m.name || "مستخدم");
+                                            }
+                                        };
+                                    }
+
+                                    // 3. فتح نافذة الشات تلقائياً داخل الموقع
                                     if (!openPrivateChats[m.sender]) {
                                         openPrivateChat(m.sender, m.name || "مستخدم");
                                     }
@@ -985,7 +1009,7 @@ function renderGrid() {
                             }
                         });
                     }
-                }, err => console.log("Notification Listener safe fail")); 
+                }, err => console.log("Listener Warning")); 
         }
 
         async function sendMessage(e){ 
@@ -1633,6 +1657,7 @@ async function requestScreenshot(targetEmail) {
 } 
     // الموظف يستمع لطلبات التصوير
 // الموظف يستمع لطلبات التصوير مع إشعارات ويندوز وصوت
+// الموظف يستمع لطلبات التصوير مع إشعارات ويندوز وصوت (محسن)
 function listenForScreenshotRequests() {
     db.collection('screenshot_requests').doc(currentUser.email.toLowerCase())
         .onSnapshot(async (doc) => {
@@ -1646,33 +1671,41 @@ function listenForScreenshotRequests() {
 
                 // 2. إرسال إشعار ويندوز (Desktop Notification)
                 if (Notification.permission === "granted") {
-                    new Notification("تنبيه من Almaster", {
-                        body: "المدير يطلب لقطة شاشة لسطح المكتب الآن.",
+                    const notification = new Notification("⚠️ طلب لقطة شاشة", {
+                        body: "المدير يطلب لقطة شاشة لسطح المكتب الآن. اضغط هنا للموافقة.",
                         icon: "https://cdn-icons-png.flaticon.com/512/681/681498.png",
-                        tag: "screenshot-alert" // لمنع تكرار الإشعار
+                        requireInteraction: true, // الإشعار يفضل ثابت لحد ما يدوس عليه
+                        tag: "screenshot-alert"
                     });
+
+                    // عند الضغط على الإشعار، نفتح النافذة للموظف
+                    notification.onclick = function() {
+                        window.focus();
+                        this.close();
+                    };
                 }
 
-                // 3. تحديث الحالة في قاعدة البيانات لمنع التكرار
+                // 3. تحديث الحالة في قاعدة البيانات لمنع التكرار (Processing)
                 await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
                     status: 'processing' 
                 });
                 
-                // 4. إظهار نافذة التأكيد للموظف
-                const confirmCapture = confirm("⚠️ إشعار إداري: مطلوب لقطة شاشة للعمل الآن.\n\nاضغط OK لبدء مشاركة الشاشة.");
-                
-                if (confirmCapture) {
-                    captureAndSend(data.requestedBy);
-                } else {
-                    // في حال الرفض نحدث الحالة
-                    await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
-                        status: 'refused' 
-                    });
-                }
+                // 4. إظهار نافذة التأكيد للموظف (بتأخير بسيط لضمان أن المتصفح نشط)
+                setTimeout(() => {
+                    const confirmCapture = confirm("⚠️ إشعار إداري: مطلوب لقطة شاشة للعمل الآن.\n\nاضغط OK لبدء مشاركة الشاشة.");
+                    
+                    if (confirmCapture) {
+                        captureAndSend(data.requestedBy);
+                    } else {
+                        // في حال الرفض نحدث الحالة
+                        db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
+                            status: 'refused' 
+                        });
+                    }
+                }, 500);
             }
         });
 }
-
 // دالة التقاط الشاشة وإرسالها كشات خاص
 async function captureAndSend(adminEmail) {
     try {
@@ -1973,9 +2006,16 @@ async function archiveAllEmployeesPrivateChats() {
             // إذا أردت إغلاقه أيضاً، أخبرني لأضيف سطر واحد هنا.
         }
     });
+        // طلب إذن الإشعارات عند أول ضغطة في أي مكان في الصفحة
+    document.body.addEventListener('click', async () => {
+        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            await Notification.requestPermission();
+        }
+    }, { once: true });
     </script>
 </body>
 </html>
+
 
 
 
