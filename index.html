@@ -4,17 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALMASTER</title>
-    <link rel="manifest" href="manifest.json">
+    <title>ALMASTER TEAM DASHBOARD</title>
     <meta name="theme-color" content="#0ea5e9">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <link rel="icon" type="image/png" href="./icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -42,7 +40,7 @@
         .form-input { width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-size: 14px; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
         
-        /* تأثيرات النبض للحالات */
+        /* Animations */
         .pulse-green { animation: pulse-g 2s infinite; }
         @keyframes pulse-g { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
         
@@ -61,15 +59,18 @@
         .user-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .user-card:hover { transform: translateY(-5px); }
 
-        /* تعديلات الدردشة الجديدة */
         .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
         .chat-header { cursor: move; user-select: none; }
         .message-img { max-width: 200px; border-radius: 8px; margin-top: 5px; cursor: pointer; }
-        .file-link { display: flex; align-items: center; gap: 5px; background: rgba(0,0,0,0.05); padding: 5px 10px; border-radius: 5px; margin-top: 5px; font-size: 11px; }
+        
+        /* Scrollbar Styling */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
     </style>
 </head>
 
-<body class="min-h-screen text-slate-800 dark:text-slate-100 selection:bg-primary-500 selection:text-white">
+<body class="min-h-screen text-slate-800 dark:text-slate-100 selection:bg-primary-500 selection:text-white bg-slate-100 dark:bg-slate-900">
 
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
     <audio id="status-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
@@ -84,7 +85,7 @@
         <div class="w-full max-w-sm glass p-8 rounded-2xl shadow-2xl">
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-primary-700 dark:text-primary-400 mb-1">ALMASTER</h1>
-                <p class="text-xs text-slate-500 uppercase tracking-widest font-bold italic">Status Enhanced</p>
+                <p class="text-xs text-slate-500 uppercase tracking-widest font-bold italic">Team Workspace</p>
             </div>
             <form onsubmit="handleLogin(event)">
                 <div class="mb-4 text-right">
@@ -104,10 +105,8 @@
     <div id="view-system" class="hidden-section flex min-h-screen overflow-hidden">
         
         <aside class="w-20 md:w-72 bg-[#0f172a] text-slate-300 flex flex-col shadow-2xl z-20 border-l border-slate-800 transition-all duration-300 relative group">
-            
             <div class="h-24 flex flex-col items-center justify-center border-b border-slate-800/50 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-purple-500 to-primary-500 opacity-50"></div>
-                
                 <h1 class="text-2xl font-black tracking-widest text-white md:block hidden font-[Outfit]">
                     ALMASTER
                     <span class="text-primary-500 text-xs block font-medium tracking-normal opacity-70 mt-1">Team Dashboard</span>
@@ -126,7 +125,6 @@
             </div>
 
             <nav class="flex-1 px-4 py-6 space-y-6 overflow-y-auto custom-scrollbar">
-                
                 <div>
                     <p class="hidden md:block px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">الرئيسية</p>
                     <button class="w-full flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-900/20 hover:scale-[1.02] transition-all">
@@ -136,7 +134,6 @@
                 </div>
 
                 <div id="admin-menu" class="hidden-section space-y-6">
-                    
                     <div>
                         <p class="hidden md:block px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">إدارة البيانات</p>
                         <div class="space-y-1">
@@ -144,12 +141,10 @@
                                 <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-yellow-500/20 group-hover:text-yellow-500 transition"><i class="fas fa-box-archive"></i></div>
                                 <span class="hidden md:block text-xs font-bold">أرشيف الشات العام</span>
                             </button>
-                            
                             <button onclick="archivePrivateChats()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
                                 <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-blue-500/20 group-hover:text-blue-500 transition"><i class="fas fa-comments"></i></div>
                                 <span class="hidden md:block text-xs font-bold">نسختي الخاصة</span>
                             </button>
-
                             <button onclick="archiveAllEmployeesPrivateChats()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
                                 <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-red-500/20 group-hover:text-red-500 transition"><i class="fas fa-database"></i></div>
                                 <span class="hidden md:block text-xs font-bold text-red-400 group-hover:text-red-400">أرشفة شاملة (Full)</span>
@@ -164,7 +159,6 @@
                                 <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-green-500/20 group-hover:text-green-500 transition"><i class="fas fa-user-plus"></i></div>
                                 <span class="hidden md:block text-xs font-bold">إضافة موظف جديد</span>
                             </button>
-
                             <button onclick="openReportModal()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
                                 <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-purple-500/20 group-hover:text-purple-500 transition"><i class="fas fa-chart-pie"></i></div>
                                 <span class="hidden md:block text-xs font-bold">التقارير والإحصائيات</span>
@@ -181,7 +175,6 @@
                             </div>
                         </label>
                     </div>
-
                 </div>
             </nav>
             
@@ -207,25 +200,26 @@
 
             <div class="flex-1 overflow-auto p-6 md:p-8">
                 <div class="mb-6 flex flex-wrap gap-2 justify-end px-2" dir="ltr">
-    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
-        <span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline
-    </button>
-    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-red-50 border border-slate-200 shadow-sm transition-all">
-        <span class="w-2 h-2 rounded-full bg-red-500 inline-block ml-1"></span> Idle
-    </button>
-    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-blue-50 border border-slate-200 shadow-sm transition-all">
-        <span class="w-2 h-2 rounded-full bg-blue-500 inline-block ml-1"></span> Meeting
-    </button>
-    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-orange-50 border border-slate-200 shadow-sm transition-all">
-        <span class="w-2 h-2 rounded-full bg-orange-500 inline-block ml-1"></span> Break
-    </button>
-    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-green-50 border border-slate-200 shadow-sm transition-all">
-        <span class="w-2 h-2 rounded-full bg-green-500 inline-block ml-1"></span> Online
-    </button>
-    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all">
-        الكل
-    </button>
-</div>
+                    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline
+                    </button>
+                    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-red-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-red-500 inline-block ml-1"></span> Idle
+                    </button>
+                    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-blue-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 inline-block ml-1"></span> Meeting
+                    </button>
+                    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-orange-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-orange-500 inline-block ml-1"></span> Break
+                    </button>
+                    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-green-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-green-500 inline-block ml-1"></span> Online
+                    </button>
+                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all">
+                        الكل
+                    </button>
+                </div>
+                
                 <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
                 <div id="empty-state" class="hidden text-center text-slate-400 mt-20">
                     <i class="fas fa-user-slash text-4xl mb-3"></i>
@@ -255,26 +249,13 @@
                 <span id="file-name" class="truncate max-w-[200px]"></span>
                 <button type="button" onclick="clearAttachment()" class="text-red-500"><i class="fas fa-times"></i></button>
             </div>
+            
             <div id="chat-input-area" class="flex gap-2 items-center">
                 <input type="file" id="chat-file" class="hidden" onchange="handleFileSelect(this)">
                 <button type="button" onclick="document.getElementById('chat-file').click()" class="w-10 h-10 text-slate-400 hover:text-primary-500 transition"><i class="fas fa-paperclip"></i></button>
-                
                 <input type="text" id="chat-input" class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 ring-primary-500 dark:text-white" placeholder="اكتب رسالتك..." autocomplete="off">
-                
                 <button type="button" onclick="startRecording('public')" class="w-10 h-10 text-slate-400 hover:text-red-500 transition"><i class="fas fa-microphone"></i></button>
-                
                 <button type="submit" class="w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center transition"><i class="fas fa-paper-plane text-xs"></i></button>
-            </div>
-
-            <div id="chat-recording-area" class="hidden flex gap-3 items-center justify-between bg-red-50 dark:bg-red-900/20 p-2 rounded-full border border-red-100 dark:border-red-900">
-                <div class="flex items-center gap-2 text-red-600 px-2">
-                    <span class="animate-pulse text-xs font-bold">● جاري التسجيل...</span>
-                    <span id="recording-timer-public" class="font-mono text-xs">00:00</span>
-                </div>
-                <div class="flex gap-1">
-                    <button type="button" onclick="cancelRecording()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs"><i class="fas fa-times"></i></button>
-                    <button type="button" onclick="stopAndSendRecording('public')" class="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs"><i class="fas fa-paper-plane"></i></button>
-                </div>
             </div>
 
             <div id="chat-recording-area" class="hidden flex gap-3 items-center justify-between bg-red-50 dark:bg-red-900/20 p-2 rounded-full border border-red-100 dark:border-red-900">
@@ -330,7 +311,6 @@
                     </div>
                     <div class="md:col-span-2"><label class="text-[10px] font-bold uppercase text-slate-400">البريد الإلكتروني</label><input type="email" id="edit-email" class="form-input text-left" dir="ltr" readonly></div>
                     
-                    <div class="md:col-span-2"><label class="text-[10px] font-bold uppercase text-slate-400">البريد الإلكتروني</label><input type="email" id="edit-email" class="form-input text-left" dir="ltr" readonly></div>
                     <div class="md:col-span-2 pt-4 flex gap-3 border-t dark:border-slate-700 mt-2">
                         <button type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-primary-700 transition">حفظ التغييرات</button>
                         <button type="button" onclick="deleteUser()" id="btn-delete" class="px-6 text-red-500 border border-red-200 rounded-xl hover:bg-red-50"><i class="fas fa-trash"></i></button>
@@ -340,48 +320,39 @@
         </div>
     </div>
 
-<div id="modal-report" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden text-right flex flex-col max-h-[90vh]">
-        <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center bg-primary-50 dark:bg-primary-900/10">
-            <h3 class="text-lg font-bold dark:text-white">تقارير الأداء الاحترافية</h3>
-            <button onclick="closeModal('modal-report')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
-        </div>
-        
-        <div class="p-6 overflow-y-auto">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div>
-                    <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">الموظف</label>
-                    <select id="report-user-select" class="form-input font-bold"></select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">من تاريخ</label>
-                    <input type="date" id="report-date-from" class="form-input">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">إلى تاريخ</label>
-                    <input type="date" id="report-date-to" class="form-input">
-                </div>
+    <div id="modal-report" class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden text-right flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center bg-primary-50 dark:bg-primary-900/10">
+                <h3 class="text-lg font-bold dark:text-white">تقارير الأداء الاحترافية</h3>
+                <button onclick="closeModal('modal-report')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
             </div>
-            
-            <button onclick="generateProfessionalReport()" class="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] mb-6">
-                <i class="fas fa-search-dollar ml-2"></i> استخراج التقرير وتوليد ملف Excel
-            </button>
-
-            <div id="report-results-area" class="hidden border-t dark:border-slate-700 pt-6">
-                <h4 class="text-sm font-black mb-4 text-primary-600 border-r-4 border-primary-600 pr-2">ملخص الأداء للفترة المحددة:</h4>
-                <div id="daily-summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div class="p-6 overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">الموظف</label>
+                        <select id="report-user-select" class="form-input font-bold"></select>
                     </div>
-                <div id="total-day-box" class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-2xl text-center border border-primary-100 dark:border-primary-800">
-                    <p class="text-xs font-bold text-primary-600">إجمالي الوقت المسجل للموظف</p>
-                    <p id="total-duration-text" class="text-2xl font-black text-primary-700 dark:text-primary-400">00:00:00</p>
+                    <div>
+                        <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">من تاريخ</label>
+                        <input type="date" id="report-date-from" class="form-input">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black uppercase text-slate-500 mb-1">إلى تاريخ</label>
+                        <input type="date" id="report-date-to" class="form-input">
+                    </div>
                 </div>
-            </div>
-            
-            <p id="export-status" class="text-center text-[11px] font-bold text-slate-400 mt-4"></p>
-        </div>
-    </div>
-</div>
-                <p id="export-status" class="text-center text-xs text-slate-400 mt-4"></p>
+                <button onclick="generateProfessionalReport()" class="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] mb-6">
+                    <i class="fas fa-search-dollar ml-2"></i> استخراج التقرير وتوليد ملف Excel
+                </button>
+                <div id="report-results-area" class="hidden border-t dark:border-slate-700 pt-6">
+                    <h4 class="text-sm font-black mb-4 text-primary-600 border-r-4 border-primary-600 pr-2">ملخص الأداء للفترة المحددة:</h4>
+                    <div id="daily-summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
+                    <div id="total-day-box" class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-2xl text-center border border-primary-100 dark:border-primary-800">
+                        <p class="text-xs font-bold text-primary-600">إجمالي الوقت المسجل للموظف</p>
+                        <p id="total-duration-text" class="text-2xl font-black text-primary-700 dark:text-primary-400">00:00:00</p>
+                    </div>
+                </div>
+                <p id="export-status" class="text-center text-[11px] font-bold text-slate-400 mt-4"></p>
             </div>
         </div>
     </div>
@@ -410,6 +381,16 @@
             </div>
         </div>
     </div>
+    
+    <div id="image-preview-modal" class="hidden fixed inset-0 z-[1000] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
+        <button onclick="closeImagePreview()" class="absolute top-5 right-5 text-white text-3xl hover:text-red-500 transition"><i class="fas fa-times"></i></button>
+        <img id="preview-img-target" src="" class="max-w-full max-h-full rounded-lg shadow-2xl border-4 border-white/10">
+        <div class="absolute bottom-5 flex gap-4">
+            <a id="download-link-target" href="" download="image.jpg" class="bg-primary-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-primary-700 transition">
+                <i class="fas fa-download ml-2"></i> تحميل الصورة
+            </a>
+        </div>
+    </div>
 
     <script>
         // -- الأساسيات --
@@ -429,11 +410,11 @@
         let userProfile = null;
         let lastActionTime = Date.now();
         let allUsersData = [];
-        let dismissedAlerts = []; // قائمة لتخزين الموظفين الذين قام المدير بإغلاق تنبيههم
-        let currentFilter = 'all'; // متغير لتخزين الفلتر الحالي
+        let dismissedAlerts = []; 
+        let currentFilter = 'all'; 
         let attachedFileBase64 = null;
         let attachedFileName = "";
-        let openPrivateChats = {}; // تتبع نوافذ الشات المفتوحة
+        let openPrivateChats = {}; 
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
 
         // -- إدارة الجلسة --
@@ -464,16 +445,11 @@
             const errEl = document.getElementById('login-error');
 
             try {
-                // 1. تسجيل الدخول أولاً
                 await auth.signInWithEmailAndPassword(email, pass);
 
-                // 2. فحص حالة المستخدم (هل هو أونلاين من قبل؟)
                 const userDoc = await db.collection('users').doc(email).get();
-                
                 if (userDoc.exists) {
                     const userData = userDoc.data();
-                    
-                    // إذا كان المستخدم أونلاين بالفعل، نرسل إنذار
                     if (userData.status === 'Online') {
                         await db.collection('logs').add({
                             user: email,
@@ -488,11 +464,9 @@
                     }
                 }
                 
-                // 3. إنشاء بصمة الجلسة
                 const newSessionId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
                 localStorage.setItem('my_session_id', newSessionId);
 
-                // 4. حفظ البصمة
                 await db.collection('users').doc(email).update({
                     sessionId: newSessionId
                 });
@@ -509,51 +483,43 @@
             if(currentUser) await setStatus(currentUser.email, 'Offline', true);
             auth.signOut().then(() => location.reload());
         }
-   async function initSystem() {
-    // 1. طلب إذن الإشعارات فوراً عند الدخول (أفضل مكان)
-    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-        Notification.requestPermission();
-    }
 
-    // 2. إظهار الواجهات وإخفاء اللودر
-    document.getElementById('loader').classList.add('hidden-section');
-    document.getElementById('view-login').classList.add('hidden-section');
-    document.getElementById('view-system').classList.remove('hidden-section');
-    document.getElementById('chat-fab').classList.remove('hidden-section');
+        async function initSystem() {
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                Notification.requestPermission();
+            }
 
-    // 3. تحديث بيانات الشريط الجانبي
-    document.getElementById('sb-name').innerText = userProfile.name;
-    document.getElementById('sb-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
-    document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
+            document.getElementById('loader').classList.add('hidden-section');
+            document.getElementById('view-login').classList.add('hidden-section');
+            document.getElementById('view-system').classList.remove('hidden-section');
+            document.getElementById('chat-fab').classList.remove('hidden-section');
 
-    // 4. إظهار قائمة المدير إذا كان المستخدم مديراً
-    if(userProfile.role === 'admin') {
-        document.getElementById('admin-menu').classList.remove('hidden-section');
-    }
-    
-    // 5. تصفير العدادات اليومية
-    await checkAndResetCounters(); 
+            document.getElementById('sb-name').innerText = userProfile.name;
+            document.getElementById('sb-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
+            document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
 
-    // 6. تشغيل الأنظمة الفرعية
-    listenToAllUsers();
-    initChat();
-    listenToPrivateMessages(); 
-    startIdleTracker();
-    setInterval(updateTimers, 1000);
-    
-    // 7. مراقبة حركة المستخدم
-    //window.addEventListener('mousemove', resetIdleTimer);//
-    window.addEventListener('keydown', resetIdleTimer);
+            if(userProfile.role === 'admin') {
+                document.getElementById('admin-menu').classList.remove('hidden-section');
+            }
+            
+            await checkAndResetCounters(); 
 
-    // 8. تشغيل رادار لقطات الشاشة للموظفين فقط
-    if (userProfile.role !== 'admin') {
-        listenForScreenshotRequests();
-    }
-}
-// دالة فحص اليوم الجديد وتصفير البيانات (ضعها تحت دالة initSystem)
-// دالة فحص اليوم الجديد وتصفير البيانات (تعمل للأدمن فقط لتجنب الأخطاء)
+            listenToAllUsers();
+            initChat();
+            listenToPrivateMessages(); 
+            startIdleTracker();
+            setInterval(updateTimers, 1000);
+            
+            // Fixed: Enable mouse movement tracking
+            window.addEventListener('mousemove', resetIdleTimer);
+            window.addEventListener('keydown', resetIdleTimer);
+
+            if (userProfile.role !== 'admin') {
+                listenForScreenshotRequests();
+            }
+        }
+
         async function checkAndResetCounters() {
-            // 1. إذا لم يكن المستخدم مديراً، لا تفعل شيئاً (يمنع خطأ Permissions)
             if (!userProfile || userProfile.role !== 'admin') return;
 
             const today = moment().format('YYYY-MM-DD');
@@ -577,39 +543,30 @@
                         });
                     });
 
-                    // تحديث تاريخ التصفير
                     batch.set(db.collection('system_settings').doc('daily_reset'), { lastDate: today }, { merge: true });
                     await batch.commit();
                 }
             } catch (e) {
-                console.error("Reset Warning:", e.message); // تم تحويله لتحذير فقط
+                console.error("Reset Warning:", e.message);
             }
         }
-                    function listenToAllUsers() {
+
+        function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
                 let hasStatusChange = false;
-            
-                // تصفير المصفوفة لتعبئتها من جديد
                 allUsersData = [];
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     allUsersData.push(data);
-
-                    // ✅✅✅ هذا هو التعديل الهام جداً ✅✅✅
-                    // تحديث المتغير العالمي userProfile إذا كانت البيانات تخصني
-                    // هذا يضمن أن نظام الخمول يرى الحالة الجديدة (Offline) فوراً ويتوقف
                     if (currentUser && data.email === currentUser.email) {
                         userProfile = data; 
                     }
-                    // ✅✅✅ انتهى التعديل ✅✅✅
                 });
 
                 snapshot.docChanges().forEach(change => {
                     if (change.type === "modified") {
                         const newData = change.doc.data();
-                        
-                        // كود الحماية (الخروج من أجهزة أخرى)
                         if (currentUser && newData.email === currentUser.email) {
                             const localSession = localStorage.getItem('my_session_id');
                             if (newData.sessionId && newData.sessionId !== localSession) {
@@ -618,10 +575,7 @@
                             }
                         }
                         
-                        // منطق صوت التنبيه للمدير
                         if (userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) {
-                             // نتأكد أن التغيير ليس مجرد تحديث للوقت بل تغيير في الحالة
-                             // (يمكن تحسين هذا الشرط، لكنه يعمل حالياً)
                              hasStatusChange = true;
                         }
                     }
@@ -636,27 +590,20 @@
                 if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
             });
         }
-        // --- دالة تغيير الفلتر ---
-function setFilter(status) {
-    currentFilter = status;
-    
-    // تغيير ألوان الأزرار لتوضيح النشط
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-100 border border-slate-200 shadow-sm transition-all";
-    });
-    
-    const activeBtn = document.getElementById(`filter-${status}`);
-    if(activeBtn) {
-        // تمييز الزر النشط بلون مختلف
-        activeBtn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all transform scale-105";
-    }
-    
-    renderGrid(); // إعادة رسم الشبكة
-}
 
-// --- دالة رسم الشبكة المعدلة ---
-// --- دالة رسم الشبكة المعدلة (تظهر المستخدم لنفسه دائماً) ---
-function renderGrid() {
+        function setFilter(status) {
+            currentFilter = status;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-100 border border-slate-200 shadow-sm transition-all";
+            });
+            const activeBtn = document.getElementById(`filter-${status}`);
+            if(activeBtn) {
+                activeBtn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all transform scale-105";
+            }
+            renderGrid();
+        }
+
+        function renderGrid() {
             const grid = document.getElementById('grid-users');
             grid.innerHTML = '';
             const showOffline = document.getElementById('show-offline-toggle').checked;
@@ -699,11 +646,9 @@ function renderGrid() {
 
                 const card = `
                 <div class="user-card bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 relative transition-all duration-300 hover:-translate-y-1 flex flex-col overflow-hidden group">
-                    
                     <div class="absolute left-0 top-0 bottom-0 w-1.5 ${u.isIdle ? 'bg-red-500' : (u.status === 'Online' ? 'bg-green-500' : (u.status === 'Meeting' ? 'bg-blue-500' : (u.status === 'Break' ? 'bg-yellow-500' : 'bg-slate-300')))}"></div>
 
                     <div class="p-5 flex-1 pl-6">
-                        
                         <div class="flex items-start justify-between mb-5">
                             <div class="flex items-center gap-3">
                                 <div class="relative">
@@ -711,20 +656,15 @@ function renderGrid() {
                                     <div class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${pulseClass}"></div>
                                 </div>
                                 <div>
-                                    <h3 class="font-black text-base dark:text-white leading-tight">
-                                        ${u.name}
-                                    </h3>
+                                    <h3 class="font-black text-base dark:text-white leading-tight">${u.name}</h3>
                                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${u.department || 'Member'}</p>
                                 </div>
                             </div>
 
                             <div class="flex items-center gap-1">
                                 ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-primary-100 text-slate-400 hover:text-primary-600 transition flex items-center justify-center border border-slate-100" title="محادثة"><i class="fas fa-comment-dots text-sm"></i></button>` : ''}
-                                
                                 <button onclick="viewLogs('${u.email}')" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition flex items-center justify-center border border-slate-100" title="سجل الحركات"><i class="fas fa-history text-sm"></i></button>
-                                
                                 ${(isAdmin && !isMe) ? `<button onclick="requestScreenshot('${u.email}')" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-red-100 text-slate-400 hover:text-red-600 transition flex items-center justify-center border border-slate-100" title="طلب لقطة شاشة"><i class="fas fa-camera text-sm"></i></button>` : ''}
-                                
                                 ${(isAdmin) ? `<button onclick="openEditModal('${u.email}')" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-blue-100 text-slate-400 hover:text-blue-600 transition flex items-center justify-center border border-slate-100" title="إعدادات"><i class="fas fa-cog text-sm"></i></button>` : ''}
                             </div>
                         </div>
@@ -788,105 +728,56 @@ function renderGrid() {
             if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
             else document.getElementById('empty-state').classList.add('hidden');
         }
+
         function getStatusColor(s, isFocus, isIdle) {
-            // 1. خمول (أحمر قوي)
-            if (isIdle) return { 
-                border: 'border-red-600 border-r-4', 
-                text: 'text-red-800', 
-                badge: 'bg-red-200 text-red-900', 
-                shadow: 'shadow-xl shadow-red-900/20', // ظل أغمق
-                cardBg: 'bg-white dark:bg-slate-800',
-                innerGlow: 'bg-red-100/50 dark:bg-red-900/40 border-red-200'
-            };
-
-            // 2. أوفلاين (رمادي داكن)
-            if (s === 'Offline') return { 
-                border: 'border-slate-500 border-r-4', 
-                text: 'text-slate-700', 
-                badge: 'bg-slate-300 text-slate-800', 
-                shadow: 'shadow-xl shadow-slate-900/20', 
-                cardBg: 'bg-slate-100 dark:bg-slate-900', // خلفية مميزة للأوفلاين
-                innerGlow: 'bg-slate-200 dark:bg-slate-800 border-slate-300'
-            };
-
-            // 3. أونلاين (أخضر داكن)
-            if (s === 'Online') return { 
-                border: 'border-green-600 border-r-4', 
-                text: 'text-green-800', 
-                badge: 'bg-green-200 text-green-900', 
-                shadow: 'shadow-xl shadow-green-900/20', // ظل قوي
-                cardBg: 'bg-white dark:bg-slate-800',
-                innerGlow: 'bg-green-100/50 dark:bg-green-900/40 border-green-200'
-            };
-
-            // 4. ميتنج (أزرق داكن)
-            if (s === 'Meeting') return { 
-                border: 'border-blue-600 border-r-4', 
-                text: 'text-blue-800', 
-                badge: 'bg-blue-200 text-blue-900', 
-                shadow: 'shadow-xl shadow-blue-900/20', 
-                cardBg: 'bg-white dark:bg-slate-800',
-                innerGlow: 'bg-blue-100/50 dark:bg-blue-900/40 border-blue-200'
-            };
-
-            // 5. بريك (أصفر داكن/برتقالي)
-            if (s === 'Break') return { 
-                border: 'border-yellow-500 border-r-4', 
-                text: 'text-yellow-800', 
-                badge: 'bg-yellow-200 text-yellow-900', 
-                shadow: 'shadow-xl shadow-yellow-900/20', 
-                cardBg: 'bg-white dark:bg-slate-800',
-                innerGlow: 'bg-yellow-100/50 dark:bg-yellow-900/40 border-yellow-200'
-            };
-
+            if (isIdle) return { border: 'border-red-600 border-r-4', text: 'text-red-800', badge: 'bg-red-200 text-red-900', shadow: 'shadow-xl shadow-red-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-red-100/50 dark:bg-red-900/40 border-red-200' };
+            if (s === 'Offline') return { border: 'border-slate-500 border-r-4', text: 'text-slate-700', badge: 'bg-slate-300 text-slate-800', shadow: 'shadow-xl shadow-slate-900/20', cardBg: 'bg-slate-100 dark:bg-slate-900', innerGlow: 'bg-slate-200 dark:bg-slate-800 border-slate-300' };
+            if (s === 'Online') return { border: 'border-green-600 border-r-4', text: 'text-green-800', badge: 'bg-green-200 text-green-900', shadow: 'shadow-xl shadow-green-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-green-100/50 dark:bg-green-900/40 border-green-200' };
+            if (s === 'Meeting') return { border: 'border-blue-600 border-r-4', text: 'text-blue-800', badge: 'bg-blue-200 text-blue-900', shadow: 'shadow-xl shadow-blue-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-blue-100/50 dark:bg-blue-900/40 border-blue-200' };
+            if (s === 'Break') return { border: 'border-yellow-500 border-r-4', text: 'text-yellow-800', badge: 'bg-yellow-200 text-yellow-900', shadow: 'shadow-xl shadow-yellow-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-yellow-100/50 dark:bg-yellow-900/40 border-yellow-200' };
             return { border: 'border-slate-300', text: 'text-slate-600', badge: 'bg-slate-200', shadow: 'shadow-md', cardBg: 'bg-white', innerGlow: 'bg-slate-50' };
         }
         
         async function setStatus(targetEmail, newStatus, isAuto = false) {
-    const userRef = db.collection('users').doc(targetEmail);
-    const snapshot = await userRef.get();
-    const uData = snapshot.data();
-    
-    // إذا لم تكن هناك بيانات أو الحالة هي نفسها الحالية (وليس تغييراً تلقائياً)، لا نفعل شيئاً
-    if(!uData || (uData.status === newStatus && !isAuto)) return;
+            const userRef = db.collection('users').doc(targetEmail);
+            const snapshot = await userRef.get();
+            const uData = snapshot.data();
+            
+            if(!uData || (uData.status === newStatus && !isAuto)) return;
 
-    // --- [التعديل هنا] ---
-    // تشغيل صوت تنبيه تغيير الحالة الجديد بدلاً من صوت الدردشة
-    playStatusNotification(); 
+            playStatusNotification(); 
 
-    const now = Date.now();
-    const lastTime = getMillis(uData.lastChange);
-    const duration = now - lastTime;
-    
-    let timeBank = uData.timeBank || {};
-    const oldStatus = uData.status || 'Offline';
-    
-    if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
-    timeBank[oldStatus] += duration;
-    
-    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+            const now = Date.now();
+            const lastTime = getMillis(uData.lastChange);
+            const duration = now - lastTime;
+            
+            let timeBank = uData.timeBank || {};
+            const oldStatus = uData.status || 'Offline';
+            
+            if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
+            timeBank[oldStatus] += duration;
+            
+            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
 
-    // تسجيل العملية في سجل اللوج (Logs)
-    await db.collection('logs').add({ 
-        user: targetEmail, 
-        name: uData.name, 
-        from_status: oldStatus, 
-        to_status: newStatus, 
-        start_time: uData.lastChange || timestamp, 
-        end_time: timestamp, 
-        duration_ms: duration, 
-        auto: isAuto 
-    });
+            await db.collection('logs').add({ 
+                user: targetEmail, 
+                name: uData.name, 
+                from_status: oldStatus, 
+                to_status: newStatus, 
+                start_time: uData.lastChange || timestamp, 
+                end_time: timestamp, 
+                duration_ms: duration, 
+                auto: isAuto 
+            });
 
-    // تحديث حالة المستخدم في قاعدة البيانات وتصفير عداد الخمول
-    await userRef.update({ 
-        status: newStatus, 
-        lastChange: timestamp, 
-        timeBank: timeBank, 
-        isIdle: false 
-    });
-}
-        // -- العدادات --
+            await userRef.update({ 
+                status: newStatus, 
+                lastChange: timestamp, 
+                timeBank: timeBank, 
+                isIdle: false 
+            });
+        }
+
         function updateTimers() {
             const now = Date.now();
             document.querySelectorAll('.main-timer').forEach(el => { 
@@ -902,6 +793,7 @@ function renderGrid() {
                 t.innerText = formatTimeSmall((t.dataset.isidle==='true')?b+(now-s):b); 
             });
         }
+
         function formatTime(ms) {
             if(isNaN(ms) || ms < 0) return "00:00:00";
             const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
@@ -923,7 +815,6 @@ function renderGrid() {
             return Date.now();
         }
 
-        // -- الخمول (Idle Tracker) --
         function resetIdleTimer() {
             lastActionTime = Date.now();
             if(userProfile && userProfile.isIdle) {
@@ -934,12 +825,11 @@ function renderGrid() {
                 });
             }
         }
-// -- الخمول (Idle Tracker) - يعمل فقط عند حالة Online --
+        
         let presenceCheckActive = false; 
 
         function startIdleTracker() {
-            
-            const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'visibilitychange'];
+            const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'visibilitychange', 'mousemove'];
             
             activityEvents.forEach(evt => {
                 document.addEventListener(evt, () => {
@@ -951,13 +841,8 @@ function renderGrid() {
             });
 
             setInterval(() => {
-                // 🛑 التعديل الجوهري هنا 🛑
-                // الشرط الجديد: (!userProfile || userProfile.role === 'admin' || userProfile.isIdle || userProfile.status !== 'Online')
-                // الترجمة: لو مفيش بروفايل، أو أدمن، أو هو أصلاً خامل، أو حالته "ليست أونلاين" (يعني بريك أو ميتنج).. اخرج فوراً
-                
                 if(!userProfile || userProfile.role === 'admin' || userProfile.isIdle || userProfile.status !== 'Online') return;
 
-                // --- باقي الكود كما هو تماماً ---
                 const now = Date.now();
                 const timeDiff = now - lastActionTime;
                 
@@ -980,7 +865,6 @@ function renderGrid() {
 
                     if (Notification.permission === "granted") {
                         const uniqueTag = "presence-" + Date.now(); 
-
                         const n = new Notification("⏳ إثبات تواجد", {
                             body: `مرت ${Math.floor(timeDiff/60000)} دقيقة على وضع Online. اضغط لتأكيد العمل.`,
                             icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png",
@@ -999,7 +883,6 @@ function renderGrid() {
                 }
 
                 if (presenceCheckActive && timeDiff > (currentLimit + warningDuration)) {
-                    
                     db.collection('users').doc(currentUser.email).update({ 
                         isIdle: true, 
                         idleSince: firebase.firestore.FieldValue.serverTimestamp() 
@@ -1020,21 +903,19 @@ function renderGrid() {
         }
         
         function playNotification() {
-                const sound = document.getElementById('notification-sound');
+            const sound = document.getElementById('notification-sound');
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("Audio play blocked"));
+        }
+        
+        function playStatusNotification() {
+            const sound = document.getElementById('status-sound');
+            if (sound) {
                 sound.currentTime = 0;
-                sound.play().catch(e => console.log("Audio play blocked"));
+                sound.play().catch(e => console.log("Audio status sound blocked"));
             }
-            
-            // أضف هذه تحتها مباشرة لتنبيهات تغيير الحالة
-            function playStatusNotification() {
-                const sound = document.getElementById('status-sound');
-                if (sound) {
-                    sound.currentTime = 0;
-                    sound.play().catch(e => console.log("Audio status sound blocked"));
-                }
-            }
+        }
 
-        // اختيار ملف
         function handleFileSelect(input) {
             const file = input.files[0];
             if(!file) return;
@@ -1055,7 +936,6 @@ function renderGrid() {
             document.getElementById('chat-file').value = "";
         }
 
-        // الدردشة الجماعية
         function initChat(){
             db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s=>{
                 const t=document.getElementById("chat-messages"); 
@@ -1076,8 +956,7 @@ function renderGrid() {
                 }
             });
         }
-        /// الدالة المفقودة: الاستماع للإشعارات العامة للرسائل الخاصة
-        // دالة الاستماع للرسائل + إشعارات الويندوز
+
         function listenToPrivateMessages() {
             if(!currentUser) return;
             
@@ -1090,21 +969,15 @@ function renderGrid() {
                                 const m = change.doc.data();
                                 const msgTime = m.time ? m.time.toMillis() : Date.now();
                                 
-                                // شرط: الرسالة حديثة (وصلت في آخر 10 ثواني) وليست قديمة
                                 if (msgTime > (Date.now() - 10000)) { 
-                                    
-                                    // 1. تشغيل صوت التنبيه
                                     playNotification();
-
-                                    // 2. إظهار إشعار الويندوز (الكود الجديد)
                                     if (Notification.permission === "granted") {
                                         const notification = new Notification(`رسالة من ${m.name || "زميل"}`, {
                                             body: m.text || "📎 أرسل مرفقاً جديداً",
                                             icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
-                                            tag: "chat-message" // لمنع تكرار الإشعارات
+                                            tag: "chat-message" 
                                         });
 
-                                        // عند الضغط على الإشعار، يتم التركيز على الصفحة
                                         notification.onclick = function() {
                                             window.focus();
                                             this.close();
@@ -1114,7 +987,6 @@ function renderGrid() {
                                         };
                                     }
 
-                                    // 3. فتح نافذة الشات تلقائياً داخل الموقع
                                     if (!openPrivateChats[m.sender]) {
                                         openPrivateChat(m.sender, m.name || "مستخدم");
                                     }
@@ -1125,12 +997,11 @@ function renderGrid() {
                 }, err => console.log("Listener Warning")); 
         }
 
-        // --- نظام تسجيل الصوت ---
         let mediaRecorder = null;
         let audioChunks = [];
         let recordingTimer = null;
         let recordingSeconds = 0;
-        let currentRecordChatId = null; // لتحديد نحن نسجل في العام أم الخاص
+        let currentRecordChatId = null; 
 
         async function startRecording(chatId, targetEmail = null) {
             try {
@@ -1141,10 +1012,8 @@ function renderGrid() {
 
                 mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
 
-                // تبديل الواجهة
                 toggleRecordUI(chatId, true);
 
-                // بدء المؤقت
                 recordingSeconds = 0;
                 updateRecordTimer(chatId);
                 recordingTimer = setInterval(() => {
@@ -1170,22 +1039,17 @@ function renderGrid() {
                 reader.onloadend = async () => {
                     const base64Audio = reader.result;
                     
-                    // إرسال الصوت
                     if (chatId === 'public') {
-                        // إرسال للشات العام
                         await db.collection("messages").add({
                             user: currentUser.email,
                             name: userProfile.name,
-                            text: "", // نص فارغ
-                            file: base64Audio, // الصوت يعامل كملف
+                            text: "", 
+                            file: base64Audio, 
                             fileName: "voice_note.webm",
-                            type: "voice", // علامة لتمييزه
+                            type: "voice", 
                             time: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     } else {
-                        // إرسال للشات الخاص
-                        // نحتاج للإيميلين (المرسل والمستقبل)
-                        // sender هو أنا، receiver هو targetEmail الممرر
                         if(targetEmail) {
                             await db.collection("private_messages").add({
                                 sender: currentUser.email.toLowerCase(),
@@ -1271,8 +1135,6 @@ function renderGrid() {
 
        function renderMessage(m, isMe) {
             const timeFull = m.time ? moment(m.time.toDate()).format("D/M/YYYY h:mm A") : "...";
-            
-            // تحديد الصورة الرمزية
             const senderEmail = m.user || m.sender || 'unknown';
             let senderAvatar = DEFAULT_PHOTO + encodeURIComponent(m.name || 'User'); 
             if (typeof allUsersData !== 'undefined') {
@@ -1282,16 +1144,13 @@ function renderGrid() {
 
             let content = "";
             
-            // 1. عرض النص إن وجد
             if (m.text) {
                 content += `<p class="text-sm leading-relaxed whitespace-pre-wrap ${isMe ? 'text-white' : 'text-slate-800 dark:text-slate-200'}">${m.text}</p>`;
             }
 
-            // 2. معالجة الملفات (صور أو صوت أو ملفات عادية)
             if (m.file) {
                 const mt = m.text ? "mt-3" : ""; 
                 
-                // حالة 1: تسجيل صوتي (Voice Note)
                 if (m.type === 'voice' || m.file.startsWith("data:audio") || (m.fileName && m.fileName.endsWith('webm'))) {
                     content += `
                     <div class="${mt} flex items-center gap-2 min-w-[200px]">
@@ -1303,14 +1162,12 @@ function renderGrid() {
                         </audio>
                     </div>`;
                 } 
-                // حالة 2: صورة
                 else if (m.file.startsWith("data:image")) {
                     content += `
                     <div class="${mt} relative overflow-hidden rounded-lg border ${isMe ? 'border-white/20' : 'border-slate-200 dark:border-slate-600'}">
                         <img src="${m.file}" class="max-w-[220px] max-h-[200px] object-cover cursor-pointer hover:scale-105 transition-transform duration-500" onclick="openImagePreview(this.src)">
                     </div>`;
                 } 
-                // حالة 3: ملف عادي
                 else {
                     content += `
                     <a href="${m.file}" download="${m.fileName || 'file'}" class="${mt} flex items-center gap-3 p-2.5 rounded-lg border ${isMe ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-50'} transition group">
@@ -1325,7 +1182,6 @@ function renderGrid() {
                 }
             }
 
-            // القالب النهائي (يمين أو يسار)
             if (isMe) {
                 return `
                 <div class="flex items-end gap-3 justify-end mb-5 pl-2 animate-fade-in">
@@ -1357,14 +1213,13 @@ function renderGrid() {
         }
         
         function toggleChat(){ 
-            document.getElementById("chat-window").classList.toggle("hidden"); 
+            const chatWindow = document.getElementById("chat-window");
+            chatWindow.classList.toggle("hidden"); 
             document.getElementById("chat-badge").classList.add("hidden"); 
-            makeDraggable(document.getElementById("chat-window"));
+            makeDraggable(chatWindow);
         }
 
         // -- الدردشة الخاصة --
-        // -- الدردشة الخاصة (الكود الكامل والمصحح) --
-
         function closePrivateChat(email) {
             const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
             const el = document.getElementById(`chat-priv-${chatId}`);
@@ -1377,7 +1232,6 @@ function renderGrid() {
             if(!file) return;
             const reader = new FileReader();
             
-            // تحديد معرف الشات
             const myEmail = currentUser.email.toLowerCase();
             const otherEmail = targetEmail.toLowerCase();
             const chatId = [myEmail, otherEmail].sort().join("_").replace(/[@.]/g, "_");
@@ -1396,7 +1250,6 @@ function renderGrid() {
             reader.readAsDataURL(file);
         }
 
-        // 1. دالة فتح النافذة (كانت مفقودة)
         function openPrivateChat(otherEmail, otherName) {
             const myEmail = currentUser.email.toLowerCase().trim();
             const targetEmail = otherEmail.toLowerCase().trim();
@@ -1406,7 +1259,6 @@ function renderGrid() {
             const chatId = [myEmail, targetEmail].sort().join("_").replace(/[@.]/g, "_");
             const windowId = `chat-priv-${chatId}`;
             
-            // تصميم النافذة الاحترافي
             const chatHtml = `
             <div id="${windowId}" class="chat-window w-80 h-[450px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col" style="bottom: 100px; left: 350px; transition: transform 0.2s;">
                 
@@ -1476,7 +1328,6 @@ function renderGrid() {
             listenToSpecificChat(targetEmail, chatId);
         }
 
-        // دالة إلغاء الملف
         function cancelPrivateFile(email, chatId) {
             if(openPrivateChats[email]) {
                 openPrivateChats[email].file = null;
@@ -1486,7 +1337,6 @@ function renderGrid() {
             document.getElementById(`file-${chatId}`).value = "";
         }
 
-        // 2. دالة الإرسال
         async function sendPrivateMessage(e, otherEmail, chatId) {
             e.preventDefault();
             const input = document.getElementById(`input-${chatId}`);
@@ -1509,7 +1359,6 @@ function renderGrid() {
                 try {
                     await db.collection("private_messages").add(msg);
                     
-                    // Reset
                     input.value = "";
                     if(fileData) { fileData.file = null; fileData.fileName = ""; }
                     document.getElementById(`preview-box-${chatId}`).classList.add('hidden');
@@ -1520,24 +1369,18 @@ function renderGrid() {
             }
         }
 
-      // 3. دالة الاستماع (نظام المسارين - الأكثر أماناً واستقراراً)
-        let activeListeners = []; // لتخزين المستمعين وحذفهم عند الإغلاق
+        let activeListeners = []; 
 
         function listenToSpecificChat(otherEmail, chatId) {
             const myEmail = currentUser.email.toLowerCase().trim();
             const targetEmail = otherEmail.toLowerCase().trim();
             const container = document.getElementById(`messages-${chatId}`);
             
-            // إلغاء أي استماع سابق لنفس النافذة لمنع التداخل
-            // (هذه الخطوة متقدمة وتضمن عدم تكرار الرسائل)
-            
-            let allMsgs = []; // مصفوفة لتجميع الرسائل من المصدرين
+            let allMsgs = []; 
 
-            // دالة لإعادة الرسم عند وصول أي تحديث
             const render = () => {
                 if(!document.getElementById(`messages-${chatId}`)) return;
                 
-                // ترتيب حسب الوقت
                 allMsgs.sort((a, b) => (a.time?.seconds || 0) - (b.time?.seconds || 0));
                 
                 container.innerHTML = "";
@@ -1552,42 +1395,33 @@ function renderGrid() {
                 container.scrollTop = container.scrollHeight;
             };
 
-            // المسار الأول: الرسائل التي أرسلتها أنا لهذا الشخص
             const unsub1 = db.collection("private_messages")
                 .where("sender", "==", myEmail)
                 .where("receiver", "==", targetEmail)
                 .onSnapshot(snapshot => {
-                    // تحديث قائمتنا بالرسائل الصادرة
                     const sent = snapshot.docs.map(d => d.data());
-                    // ندمجها مع الرسائل الواردة الموجودة حالياً
                     const received = allMsgs.filter(m => m.sender === targetEmail);
                     allMsgs = [...sent, ...received];
                     render();
                 });
 
-            // المسار الثاني: الرسائل التي أرسلها هو لي
             const unsub2 = db.collection("private_messages")
                 .where("sender", "==", targetEmail)
                 .where("receiver", "==", myEmail)
                 .onSnapshot(snapshot => {
-                    // تحديث قائمتنا بالرسائل الواردة
                     const received = snapshot.docs.map(d => d.data());
-                    // ندمجها مع الرسائل الصادرة الموجودة حالياً
                     const sent = allMsgs.filter(m => m.sender === myEmail);
                     allMsgs = [...sent, ...received];
                     render();
                     
-                    // تشغيل الصوت للرسائل الجديدة
                     if(!snapshot.metadata.hasPendingWrites) {
                         snapshot.docChanges().forEach(change => {
                             if (change.type === "added") playNotification();
                         });
                     }
                 });
-                
-            // حفظ دوال الإلغاء لاستخدامها عند إغلاق الشات (اختياري لكن جيد للأداء)
-            // activeListeners.push(unsub1, unsub2); 
         }
+
         function makeDraggable(el) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             const header = el.querySelector(".chat-header");
@@ -1620,7 +1454,6 @@ function renderGrid() {
         }
 
         // -- إدارة البيانات (Edit & Reports) --
-       // 1. فتح نافذة التعديل (مع الحقل الجديد)
         async function openEditModal(e){
             document.getElementById("modal-edit").classList.remove("hidden"); 
             const t = document.getElementById("edit-email");
@@ -1630,7 +1463,6 @@ function renderGrid() {
                 t.readOnly = false; 
                 t.setAttribute("data-mode", "new"); 
                 document.getElementById("edit-preview").src = DEFAULT_PHOTO + "New"; 
-                // القيمة الافتراضية للموظف الجديد
                 document.getElementById("edit-background-limit").value = 60; 
             }
             else { 
@@ -1644,17 +1476,13 @@ function renderGrid() {
                 document.getElementById("edit-dept").value = d.department || "";
                 document.getElementById("edit-role").value = d.role || "employee"; 
                 document.getElementById("edit-idle").value = d.idleLimit || 5; 
-                
-                // --- الحقل الجديد: قراءة القيمة أو وضع 60 كافتراضي ---
                 document.getElementById("edit-background-limit").value = d.backgroundLimit || 60;
-                // ---------------------------------------------------
 
                 document.getElementById("edit-photo-base64").value = d.photo || ""; 
                 document.getElementById("edit-preview").src = d.photo || DEFAULT_PHOTO + d.name; 
             }
         }
 
-        // 2. حفظ التغييرات (مع الحقل الجديد)
         async function saveUserChanges(e){
             e.preventDefault(); 
             const em = document.getElementById("edit-email").value.toLowerCase().trim();
@@ -1665,11 +1493,7 @@ function renderGrid() {
                 department: document.getElementById("edit-dept").value,
                 role: document.getElementById("edit-role").value, 
                 idleLimit: parseInt(document.getElementById("edit-idle").value) || 5, 
-                
-                // --- حفظ الحقل الجديد ---
                 backgroundLimit: parseInt(document.getElementById("edit-background-limit").value) || 60,
-                // -----------------------
-
                 photo: document.getElementById("edit-photo-base64").value 
             };
 
@@ -1689,147 +1513,143 @@ function renderGrid() {
         async function deleteUser(){ if(confirm("هل أنت متأكد من حذف هذا الموظف نهائياً؟")){ await db.collection("users").doc(document.getElementById("edit-email").value).delete(); closeModal("modal-edit"); } }
         function openReportModal(){ document.getElementById("modal-report").classList.remove("hidden"); }
         function updateReportDropdown(){ const e=document.getElementById("report-user-select"),v=e.value; e.innerHTML='<option value="all">-- جميع الموظفين --</option>'; allUsersData.forEach(u=>{e.innerHTML+=`<option value="${u.email}">${u.name}</option>`}); e.value=v; }
+        
         async function generateProfessionalReport() {
-    const userEmail = document.getElementById("report-user-select").value;
-    const dateFrom = document.getElementById("report-date-from").value;
-    const dateTo = document.getElementById("report-date-to").value;
-    const statusEl = document.getElementById("export-status");
-    const resultsArea = document.getElementById("report-results-area");
-    const summaryCards = document.getElementById("daily-summary-cards");
-    const totalDurationText = document.getElementById("total-duration-text");
+            const userEmail = document.getElementById("report-user-select").value;
+            const dateFrom = document.getElementById("report-date-from").value;
+            const dateTo = document.getElementById("report-date-to").value;
+            const statusEl = document.getElementById("export-status");
+            const resultsArea = document.getElementById("report-results-area");
+            const summaryCards = document.getElementById("daily-summary-cards");
+            const totalDurationText = document.getElementById("total-duration-text");
 
-    if (!dateFrom || !dateTo) {
-        alert("يرجى تحديد الفترة الزمنية (من وإلى)");
-        return;
-    }
-
-    statusEl.innerText = "جاري تحليل سجلات الحركات بدقة...";
-    resultsArea.classList.add('hidden');
-
-    const start = new Date(dateFrom);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(dateTo);
-    end.setHours(23, 59, 59, 999);
-
-    try {
-        // نعتمد على جدول logs حصرياً لأنه يسجل الحركات الفعلية بالوقت والتاريخ
-        let query = db.collection("logs")
-            .where("end_time", ">=", start)
-            .where("end_time", "<=", end);
-
-        if (userEmail !== "all") {
-            query = query.where("user", "==", userEmail);
-        }
-
-        const snapshot = await query.get();
-        if (snapshot.empty) {
-            statusEl.innerText = "لا توجد حركات مسجلة لهذا الموظف في هذه الفترة.";
-            return;
-        }
-
-        const dataGrouped = {};
-
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
-            const userName = d.name || d.user;
-            // نأخذ الحالة التي "كان فيها" الموظف قبل التغيير (from_status) 
-            // لأن duration_ms محسوب للفترة التي قضاها في الحالة السابقة
-            const status = d.from_status; 
-            const duration = parseInt(d.duration_ms) || 0;
-
-            // تجاهل أوقات Offline لأنها لا تحسب كوقت عمل أو استراحة
-            if (status === 'Offline') return;
-
-            if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
-            if (!dataGrouped[dateKey][userName]) {
-                dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+            if (!dateFrom || !dateTo) {
+                alert("يرجى تحديد الفترة الزمنية (من وإلى)");
+                return;
             }
 
-            // إضافة الوقت للحالة الصحيحة (بشرط أن تكون ضمن الحالات الأربعة)
-            if (dataGrouped[dateKey][userName].hasOwnProperty(status)) {
-                dataGrouped[dateKey][userName][status] += duration;
-                dataGrouped[dateKey][userName].Total += duration;
-            }
-        });
+            statusEl.innerText = "جاري تحليل سجلات الحركات بدقة...";
+            resultsArea.classList.add('hidden');
 
-        // التحقق من وجود بيانات بعد الفلترة
-        if (Object.keys(dataGrouped).length === 0) {
-            statusEl.innerText = "لم يتم العثور على ساعات عمل فعلية (بخلاف Offline).";
-            return;
-        }
+            const start = new Date(dateFrom);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(dateTo);
+            end.setHours(23, 59, 59, 999);
 
-        resultsArea.classList.remove('hidden');
-        summaryCards.innerHTML = "";
-        
-        let grandTotals = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
-        
-        Object.values(dataGrouped).forEach(day => {
-            Object.values(day).forEach(userStats => {
-                grandTotals.Online += userStats.Online;
-                grandTotals.Break += userStats.Break;
-                grandTotals.Meeting += userStats.Meeting;
-                grandTotals.Idle += userStats.Idle;
-                grandTotals.Total += userStats.Total;
-            });
-        });
+            try {
+                let query = db.collection("logs")
+                    .where("end_time", ">=", start)
+                    .where("end_time", "<=", end);
 
-        const statusLabels = { Online: 'العمل', Break: 'استراحة', Meeting: 'اجتماع', Idle: 'خمول' };
-        const colors = { Online: 'text-green-600', Break: 'text-orange-500', Meeting: 'text-blue-500', Idle: 'text-red-500' };
-
-        Object.keys(statusLabels).forEach(key => {
-            summaryCards.innerHTML += `
-                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 text-center">
-                    <p class="text-[10px] font-black text-slate-400 mb-1">${statusLabels[key]}</p>
-                    <p class="text-sm font-black ${colors[key]}">${formatDuration(grandTotals[key])}</p>
-                </div>`;
-        });
-
-        totalDurationText.innerText = formatDuration(grandTotals.Total);
-
-        downloadDetailedExcel(dataGrouped, dateFrom, dateTo);
-        statusEl.innerText = "تم استخراج التقرير الفعلي بنجاح.";
-
-    } catch (error) {
-        console.error(error);
-        statusEl.innerText = "خطأ في الحساب: يرجى التأكد من استقرار الإنترنت.";
-    }
-}
-                function downloadDetailedExcel(dataGrouped, from, to) {
-                    let csvContent = "\ufeff"; 
-                    csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
-                
-                    const sortedDates = Object.keys(dataGrouped).sort().reverse();
-                
-                    sortedDates.forEach(date => {
-                        Object.keys(dataGrouped[date]).forEach(user => {
-                            const d = dataGrouped[date][user];
-                            csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
-                        });
-                    });
-                
-                    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                if (userEmail !== "all") {
+                    query = query.where("user", "==", userEmail);
                 }
-                // دالة مساعدة لتحويل الملي ثانية إلى تنسيق HH:MM:SS بدقة
-function formatDuration(ms) {
-    if (!ms || ms < 0) return "00:00:00";
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    return [
-        hours.toString().padStart(2, '0'),
-        minutes.toString().padStart(2, '0'),
-        seconds.toString().padStart(2, '0')
-    ].join(':');
-}
+
+                const snapshot = await query.get();
+                if (snapshot.empty) {
+                    statusEl.innerText = "لا توجد حركات مسجلة لهذا الموظف في هذه الفترة.";
+                    return;
+                }
+
+                const dataGrouped = {};
+
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
+                    const userName = d.name || d.user;
+                    const status = d.from_status; 
+                    const duration = parseInt(d.duration_ms) || 0;
+
+                    if (status === 'Offline') return;
+
+                    if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
+                    if (!dataGrouped[dateKey][userName]) {
+                        dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+                    }
+
+                    if (dataGrouped[dateKey][userName].hasOwnProperty(status)) {
+                        dataGrouped[dateKey][userName][status] += duration;
+                        dataGrouped[dateKey][userName].Total += duration;
+                    }
+                });
+
+                if (Object.keys(dataGrouped).length === 0) {
+                    statusEl.innerText = "لم يتم العثور على ساعات عمل فعلية (بخلاف Offline).";
+                    return;
+                }
+
+                resultsArea.classList.remove('hidden');
+                summaryCards.innerHTML = "";
+                
+                let grandTotals = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+                
+                Object.values(dataGrouped).forEach(day => {
+                    Object.values(day).forEach(userStats => {
+                        grandTotals.Online += userStats.Online;
+                        grandTotals.Break += userStats.Break;
+                        grandTotals.Meeting += userStats.Meeting;
+                        grandTotals.Idle += userStats.Idle;
+                        grandTotals.Total += userStats.Total;
+                    });
+                });
+
+                const statusLabels = { Online: 'العمل', Break: 'استراحة', Meeting: 'اجتماع', Idle: 'خمول' };
+                const colors = { Online: 'text-green-600', Break: 'text-orange-500', Meeting: 'text-blue-500', Idle: 'text-red-500' };
+
+                Object.keys(statusLabels).forEach(key => {
+                    summaryCards.innerHTML += `
+                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 text-center">
+                            <p class="text-[10px] font-black text-slate-400 mb-1">${statusLabels[key]}</p>
+                            <p class="text-sm font-black ${colors[key]}">${formatDuration(grandTotals[key])}</p>
+                        </div>`;
+                });
+
+                totalDurationText.innerText = formatDuration(grandTotals.Total);
+
+                downloadDetailedExcel(dataGrouped, dateFrom, dateTo);
+                statusEl.innerText = "تم استخراج التقرير الفعلي بنجاح.";
+
+            } catch (error) {
+                console.error(error);
+                statusEl.innerText = "خطأ في الحساب: يرجى التأكد من استقرار الإنترنت.";
+            }
+        }
+
+        function downloadDetailedExcel(dataGrouped, from, to) {
+            let csvContent = "\ufeff"; 
+            csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
+            
+            const sortedDates = Object.keys(dataGrouped).sort().reverse();
+            
+            sortedDates.forEach(date => {
+                Object.keys(dataGrouped[date]).forEach(user => {
+                    const d = dataGrouped[date][user];
+                    csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
+                });
+            });
+            
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function formatDuration(ms) {
+            if (!ms || ms < 0) return "00:00:00";
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            return [
+                hours.toString().padStart(2, '0'),
+                minutes.toString().padStart(2, '0'),
+                seconds.toString().padStart(2, '0')
+            ].join(':');
+        }
 
         async function viewLogs(email) {
             const modal = document.getElementById('modal-logs');
@@ -1860,63 +1680,52 @@ function formatDuration(ms) {
         }
 
         function renderAdminAlerts() {
-    const container = document.getElementById('admin-alerts-container');
-    
-    allUsersData.forEach(u => {
-        // التحقق من الخمول
-        if(u.isIdle) {
-            // لو المدير قفل الإشعار ده قبل كده، منرسموش تاني
-            if (dismissedAlerts.includes(u.email)) return;
+            const container = document.getElementById('admin-alerts-container');
+            
+            allUsersData.forEach(u => {
+                if(u.isIdle) {
+                    if (dismissedAlerts.includes(u.email)) return;
 
-            let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
-            
-            if(!activeAlert) {
-                const div = document.createElement('div');
-                // معرف فريد خالي من الرموز الخاصة
-                const safeId = u.email.replace(/[@.]/g, "_");
-                div.id = `alert-active-${safeId}`;
-                
-                // التصميم مع زر الإغلاق الجديد
-                div.className = 'bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border-l-4 border-red-500 flex items-center justify-between gap-4 animate-bounce pulse-red pointer-events-auto w-80 relative';
-                div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="bg-red-100 p-2 rounded-full text-red-600">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-red-500 uppercase">تنبيه خمول (كيبورد)</p>
-                            <p class="text-xs font-bold dark:text-white">${u.name} متوقف</p>
-                        </div>
-                    </div>
-                    <button onclick="closeAdminAlert('${u.email}')" class="text-slate-400 hover:text-red-500 transition px-2">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                container.appendChild(div);
-                
-                // تشغيل صوت تنبيه عند ظهور الإشعار لأول مرة
-                playNotification(); 
-            }
-        } else {
-            // الموظف رجع اشتغل؟ نمسح الإشعار ونشيله من قائمة التجاهل عشان لو نام تاني يظهر
-            let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
-            if(activeAlert) activeAlert.remove();
-            
-            // إزالة الموظف من قائمة المغلقين عشان لو بقى خامل تاني يظهر تنبيه جديد
-            dismissedAlerts = dismissedAlerts.filter(e => e !== u.email);
+                    let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
+                    
+                    if(!activeAlert) {
+                        const div = document.createElement('div');
+                        const safeId = u.email.replace(/[@.]/g, "_");
+                        div.id = `alert-active-${safeId}`;
+                        
+                        div.className = 'bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border-l-4 border-red-500 flex items-center justify-between gap-4 animate-bounce pulse-red pointer-events-auto w-80 relative';
+                        div.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <div class="bg-red-100 p-2 rounded-full text-red-600">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-red-500 uppercase">تنبيه خمول (كيبورد)</p>
+                                    <p class="text-xs font-bold dark:text-white">${u.name} متوقف</p>
+                                </div>
+                            </div>
+                            <button onclick="closeAdminAlert('${u.email}')" class="text-slate-400 hover:text-red-500 transition px-2">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        container.appendChild(div);
+                        playNotification(); 
+                    }
+                } else {
+                    let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
+                    if(activeAlert) activeAlert.remove();
+                    dismissedAlerts = dismissedAlerts.filter(e => e !== u.email);
+                }
+            });
         }
-    });
-}
 
-// دالة إغلاق الإشعار يدوياً
-function closeAdminAlert(email) {
-    // إضافة الإيميل لقائمة التجاهل
-    dismissedAlerts.push(email);
-    // مسح العنصر من الشاشة فوراً
-    const safeId = email.replace(/[@.]/g, "_");
-    const el = document.getElementById(`alert-active-${safeId}`);
-    if(el) el.remove();
-}
+        function closeAdminAlert(email) {
+            dismissedAlerts.push(email);
+            const safeId = email.replace(/[@.]/g, "_");
+            const el = document.getElementById(`alert-active-${safeId}`);
+            if(el) el.remove();
+        }
+
         async function addTask(email) {
             const txt = prompt("أدخل تفاصيل المهمة الجديدة:");
             if(txt && txt.trim()) {
@@ -1927,12 +1736,14 @@ function closeAdminAlert(email) {
                 await userRef.update({ tasks: tasks });
             }
         }
+
         async function toggleTask(email, idx, done) {
             const userRef = db.collection('users').doc(email);
             const doc = await userRef.get();
             const tasks = doc.data().tasks || [];
             if(tasks[idx]) { tasks[idx].done = done; await userRef.update({ tasks: tasks }); }
         }
+
         async function deleteTask(email, idx) {
             if(confirm("هل تريد حذف هذه المهمة؟")) {
                 const userRef = db.collection('users').doc(email);
@@ -1941,227 +1752,200 @@ function closeAdminAlert(email) {
                 tasks.splice(idx, 1); await userRef.update({ tasks: tasks });
             }
         }
-async function requestScreenshot(targetEmail) {
-    if (userProfile.role !== 'admin') return; // للمدير فقط
-    
-    try {
-        await db.collection('screenshot_requests').doc(targetEmail.toLowerCase()).set({
-            requestedBy: currentUser.email,
-            time: firebase.firestore.FieldValue.serverTimestamp(),
-            status: 'pending'
-        });
-        alert("تم إرسال طلب لقطة الشاشة للموظف...");
-    } catch (e) {
-        console.error("Error requesting screenshot:", e);
-    }
-} 
-    // الموظف يستمع لطلبات التصوير
-// الموظف يستمع لطلبات التصوير مع إشعارات ويندوز وصوت
-// الموظف يستمع لطلبات التصوير مع إشعارات ويندوز وصوت (محسن)
-// الموظف يستمع لطلبات التصوير (مع نغمة تحذير خاصة)
-function listenForScreenshotRequests() {
-    db.collection('screenshot_requests').doc(currentUser.email.toLowerCase())
-        .onSnapshot(async (doc) => {
-            const data = doc.data();
+
+        async function requestScreenshot(targetEmail) {
+            if (userProfile.role !== 'admin') return; 
             
-            if (data && data.status === 'pending') {
-                
-                // 1. تشغيل نغمة التحذير الجديدة (بدلاً من playNotification)
-                const alertSound = document.getElementById('alert-sound');
-                if (alertSound) {
-                    alertSound.currentTime = 0;
-                    alertSound.play().catch(e => console.log("Sound blocked"));
-                }
-
-                // 2. إرسال إشعار ويندوز
-                if (Notification.permission === "granted") {
-                    const notification = new Notification("⚠️ تنبيه إداري", {
-                        body: "مطلوب لقطة شاشة حالاً. اضغط للموافقة.",
-                        icon: "https://cdn-icons-png.flaticon.com/512/681/681498.png",
-                        requireInteraction: true,
-                        tag: "screenshot-alert"
-                    });
-
-                    notification.onclick = function() {
-                        window.focus();
-                        this.close();
-                    };
-                }
-
-                // 3. تحديث الحالة
-                await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
-                    status: 'processing' 
-                });
-                
-                // 4. إظهار النافذة
-                setTimeout(() => {
-                    const confirmCapture = confirm("⚠️ تنبيه: الإدارة تطلب لقطة شاشة لسطح المكتب.\n\nاضغط OK للموافقة والإرسال.");
-                    if (confirmCapture) {
-                        captureAndSend(data.requestedBy);
-                    } else {
-                        db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
-                            status: 'refused' 
-                        });
-                    }
-                }, 500);
-            }
-        });
-}
-        // دالة التقاط الشاشة وإرسالها كشات خاص
-async function captureAndSend(adminEmail) {
-    try {
-        // طلب الوصول للشاشة
-        const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false });
-        const video = document.createElement('video');
-        video.srcObject = stream;
-        video.play();
-
-        // التقاط فريم من الفيديو وتحويله لصورة
-        video.onloadedmetadata = () => {
-            setTimeout(async () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                const screenshotBase64 = canvas.toDataURL('image/jpeg', 0.7);
-
-                // إيقاف البث
-                stream.getTracks().forEach(track => track.stop());
-
-                // إرسال الصورة كرسالة خاصة
-                const chatId = [currentUser.email.toLowerCase(), adminEmail.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
-                
-                await db.collection("private_messages").add({
-                    text: "📷 تم إرسال لقطة شاشة تلقائية بطلب من الإدارة",
-                    sender: currentUser.email.toLowerCase(),
-                    receiver: adminEmail.toLowerCase(),
+            try {
+                await db.collection('screenshot_requests').doc(targetEmail.toLowerCase()).set({
+                    requestedBy: currentUser.email,
                     time: firebase.firestore.FieldValue.serverTimestamp(),
-                    file: screenshotBase64,
-                    fileName: "screenshot.jpg",
-                    name: userProfile.name
+                    status: 'pending'
                 });
+                alert("تم إرسال طلب لقطة الشاشة للموظف...");
+            } catch (e) {
+                console.error("Error requesting screenshot:", e);
+            }
+        } 
 
-                // مسح الطلب من السيرفر
-                await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
-            }, 500); // تأخير بسيط لضمان وضوح الصورة
-        };
-    } catch (err) {
-        console.error("Capture failed:", err);
-        await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
-    }
-}
-        function openImagePreview(src) {
-    const modal = document.getElementById('image-preview-modal');
-    const img = document.getElementById('preview-img-target');
-    const downloadLink = document.getElementById('download-link-target');
-    
-    img.src = src;
-    downloadLink.href = src;
-    modal.classList.remove('hidden');
-}
+        function listenForScreenshotRequests() {
+            db.collection('screenshot_requests').doc(currentUser.email.toLowerCase())
+                .onSnapshot(async (doc) => {
+                    const data = doc.data();
+                    
+                    if (data && data.status === 'pending') {
+                        const alertSound = document.getElementById('alert-sound');
+                        if (alertSound) {
+                            alertSound.currentTime = 0;
+                            alertSound.play().catch(e => console.log("Sound blocked"));
+                        }
 
-function closeImagePreview() {
-    document.getElementById('image-preview-modal').classList.add('hidden');
-}
+                        if (Notification.permission === "granted") {
+                            const notification = new Notification("⚠️ تنبيه إداري", {
+                                body: "مطلوب لقطة شاشة حالاً. اضغط للموافقة.",
+                                icon: "https://cdn-icons-png.flaticon.com/512/681/681498.png",
+                                requireInteraction: true,
+                                tag: "screenshot-alert"
+                            });
 
-// لإغلاق النافذة عند الضغط على مفتاح Escape
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeImagePreview();
-});
-    </script>
-    <div id="image-preview-modal" class="hidden fixed inset-0 z-[1000] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
-    <button onclick="closeImagePreview()" class="absolute top-5 right-5 text-white text-3xl hover:text-red-500 transition"><i class="fas fa-times"></i></button>
-    <img id="preview-img-target" src="" class="max-w-full max-h-full rounded-lg shadow-2xl border-4 border-white/10">
-    <div class="absolute bottom-5 flex gap-4">
-        <a id="download-link-target" href="" download="image.jpg" class="bg-primary-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-primary-700 transition">
-            <i class="fas fa-download ml-2"></i> تحميل الصورة
-        </a>
-    </div>
-</div>
-    <script>
-    // تسجيل Service Worker لتحويل الموقع لتطبيق
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(registration => {
-                    console.log('PWA Ready:', registration.scope);
-                })
-                .catch(err => {
-                    console.log('PWA Failed:', err);
+                            notification.onclick = function() {
+                                window.focus();
+                                this.close();
+                            };
+                        }
+
+                        await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
+                            status: 'processing' 
+                        });
+                        
+                        setTimeout(() => {
+                            const confirmCapture = confirm("⚠️ تنبيه: الإدارة تطلب لقطة شاشة لسطح المكتب.\n\nاضغط OK للموافقة والإرسال.");
+                            if (confirmCapture) {
+                                captureAndSend(data.requestedBy);
+                            } else {
+                                db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
+                                    status: 'refused' 
+                                });
+                            }
+                        }, 500);
+                    }
                 });
-        });
-    }
-        // ============================================================
-//  نظام الأرشفة المتقدم (V2) - يدعم ZIP والصور وتقارير Excel
-// ============================================================
-
-// 1. أرشفة الشات العام
-async function archivePublicChat() {
-    if (!confirm("هل تريد أرشفة الشات العام؟\n\nسيتم تحميل ملف ZIP يحتوي على سجل Excel + الصور.")) return;
-    
-    const loader = document.getElementById('loader');
-    loader.classList.remove('hidden-section');
-
-    try {
-        const zip = new JSZip();
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - 0); // 30 يوم
-
-                // نأتي بكل الرسائل بلا استثناء
-        const snapshot = await db.collection("messages")
-            .orderBy("time", "asc")
-            .get();
-
-        if (snapshot.empty) {
-            alert("لا توجد رسائل عامة قديمة للأرشفة.");
-            loader.classList.add('hidden-section');
-            return;
         }
 
-        let csvContent = "\ufeffالتاريخ,الاسم,الرسالة,اسم الملف المرفق\n";
-        const mediaFolder = zip.folder("Media_Files");
+        async function captureAndSend(adminEmail) {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
 
-        snapshot.docs.forEach((doc, index) => {
-            const m = doc.data();
-            const time = m.time ? moment(m.time.toDate()).format('YYYY-MM-DD HH:mm:ss') : '-';
-            const safeText = (m.text || "").replace(/,/g, "،").replace(/\n/g, " ");
-            let fileName = "لا يوجد";
+                video.onloadedmetadata = () => {
+                    setTimeout(async () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        canvas.getContext('2d').drawImage(video, 0, 0);
+                        const screenshotBase64 = canvas.toDataURL('image/jpeg', 0.7);
 
-            if (m.file) {
-                let extension = "bin";
-                if (m.file.includes("image/jpeg")) extension = "jpg";
-                else if (m.file.includes("image/png")) extension = "png";
-                else if (m.file.includes("application/pdf")) extension = "pdf";
-                
-                fileName = `File_${index}_${moment().format('HHmmss')}.${extension}`;
-                const base64Data = m.file.split(',')[1];
-                if(base64Data) mediaFolder.file(fileName, base64Data, {base64: true});
+                        stream.getTracks().forEach(track => track.stop());
+
+                        const chatId = [currentUser.email.toLowerCase(), adminEmail.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+                        
+                        await db.collection("private_messages").add({
+                            text: "📷 تم إرسال لقطة شاشة تلقائية بطلب من الإدارة",
+                            sender: currentUser.email.toLowerCase(),
+                            receiver: adminEmail.toLowerCase(),
+                            time: firebase.firestore.FieldValue.serverTimestamp(),
+                            file: screenshotBase64,
+                            fileName: "screenshot.jpg",
+                            name: userProfile.name
+                        });
+
+                        await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
+                    }, 500); 
+                };
+            } catch (err) {
+                console.error("Capture failed:", err);
+                await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
             }
-            csvContent += `${time},${m.name},${safeText},${fileName}\n`;
+        }
+
+        function openImagePreview(src) {
+            const modal = document.getElementById('image-preview-modal');
+            const img = document.getElementById('preview-img-target');
+            const downloadLink = document.getElementById('download-link-target');
+            
+            img.src = src;
+            downloadLink.href = src;
+            modal.classList.remove('hidden');
+        }
+
+        function closeImagePreview() {
+            document.getElementById('image-preview-modal').classList.add('hidden');
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modals = [
+                    'modal-edit', 'modal-report', 'modal-logs', 'image-preview-modal', 'chat-window'
+                ];
+                modals.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element && !element.classList.contains('hidden')) {
+                        element.classList.add('hidden');
+                        if(id === 'image-preview-modal') {
+                            const img = document.getElementById('preview-img-target');
+                            if(img) img.src = ""; 
+                        }
+                    }
+                });
+            }
         });
 
-        zip.file("Public_Chat_Log.csv", csvContent);
-        const content = await zip.generateAsync({type:"blob"});
-        saveAs(content, `Public_Chat_Archive_${moment().format('YYYY-MM-DD')}.zip`);
-        
-        await deleteDocsInBatches(snapshot.docs, "messages", "الشات العام");
+        document.body.addEventListener('click', async () => {
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                await Notification.requestPermission();
+            }
+        }, { once: true });
 
-    } catch (e) { console.error(e); alert("حدث خطأ."); } 
-    finally { loader.classList.add('hidden-section'); }
-}
+        // -- أرشيف --
+        async function archivePublicChat() {
+            if (!confirm("هل تريد أرشفة الشات العام؟\n\nسيتم تحميل ملف ZIP يحتوي على سجل Excel + الصور.")) return;
+            
+            const loader = document.getElementById('loader');
+            loader.classList.remove('hidden-section');
 
-// 2. أرشفة الشات الخاص (الشخصي)
-async function archivePrivateChats() {
-    await coreArchivePrivate("MY_CHATS", currentUser.email.toLowerCase());
-}
+            try {
+                const zip = new JSZip();
+                const snapshot = await db.collection("messages").orderBy("time", "asc").get();
 
-// 3. أرشفة شاملة لكل الموظفين (للأدمن)
-async function archiveAllEmployeesPrivateChats() {
-    await coreArchivePrivate("FULL_DB_ARCHIVE", null); // null يعني هات الكل
-}
+                if (snapshot.empty) {
+                    alert("لا توجد رسائل عامة قديمة للأرشفة.");
+                    loader.classList.add('hidden-section');
+                    return;
+                }
 
-// --- المحرك الأساسي للأرشفة الخاصة (مشترك للدالتين) ---
-// --- المحرك الأساسي للأرشفة الخاصة (مصحح) ---
+                let csvContent = "\ufeffالتاريخ,الاسم,الرسالة,اسم الملف المرفق\n";
+                const mediaFolder = zip.folder("Media_Files");
+
+                snapshot.docs.forEach((doc, index) => {
+                    const m = doc.data();
+                    const time = m.time ? moment(m.time.toDate()).format('YYYY-MM-DD HH:mm:ss') : '-';
+                    const safeText = (m.text || "").replace(/,/g, "،").replace(/\n/g, " ");
+                    let fileName = "لا يوجد";
+
+                    if (m.file) {
+                        let extension = "bin";
+                        if (m.file.includes("image/jpeg")) extension = "jpg";
+                        else if (m.file.includes("image/png")) extension = "png";
+                        else if (m.file.includes("application/pdf")) extension = "pdf";
+                        else if (m.file.includes("audio")) extension = "webm";
+                        
+                        fileName = `File_${index}_${moment().format('HHmmss')}.${extension}`;
+                        const base64Data = m.file.split(',')[1];
+                        if(base64Data) mediaFolder.file(fileName, base64Data, {base64: true});
+                    }
+                    csvContent += `${time},${m.name},${safeText},${fileName}\n`;
+                });
+
+                zip.file("Public_Chat_Log.csv", csvContent);
+                const content = await zip.generateAsync({type:"blob"});
+                saveAs(content, `Public_Chat_Archive_${moment().format('YYYY-MM-DD')}.zip`);
+                
+                await deleteDocsInBatches(snapshot.docs, "messages", "الشات العام");
+
+            } catch (e) { console.error(e); alert("حدث خطأ."); } 
+            finally { loader.classList.add('hidden-section'); }
+        }
+
+        async function archivePrivateChats() {
+            await coreArchivePrivate("MY_CHATS", currentUser.email.toLowerCase());
+        }
+
+        async function archiveAllEmployeesPrivateChats() {
+            await coreArchivePrivate("FULL_DB_ARCHIVE", null); 
+        }
+
         async function coreArchivePrivate(zipName, specificEmail) {
             if (!confirm("هل أنت متأكد من بدء الأرشفة؟\n\nسيتم تحميل ملف ZIP وحذف الرسائل المؤرشفة من السيرفر.")) return;
 
@@ -2170,30 +1954,17 @@ async function archiveAllEmployeesPrivateChats() {
 
             try {
                 const zip = new JSZip();
-                
-                // هذا سيجلب كل الرسائل الخاصة الموجودة في النظام
                 let allDocs = [];
                 
                 if (specificEmail) {
-                    // 1. الرسائل التي أرسلتها أنت (تم إصلاح الخطأ هنا بإضافة .get())
-                    const sent = await db.collection("private_messages")
-                        .where("sender", "==", specificEmail)
-                        .get(); 
-
-                    // 2. الرسائل التي استقبلتها أنت
-                    const received = await db.collection("private_messages")
-                        .where("receiver", "==", specificEmail)
-                        .get();
-
-                    // دمج الاثنين
+                    const sent = await db.collection("private_messages").where("sender", "==", specificEmail).get(); 
+                    const received = await db.collection("private_messages").where("receiver", "==", specificEmail).get();
                     allDocs = [...sent.docs, ...received.docs];
                 } else {
-                    // لو مفيش إيميل محدد (أدمن)، هات الكل
                     const snapshot = await db.collection("private_messages").get();
                     allDocs = snapshot.docs;
                 }
 
-                // إزالة التكرار (لأن الـ merge قد يكرر رسائل المحادثة الذاتية إن وجدت)
                 const uniqueDocs = Array.from(new Set(allDocs.map(a => a.id))).map(id => allDocs.find(a => a.id === id));
 
                 if (uniqueDocs.length === 0) {
@@ -2202,25 +1973,21 @@ async function archiveAllEmployeesPrivateChats() {
                     return;
                 }
 
-                // تجميع الرسائل في مجلدات (أحمد_مع_محمد)
                 let conversations = {};
                 uniqueDocs.forEach(doc => {
                     const m = doc.data();
                     const p1 = m.sender || "unknown";
                     const p2 = m.receiver || "unknown";
-                    // ترتيب الأسماء أبجدياً لتوحيد اسم المجلد
                     const convKey = [p1, p2].sort().join("_WITH_").replace(/[@.]/g, "_");
                     
                     if (!conversations[convKey]) conversations[convKey] = [];
                     conversations[convKey].push(m);
                 });
 
-                // بناء ملف الـ ZIP
                 Object.keys(conversations).forEach(folderName => {
                     const folder = zip.folder(folderName);
                     const mediaBox = folder.folder("Attachments");
                     
-                    // ترتيب زمني
                     const msgs = conversations[folderName].sort((a, b) => (a.time?.seconds || 0) - (b.time?.seconds || 0));
                     
                     let csv = "\ufeffالتاريخ,المرسل,المستقبل,الرسالة,اسم الملف\n";
@@ -2234,6 +2001,7 @@ async function archiveAllEmployeesPrivateChats() {
                             let ext = "bin";
                             if (m.file.includes("image")) ext = "jpg";
                             else if (m.file.includes("pdf")) ext = "pdf";
+                            else if (m.file.includes("audio")) ext = "webm";
                             
                             fName = `Att_${idx}_${moment().format('ss')}.${ext}`;
                             const b64 = m.file.split(',')[1];
@@ -2248,7 +2016,6 @@ async function archiveAllEmployeesPrivateChats() {
                 const content = await zip.generateAsync({type:"blob"});
                 saveAs(content, `${zipName}_${moment().format('YYYY-MM-DD')}.zip`);
 
-                // حذف الرسائل بعد التحميل
                 await deleteDocsInBatches(uniqueDocs, "private_messages", "الرسائل الخاصة");
 
             } catch (e) {
@@ -2258,61 +2025,21 @@ async function archiveAllEmployeesPrivateChats() {
                 loader.classList.add('hidden-section');
             }
         }
+
         async function deleteDocsInBatches(docs, colName, title) {
-    if (!confirm(`تم تجهيز الأرشيف (${title}) بعدد ${docs.length} رسالة.\n\nهل تريد حذفهم من السيرفر الآن؟`)) return;
-    
-    const batchSize = 400; 
-    const chunks = [];
-    for (let i = 0; i < docs.length; i += batchSize) chunks.push(docs.slice(i, i + batchSize));
-    
-    for (const chunk of chunks) {
-        const batch = db.batch();
-        chunk.forEach(d => batch.delete(db.collection(colName).doc(d.id)));
-        await batch.commit();
-    }
-    alert("تم التنظيف بنجاح! ✅");
-}
-        // ==========================================
-    //  Global ESC Listener - إغلاق النوافذ بزر الهروب
-    // ==========================================
-    window.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
+            if (!confirm(`تم تجهيز الأرشيف (${title}) بعدد ${docs.length} رسالة.\n\nهل تريد حذفهم من السيرفر الآن؟`)) return;
             
-            // 1. قائمة بجميع النوافذ المنبثقة في النظام
-            const modals = [
-                'modal-edit',           // نافذة تعديل الموظف
-                'modal-report',         // نافذة التقارير
-                'modal-logs',           // نافذة السجلات
-                'image-preview-modal',  // نافذة معاينة الصور
-                'chat-window'           // نافذة الشات العام
-            ];
-
-            // 2. إغلاق أي نافذة مفتوحة منهم
-            modals.forEach(id => {
-                const element = document.getElementById(id);
-                if (element && !element.classList.contains('hidden')) {
-                    element.classList.add('hidden');
-                    
-                    // تحسينات إضافية عند الإغلاق
-                    if(id === 'image-preview-modal') {
-                        // إيقاف أي فيديو/صوت لو كان شغال (احتياطي)
-                        const img = document.getElementById('preview-img-target');
-                        if(img) img.src = ""; 
-                    }
-                }
-            });
-
-            // 3. التعامل مع الشات الخاص (اختياري: هل تريد إغلاق الشات الخاص بـ Esc؟)
-            // حالياً تركت الشات الخاص مفتوحاً لأنه قد يحتوي على محادثة مهمة لا تريد إغلاقها بالخطأ
-            // إذا أردت إغلاقه أيضاً، أخبرني لأضيف سطر واحد هنا.
+            const batchSize = 400; 
+            const chunks = [];
+            for (let i = 0; i < docs.length; i += batchSize) chunks.push(docs.slice(i, i + batchSize));
+            
+            for (const chunk of chunks) {
+                const batch = db.batch();
+                chunk.forEach(d => batch.delete(db.collection(colName).doc(d.id)));
+                await batch.commit();
+            }
+            alert("تم التنظيف بنجاح! ✅");
         }
-    });
-        // طلب إذن الإشعارات عند أول ضغطة في أي مكان في الصفحة
-    document.body.addEventListener('click', async () => {
-        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-            await Notification.requestPermission();
-        }
-    }, { once: true });
     </script>
 </body>
 </html>
