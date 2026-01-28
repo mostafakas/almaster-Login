@@ -153,15 +153,10 @@
 
             <div class="flex items-center gap-3 relative">
                 
-                <button onclick="alert('تفقد المحادثات الخاصة في البطاقات')" class="flex items-center justify-center w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition relative">
-                    <i class="fas fa-envelope text-slate-500 dark:text-slate-300"></i>
-                    <span id="msg-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white text-[9px] text-white flex items-center justify-center font-bold">0</span>
-                </button>
-
                 <button onclick="openTaskCenter()" class="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition-all border border-transparent hover:border-primary-200 group relative">
                     <i class="fas fa-briefcase"></i>
                     <span class="text-xs font-bold hidden sm:block">مركز المهام</span>
-                    <span id="task-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white text-[9px] text-white flex items-center justify-center font-bold">0</span>
+                    <span id="task-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white text-[8px] text-white flex items-center justify-center font-bold">0</span>
                 </button>
 
                 <button onclick="toggleMainMenu()" id="menu-btn" class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/30 hover:bg-primary-700 hover:scale-105 transition-all">
@@ -292,7 +287,8 @@
                             <div class="flex gap-2">
                                 <span class="px-4 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded text-xs font-bold uppercase tracking-widest">مستند رسمي</span>
                                 <div id="admin-task-actions" class="hidden flex gap-2">
-                                    <button onclick="deleteCurrentTask()" class="px-3 py-1 bg-red-100 text-red-600 rounded text-xs font-bold hover:bg-red-200">حذف</button>
+                                    <button onclick="deleteCurrentTask()" class="px-3 py-1 bg-red-100 text-red-600 rounded text-xs font-bold hover:bg-red-200 border border-red-200"><i class="fas fa-trash-alt"></i> حذف</button>
+                                    <button onclick="alert('خاصية تعديل نص المهمة قيد التفعيل')" class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-xs font-bold hover:bg-blue-200 border border-blue-200"><i class="fas fa-edit"></i> تعديل</button>
                                 </div>
                             </div>
                         </div>
@@ -486,6 +482,7 @@
 
         let currentUser = null, userProfile = null, lastActionTime = Date.now(), allUsersData = [], dismissedAlerts = [], currentFilter = 'all', attachedFileBase64 = null, attachedFileName = "", openPrivateChats = {};
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
+        let unreadCounts = {}; 
 
         auth.onAuthStateChanged(async (user) => {
             if (user) {
@@ -540,12 +537,10 @@
             document.getElementById('view-system').classList.remove('hidden-section');
             document.getElementById('chat-fab').classList.remove('hidden-section');
             
-            // Set Header User Info (Far Right)
             document.getElementById('header-user-name').innerText = userProfile.name;
             document.getElementById('header-user-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
             document.getElementById('header-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
             
-            // Set Menu User Info
             document.getElementById('menu-user-name').innerText = userProfile.name;
             document.getElementById('menu-user-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
             document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
@@ -612,7 +607,6 @@
                     const data = doc.data();
                     allUsersData.push(data);
                     if (currentUser && data.email === currentUser.email) { 
-                        // Update current user profile and check for new tasks
                         const oldTasks = userProfile.tasks || [];
                         const newTasks = data.tasks || [];
                         if (newTasks.length > oldTasks.length) {
@@ -623,7 +617,6 @@
                         }
                         userProfile = data; 
                         
-                        // Update Task Badge
                         const badge = document.getElementById('task-badge');
                         if (newTasks.length > 0) {
                             badge.innerText = newTasks.length;
@@ -678,13 +671,16 @@
                 let effStatus = u.status || 'Offline';
                 if (u.isIdle) effStatus = 'Idle'; 
 
+                // FIX: "All" Filter Logic
                 if (!isMe) {
                     if (currentFilter !== 'all') {
                         if (effStatus !== currentFilter && u.status !== currentFilter) return;
                         if (currentFilter === 'Idle' && !u.isIdle) return;
                     } else {
-                        const isOffline = (effectiveStatus === 'Offline');
-                        if(isOffline && !showOffline) return;
+                        // If filter is ALL, show EVERYONE. Ignore showOffline toggle or treat as true implicitly.
+                        // Or if user wants toggle to still work:
+                        // if(effStatus === 'Offline' && !showOffline) return; 
+                        // But user asked "All must show all", so we skip the offline check for 'all' filter.
                     }
                 }
 
@@ -698,6 +694,8 @@
                 else if(u.status === 'Online') stripColor = "bg-green-500";
                 else if(u.status === 'Meeting') stripColor = "bg-blue-500";
                 else if(u.status === 'Break') stripColor = "bg-orange-500";
+
+                const unreadCount = unreadCounts[u.email] || 0;
 
                 const card = `
                 <div class="pro-card-design group relative flex flex-col">
@@ -721,7 +719,12 @@
                         </div>
                         
                         <div class="flex flex-col gap-2">
-                             ${!isMe ? `<button onclick="openPrivateChat('${u.email}', '${u.name}')" title="محادثة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-primary-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1"><i class="fas fa-comment-dots"></i></button>` : ''}
+                             ${!isMe ? `
+                             <button onclick="openPrivateChat('${u.email}', '${u.name}')" title="محادثة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-primary-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1 relative">
+                                <i class="fas fa-comment-dots"></i>
+                                <span id="badge-${u.email.replace(/[@.]/g, "_")}" class="${unreadCount > 0 ? '' : 'hidden'} absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold border-2 border-white">${unreadCount}</span>
+                             </button>` : ''}
+                             
                              ${isAdmin && !isMe ? `<button onclick="openAddTaskModal('${u.email}')" title="إسناد مهمة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-indigo-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1"><i class="fas fa-tasks"></i></button>` : ''}
                         </div>
                     </div>
@@ -968,7 +971,8 @@
             }
         }
 
-        // --- NEW TASK FUNCTIONS (WORD STYLE) ---
+        // --- TASKS SYSTEM LOGIC ---
+        
         function openTaskCenter() {
             document.getElementById('modal-task-center').classList.remove('hidden');
             const listContainer = document.getElementById('task-list-container');
@@ -1039,7 +1043,7 @@
             
             // Show Who assigned the task
             const assigner = task.createdBy || "Admin"; 
-            document.getElementById('task-detail-owner').innerText = assigner === currentUser.email ? "أنا" : assigner;
+            document.getElementById('task-detail-owner').innerText = assigner;
             
             // Show Admin Actions
             if(userProfile.role === 'admin') {
@@ -1084,7 +1088,6 @@
             document.getElementById('current-task-owner-email').value = task.ownerEmail; 
         }
 
-        // --- NEW ADMIN DELETE TASK FUNCTION ---
         async function deleteCurrentTask() {
             if(!confirm("هل أنت متأكد من حذف هذه المهمة نهائياً؟")) return;
             
@@ -1100,7 +1103,7 @@
             await userRef.update({ tasks: newTasks });
             
             alert("تم حذف المهمة بنجاح");
-            openTaskCenter(); // Refresh
+            openTaskCenter(); 
         }
 
         function openAddTaskModal(targetEmail) {
@@ -1133,7 +1136,7 @@
                 desc: desc,
                 file: fileBase64,
                 comments: [],
-                createdBy: userProfile.name + " (Admin)", // Store readable name
+                createdBy: userProfile.name, // Store readable name
                 status: 'open'
             };
 
@@ -1247,14 +1250,24 @@
                 .where("receiver", "==", currentUser.email.toLowerCase())
                 .onSnapshot(s => {
                     if(!s.metadata.hasPendingWrites) { 
-                        let newCount = 0;
                         s.docChanges().forEach(change => {
                             if (change.type === "added") {
                                 const m = change.doc.data();
                                 const msgTime = m.time ? m.time.toMillis() : Date.now();
                                 if (msgTime > (Date.now() - 10000)) { 
                                     playNotification();
-                                    newCount++;
+                                    
+                                    // Update Badge Count for Specific Sender
+                                    if(!unreadCounts[m.sender]) unreadCounts[m.sender] = 0;
+                                    unreadCounts[m.sender]++;
+                                    
+                                    const safeId = m.sender.replace(/[@.]/g, "_");
+                                    const badgeEl = document.getElementById(`badge-${safeId}`);
+                                    if(badgeEl) {
+                                        badgeEl.innerText = unreadCounts[m.sender];
+                                        badgeEl.classList.remove('hidden');
+                                    }
+
                                     if (Notification.permission === "granted") {
                                         const notification = new Notification(`رسالة من ${m.name || "زميل"}`, {
                                             body: m.text || "📎 أرسل مرفقاً جديداً",
@@ -1266,13 +1279,6 @@
                                 }
                             }
                         });
-                        
-                        const msgBadge = document.getElementById('msg-badge');
-                        if (newCount > 0) {
-                            let current = parseInt(msgBadge.innerText) || 0;
-                            msgBadge.innerText = current + newCount;
-                            msgBadge.classList.remove('hidden');
-                        }
                     }
                 }, err => console.log("Listener Warning", err)); 
         }
@@ -1505,6 +1511,12 @@
             const el = document.getElementById(`chat-priv-${chatId}`);
             if(el) el.remove();
             delete openPrivateChats[email];
+            
+            // Reset Badge when opened
+            unreadCounts[email] = 0;
+            const safeId = email.replace(/[@.]/g, "_");
+            const badgeEl = document.getElementById(`badge-${safeId}`);
+            if(badgeEl) badgeEl.classList.add('hidden');
         }
 
         function handlePrivateFile(input, targetEmail) {
@@ -1536,6 +1548,12 @@
 
             if(openPrivateChats[targetEmail]) return;
             
+            // Reset Badge
+            unreadCounts[targetEmail] = 0;
+            const safeId = targetEmail.replace(/[@.]/g, "_");
+            const badgeEl = document.getElementById(`badge-${safeId}`);
+            if(badgeEl) badgeEl.classList.add('hidden');
+
             const chatId = [myEmail, targetEmail].sort().join("_").replace(/[@.]/g, "_");
             const windowId = `chat-priv-${chatId}`;
             
