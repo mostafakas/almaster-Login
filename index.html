@@ -40,28 +40,23 @@
         .form-input { width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-size: 14px; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
         
+        /* Dropdown Animation */
+        .dropdown-menu { transform-origin: top left; transition: all 0.2s ease-out; transform: scale(0.95); opacity: 0; pointer-events: none; }
+        .dropdown-menu.active { transform: scale(1); opacity: 1; pointer-events: auto; }
+
         /* Animations */
         .pulse-green { animation: pulse-g 2s infinite; }
         @keyframes pulse-g { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
         
-        .pulse-orange { animation: pulse-o 2s infinite; }
-        @keyframes pulse-o { 0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(249, 115, 22, 0); } 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); } }
-
-        .pulse-blue { animation: pulse-b 2s infinite; }
-        @keyframes pulse-b { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
-
         .pulse-red { animation: pulse-r 2s infinite; }
         @keyframes pulse-r { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        .action-icon-btn { @apply w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-primary-500 hover:text-white transition-all duration-200 text-xs; }
-        
         #admin-alerts-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .user-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .user-card:hover { transform: translateY(-5px); }
 
         .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
         .chat-header { cursor: move; user-select: none; }
-        .message-img { max-width: 200px; border-radius: 8px; margin-top: 5px; cursor: pointer; }
         
         /* Scrollbar Styling */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -84,6 +79,7 @@
     <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
         <div class="w-full max-w-sm glass p-8 rounded-2xl shadow-2xl">
             <div class="text-center mb-8">
+                <img src="MASTER_LOGO_WHPNG.png" class="h-16 mx-auto mb-2" alt="Logo">
                 <h1 class="text-3xl font-bold text-primary-700 dark:text-primary-400 mb-1">ALMASTER</h1>
                 <p class="text-xs text-slate-500 uppercase tracking-widest font-bold italic">Team Workspace</p>
             </div>
@@ -102,104 +98,107 @@
         </div>
     </div>
 
-    <div id="view-system" class="hidden-section flex min-h-screen overflow-hidden">
+    <div id="view-system" class="hidden-section flex flex-col min-h-screen">
         
-        <aside class="w-20 md:w-72 bg-[#0f172a] text-slate-300 flex flex-col shadow-2xl z-20 border-l border-slate-800 transition-all duration-300 relative group">
-            <div class="h-24 flex flex-col items-center justify-center border-b border-slate-800/50 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-purple-500 to-primary-500 opacity-50"></div>
-                <h1 class="text-2xl font-black tracking-widest text-white md:block hidden font-[Outfit]">
-                    ALMASTER
-                    <span class="text-primary-500 text-xs block font-medium tracking-normal opacity-70 mt-1">Team Dashboard</span>
-                </h1>
-                <h1 class="text-2xl font-black text-primary-500 md:hidden block">A</h1>
-            </div>
+        <header class="bg-white dark:bg-slate-800 shadow-md h-20 px-6 flex items-center justify-between z-50 sticky top-0 relative">
             
-            <div class="p-6 border-b border-slate-800/50">
-                <div class="bg-slate-800/50 rounded-2xl p-3 flex items-center gap-3 border border-slate-700/50 hover:border-slate-600 transition group cursor-default">
-                    <img id="sb-img" src="" class="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-600 group-hover:ring-primary-500 transition">
-                    <div class="hidden md:block overflow-hidden flex-1 text-right">
-                        <p id="sb-name" class="font-bold text-sm text-white truncate leading-tight">User</p>
-                        <p id="sb-role" class="text-[10px] font-bold text-primary-400 uppercase tracking-wider mt-0.5">...</p>
-                    </div>
+            <div class="flex items-center gap-4">
+                <img src="MASTER_LOGO_WHPNG.png" class="h-12 w-auto object-contain drop-shadow-sm" alt="Logo">
+                <div class="hidden md:block">
+                    <h1 class="text-xl font-black tracking-wider text-slate-800 dark:text-white font-[Outfit]">ALMASTER</h1>
+                    <p class="text-[10px] text-primary-500 font-bold uppercase tracking-[0.2em]">System Dashboard</p>
                 </div>
             </div>
 
-            <nav class="flex-1 px-4 py-6 space-y-6 overflow-y-auto custom-scrollbar">
-                <div>
-                    <p class="hidden md:block px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">الرئيسية</p>
-                    <button class="w-full flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-900/20 hover:scale-[1.02] transition-all">
-                        <i class="fas fa-th-large text-lg w-6 text-center"></i>
-                        <span class="hidden md:block text-sm font-bold">لوحة التحكم</span>
-                    </button>
-                </div>
+            <div class="hidden md:flex flex-col items-center justify-center absolute left-1/2 transform -translate-x-1/2">
+                <div id="header-time" class="text-2xl font-black font-mono text-slate-700 dark:text-slate-200 tracking-widest">00:00:00</div>
+                <div id="header-date" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loading Date...</div>
+            </div>
 
-                <div id="admin-menu" class="hidden-section space-y-6">
-                    <div>
-                        <p class="hidden md:block px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">إدارة البيانات</p>
-                        <div class="space-y-1">
-                            <button onclick="archivePublicChat()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-yellow-500/20 group-hover:text-yellow-500 transition"><i class="fas fa-box-archive"></i></div>
-                                <span class="hidden md:block text-xs font-bold">أرشيف الشات العام</span>
-                            </button>
-                            <button onclick="archivePrivateChats()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-blue-500/20 group-hover:text-blue-500 transition"><i class="fas fa-comments"></i></div>
-                                <span class="hidden md:block text-xs font-bold">نسختي الخاصة</span>
-                            </button>
-                            <button onclick="archiveAllEmployeesPrivateChats()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-red-500/20 group-hover:text-red-500 transition"><i class="fas fa-database"></i></div>
-                                <span class="hidden md:block text-xs font-bold text-red-400 group-hover:text-red-400">أرشفة شاملة (Full)</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <p class="hidden md:block px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">الموظفين والتقارير</p>
-                        <div class="space-y-1">
-                            <button onclick="openEditModal('new')" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-green-500/20 group-hover:text-green-500 transition"><i class="fas fa-user-plus"></i></div>
-                                <span class="hidden md:block text-xs font-bold">إضافة موظف جديد</span>
-                            </button>
-                            <button onclick="openReportModal()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-purple-500/20 group-hover:text-purple-500 transition"><i class="fas fa-chart-pie"></i></div>
-                                <span class="hidden md:block text-xs font-bold">التقارير والإحصائيات</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-800/40 rounded-xl p-3 border border-slate-800 mt-2">
-                        <label class="flex items-center justify-between cursor-pointer group">
-                            <span class="hidden md:block text-[10px] font-bold text-slate-400 group-hover:text-white transition">عرض Offline</span>
-                            <div class="relative">
-                                <input type="checkbox" id="show-offline-toggle" onchange="renderGrid()" class="sr-only peer">
-                                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-            </nav>
-            
-            <div class="p-4 border-t border-slate-800 bg-[#0b1120]">
-                <button onclick="logout()" class="w-full flex items-center justify-center md:justify-start gap-3 p-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition group border border-transparent hover:border-red-500/20">
-                    <i class="fas fa-arrow-right-from-bracket text-lg transform group-hover:-translate-x-1 transition"></i>
-                    <span class="hidden md:block text-xs font-black">تسجيل الخروج</span>
+            <div class="flex items-center gap-3 relative">
+                
+                <button class="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition-all border border-transparent hover:border-primary-200 group relative overflow-hidden" onclick="alert('خاصية المهام: قيد التفعيل قريباً')">
+                    <i class="fas fa-check-double"></i>
+                    <span class="text-xs font-bold hidden sm:block">المهام</span>
+                    <span class="absolute top-0 right-0 w-2 h-2 bg-primary-500 rounded-full animate-ping"></span>
                 </button>
-                <p class="hidden md:block text-[9px] text-slate-700 text-center mt-3 font-mono">Dev. BY ELKASTELLO</p>
+
+                <button onclick="toggleMainMenu()" id="menu-btn" class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/30 hover:bg-primary-700 hover:scale-105 transition-all">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+
+                <div id="main-dropdown" class="dropdown-menu absolute top-14 left-0 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-[100] flex flex-col overflow-hidden">
+                    
+                    <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
+                        <img id="menu-user-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500">
+                        <div class="overflow-hidden">
+                            <p id="menu-user-name" class="text-sm font-bold text-slate-800 dark:text-white truncate">User</p>
+                            <p id="menu-user-role" class="text-[10px] text-primary-500 font-bold uppercase">Role</p>
+                        </div>
+                    </div>
+
+                    <div class="p-2 space-y-1 overflow-y-auto max-h-[400px] custom-scrollbar">
+                        
+                        <div class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">القائمة الرئيسية</div>
+                        
+                        <button onclick="toggleMainMenu()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
+                            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fas fa-th-large"></i></div>
+                            <span class="text-xs font-bold text-slate-600 dark:text-slate-300">لوحة التحكم</span>
+                        </button>
+
+                        <div id="admin-options" class="hidden-section border-t border-slate-100 dark:border-slate-700 pt-2 mt-2">
+                            <div class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">أدوات المدير</div>
+                            
+                            <button onclick="archivePublicChat()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
+                                <div class="w-8 h-8 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center"><i class="fas fa-box-archive"></i></div>
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">أرشيف الشات العام</span>
+                            </button>
+                            <button onclick="archiveAllEmployeesPrivateChats()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
+                                <div class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center"><i class="fas fa-database"></i></div>
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">أرشفة شاملة (Full)</span>
+                            </button>
+                            <button onclick="openEditModal('new')" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
+                                <div class="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center"><i class="fas fa-user-plus"></i></div>
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">إضافة موظف</span>
+                            </button>
+                            <button onclick="openReportModal()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
+                                <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fas fa-chart-pie"></i></div>
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">التقارير</span>
+                            </button>
+                        </div>
+
+                        <div class="border-t border-slate-100 dark:border-slate-700 pt-2 mt-2">
+                            <button onclick="archivePrivateChats()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
+                                <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fas fa-comments"></i></div>
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">أرشيف محادثاتي</span>
+                            </button>
+
+                            <label class="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fas fa-eye-slash"></i></div>
+                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">عرض Offline</span>
+                                </div>
+                                <div class="relative">
+                                    <input type="checkbox" id="show-offline-toggle" onchange="renderGrid()" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition font-bold text-xs">
+                            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                        </button>
+                    </div>
+                </div>
             </div>
-        </aside>
+        </header>
 
         <main class="flex-1 bg-slate-100 dark:bg-slate-900 relative overflow-hidden flex flex-col">
-            <header class="bg-white dark:bg-slate-800 h-16 shadow-sm flex items-center justify-between px-6 z-10">
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/20 rounded-full border border-green-100 dark:border-green-900">
-                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <span class="text-[10px] font-bold text-green-700 dark:text-green-400">Live Sync</span>
-                    </div>
-                </div>
-                <h2 class="text-lg font-bold text-slate-700 dark:text-white">لوحة متابعة الفريق</h2>
-            </header>
-
             <div class="flex-1 overflow-auto p-6 md:p-8">
-                <div class="mb-6 flex flex-wrap gap-2 justify-end px-2" dir="ltr">
+                
+                <div class="mb-8 flex flex-wrap gap-2 justify-center md:justify-end px-2" dir="ltr">
                     <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
                         <span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline
                     </button>
@@ -221,9 +220,10 @@
                 </div>
                 
                 <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
+                
                 <div id="empty-state" class="hidden text-center text-slate-400 mt-20">
-                    <i class="fas fa-user-slash text-4xl mb-3"></i>
-                    <p>لا يوجد مستخدمين حالياً</p>
+                    <i class="fas fa-user-slash text-6xl mb-4 opacity-50"></i>
+                    <p class="font-bold">لا يوجد مستخدمين حالياً</p>
                 </div>
             </div>
         </main>
@@ -494,12 +494,14 @@
             document.getElementById('view-system').classList.remove('hidden-section');
             document.getElementById('chat-fab').classList.remove('hidden-section');
 
-            document.getElementById('sb-name').innerText = userProfile.name;
-            document.getElementById('sb-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
-            document.getElementById('sb-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
+            // Populate User Info in Dropdown
+            document.getElementById('menu-user-name').innerText = userProfile.name;
+            document.getElementById('menu-user-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
+            document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
 
+            // Handle Admin Menu Visibility in Dropdown
             if(userProfile.role === 'admin') {
-                document.getElementById('admin-menu').classList.remove('hidden-section');
+                document.getElementById('admin-options').classList.remove('hidden-section');
             }
             
             await checkAndResetCounters(); 
@@ -510,12 +512,44 @@
             startIdleTracker();
             setInterval(updateTimers, 1000);
             
+            // Start Real-time Clock
+            setInterval(updateHeaderTime, 1000);
+            updateHeaderTime();
+            
             // Fixed: Enable mouse movement tracking
             window.addEventListener('mousemove', resetIdleTimer);
             window.addEventListener('keydown', resetIdleTimer);
 
             if (userProfile.role !== 'admin') {
                 listenForScreenshotRequests();
+            }
+        }
+
+        // New Header Time Function
+        function updateHeaderTime() {
+            const now = moment();
+            document.getElementById('header-time').innerText = now.format('HH:mm:ss');
+            document.getElementById('header-date').innerText = now.format('dddd, DD MMMM YYYY');
+        }
+
+        function toggleMainMenu() {
+            const menu = document.getElementById('main-dropdown');
+            menu.classList.toggle('active');
+            
+            // Close if clicked outside
+            if (menu.classList.contains('active')) {
+                document.addEventListener('click', closeMenuOutside);
+            } else {
+                document.removeEventListener('click', closeMenuOutside);
+            }
+        }
+
+        function closeMenuOutside(event) {
+            const menu = document.getElementById('main-dropdown');
+            const btn = document.getElementById('menu-btn');
+            if (!menu.contains(event.target) && !btn.contains(event.target)) {
+                menu.classList.remove('active');
+                document.removeEventListener('click', closeMenuOutside);
             }
         }
 
@@ -537,8 +571,8 @@
                         const userRef = db.collection('users').doc(doc.id);
                         batch.update(userRef, {
                             'timeBank': {},      
-                            'idleBank': 0,       
-                            'tasks': [],         
+                            'idleBank': 0,        
+                            'tasks': [],          
                             'lastChange': firebase.firestore.FieldValue.serverTimestamp()
                         });
                     });
@@ -2073,9 +2107,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
