@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALMASTER TEAM DASHBOARD</title>
     <meta name="theme-color" content="#0ea5e9">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -51,13 +52,7 @@
 
         #admin-alerts-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         
-        .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
-        .chat-header { cursor: move; user-select: none; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
-
-        /* Professional Card Design */
+        /* Enterprise Card */
         .pro-card-design {
             background: white;
             border-radius: 1.5rem;
@@ -71,19 +66,7 @@
         .dark-mode .pro-card-design { background: #1e293b; border-color: #334155; }
         .pro-card-design:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
 
-        /* Task Center Sidebar Items */
-        .task-sidebar-item {
-            border-bottom: 1px solid #f1f5f9;
-            transition: all 0.2s;
-            border-right: 4px solid transparent;
-        }
-        .dark-mode .task-sidebar-item { border-bottom-color: #334155; }
-        .task-sidebar-item:hover { background-color: #f8fafc; }
-        .dark-mode .task-sidebar-item:hover { background-color: #1e293b; }
-        .task-sidebar-item.active { background-color: #eff6ff; border-right-color: #0ea5e9; }
-        .dark-mode .task-sidebar-item.active { background-color: #1e293b; border-right-color: #0ea5e9; }
-
-        /* Word Sheet */
+        /* Task System UI */
         .a4-paper {
             background: white;
             width: 100%;
@@ -100,7 +83,18 @@
         }
         .dark-mode .a4-paper { background: #f8fafc; color: #0f172a; }
 
-        /* Chat Bubbles in Notes */
+        .task-sidebar-item {
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s;
+            border-right: 4px solid transparent;
+        }
+        .dark-mode .task-sidebar-item { border-bottom-color: #334155; }
+        .task-sidebar-item:hover { background-color: #f8fafc; }
+        .dark-mode .task-sidebar-item:hover { background-color: #1e293b; }
+        .task-sidebar-item.active { background-color: #eff6ff; border-right-color: #0ea5e9; }
+        .dark-mode .task-sidebar-item.active { background-color: #1e293b; border-right-color: #0ea5e9; }
+
+        /* Chat Bubbles */
         .chat-bubble {
             border-radius: 12px;
             padding: 10px 14px;
@@ -110,6 +104,14 @@
         }
         .chat-bubble.me { background-color: #e0f2fe; color: #0c4a6e; border-bottom-left-radius: 2px; }
         .chat-bubble.other { background-color: #f1f5f9; color: #334155; border-bottom-right-radius: 2px; }
+        .dark-mode .chat-bubble.other { background-color: #334155; color: #e2e8f0; }
+
+        /* Utilities */
+        .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
+        .chat-header { cursor: move; user-select: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
     </style>
 </head>
 
@@ -301,7 +303,7 @@
                             <div class="flex gap-2">
                                 <span class="px-4 py-1 bg-gray-800 text-white border border-gray-900 rounded text-xs font-bold uppercase tracking-widest shadow-sm">Official</span>
                                 <div id="admin-task-actions" class="hidden flex gap-2">
-                                    <button onclick="deleteCurrentTask()" class="px-3 py-1 bg-red-100 text-red-600 rounded text-xs font-bold hover:bg-red-200 border border-red-200"><i class="fas fa-trash-alt"></i> حذف</button>
+                                    <button onclick="deleteCurrentTask()" class="px-3 py-1 bg-red-100 text-red-600 rounded text-xs font-bold hover:bg-red-200 border border-red-200"><i class="fas fa-trash-alt"></i></button>
                                     <button onclick="openEditTaskModal()" class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-xs font-bold hover:bg-blue-200 border border-blue-200"><i class="fas fa-edit"></i> تعديل</button>
                                 </div>
                             </div>
@@ -495,6 +497,7 @@
         const auth = firebase.auth();
 
         let currentUser = null, userProfile = null, lastActionTime = Date.now(), allUsersData = [], dismissedAlerts = [], currentFilter = 'all', attachedFileBase64 = null, attachedFileName = "", openPrivateChats = {};
+        let presenceCheckActive = false; // Declared once globally
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
         let unreadCounts = {}; 
 
@@ -704,13 +707,16 @@
 
                 // Filter Logic Correction
                 if (!isMe) {
-                    if (currentFilter === 'all') {
-                        // Show EVERYONE. Do not return.
-                    } else if (currentFilter === 'Idle') {
-                        if (!u.isIdle) return;
+                    if (currentFilter !== 'all') {
+                        if (currentFilter === 'Idle') {
+                            if (!u.isIdle) return;
+                        } else {
+                            // Specific status filter (Online, Meeting, Break, Offline)
+                            if (effStatus !== currentFilter && u.status !== currentFilter) return;
+                        }
                     } else {
-                        // Specific status filter (Online, Meeting, Break, Offline)
-                        if (effStatus !== currentFilter && u.status !== currentFilter) return;
+                        // If 'all', we check showOffline toggle, UNLESS the user wants *absolutely everyone* when clicking ALL.
+                        // Based on user feedback "All must show all employees", we SKIP the offline toggle check here.
                     }
                 }
 
@@ -802,495 +808,6 @@
             const userRef = db.collection('users').doc(targetEmail);
             const snapshot = await userRef.get();
             const uData = snapshot.data();
-            
-            if(!uData || (uData.status === newStatus && !isAuto)) return;
-
-            playStatusNotification(); 
-
-            const now = Date.now();
-            let currentIdleBank = uData.idleBank || 0;
-            
-            if (uData.isIdle && uData.idleSince) {
-                const idleStart = getMillis(uData.idleSince);
-                const idleDuration = now - idleStart;
-                currentIdleBank += idleDuration;
-
-                await db.collection('logs').add({
-                    user: targetEmail,
-                    name: uData.name,
-                    from_status: 'Idle (Auto)',
-                    to_status: newStatus, 
-                    start_time: uData.idleSince,
-                    end_time: firebase.firestore.FieldValue.serverTimestamp(),
-                    duration_ms: idleDuration,
-                    auto: true
-                });
-            }
-
-            const lastTime = getMillis(uData.lastChange);
-            const duration = now - lastTime;
-            
-            let timeBank = uData.timeBank || {};
-            const oldStatus = uData.status || 'Offline';
-            
-            if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
-            timeBank[oldStatus] += duration;
-            
-            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-
-            await db.collection('logs').add({ 
-                user: targetEmail, 
-                name: uData.name, 
-                from_status: oldStatus, 
-                to_status: newStatus, 
-                start_time: uData.lastChange || timestamp, 
-                end_time: timestamp, 
-                duration_ms: duration, 
-                auto: isAuto 
-            });
-
-            await userRef.update({ 
-                status: newStatus, 
-                lastChange: timestamp, 
-                timeBank: timeBank, 
-                isIdle: false, 
-                idleSince: null,
-                idleBank: currentIdleBank 
-            });
-        }
-
-        function updateTimers() {
-            const now = Date.now();
-            document.querySelectorAll('.stat-timer').forEach(t => { 
-                const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; 
-                t.innerText = formatTimeSmall((t.dataset.active==='true')?b+(now-s):b); 
-            });
-            document.querySelectorAll('.stat-idle').forEach(t => { 
-                const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; 
-                t.innerText = formatTimeSmall((t.dataset.isidle==='true')?b+(now-s):b); 
-            });
-        }
-
-        function formatTime(ms) {
-            if(isNaN(ms) || ms < 0) return "00:00:00";
-            const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
-            const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0');
-            const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
-            return `${h}:${m}:${s}`;
-        }
-        function formatTimeSmall(ms) {
-            if (isNaN(ms) || ms < 0) ms = 0;
-            const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
-            const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0');
-            const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
-            return `${h}:${m}:${s}`;
-        }
-        function getMillis(val) {
-            if (!val) return Date.now();
-            if (typeof val === 'number') return val;
-            if (typeof val.toMillis === 'function') return val.toMillis();
-            return Date.now();
-        }
-
-        function resetIdleTimer() {
-            lastActionTime = Date.now();
-            if(userProfile && userProfile.isIdle) {
-                const now = Date.now();
-                const dur = now - getMillis(userProfile.idleSince);
-                db.collection('users').doc(currentUser.email).update({ 
-                    isIdle: false, idleSince: null, idleBank: (userProfile.idleBank || 0) + dur
-                });
-            }
-        }
-        
-        let presenceCheckActive = false; 
-
-        function startIdleTracker() {
-            const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'visibilitychange', 'mousemove'];
-            
-            activityEvents.forEach(evt => {
-                document.addEventListener(evt, () => {
-                    if (presenceCheckActive || document.hidden === false) {
-                        lastActionTime = Date.now();
-                        presenceCheckActive = false; 
-                    }
-                }, true);
-            });
-
-            setInterval(() => {
-                if(!userProfile || userProfile.role === 'admin' || userProfile.isIdle || userProfile.status !== 'Online') return;
-
-                const now = Date.now();
-                const timeDiff = now - lastActionTime;
-                
-                const activePageLimit = (parseInt(userProfile.idleLimit) || 5); 
-                const backgroundPageLimit = (parseInt(userProfile.backgroundLimit) || 60); 
-                const warningDuration = 5 * 60 * 1000;
-
-                let currentLimit = document.hidden ? (backgroundPageLimit * 60 * 1000) : (activePageLimit * 60 * 1000);
-
-                if (timeDiff > currentLimit && !presenceCheckActive) {
-                    presenceCheckActive = true; 
-                    
-                    const alertSound = document.getElementById('alert-sound');
-                    if (alertSound) {
-                        alertSound.currentTime = 0;
-                        alertSound.play().catch(e => console.log("Sound blocked"));
-                    } else {
-                        playNotification();
-                    }
-
-                    if (Notification.permission === "granted") {
-                        const uniqueTag = "presence-" + Date.now(); 
-                        const n = new Notification("⏳ إثبات تواجد", {
-                            body: `مرت ${Math.floor(timeDiff/60000)} دقيقة على وضع Online. اضغط لتأكيد العمل.`,
-                            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png",
-                            requireInteraction: true,
-                            tag: uniqueTag, 
-                            renotify: true  
-                        });
-                        
-                        n.onclick = function() {
-                            window.focus();
-                            this.close();
-                            lastActionTime = Date.now();
-                            presenceCheckActive = false;
-                        };
-                    }
-                }
-
-                if (presenceCheckActive && timeDiff > (currentLimit + warningDuration)) {
-                    db.collection('users').doc(currentUser.email).update({ 
-                        isIdle: true, 
-                        idleSince: firebase.firestore.FieldValue.serverTimestamp() 
-                    });
-
-                    presenceCheckActive = false;
-                    
-                    if (Notification.permission === "granted") {
-                        new Notification("⚠️ تم تحويلك للخمول", {
-                            body: "لم يتم تأكيد التواجد، تم تغيير الحالة تلقائياً.",
-                            icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png",
-                            tag: "idle-alert-" + Date.now()
-                        });
-                    }
-                }
-
-            }, 5000); 
-        }
-        
-        function playNotification() {
-            const sound = document.getElementById('notification-sound');
-            sound.currentTime = 0;
-            sound.play().catch(e => console.log("Audio play blocked"));
-        }
-        
-        function playStatusNotification() {
-            const sound = document.getElementById('status-sound');
-            if (sound) {
-                sound.currentTime = 0;
-                sound.play().catch(e => console.log("Audio status sound blocked"));
-            }
-        }
-
-        // --- TASKS SYSTEM LOGIC (Sync Edit Fix) ---
-        
-        function openTaskCenter() {
-            document.getElementById('modal-task-center').classList.remove('hidden');
-            const listContainer = document.getElementById('task-list-container');
-            listContainer.innerHTML = '<div class="text-center p-4"><div class="animate-spin w-6 h-6 border-2 border-primary-500 rounded-full inline-block"></div></div>';
-            
-            let tasksToShow = [];
-            
-            if(userProfile.role === 'admin') {
-                allUsersData.forEach(u => {
-                    if(u.tasks) {
-                        u.tasks.forEach(t => {
-                            const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email, creatorName: t.createdBy};
-                            tasksToShow.push(taskWithInfo);
-                        });
-                    }
-                });
-            } else {
-                if(userProfile.tasks) {
-                    userProfile.tasks.forEach(t => {
-                        const taskWithInfo = {...t, ownerName: "Me", ownerEmail: userProfile.email, creatorName: t.createdBy};
-                        tasksToShow.push(taskWithInfo);
-                    });
-                }
-            }
-            
-            renderTaskList(tasksToShow);
-        }
-
-        function renderTaskList(tasks) {
-            const listContainer = document.getElementById('task-list-container');
-            listContainer.innerHTML = '';
-            
-            if (!tasks || tasks.length === 0) {
-                listContainer.innerHTML = '<div class="text-center text-slate-400 p-8 text-sm font-bold flex flex-col items-center gap-2"><i class="fas fa-clipboard-check text-2xl opacity-50"></i><p>لا توجد مهام حالياً</p></div>';
-                return;
-            }
-
-            tasks.sort((a, b) => b.id - a.id);
-
-            tasks.forEach((task, idx) => {
-                const el = document.createElement('div');
-                const isMyTask = userProfile.role !== 'admin';
-                
-                // Sidebar Content Logic
-                let subText = "";
-                if(userProfile.role === 'admin') {
-                    // Admin sees: Task Name + Assignee (Employee) + Assigner (Manager)
-                    subText = `
-                        <div class="flex items-center gap-1 mt-1 text-primary-600">
-                            <i class="fas fa-user text-[8px]"></i> <span>${task.ownerName}</span>
-                        </div>
-                        <div class="text-slate-400 flex items-center gap-1 mt-0.5">
-                            <i class="fas fa-pen-nib text-[8px]"></i> <span>بواسطة: ${task.creatorName}</span>
-                        </div>
-                    `;
-                } else {
-                    // Employee sees: Task Name + Assigner
-                    subText = `
-                        <div class="text-slate-400 flex items-center gap-1 mt-1">
-                            <i class="fas fa-user-tie text-[8px]"></i> <span>بواسطة: ${task.creatorName}</span>
-                        </div>
-                    `;
-                }
-
-                el.className = `task-sidebar-item p-4 mb-0 bg-white dark:bg-slate-800 cursor-pointer`;
-                el.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate w-full">${task.title}</h4>
-                    </div>
-                    <div class="text-[10px]">
-                        ${subText}
-                        <div class="text-right mt-1 text-slate-300">${moment(task.id).format('DD/MM HH:mm')}</div>
-                    </div>
-                `;
-                el.onclick = () => showTaskDetail(task, idx);
-                listContainer.appendChild(el);
-            });
-        }
-
-        function showTaskDetail(task, idx) {
-            document.querySelectorAll('.task-sidebar-item').forEach(e => e.classList.remove('active'));
-            if(document.querySelectorAll('.task-sidebar-item')[idx]) document.querySelectorAll('.task-sidebar-item')[idx].classList.add('active');
-
-            document.getElementById('task-empty-view').classList.add('hidden');
-            document.getElementById('task-detail-view').classList.remove('hidden');
-
-            document.getElementById('task-detail-title').innerText = task.title;
-            document.getElementById('task-detail-desc').innerText = task.desc;
-            document.getElementById('task-detail-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
-            document.getElementById('task-detail-owner').innerText = task.creatorName;
-            
-            if(userProfile.role === 'admin') {
-                document.getElementById('admin-task-actions').classList.remove('hidden');
-            } else {
-                document.getElementById('admin-task-actions').classList.add('hidden');
-            }
-
-            const attContainer = document.getElementById('task-detail-attachments');
-            attContainer.innerHTML = '';
-            if (task.file) {
-                attContainer.innerHTML = `
-                    <a href="${task.file}" download="task_attachment" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold text-primary-600 hover:bg-primary-50 transition border border-slate-200 dark:border-slate-600">
-                        <i class="fas fa-paperclip"></i> تحميل المرفق الرئيسي
-                    </a>
-                `;
-            }
-
-            const commentsContainer = document.getElementById('task-comments-list');
-            commentsContainer.innerHTML = '';
-            
-            if(!task.comments || task.comments.length === 0) {
-                commentsContainer.innerHTML = '<p class="text-center text-xs text-slate-400 py-4 italic">ابدأ المحادثة حول هذه المهمة...</p>';
-            } else {
-                task.comments.forEach(c => {
-                    const isMe = c.user === currentUser.email;
-                    commentsContainer.innerHTML += `
-                        <div class="flex gap-3 mb-3 ${isMe ? 'flex-row-reverse' : ''}">
-                            <img src="${DEFAULT_PHOTO + encodeURIComponent(c.name)}" class="w-8 h-8 rounded-full border border-slate-200 bg-white self-end">
-                            <div class="chat-bubble max-w-[80%] ${isMe ? 'me' : 'other'} shadow-sm">
-                                <p class="font-bold text-[10px] mb-1 opacity-70 ${isMe ? 'text-left' : 'text-right'}">${c.name}</p>
-                                <p>${c.text}</p>
-                                ${c.file ? `<div class="mt-2"><img src="${c.file}" class="max-w-[150px] rounded-lg border cursor-pointer hover:opacity-90" onclick="openImagePreview(this.src)"></div>` : ''}
-                                <p class="text-[9px] mt-1 opacity-50 text-right">${moment(c.time).fromNow()}</p>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            commentsContainer.scrollTop = commentsContainer.scrollHeight;
-
-            document.getElementById('current-task-id').value = task.id; 
-            document.getElementById('current-task-owner-email').value = task.ownerEmail; 
-        }
-
-        async function deleteCurrentTask() {
-            if(!confirm("هل أنت متأكد من حذف هذه المهمة نهائياً؟")) return;
-            
-            const taskId = parseInt(document.getElementById('current-task-id').value);
-            const targetEmail = document.getElementById('current-task-owner-email').value;
-            
-            const userRef = db.collection('users').doc(targetEmail);
-            const doc = await userRef.get();
-            let tasks = doc.data().tasks || [];
-            
-            const newTasks = tasks.filter(t => t.id !== taskId);
-            
-            await userRef.update({ tasks: newTasks });
-            
-            alert("تم حذف المهمة بنجاح");
-            openTaskCenter(); 
-        }
-
-        // --- INSTANT EDIT LOGIC ---
-        function openEditTaskModal() {
-            const taskId = parseInt(document.getElementById('current-task-id').value);
-            const targetEmail = document.getElementById('current-task-owner-email').value;
-
-            // Find data synchronously from global state (No Await)
-            const targetUser = allUsersData.find(u => u.email === targetEmail);
-            if (!targetUser) return alert("خطأ: لم يتم العثور على بيانات الموظف");
-
-            const task = targetUser.tasks.find(t => t.id === taskId);
-            if (!task) return alert("خطأ: لم يتم العثور على المهمة");
-
-            document.getElementById('new-task-target-email').value = targetEmail;
-            document.getElementById('task-edit-id').value = task.id;
-            document.getElementById('new-task-title').value = task.title;
-            document.getElementById('new-task-desc').value = task.desc;
-            document.getElementById('task-modal-title').innerText = "تعديل المهمة الحالية";
-            
-            // Show modal
-            document.getElementById('modal-create-task').classList.remove('hidden');
-        }
-
-        function openAddTaskModal(targetEmail) {
-            document.getElementById('new-task-target-email').value = targetEmail;
-            document.getElementById('task-edit-id').value = ""; // Clear edit ID
-            document.getElementById('new-task-title').value = '';
-            document.getElementById('new-task-desc').value = '';
-            document.getElementById('new-task-file').value = '';
-            document.getElementById('task-modal-title').innerText = "إسناد مهمة جديدة";
-            document.getElementById('modal-create-task').classList.remove('hidden');
-        }
-
-        async function submitTaskForm(e) {
-            e.preventDefault();
-            const targetEmail = document.getElementById('new-task-target-email').value;
-            const editId = document.getElementById('task-edit-id').value;
-            const title = document.getElementById('new-task-title').value;
-            const desc = document.getElementById('new-task-desc').value;
-            const fileInput = document.getElementById('new-task-file');
-            
-            let fileBase64 = null;
-            if (fileInput.files[0]) {
-                const reader = new FileReader();
-                fileBase64 = await new Promise(resolve => {
-                    reader.onload = e => resolve(e.target.result);
-                    reader.readAsDataURL(fileInput.files[0]);
-                });
-            }
-
-            const userRef = db.collection('users').doc(targetEmail);
-            const doc = await userRef.get();
-            let tasks = doc.data().tasks || [];
-
-            if (editId) {
-                // UPDATE EXISTING TASK
-                const taskIndex = tasks.findIndex(t => t.id == editId);
-                if (taskIndex > -1) {
-                    tasks[taskIndex].title = title;
-                    tasks[taskIndex].desc = desc;
-                    if (fileBase64) tasks[taskIndex].file = fileBase64;
-                }
-            } else {
-                // CREATE NEW TASK
-                const newTask = {
-                    id: Date.now(),
-                    title: title,
-                    desc: desc,
-                    file: fileBase64,
-                    comments: [],
-                    createdBy: userProfile.name, // Store readable name
-                    status: 'open'
-                };
-                tasks.push(newTask);
-            }
-            
-            await userRef.update({ tasks: tasks });
-            
-            alert(editId ? '✅ تم تعديل المهمة' : '✅ تم إسناد المهمة');
-            document.getElementById('modal-create-task').classList.add('hidden');
-            
-            // Refresh if open
-            if(!document.getElementById('modal-task-center').classList.contains('hidden')) {
-                openTaskCenter();
-            }
-        }
-
-        async function addTaskNote(e) {
-            e.preventDefault();
-            const taskId = parseInt(document.getElementById('current-task-id').value);
-            const txt = document.getElementById('note-input').value;
-            const fileInput = document.getElementById('note-attachment');
-            const targetUserEmail = document.getElementById('current-task-owner-email').value;
-            
-            if (!txt && !fileInput.files[0]) return;
-
-            let fileBase64 = null;
-            if (fileInput.files[0]) {
-                const reader = new FileReader();
-                fileBase64 = await new Promise(resolve => {
-                    reader.onload = e => resolve(e.target.result);
-                    reader.readAsDataURL(fileInput.files[0]);
-                });
-            }
-
-            const userRef = db.collection('users').doc(targetUserEmail); 
-            const doc = await userRef.get();
-            let tasks = doc.data().tasks || [];
-            
-            const taskIndex = tasks.findIndex(t => t.id === taskId);
-            if (taskIndex > -1) {
-                const newComment = {
-                    user: currentUser.email,
-                    name: userProfile.name,
-                    text: txt,
-                    file: fileBase64,
-                    time: Date.now()
-                };
-                if (!tasks[taskIndex].comments) tasks[taskIndex].comments = [];
-                tasks[taskIndex].comments.push(newComment);
-                
-                await userRef.update({ tasks: tasks });
-                
-                document.getElementById('note-input').value = '';
-                document.getElementById('note-attachment').value = '';
-                
-                const taskWithInfo = {...tasks[taskIndex], ownerName: tasks[taskIndex].ownerName, ownerEmail: targetUserEmail}; 
-                showTaskDetail(taskWithInfo, taskIndex);
-            }
-        }
-
-        // --- Other Standard Functions (Status, Timers, Chat, etc) ---
-        function getStatusColor(s, isFocus, isIdle) {
-            if (isIdle) return { border: 'border-red-600 border-r-4', text: 'text-red-800', badge: 'bg-red-200 text-red-900', shadow: 'shadow-xl shadow-red-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-red-100/50 dark:bg-red-900/40 border-red-200' };
-            if (s === 'Offline') return { border: 'border-slate-500 border-r-4', text: 'text-slate-700', badge: 'bg-slate-300 text-slate-800', shadow: 'shadow-xl shadow-slate-900/20', cardBg: 'bg-slate-100 dark:bg-slate-900', innerGlow: 'bg-slate-200 dark:bg-slate-800 border-slate-300' };
-            if (s === 'Online') return { border: 'border-green-600 border-r-4', text: 'text-green-800', badge: 'bg-green-200 text-green-900', shadow: 'shadow-xl shadow-green-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-green-100/50 dark:bg-green-900/40 border-green-200' };
-            if (s === 'Meeting') return { border: 'border-blue-600 border-r-4', text: 'text-blue-800', badge: 'bg-blue-200 text-blue-900', shadow: 'shadow-xl shadow-blue-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-blue-100/50 dark:bg-blue-900/40 border-blue-200' };
-            if (s === 'Break') return { border: 'border-yellow-500 border-r-4', text: 'text-yellow-800', badge: 'bg-yellow-200 text-yellow-900', shadow: 'shadow-xl shadow-yellow-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-yellow-100/50 dark:bg-yellow-900/40 border-yellow-200' };
-            return { border: 'border-slate-300', text: 'text-slate-600', badge: 'bg-slate-200', shadow: 'shadow-md', cardBg: 'bg-white', innerGlow: 'bg-slate-50' };
-        }
-        
-        async function setStatus(targetEmail, newStatus, isAuto = false) {
-            const userRef = db.collection('users').doc(targetEmail);
-            const snapshot = await userRef.get();
-            const uData = snapshot.data();
             if(!uData || (uData.status === newStatus && !isAuto)) return;
             playStatusNotification(); 
             const now = Date.now();
@@ -1354,7 +871,6 @@
             }
         }
         
-        let presenceCheckActive = false; 
         function startIdleTracker() {
             ['mousedown', 'keydown', 'scroll', 'mousemove'].forEach(evt => document.addEventListener(evt, () => { if (presenceCheckActive || !document.hidden) { lastActionTime = Date.now(); presenceCheckActive = false; } }, true));
             setInterval(() => {
