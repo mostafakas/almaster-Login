@@ -37,7 +37,8 @@
         .dark-mode body { background-color: #0f172a; color: white; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .hidden-section { display: none !important; }
-        .form-input { width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-size: 14px; }
+        .form-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; font-size: 14px; transition: all 0.3s; }
+        .form-input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); outline: none; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
         
         .dropdown-menu { transform-origin: top left; transition: all 0.2s ease-out; transform: scale(0.95); opacity: 0; pointer-events: none; }
@@ -58,54 +59,44 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
 
-        /* --- New Professional Styles for Tasks & Cards --- */
+        /* Professional Card Design */
         .pro-card-design {
             background: white;
             border-radius: 1.5rem;
-            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.05);
-            border: 1px solid #f1f5f9;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e2e8f0;
             overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
         }
-        .dark-mode .pro-card-design { background: #1e293b; border-color: #334155; box-shadow: none; }
-        .pro-card-design:hover { transform: translateY(-8px); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
+        .dark-mode .pro-card-design { background: #1e293b; border-color: #334155; }
+        .pro-card-design:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
 
+        /* Word Sheet & Task Interface */
         .a4-paper {
             background: white;
             width: 100%;
-            min-height: 297mm; /* A4 height approx */
-            padding: 40px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            margin-bottom: 20px;
+            max-width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             color: #1f2937;
             font-family: 'Times New Roman', serif;
-            line-height: 1.8;
-            font-size: 16px;
+            font-size: 12pt;
+            line-height: 1.6;
         }
-        .dark-mode .a4-paper {
-            background: #cbd5e1; /* Off-white for dark mode ease */
-            color: #0f172a;
-        }
+        .dark-mode .a4-paper { background: #e2e8f0; color: #0f172a; }
 
-        .task-sidebar-item {
-            transition: all 0.2s;
+        .task-list-item {
+            transition: background-color 0.2s, border-color 0.2s;
             border-right: 4px solid transparent;
         }
-        .task-sidebar-item:hover {
-            background-color: #f8fafc;
-        }
-        .dark-mode .task-sidebar-item:hover {
-            background-color: #334155;
-        }
-        .task-sidebar-item.active {
-            background-color: #f0f9ff;
-            border-right-color: #0ea5e9;
-        }
-        .dark-mode .task-sidebar-item.active {
-            background-color: #1e293b;
-            border-right-color: #0ea5e9;
-        }
+        .task-list-item:hover { background-color: #f1f5f9; }
+        .dark-mode .task-list-item:hover { background-color: #334155; }
+        .task-list-item.active { background-color: #eff6ff; border-right-color: #3b82f6; }
+        .dark-mode .task-list-item.active { background-color: #1e293b; border-right-color: #3b82f6; }
     </style>
 </head>
 
@@ -159,11 +150,10 @@
             </div>
 
             <div class="flex items-center gap-3 relative">
-                
                 <button onclick="openTaskCenter()" class="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition-all border border-transparent hover:border-primary-200 group relative">
-                    <i class="fas fa-file-contract"></i>
+                    <i class="fas fa-briefcase"></i>
                     <span class="text-xs font-bold hidden sm:block">مركز المهام</span>
-                    <span id="task-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></span>
+                    <span id="task-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white text-[8px] text-white flex items-center justify-center font-bold">0</span>
                 </button>
 
                 <button onclick="toggleMainMenu()" id="menu-btn" class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/30 hover:bg-primary-700 hover:scale-105 transition-all">
@@ -184,6 +174,7 @@
                             <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fas fa-th-large"></i></div>
                             <span class="text-xs font-bold text-slate-600 dark:text-slate-300">لوحة التحكم</span>
                         </button>
+                        
                         <div id="admin-options" class="hidden-section border-t border-slate-100 dark:border-slate-700 pt-2 mt-2">
                             <div class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">أدوات المدير</div>
                             <button onclick="archivePublicChat()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
@@ -203,6 +194,7 @@
                                 <span class="text-xs font-bold text-slate-600 dark:text-slate-300">التقارير</span>
                             </button>
                         </div>
+
                         <div class="border-t border-slate-100 dark:border-slate-700 pt-2 mt-2">
                             <button onclick="archivePrivateChats()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
                                 <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fas fa-comments"></i></div>
@@ -274,10 +266,9 @@
 
     <div id="modal-task-center" class="fixed inset-0 z-[150] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-6xl h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-slate-200 dark:border-slate-700">
-            
             <div class="w-full md:w-80 border-l border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col">
                 <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800">
-                    <h3 class="font-bold text-slate-700 dark:text-slate-200">مهامي الواردة</h3>
+                    <h3 class="font-bold text-slate-700 dark:text-slate-200">مهامي</h3>
                     <span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded shadow-sm text-slate-500">Inbox</span>
                 </div>
                 <div id="task-list-container" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
@@ -293,7 +284,7 @@
                         <div class="border-b-2 border-slate-200 pb-4 mb-6 flex justify-between items-start">
                             <div>
                                 <h1 id="task-detail-title" class="text-3xl font-bold mb-2 font-serif text-black dark:text-black">Task Title</h1>
-                                <p class="text-sm text-gray-500 italic">Date: <span id="task-detail-date"></span> | Assigned by Admin</p>
+                                <p class="text-sm text-gray-500 italic">Date: <span id="task-detail-date"></span> | <span id="task-detail-owner"></span></p>
                             </div>
                             <span class="px-4 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded text-xs font-bold uppercase tracking-widest">مستند رسمي</span>
                         </div>
@@ -314,17 +305,17 @@
 
                         <form onsubmit="addTaskNote(event)" class="p-4 bg-white dark:bg-slate-800 border-t dark:border-slate-700 flex gap-3 items-center">
                             <input type="hidden" id="current-task-id">
+                            <input type="hidden" id="current-task-owner-email">
                             <input type="file" id="note-attachment" class="hidden">
                             <button type="button" onclick="document.getElementById('note-attachment').click()" class="text-slate-400 hover:text-primary-500"><i class="fas fa-paperclip text-lg"></i></button>
                             <input type="text" id="note-input" class="flex-1 bg-slate-100 dark:bg-slate-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 ring-primary-500" placeholder="أضف ملاحظة أو استفسار..." autocomplete="off">
                             <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white w-10 h-10 rounded-xl shadow-lg flex items-center justify-center transition"><i class="fas fa-paper-plane"></i></button>
                         </form>
                     </div>
-
                 </div>
 
                 <div id="task-empty-view" class="flex-1 flex flex-col items-center justify-center text-slate-400">
-                    <i class="far fa-folder-open text-6xl mb-4 opacity-30"></i>
+                    <i class="fas fa-folder-open text-6xl mb-4 opacity-30"></i>
                     <p class="font-bold text-lg">اختر مهمة من القائمة لعرض المستند</p>
                 </div>
             </div>
@@ -443,12 +434,12 @@
                     <div><label class="block text-[11px] font-black uppercase text-slate-500 mb-1">من تاريخ</label><input type="date" id="report-date-from" class="form-input"></div>
                     <div><label class="block text-[11px] font-black uppercase text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="report-date-to" class="form-input"></div>
                 </div>
-                <button onclick="generateProfessionalReport()" class="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] mb-6"><i class="fas fa-search-dollar ml-2"></i> استخراج التقرير وتوليد ملف Excel</button>
+                <button onclick="generateProfessionalReport()" class="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] mb-6"><i class="fas fa-search-dollar ml-2"></i> استخراج التقرير</button>
                 <div id="report-results-area" class="hidden border-t dark:border-slate-700 pt-6">
-                    <h4 class="text-sm font-black mb-4 text-primary-600 border-r-4 border-primary-600 pr-2">ملخص الأداء للفترة المحددة:</h4>
+                    <h4 class="text-sm font-black mb-4 text-primary-600 border-r-4 border-primary-600 pr-2">الملخص:</h4>
                     <div id="daily-summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
                     <div id="total-day-box" class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-2xl text-center border border-primary-100 dark:border-primary-800">
-                        <p class="text-xs font-bold text-primary-600">إجمالي الوقت المسجل للموظف</p>
+                        <p class="text-xs font-bold text-primary-600">الإجمالي</p>
                         <p id="total-duration-text" class="text-2xl font-black text-primary-700 dark:text-primary-400">00:00:00</p>
                     </div>
                 </div>
@@ -465,7 +456,7 @@
             </div>
             <div class="p-0 overflow-y-auto">
                 <table class="w-full text-sm text-right">
-                    <thead class="bg-slate-100 dark:bg-slate-900 text-slate-500 sticky top-0"><tr><th class="p-4">الحركة</th><th class="p-4">وقت التغيير</th><th class="p-4">المدة المستغرقة</th><th class="p-4">النوع</th></tr></thead>
+                    <thead class="bg-slate-100 dark:bg-slate-900 text-slate-500 sticky top-0"><tr><th class="p-4">الحركة</th><th class="p-4">وقت التغيير</th><th class="p-4">المدة</th><th class="p-4">النوع</th></tr></thead>
                     <tbody id="logs-table-body" class="divide-y dark:divide-slate-700"></tbody>
                 </table>
                 <div id="logs-loader" class="p-10 text-center hidden"><div class="animate-spin inline-block w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full"></div></div>
@@ -480,20 +471,39 @@
     </div>
 
     <script>
+        // --- Firebase Config ---
         const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        let currentUser = null, userProfile = null, lastActionTime = Date.now(), allUsersData = [], dismissedAlerts = [], currentFilter = 'all', attachedFileBase64 = null, attachedFileName = "", openPrivateChats = {};
+        // --- State ---
+        let currentUser = null;
+        let userProfile = null;
+        let lastActionTime = Date.now();
+        let allUsersData = [];
+        let dismissedAlerts = [];
+        let currentFilter = 'all';
+        let attachedFileBase64 = null;
+        let attachedFileName = "";
+        let openPrivateChats = {};
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
+        let previousTaskCount = 0; // To track new tasks
 
+        // --- Auth ---
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
                 const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
-                if(doc.exists) { userProfile = doc.data(); await setStatus(user.email, 'Online', true); initSystem(); } 
-                else { alert("Account Error"); auth.signOut(); }
+                if(doc.exists) { 
+                    userProfile = doc.data(); 
+                    previousTaskCount = (userProfile.tasks || []).length;
+                    await setStatus(user.email, 'Online', true); 
+                    initSystem(); 
+                } else { 
+                    alert("Account Error"); 
+                    auth.signOut(); 
+                }
             } else {
                 document.getElementById('view-system').classList.add('hidden-section');
                 document.getElementById('view-login').classList.remove('hidden-section');
@@ -506,7 +516,6 @@
             e.preventDefault();
             const email = document.getElementById('login-email').value.toLowerCase().trim();
             const pass = document.getElementById('login-pass').value;
-            const errEl = document.getElementById('login-error');
             try {
                 await auth.signInWithEmailAndPassword(email, pass);
                 const userDoc = await db.collection('users').doc(email).get();
@@ -521,8 +530,8 @@
                 await db.collection('users').doc(email).update({ sessionId: newSessionId });
             } catch (err) {
                 console.error(err);
-                errEl.innerText = "خطأ في الدخول: تأكد من صحة البريد وكلمة المرور";
-                errEl.classList.remove('hidden');
+                document.getElementById('login-error').innerText = "بيانات الدخول غير صحيحة";
+                document.getElementById('login-error').classList.remove('hidden');
                 auth.signOut();
             }
         }
@@ -532,16 +541,20 @@
             auth.signOut().then(() => location.reload());
         }
 
+        // --- System Init ---
         async function initSystem() {
             if (Notification.permission !== 'granted' && Notification.permission !== 'denied') { Notification.requestPermission(); }
             document.getElementById('loader').classList.add('hidden-section');
             document.getElementById('view-login').classList.add('hidden-section');
             document.getElementById('view-system').classList.remove('hidden-section');
             document.getElementById('chat-fab').classList.remove('hidden-section');
+            
             document.getElementById('menu-user-name').innerText = userProfile.name;
             document.getElementById('menu-user-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
             document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
+            
             if(userProfile.role === 'admin') { document.getElementById('admin-options').classList.remove('hidden-section'); }
+            
             await checkAndResetCounters(); 
             listenToAllUsers();
             initChat();
@@ -550,8 +563,10 @@
             setInterval(updateTimers, 1000);
             setInterval(updateHeaderTime, 1000);
             updateHeaderTime();
+            
             window.addEventListener('mousemove', resetIdleTimer);
             window.addEventListener('keydown', resetIdleTimer);
+            
             if (userProfile.role !== 'admin') { listenForScreenshotRequests(); }
         }
 
@@ -583,7 +598,6 @@
                 const settingsDoc = await db.collection('system_settings').doc('daily_reset').get();
                 const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
                 if (lastResetDate !== today) {
-                    console.log("يوم جديد: جاري تصفير عدادات الوقت والمهام...");
                     const usersSnapshot = await db.collection('users').get();
                     const batch = db.batch();
                     usersSnapshot.forEach((doc) => {
@@ -596,6 +610,7 @@
             } catch (e) { console.error("Reset Warning:", e.message); }
         }
 
+        // --- Core Listener ---
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
                 let hasStatusChange = false;
@@ -603,8 +618,29 @@
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     allUsersData.push(data);
-                    if (currentUser && data.email === currentUser.email) { userProfile = data; }
+                    if (currentUser && data.email === currentUser.email) { 
+                        // Update current user profile and check for new tasks
+                        const oldTasks = userProfile.tasks || [];
+                        const newTasks = data.tasks || [];
+                        if (newTasks.length > oldTasks.length) {
+                            playNotification();
+                            if (Notification.permission === "granted") {
+                                new Notification("📋 مهمة جديدة", { body: "تم إسناد مهمة جديدة إليك", icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png" });
+                            }
+                        }
+                        userProfile = data; 
+                        
+                        // Update Task Badge
+                        const badge = document.getElementById('task-badge');
+                        if (newTasks.length > 0) {
+                            badge.innerText = newTasks.length;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+                    }
                 });
+
                 snapshot.docChanges().forEach(change => {
                     if (change.type === "modified") {
                         const newData = change.doc.data();
@@ -618,6 +654,7 @@
                         if (userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) { hasStatusChange = true; }
                     }
                 });
+                
                 if (hasStatusChange && userProfile && userProfile.role === 'admin') { playStatusNotification(); }
                 renderGrid();
                 updateReportDropdown();
@@ -637,7 +674,7 @@
             renderGrid();
         }
 
-        // --- NEW RENDER GRID: PROFESSIONAL CARDS (No Task List) ---
+        // --- Render Cards (Professional Style) ---
         function renderGrid() {
             const grid = document.getElementById('grid-users');
             grid.innerHTML = '';
@@ -647,12 +684,12 @@
 
             allUsersData.forEach(u => {
                 const isMe = (currentUser.email === u.email);
-                let effectiveStatus = u.status || 'Offline';
-                if (u.isIdle) effectiveStatus = 'Idle'; 
+                let effStatus = u.status || 'Offline';
+                if (u.isIdle) effStatus = 'Idle'; 
 
                 if (!isMe) {
                     if (currentFilter !== 'all') {
-                        if (effectiveStatus !== currentFilter && u.status !== currentFilter) return;
+                        if (effStatus !== currentFilter && u.status !== currentFilter) return;
                         if (currentFilter === 'Idle' && !u.isIdle) return;
                     } else {
                         const isOffline = (effectiveStatus === 'Offline');
@@ -665,7 +702,6 @@
                 const safeStart = getMillis(u.lastChange);
                 const canControl = (isAdmin || isMe);
                 
-                // Card Color Strip Logic
                 let stripColor = "bg-slate-300";
                 if(u.isIdle) stripColor = "bg-red-500";
                 else if(u.status === 'Online') stripColor = "bg-green-500";
@@ -809,10 +845,6 @@
 
         function updateTimers() {
             const now = Date.now();
-            document.querySelectorAll('.main-timer').forEach(el => { 
-                const s = parseInt(el.dataset.start); const b = parseInt(el.dataset.bank)||0; 
-                if(s) el.innerText = formatTime(b + (now-s)); 
-            });
             document.querySelectorAll('.stat-timer').forEach(t => { 
                 const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; 
                 t.innerText = formatTimeSmall((t.dataset.active==='true')?b+(now-s):b); 
@@ -945,14 +977,38 @@
             }
         }
 
-        // --- NEW TASK FUNCTIONS (WORD STYLE) ---
+        // --- TASKS SYSTEM LOGIC ---
+        
+        // 1. Open Task Center
         function openTaskCenter() {
             document.getElementById('modal-task-center').classList.remove('hidden');
             const listContainer = document.getElementById('task-list-container');
             listContainer.innerHTML = '<div class="text-center p-4"><div class="animate-spin w-6 h-6 border-2 border-primary-500 rounded-full inline-block"></div></div>';
             
-            const tasks = userProfile.tasks || []; 
-            renderTaskList(tasks);
+            let tasksToShow = [];
+            
+            // If Admin: show ALL tasks from ALL users
+            if(userProfile.role === 'admin') {
+                allUsersData.forEach(u => {
+                    if(u.tasks) {
+                        u.tasks.forEach(t => {
+                            // Clone task and add owner info for display
+                            const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
+                            tasksToShow.push(taskWithInfo);
+                        });
+                    }
+                });
+            } else {
+                // If Employee: show only MY tasks
+                if(userProfile.tasks) {
+                    userProfile.tasks.forEach(t => {
+                        const taskWithInfo = {...t, ownerName: "Me", ownerEmail: userProfile.email};
+                        tasksToShow.push(taskWithInfo);
+                    });
+                }
+            }
+            
+            renderTaskList(tasksToShow);
         }
 
         function renderTaskList(tasks) {
@@ -964,33 +1020,41 @@
                 return;
             }
 
+            // Sort by Date (Newest First)
             tasks.sort((a, b) => b.id - a.id);
 
             tasks.forEach((task, idx) => {
                 const el = document.createElement('div');
-                el.className = `task-sidebar-item p-4 mb-2 bg-white dark:bg-slate-800 rounded-lg cursor-pointer border-b border-slate-100 dark:border-slate-700/50 hover:shadow-sm`;
+                el.className = `task-list-item p-4 mb-2 bg-white dark:bg-slate-800 rounded-2xl cursor-pointer shadow-sm border border-slate-100 dark:border-slate-700/50`;
                 el.innerHTML = `
                     <div class="flex justify-between items-start mb-1">
-                        <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate max-w-[180px]">${task.title}</h4>
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate max-w-[150px]">${task.title}</h4>
+                            ${userProfile.role === 'admin' ? `<p class="text-[9px] text-primary-500 font-bold">${task.ownerName}</p>` : ''}
+                        </div>
                         <span class="text-[9px] bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-500">${moment(task.id).format('DD/MM')}</span>
                     </div>
                     <p class="text-[10px] text-slate-400 truncate">${task.desc ? task.desc.substring(0, 40) + '...' : 'لا يوجد وصف'}</p>
                 `;
+                // We pass the whole task object to details
                 el.onclick = () => showTaskDetail(task, idx);
                 listContainer.appendChild(el);
             });
         }
 
         function showTaskDetail(task, idx) {
-            document.querySelectorAll('.task-sidebar-item').forEach(e => e.classList.remove('active'));
-            document.querySelectorAll('.task-sidebar-item')[idx].classList.add('active');
+            // UI Toggle
+            document.querySelectorAll('.task-list-item').forEach(e => e.classList.remove('active'));
+            if(document.querySelectorAll('.task-list-item')[idx]) document.querySelectorAll('.task-list-item')[idx].classList.add('active');
 
             document.getElementById('task-empty-view').classList.add('hidden');
             document.getElementById('task-detail-view').classList.remove('hidden');
 
+            // Fill Content
             document.getElementById('task-detail-title').innerText = task.title;
             document.getElementById('task-detail-desc').innerText = task.desc;
             document.getElementById('task-detail-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
+            document.getElementById('task-detail-owner').innerText = task.ownerName || "Me";
             
             const attContainer = document.getElementById('task-detail-attachments');
             attContainer.innerHTML = '';
@@ -1002,6 +1066,7 @@
                 `;
             }
 
+            // Render Comments
             const commentsContainer = document.getElementById('task-comments-list');
             commentsContainer.innerHTML = '';
             
@@ -1024,10 +1089,11 @@
             }
             commentsContainer.scrollTop = commentsContainer.scrollHeight;
 
+            // Set hidden fields for replying
             document.getElementById('current-task-id').value = task.id; 
+            document.getElementById('current-task-owner-email').value = task.ownerEmail; // Critical for Admin to reply to correct user
         }
 
-        // Open Add Task Modal (Admin Only)
         function openAddTaskModal(targetEmail) {
             document.getElementById('new-task-target-email').value = targetEmail;
             document.getElementById('new-task-title').value = '';
@@ -1073,12 +1139,12 @@
             document.getElementById('modal-create-task').classList.add('hidden');
         }
 
-        // Add Note/Comment to Task
         async function addTaskNote(e) {
             e.preventDefault();
             const taskId = parseInt(document.getElementById('current-task-id').value);
             const txt = document.getElementById('note-input').value;
             const fileInput = document.getElementById('note-attachment');
+            const targetUserEmail = document.getElementById('current-task-owner-email').value; // Get owner from hidden field
             
             if (!txt && !fileInput.files[0]) return;
 
@@ -1091,7 +1157,8 @@
                 });
             }
 
-            const userRef = db.collection('users').doc(currentUser.email); 
+            // Update the task inside the TARGET user document
+            const userRef = db.collection('users').doc(targetUserEmail); 
             const doc = await userRef.get();
             let tasks = doc.data().tasks || [];
             
@@ -1111,11 +1178,14 @@
                 
                 document.getElementById('note-input').value = '';
                 document.getElementById('note-attachment').value = '';
-                showTaskDetail(tasks[taskIndex], taskIndex);
+                
+                // Re-construct the task object for display refresh
+                const taskWithInfo = {...tasks[taskIndex], ownerName: userProfile.name, ownerEmail: targetUserEmail}; 
+                showTaskDetail(taskWithInfo, taskIndex); // This relies on index which might be tricky if sorted differently, but for immediate feedback usually okay. Better to reload list.
+                openTaskCenter(); // Refresh list to be safe
             }
         }
 
-        // Override Old Task Logic
         async function addTask(email) {
             alert("يرجى استخدام زر إسناد المهام في البطاقة (الأيقونة الجديدة)");
         }
@@ -1167,6 +1237,11 @@
         function listenToPrivateMessages() {
             if(!currentUser) return;
             
+            // FIX: Listen for both SENT and RECEIVED messages to ensure sync
+            // Note: Firestore requires composite index for compound queries. 
+            // Simple approach: Listen to "receiver == me" OR "sender == me" logic manually if needed, 
+            // but for now let's ensure the BASIC receive works perfectly.
+            
             db.collection("private_messages")
                 .where("receiver", "==", currentUser.email.toLowerCase())
                 .onSnapshot(s => {
@@ -1176,6 +1251,7 @@
                                 const m = change.doc.data();
                                 const msgTime = m.time ? m.time.toMillis() : Date.now();
                                 
+                                // Only notify if message is recent (last 10 seconds)
                                 if (msgTime > (Date.now() - 10000)) { 
                                     playNotification();
                                     if (Notification.permission === "granted") {
@@ -1194,14 +1270,15 @@
                                         };
                                     }
 
+                                    // Auto open if not open? Optional.
                                     if (!openPrivateChats[m.sender]) {
-                                        openPrivateChat(m.sender, m.name || "مستخدم");
+                                        // openPrivateChat(m.sender, m.name || "مستخدم"); // Uncomment to auto-open
                                     }
                                 }
                             }
                         });
                     }
-                }, err => console.log("Listener Warning")); 
+                }, err => console.log("Listener Warning", err)); 
         }
 
         let mediaRecorder = null;
@@ -1426,7 +1503,7 @@
             makeDraggable(chatWindow);
         }
 
-        // -- الدردشة الخاصة --
+        // -- الدردشة الخاصة (FIXED EMAIL LOGIC) --
         function closePrivateChat(email) {
             const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
             const el = document.getElementById(`chat-priv-${chatId}`);
