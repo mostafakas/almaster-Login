@@ -78,16 +78,17 @@
             background: white;
             width: 100%;
             max-width: 210mm;
-            min-height: 297mm;
+            min-height: 200mm;
             padding: 20mm;
             margin: 0 auto;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             color: #1f2937;
             font-family: 'Times New Roman', serif;
-            font-size: 12pt;
+            font-size: 14pt;
             line-height: 1.6;
+            border: 1px solid #e5e7eb;
         }
-        .dark-mode .a4-paper { background: #e2e8f0; color: #0f172a; }
+        .dark-mode .a4-paper { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
 
         .task-list-item {
             transition: background-color 0.2s, border-color 0.2s;
@@ -136,24 +137,31 @@
     <div id="view-system" class="hidden-section flex flex-col min-h-screen">
         
         <header class="bg-white dark:bg-slate-800 shadow-md h-20 px-6 flex items-center justify-between z-50 sticky top-0 relative">
-            <div class="flex items-center gap-4">
-                <img src="MASTER_LOGO_WHPNG.png" class="h-12 w-auto object-contain drop-shadow-sm" alt="Logo">
+            
+            <div class="flex items-center gap-3">
+                <img id="header-user-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500 object-cover shadow-sm">
                 <div class="hidden md:block">
-                    <h1 class="text-xl font-black tracking-wider text-slate-800 dark:text-white font-[Outfit]">ALMASTER</h1>
-                    <p class="text-[10px] text-primary-500 font-bold uppercase tracking-[0.2em]">System Dashboard</p>
+                    <p id="header-user-name" class="text-sm font-bold text-slate-800 dark:text-white leading-tight">User Name</p>
+                    <p id="header-user-role" class="text-[10px] text-primary-500 font-bold uppercase tracking-wider">Role</p>
                 </div>
             </div>
 
             <div class="hidden md:flex flex-col items-center justify-center absolute left-1/2 transform -translate-x-1/2">
-                <div id="header-time" class="text-2xl font-black font-mono text-slate-700 dark:text-slate-200 tracking-widest">00:00:00</div>
-                <div id="header-date" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loading Date...</div>
+                <img src="MASTER_LOGO_WHPNG.png" class="h-8 w-auto object-contain mb-1 opacity-80" alt="Logo">
+                <div id="header-time" class="text-lg font-black font-mono text-slate-700 dark:text-slate-200 tracking-widest">00:00:00</div>
             </div>
 
             <div class="flex items-center gap-3 relative">
+                
+                <button onclick="alert('تفقد المحادثات الخاصة في البطاقات')" class="flex items-center justify-center w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition relative">
+                    <i class="fas fa-envelope text-slate-500 dark:text-slate-300"></i>
+                    <span id="msg-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white text-[9px] text-white flex items-center justify-center font-bold">0</span>
+                </button>
+
                 <button onclick="openTaskCenter()" class="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition-all border border-transparent hover:border-primary-200 group relative">
                     <i class="fas fa-briefcase"></i>
                     <span class="text-xs font-bold hidden sm:block">مركز المهام</span>
-                    <span id="task-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white text-[8px] text-white flex items-center justify-center font-bold">0</span>
+                    <span id="task-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white text-[9px] text-white flex items-center justify-center font-bold">0</span>
                 </button>
 
                 <button onclick="toggleMainMenu()" id="menu-btn" class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/30 hover:bg-primary-700 hover:scale-105 transition-all">
@@ -161,13 +169,6 @@
                 </button>
 
                 <div id="main-dropdown" class="dropdown-menu absolute top-14 left-0 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-[100] flex flex-col overflow-hidden">
-                    <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
-                        <img id="menu-user-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500">
-                        <div class="overflow-hidden">
-                            <p id="menu-user-name" class="text-sm font-bold text-slate-800 dark:text-white truncate">User</p>
-                            <p id="menu-user-role" class="text-[10px] text-primary-500 font-bold uppercase">Role</p>
-                        </div>
-                    </div>
                     <div class="p-2 space-y-1 overflow-y-auto max-h-[400px] custom-scrollbar">
                         <div class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">القائمة الرئيسية</div>
                         <button onclick="toggleMainMenu()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
@@ -284,9 +285,16 @@
                         <div class="border-b-2 border-slate-200 pb-4 mb-6 flex justify-between items-start">
                             <div>
                                 <h1 id="task-detail-title" class="text-3xl font-bold mb-2 font-serif text-black dark:text-black">Task Title</h1>
-                                <p class="text-sm text-gray-500 italic">Date: <span id="task-detail-date"></span> | <span id="task-detail-owner"></span></p>
+                                <p class="text-sm text-gray-500 italic">
+                                    <span id="task-detail-date"></span> | تم الإسناد بواسطة: <span id="task-detail-owner" class="font-bold text-primary-600">Admin</span>
+                                </p>
                             </div>
-                            <span class="px-4 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded text-xs font-bold uppercase tracking-widest">مستند رسمي</span>
+                            <div class="flex gap-2">
+                                <span class="px-4 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded text-xs font-bold uppercase tracking-widest">مستند رسمي</span>
+                                <div id="admin-task-actions" class="hidden flex gap-2">
+                                    <button onclick="deleteCurrentTask()" class="px-3 py-1 bg-red-100 text-red-600 rounded text-xs font-bold hover:bg-red-200">حذف</button>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="task-detail-desc" class="text-lg text-justify whitespace-pre-wrap font-serif min-h-[300px] text-black dark:text-black">
@@ -315,7 +323,7 @@
                 </div>
 
                 <div id="task-empty-view" class="flex-1 flex flex-col items-center justify-center text-slate-400">
-                    <i class="fas fa-folder-open text-6xl mb-4 opacity-30"></i>
+                    <i class="far fa-folder-open text-6xl mb-4 opacity-30"></i>
                     <p class="font-bold text-lg">اختر مهمة من القائمة لعرض المستند</p>
                 </div>
             </div>
@@ -434,12 +442,12 @@
                     <div><label class="block text-[11px] font-black uppercase text-slate-500 mb-1">من تاريخ</label><input type="date" id="report-date-from" class="form-input"></div>
                     <div><label class="block text-[11px] font-black uppercase text-slate-500 mb-1">إلى تاريخ</label><input type="date" id="report-date-to" class="form-input"></div>
                 </div>
-                <button onclick="generateProfessionalReport()" class="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] mb-6"><i class="fas fa-search-dollar ml-2"></i> استخراج التقرير</button>
+                <button onclick="generateProfessionalReport()" class="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] mb-6"><i class="fas fa-search-dollar ml-2"></i> استخراج التقرير وتوليد ملف Excel</button>
                 <div id="report-results-area" class="hidden border-t dark:border-slate-700 pt-6">
-                    <h4 class="text-sm font-black mb-4 text-primary-600 border-r-4 border-primary-600 pr-2">الملخص:</h4>
+                    <h4 class="text-sm font-black mb-4 text-primary-600 border-r-4 border-primary-600 pr-2">ملخص الأداء للفترة المحددة:</h4>
                     <div id="daily-summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
                     <div id="total-day-box" class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-2xl text-center border border-primary-100 dark:border-primary-800">
-                        <p class="text-xs font-bold text-primary-600">الإجمالي</p>
+                        <p class="text-xs font-bold text-primary-600">إجمالي الوقت المسجل للموظف</p>
                         <p id="total-duration-text" class="text-2xl font-black text-primary-700 dark:text-primary-400">00:00:00</p>
                     </div>
                 </div>
@@ -456,7 +464,7 @@
             </div>
             <div class="p-0 overflow-y-auto">
                 <table class="w-full text-sm text-right">
-                    <thead class="bg-slate-100 dark:bg-slate-900 text-slate-500 sticky top-0"><tr><th class="p-4">الحركة</th><th class="p-4">وقت التغيير</th><th class="p-4">المدة</th><th class="p-4">النوع</th></tr></thead>
+                    <thead class="bg-slate-100 dark:bg-slate-900 text-slate-500 sticky top-0"><tr><th class="p-4">الحركة</th><th class="p-4">وقت التغيير</th><th class="p-4">المدة المستغرقة</th><th class="p-4">النوع</th></tr></thead>
                     <tbody id="logs-table-body" class="divide-y dark:divide-slate-700"></tbody>
                 </table>
                 <div id="logs-loader" class="p-10 text-center hidden"><div class="animate-spin inline-block w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full"></div></div>
@@ -471,39 +479,23 @@
     </div>
 
     <script>
-        // --- Firebase Config ---
         const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // --- State ---
-        let currentUser = null;
-        let userProfile = null;
-        let lastActionTime = Date.now();
-        let allUsersData = [];
-        let dismissedAlerts = [];
-        let currentFilter = 'all';
-        let attachedFileBase64 = null;
-        let attachedFileName = "";
-        let openPrivateChats = {};
+        let currentUser = null, userProfile = null, lastActionTime = Date.now(), allUsersData = [], dismissedAlerts = [], currentFilter = 'all', attachedFileBase64 = null, attachedFileName = "", openPrivateChats = {};
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
-        let previousTaskCount = 0; // To track new tasks
 
-        // --- Auth ---
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
                 const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
                 if(doc.exists) { 
                     userProfile = doc.data(); 
-                    previousTaskCount = (userProfile.tasks || []).length;
                     await setStatus(user.email, 'Online', true); 
                     initSystem(); 
-                } else { 
-                    alert("Account Error"); 
-                    auth.signOut(); 
-                }
+                } else { alert("Account Error"); auth.signOut(); }
             } else {
                 document.getElementById('view-system').classList.add('hidden-section');
                 document.getElementById('view-login').classList.remove('hidden-section');
@@ -541,7 +533,6 @@
             auth.signOut().then(() => location.reload());
         }
 
-        // --- System Init ---
         async function initSystem() {
             if (Notification.permission !== 'granted' && Notification.permission !== 'denied') { Notification.requestPermission(); }
             document.getElementById('loader').classList.add('hidden-section');
@@ -549,12 +540,17 @@
             document.getElementById('view-system').classList.remove('hidden-section');
             document.getElementById('chat-fab').classList.remove('hidden-section');
             
+            // Set Header User Info (Far Right)
+            document.getElementById('header-user-name').innerText = userProfile.name;
+            document.getElementById('header-user-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
+            document.getElementById('header-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
+            
+            // Set Menu User Info
             document.getElementById('menu-user-name').innerText = userProfile.name;
             document.getElementById('menu-user-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
             document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
             
             if(userProfile.role === 'admin') { document.getElementById('admin-options').classList.remove('hidden-section'); }
-            
             await checkAndResetCounters(); 
             listenToAllUsers();
             initChat();
@@ -563,10 +559,8 @@
             setInterval(updateTimers, 1000);
             setInterval(updateHeaderTime, 1000);
             updateHeaderTime();
-            
             window.addEventListener('mousemove', resetIdleTimer);
             window.addEventListener('keydown', resetIdleTimer);
-            
             if (userProfile.role !== 'admin') { listenForScreenshotRequests(); }
         }
 
@@ -610,7 +604,6 @@
             } catch (e) { console.error("Reset Warning:", e.message); }
         }
 
-        // --- Core Listener ---
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
                 let hasStatusChange = false;
@@ -654,7 +647,6 @@
                         if (userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) { hasStatusChange = true; }
                     }
                 });
-                
                 if (hasStatusChange && userProfile && userProfile.role === 'admin') { playStatusNotification(); }
                 renderGrid();
                 updateReportDropdown();
@@ -674,7 +666,6 @@
             renderGrid();
         }
 
-        // --- Render Cards (Professional Style) ---
         function renderGrid() {
             const grid = document.getElementById('grid-users');
             grid.innerHTML = '';
@@ -977,9 +968,7 @@
             }
         }
 
-        // --- TASKS SYSTEM LOGIC ---
-        
-        // 1. Open Task Center
+        // --- NEW TASK FUNCTIONS (WORD STYLE) ---
         function openTaskCenter() {
             document.getElementById('modal-task-center').classList.remove('hidden');
             const listContainer = document.getElementById('task-list-container');
@@ -987,19 +976,16 @@
             
             let tasksToShow = [];
             
-            // If Admin: show ALL tasks from ALL users
             if(userProfile.role === 'admin') {
                 allUsersData.forEach(u => {
                     if(u.tasks) {
                         u.tasks.forEach(t => {
-                            // Clone task and add owner info for display
                             const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
                             tasksToShow.push(taskWithInfo);
                         });
                     }
                 });
             } else {
-                // If Employee: show only MY tasks
                 if(userProfile.tasks) {
                     userProfile.tasks.forEach(t => {
                         const taskWithInfo = {...t, ownerName: "Me", ownerEmail: userProfile.email};
@@ -1020,7 +1006,6 @@
                 return;
             }
 
-            // Sort by Date (Newest First)
             tasks.sort((a, b) => b.id - a.id);
 
             tasks.forEach((task, idx) => {
@@ -1036,26 +1021,33 @@
                     </div>
                     <p class="text-[10px] text-slate-400 truncate">${task.desc ? task.desc.substring(0, 40) + '...' : 'لا يوجد وصف'}</p>
                 `;
-                // We pass the whole task object to details
                 el.onclick = () => showTaskDetail(task, idx);
                 listContainer.appendChild(el);
             });
         }
 
         function showTaskDetail(task, idx) {
-            // UI Toggle
             document.querySelectorAll('.task-list-item').forEach(e => e.classList.remove('active'));
             if(document.querySelectorAll('.task-list-item')[idx]) document.querySelectorAll('.task-list-item')[idx].classList.add('active');
 
             document.getElementById('task-empty-view').classList.add('hidden');
             document.getElementById('task-detail-view').classList.remove('hidden');
 
-            // Fill Content
             document.getElementById('task-detail-title').innerText = task.title;
             document.getElementById('task-detail-desc').innerText = task.desc;
             document.getElementById('task-detail-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
-            document.getElementById('task-detail-owner').innerText = task.ownerName || "Me";
             
+            // Show Who assigned the task
+            const assigner = task.createdBy || "Admin"; 
+            document.getElementById('task-detail-owner').innerText = assigner === currentUser.email ? "أنا" : assigner;
+            
+            // Show Admin Actions
+            if(userProfile.role === 'admin') {
+                document.getElementById('admin-task-actions').classList.remove('hidden');
+            } else {
+                document.getElementById('admin-task-actions').classList.add('hidden');
+            }
+
             const attContainer = document.getElementById('task-detail-attachments');
             attContainer.innerHTML = '';
             if (task.file) {
@@ -1066,7 +1058,6 @@
                 `;
             }
 
-            // Render Comments
             const commentsContainer = document.getElementById('task-comments-list');
             commentsContainer.innerHTML = '';
             
@@ -1089,9 +1080,27 @@
             }
             commentsContainer.scrollTop = commentsContainer.scrollHeight;
 
-            // Set hidden fields for replying
             document.getElementById('current-task-id').value = task.id; 
-            document.getElementById('current-task-owner-email').value = task.ownerEmail; // Critical for Admin to reply to correct user
+            document.getElementById('current-task-owner-email').value = task.ownerEmail; 
+        }
+
+        // --- NEW ADMIN DELETE TASK FUNCTION ---
+        async function deleteCurrentTask() {
+            if(!confirm("هل أنت متأكد من حذف هذه المهمة نهائياً؟")) return;
+            
+            const taskId = parseInt(document.getElementById('current-task-id').value);
+            const targetEmail = document.getElementById('current-task-owner-email').value;
+            
+            const userRef = db.collection('users').doc(targetEmail);
+            const doc = await userRef.get();
+            let tasks = doc.data().tasks || [];
+            
+            const newTasks = tasks.filter(t => t.id !== taskId);
+            
+            await userRef.update({ tasks: newTasks });
+            
+            alert("تم حذف المهمة بنجاح");
+            openTaskCenter(); // Refresh
         }
 
         function openAddTaskModal(targetEmail) {
@@ -1124,7 +1133,7 @@
                 desc: desc,
                 file: fileBase64,
                 comments: [],
-                createdBy: currentUser.email,
+                createdBy: userProfile.name + " (Admin)", // Store readable name
                 status: 'open'
             };
 
@@ -1144,7 +1153,7 @@
             const taskId = parseInt(document.getElementById('current-task-id').value);
             const txt = document.getElementById('note-input').value;
             const fileInput = document.getElementById('note-attachment');
-            const targetUserEmail = document.getElementById('current-task-owner-email').value; // Get owner from hidden field
+            const targetUserEmail = document.getElementById('current-task-owner-email').value;
             
             if (!txt && !fileInput.files[0]) return;
 
@@ -1157,7 +1166,6 @@
                 });
             }
 
-            // Update the task inside the TARGET user document
             const userRef = db.collection('users').doc(targetUserEmail); 
             const doc = await userRef.get();
             let tasks = doc.data().tasks || [];
@@ -1179,10 +1187,8 @@
                 document.getElementById('note-input').value = '';
                 document.getElementById('note-attachment').value = '';
                 
-                // Re-construct the task object for display refresh
-                const taskWithInfo = {...tasks[taskIndex], ownerName: userProfile.name, ownerEmail: targetUserEmail}; 
-                showTaskDetail(taskWithInfo, taskIndex); // This relies on index which might be tricky if sorted differently, but for immediate feedback usually okay. Better to reload list.
-                openTaskCenter(); // Refresh list to be safe
+                const taskWithInfo = {...tasks[taskIndex], ownerName: tasks[taskIndex].ownerName, ownerEmail: targetUserEmail}; 
+                showTaskDetail(taskWithInfo, taskIndex);
             }
         }
 
@@ -1237,46 +1243,36 @@
         function listenToPrivateMessages() {
             if(!currentUser) return;
             
-            // FIX: Listen for both SENT and RECEIVED messages to ensure sync
-            // Note: Firestore requires composite index for compound queries. 
-            // Simple approach: Listen to "receiver == me" OR "sender == me" logic manually if needed, 
-            // but for now let's ensure the BASIC receive works perfectly.
-            
             db.collection("private_messages")
                 .where("receiver", "==", currentUser.email.toLowerCase())
                 .onSnapshot(s => {
                     if(!s.metadata.hasPendingWrites) { 
+                        let newCount = 0;
                         s.docChanges().forEach(change => {
                             if (change.type === "added") {
                                 const m = change.doc.data();
                                 const msgTime = m.time ? m.time.toMillis() : Date.now();
-                                
-                                // Only notify if message is recent (last 10 seconds)
                                 if (msgTime > (Date.now() - 10000)) { 
                                     playNotification();
+                                    newCount++;
                                     if (Notification.permission === "granted") {
                                         const notification = new Notification(`رسالة من ${m.name || "زميل"}`, {
                                             body: m.text || "📎 أرسل مرفقاً جديداً",
                                             icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
                                             tag: "chat-message" 
                                         });
-
-                                        notification.onclick = function() {
-                                            window.focus();
-                                            this.close();
-                                            if (!openPrivateChats[m.sender]) {
-                                                openPrivateChat(m.sender, m.name || "مستخدم");
-                                            }
-                                        };
-                                    }
-
-                                    // Auto open if not open? Optional.
-                                    if (!openPrivateChats[m.sender]) {
-                                        // openPrivateChat(m.sender, m.name || "مستخدم"); // Uncomment to auto-open
+                                        notification.onclick = function() { window.focus(); this.close(); if (!openPrivateChats[m.sender]) openPrivateChat(m.sender, m.name || "مستخدم"); };
                                     }
                                 }
                             }
                         });
+                        
+                        const msgBadge = document.getElementById('msg-badge');
+                        if (newCount > 0) {
+                            let current = parseInt(msgBadge.innerText) || 0;
+                            msgBadge.innerText = current + newCount;
+                            msgBadge.classList.remove('hidden');
+                        }
                     }
                 }, err => console.log("Listener Warning", err)); 
         }
@@ -1503,9 +1499,9 @@
             makeDraggable(chatWindow);
         }
 
-        // -- الدردشة الخاصة (FIXED EMAIL LOGIC) --
+        // -- الدردشة الخاصة (Fixed Case Sensitivity) --
         function closePrivateChat(email) {
-            const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+            const chatId = [currentUser.email.toLowerCase().trim(), email.toLowerCase().trim()].sort().join("_").replace(/[@.]/g, "_");
             const el = document.getElementById(`chat-priv-${chatId}`);
             if(el) el.remove();
             delete openPrivateChats[email];
@@ -1516,8 +1512,8 @@
             if(!file) return;
             const reader = new FileReader();
             
-            const myEmail = currentUser.email.toLowerCase();
-            const otherEmail = targetEmail.toLowerCase();
+            const myEmail = currentUser.email.toLowerCase().trim();
+            const otherEmail = targetEmail.toLowerCase().trim();
             const chatId = [myEmail, otherEmail].sort().join("_").replace(/[@.]/g, "_");
 
             reader.onload = (e) => {
