@@ -35,7 +35,6 @@
     <style>
         body { background-color: #f8fafc; font-family: 'Outfit', 'Cairo', sans-serif; overflow-x: hidden; }
         .dark-mode body { background-color: #0f172a; color: white; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .hidden-section { display: none !important; }
         .form-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; font-size: 14px; transition: all 0.3s; }
         .form-input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); outline: none; }
@@ -44,22 +43,6 @@
         .dropdown-menu { transform-origin: top left; transition: all 0.2s ease-out; transform: scale(0.95); opacity: 0; pointer-events: none; }
         .dropdown-menu.active { transform: scale(1); opacity: 1; pointer-events: auto; }
 
-        .pulse-green { animation: pulse-g 2s infinite; }
-        @keyframes pulse-g { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
-        
-        .pulse-red { animation: pulse-r 2s infinite; }
-        @keyframes pulse-r { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-        #admin-alerts-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        
-        .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
-        .chat-header { cursor: move; user-select: none; }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
-
-        /* Professional Card Design */
         .pro-card-design {
             background: white;
             border-radius: 1.5rem;
@@ -71,14 +54,13 @@
             flex-direction: column;
         }
         .dark-mode .pro-card-design { background: #1e293b; border-color: #334155; }
-        .pro-card-design:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .pro-card-design:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
 
-        /* Word Sheet & Task Interface */
         .a4-paper {
             background: white;
             width: 100%;
             max-width: 210mm;
-            min-height: 297mm;
+            min-height: 200mm;
             padding: 20mm;
             margin: 0 auto;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
@@ -90,18 +72,22 @@
         }
         .dark-mode .a4-paper { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
 
-        .task-list-item {
-            transition: background-color 0.2s, border-color 0.2s;
-            border-right: 4px solid transparent;
-        }
+        .task-list-item { transition: background-color 0.2s; border-right: 4px solid transparent; }
         .task-list-item:hover { background-color: #f1f5f9; }
         .dark-mode .task-list-item:hover { background-color: #334155; }
         .task-list-item.active { background-color: #eff6ff; border-right-color: #3b82f6; }
         .dark-mode .task-list-item.active { background-color: #1e293b; border-right-color: #3b82f6; }
+
+        /* Utilities */
+        .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
+        .chat-header { cursor: move; user-select: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
     </style>
 </head>
 
-<body class="min-h-screen text-slate-800 dark:text-slate-100 selection:bg-primary-500 selection:text-white bg-slate-100 dark:bg-slate-900">
+<body class="min-h-screen text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-900 font-sans selection:bg-primary-500 selection:text-white">
 
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
     <audio id="status-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
@@ -109,13 +95,13 @@
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
-        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER DASHBOARD</h2>
+        <h2 class="text-lg font-bold tracking-widest animate-pulse">ALMASTER LOADING...</h2>
     </div>
 
     <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
-        <div class="w-full max-w-sm glass p-8 rounded-2xl shadow-2xl">
+        <div class="w-full max-w-sm bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl">
             <div class="text-center mb-8">
-                <img src="MASTER_LOGO_WHPNG.png" class="h-16 mx-auto mb-2" alt="Logo">
+                <img src="MASTER_LOGO_WHPNG.png" class="h-16 mx-auto mb-2 object-contain" alt="Logo">
                 <h1 class="text-3xl font-bold text-primary-700 dark:text-primary-400 mb-1">ALMASTER</h1>
                 <p class="text-xs text-slate-500 uppercase tracking-widest font-bold italic">Team Workspace</p>
             </div>
@@ -139,16 +125,16 @@
         <header class="bg-white dark:bg-slate-800 shadow-md h-20 px-6 flex items-center justify-between z-50 sticky top-0 relative">
             
             <div class="flex items-center gap-3">
-                <img id="header-user-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500 object-cover shadow-sm">
+                <img id="header-user-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500 object-cover shadow-sm bg-slate-200">
                 <div class="hidden md:block">
-                    <p id="header-user-name" class="text-sm font-bold text-slate-800 dark:text-white leading-tight">User Name</p>
+                    <p id="header-user-name" class="text-sm font-bold text-slate-800 dark:text-white leading-tight">User</p>
                     <p id="header-user-role" class="text-[10px] text-primary-500 font-bold uppercase tracking-wider">Role</p>
                 </div>
             </div>
 
             <div class="hidden md:flex flex-col items-center justify-center absolute left-1/2 transform -translate-x-1/2">
                 <div id="header-time" class="text-2xl font-black font-mono text-slate-700 dark:text-slate-200 tracking-widest">00:00:00</div>
-                <div id="header-date" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loading Date...</div>
+                <div id="header-date" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loading...</div>
             </div>
 
             <div class="flex items-center gap-3 relative">
@@ -166,6 +152,13 @@
                 </button>
 
                 <div id="main-dropdown" class="dropdown-menu absolute top-14 left-0 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-[100] flex flex-col overflow-hidden">
+                    <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
+                        <img id="menu-user-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500 bg-slate-200">
+                        <div class="overflow-hidden">
+                            <p id="menu-user-name" class="text-sm font-bold text-slate-800 dark:text-white truncate">User</p>
+                            <p id="menu-user-role" class="text-[10px] text-primary-500 font-bold uppercase">Role</p>
+                        </div>
+                    </div>
                     <div class="p-2 space-y-1 overflow-y-auto max-h-[400px] custom-scrollbar">
                         <div class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">القائمة الرئيسية</div>
                         <button onclick="toggleMainMenu()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
@@ -213,31 +206,19 @@
             <div class="flex-1 overflow-auto p-6 md:p-8">
                 
                 <div class="mb-8 flex flex-wrap gap-2 justify-center md:justify-end px-2" dir="ltr">
-                    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
-                        <span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline
-                    </button>
-                    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-red-50 border border-slate-200 shadow-sm transition-all">
-                        <span class="w-2 h-2 rounded-full bg-red-500 inline-block ml-1"></span> Idle
-                    </button>
-                    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-blue-50 border border-slate-200 shadow-sm transition-all">
-                        <span class="w-2 h-2 rounded-full bg-blue-500 inline-block ml-1"></span> Meeting
-                    </button>
-                    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-orange-50 border border-slate-200 shadow-sm transition-all">
-                        <span class="w-2 h-2 rounded-full bg-orange-500 inline-block ml-1"></span> Break
-                    </button>
-                    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-green-50 border border-slate-200 shadow-sm transition-all">
-                        <span class="w-2 h-2 rounded-full bg-green-500 inline-block ml-1"></span> Online
-                    </button>
-                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all">
-                        الكل
-                    </button>
+                    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all"><span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline</button>
+                    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-red-50 border border-slate-200 shadow-sm transition-all"><span class="w-2 h-2 rounded-full bg-red-500 inline-block ml-1"></span> Idle</button>
+                    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-blue-50 border border-slate-200 shadow-sm transition-all"><span class="w-2 h-2 rounded-full bg-blue-500 inline-block ml-1"></span> Meeting</button>
+                    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-orange-50 border border-slate-200 shadow-sm transition-all"><span class="w-2 h-2 rounded-full bg-orange-500 inline-block ml-1"></span> Break</button>
+                    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-green-50 border border-slate-200 shadow-sm transition-all"><span class="w-2 h-2 rounded-full bg-green-500 inline-block ml-1"></span> Online</button>
+                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all">الكل</button>
                 </div>
                 
                 <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
                 
                 <div id="empty-state" class="hidden text-center text-slate-400 mt-20">
                     <i class="fas fa-user-slash text-6xl mb-4 opacity-50"></i>
-                    <p class="font-bold">لا يوجد مستخدمين حالياً</p>
+                    <p class="font-bold">جاري تحميل البيانات...</p>
                 </div>
             </div>
         </main>
@@ -259,8 +240,7 @@
                     <h3 class="font-bold text-slate-700 dark:text-slate-200">مهامي</h3>
                     <span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded shadow-sm text-slate-500">Inbox</span>
                 </div>
-                <div id="task-list-container" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
-                    </div>
+                <div id="task-list-container" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2"></div>
             </div>
             
             <div class="flex-1 flex flex-col bg-slate-200 dark:bg-[#0f172a] relative overflow-hidden">
@@ -284,21 +264,15 @@
                                 </div>
                             </div>
                         </div>
-
-                        <div id="task-detail-desc" class="text-lg text-justify whitespace-pre-wrap font-serif min-h-[300px] text-black dark:text-black">
-                            </div>
-
-                        <div id="task-detail-attachments" class="mt-8 pt-6 border-t border-gray-100">
-                            </div>
+                        <div id="task-detail-desc" class="text-lg text-justify whitespace-pre-wrap font-serif min-h-[300px] text-black dark:text-black"></div>
+                        <div id="task-detail-attachments" class="mt-8 pt-6 border-t border-gray-100"></div>
                     </div>
 
                     <div class="w-full max-w-[210mm] bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
                         <div class="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30">
                             <h4 class="font-bold text-sm flex items-center gap-2"><i class="fas fa-comments text-primary-500"></i> ملاحظات التنفيذ والردود</h4>
                         </div>
-                        
                         <div id="task-comments-list" class="p-4 space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-slate-900/20"></div>
-
                         <form onsubmit="addTaskNote(event)" class="p-4 bg-white dark:bg-slate-800 border-t dark:border-slate-700 flex gap-3 items-center">
                             <input type="hidden" id="current-task-id">
                             <input type="hidden" id="current-task-owner-email">
@@ -476,6 +450,18 @@
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
         let unreadCounts = {}; 
 
+        // Start Clock Immediately
+        setInterval(updateHeaderTime, 1000);
+        updateHeaderTime();
+
+        function updateHeaderTime() {
+            const now = moment();
+            const timeEl = document.getElementById('header-time');
+            const dateEl = document.getElementById('header-date');
+            if(timeEl) timeEl.innerText = now.format('HH:mm:ss');
+            if(dateEl) dateEl.innerText = now.format('dddd, DD MMMM YYYY');
+        }
+
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
@@ -522,7 +508,7 @@
             auth.signOut().then(() => location.reload());
         }
 
-        async function initSystem() {
+        function initSystem() {
             if (Notification.permission !== 'granted' && Notification.permission !== 'denied') { Notification.requestPermission(); }
             document.getElementById('loader').classList.add('hidden-section');
             document.getElementById('view-login').classList.add('hidden-section');
@@ -538,23 +524,18 @@
             document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
             
             if(userProfile.role === 'admin') { document.getElementById('admin-options').classList.remove('hidden-section'); }
-            await checkAndResetCounters(); 
+            
+            // Run these without awaiting to unblock UI
+            checkAndResetCounters(); 
             listenToAllUsers();
             initChat();
             listenToPrivateMessages(); 
             startIdleTracker();
             setInterval(updateTimers, 1000);
-            setInterval(updateHeaderTime, 1000);
-            updateHeaderTime();
+            
             window.addEventListener('mousemove', resetIdleTimer);
             window.addEventListener('keydown', resetIdleTimer);
             if (userProfile.role !== 'admin') { listenForScreenshotRequests(); }
-        }
-
-        function updateHeaderTime() {
-            const now = moment();
-            document.getElementById('header-time').innerText = now.format('HH:mm:ss');
-            document.getElementById('header-date').innerText = now.format('dddd, DD MMMM YYYY');
         }
 
         function toggleMainMenu() {
@@ -632,9 +613,10 @@
                         if (userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) { hasStatusChange = true; }
                     }
                 });
+                
                 if (hasStatusChange && userProfile && userProfile.role === 'admin') { playStatusNotification(); }
                 
-                // Force render initially if data loaded
+                // Force render
                 renderGrid();
                 
                 updateReportDropdown();
@@ -654,33 +636,29 @@
             renderGrid();
         }
 
-        // --- Render Grid (Fixed Logic) ---
+        // --- Render Grid (Fixed: Shows All properly) ---
         function renderGrid() {
             const grid = document.getElementById('grid-users');
             grid.innerHTML = '';
             
-            // NOTE: We ignore 'showOffline' if filter is 'all', based on user request to show everyone.
-            const showOffline = document.getElementById('show-offline-toggle').checked;
             const isAdmin = userProfile.role === 'admin';
             let displayedCount = 0;
 
             allUsersData.forEach(u => {
-                // Safety check for valid user data
                 if (!u.email) return;
 
                 const isMe = (currentUser.email === u.email);
                 let effStatus = u.status || 'Offline';
                 if (u.isIdle) effStatus = 'Idle'; 
 
-                // Filter Logic Correction
+                // FIX: If filter is 'all', showing everyone is mandatory.
                 if (!isMe) {
-                    if (currentFilter === 'all') {
-                        // Show EVERYONE. Do not return.
-                    } else if (currentFilter === 'Idle') {
-                        if (!u.isIdle) return;
-                    } else {
-                        // Specific status filter (Online, Meeting, Break, Offline)
-                        if (effStatus !== currentFilter && u.status !== currentFilter) return;
+                    if (currentFilter !== 'all') {
+                        if (currentFilter === 'Idle') {
+                            if (!u.isIdle) return;
+                        } else {
+                            if (effStatus !== currentFilter && u.status !== currentFilter) return;
+                        }
                     }
                 }
 
@@ -695,7 +673,6 @@
                 else if(u.status === 'Meeting') stripColor = "bg-blue-500";
                 else if(u.status === 'Break') stripColor = "bg-orange-500";
 
-                // Message Badge Logic
                 const unreadCount = unreadCounts[u.email] || 0;
 
                 const card = `
@@ -766,15 +743,6 @@
 
             if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
             else document.getElementById('empty-state').classList.add('hidden');
-        }
-
-        function getStatusColor(s, isFocus, isIdle) {
-            if (isIdle) return { border: 'border-red-600 border-r-4', text: 'text-red-800', badge: 'bg-red-200 text-red-900', shadow: 'shadow-xl shadow-red-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-red-100/50 dark:bg-red-900/40 border-red-200' };
-            if (s === 'Offline') return { border: 'border-slate-500 border-r-4', text: 'text-slate-700', badge: 'bg-slate-300 text-slate-800', shadow: 'shadow-xl shadow-slate-900/20', cardBg: 'bg-slate-100 dark:bg-slate-900', innerGlow: 'bg-slate-200 dark:bg-slate-800 border-slate-300' };
-            if (s === 'Online') return { border: 'border-green-600 border-r-4', text: 'text-green-800', badge: 'bg-green-200 text-green-900', shadow: 'shadow-xl shadow-green-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-green-100/50 dark:bg-green-900/40 border-green-200' };
-            if (s === 'Meeting') return { border: 'border-blue-600 border-r-4', text: 'text-blue-800', badge: 'bg-blue-200 text-blue-900', shadow: 'shadow-xl shadow-blue-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-blue-100/50 dark:bg-blue-900/40 border-blue-200' };
-            if (s === 'Break') return { border: 'border-yellow-500 border-r-4', text: 'text-yellow-800', badge: 'bg-yellow-200 text-yellow-900', shadow: 'shadow-xl shadow-yellow-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-yellow-100/50 dark:bg-yellow-900/40 border-yellow-200' };
-            return { border: 'border-slate-300', text: 'text-slate-600', badge: 'bg-slate-200', shadow: 'shadow-md', cardBg: 'bg-white', innerGlow: 'bg-slate-50' };
         }
         
         async function setStatus(targetEmail, newStatus, isAuto = false) {
