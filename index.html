@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#0ea5e9">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -35,6 +35,7 @@
     <style>
         body { background-color: #f8fafc; font-family: 'Outfit', 'Cairo', sans-serif; overflow-x: hidden; }
         .dark-mode body { background-color: #0f172a; color: white; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .hidden-section { display: none !important; }
         .form-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; font-size: 14px; transition: all 0.3s; }
         .form-input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); outline: none; }
@@ -43,6 +44,22 @@
         .dropdown-menu { transform-origin: top left; transition: all 0.2s ease-out; transform: scale(0.95); opacity: 0; pointer-events: none; }
         .dropdown-menu.active { transform: scale(1); opacity: 1; pointer-events: auto; }
 
+        .pulse-green { animation: pulse-g 2s infinite; }
+        @keyframes pulse-g { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+        
+        .pulse-red { animation: pulse-r 2s infinite; }
+        @keyframes pulse-r { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        #admin-alerts-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        
+        .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
+        .chat-header { cursor: move; user-select: none; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
+
+        /* Professional Card Design */
         .pro-card-design {
             background: white;
             border-radius: 1.5rem;
@@ -56,6 +73,7 @@
         .dark-mode .pro-card-design { background: #1e293b; border-color: #334155; }
         .pro-card-design:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
 
+        /* Word Sheet & Task Interface */
         .a4-paper {
             background: white;
             width: 100%;
@@ -77,13 +95,6 @@
         .dark-mode .task-list-item:hover { background-color: #334155; }
         .task-list-item.active { background-color: #eff6ff; border-right-color: #3b82f6; }
         .dark-mode .task-list-item.active { background-color: #1e293b; border-right-color: #3b82f6; }
-
-        /* Utilities */
-        .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
-        .chat-header { cursor: move; user-select: none; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
     </style>
 </head>
 
@@ -191,6 +202,16 @@
                                 <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fas fa-comments"></i></div>
                                 <span class="text-xs font-bold text-slate-600 dark:text-slate-300">أرشيف محادثاتي</span>
                             </button>
+                            <label class="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fas fa-eye-slash"></i></div>
+                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">عرض Offline</span>
+                                </div>
+                                <div class="relative">
+                                    <input type="checkbox" id="show-offline-toggle" onchange="renderGrid()" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
+                                </div>
+                            </label>
                         </div>
                     </div>
                     <div class="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
@@ -206,12 +227,24 @@
             <div class="flex-1 overflow-auto p-6 md:p-8">
                 
                 <div class="mb-8 flex flex-wrap gap-2 justify-center md:justify-end px-2" dir="ltr">
-                    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all"><span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline</button>
-                    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-red-50 border border-slate-200 shadow-sm transition-all"><span class="w-2 h-2 rounded-full bg-red-500 inline-block ml-1"></span> Idle</button>
-                    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-blue-50 border border-slate-200 shadow-sm transition-all"><span class="w-2 h-2 rounded-full bg-blue-500 inline-block ml-1"></span> Meeting</button>
-                    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-orange-50 border border-slate-200 shadow-sm transition-all"><span class="w-2 h-2 rounded-full bg-orange-500 inline-block ml-1"></span> Break</button>
-                    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-green-50 border border-slate-200 shadow-sm transition-all"><span class="w-2 h-2 rounded-full bg-green-500 inline-block ml-1"></span> Online</button>
-                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all">الكل</button>
+                    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline
+                    </button>
+                    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-red-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-red-500 inline-block ml-1"></span> Idle
+                    </button>
+                    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-blue-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 inline-block ml-1"></span> Meeting
+                    </button>
+                    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-orange-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-orange-500 inline-block ml-1"></span> Break
+                    </button>
+                    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-green-50 border border-slate-200 shadow-sm transition-all">
+                        <span class="w-2 h-2 rounded-full bg-green-500 inline-block ml-1"></span> Online
+                    </button>
+                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all">
+                        الكل
+                    </button>
                 </div>
                 
                 <div id="grid-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
@@ -246,7 +279,7 @@
             <div class="flex-1 flex flex-col bg-slate-200 dark:bg-[#0f172a] relative overflow-hidden">
                 <button onclick="document.getElementById('modal-task-center').classList.add('hidden')" class="absolute top-4 left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 transition shadow-md"><i class="fas fa-times"></i></button>
                 
-                <div id="task-detail-view" class="flex-1 flex flex-col h-full hidden overflow-y-auto custom-scrollbar p-8 items-center">
+                <div id="task-detail-view" class="flex-1 flex flex-col h-full hidden overflow-y-auto custom-scrollbar p-8 items-center pb-32">
                     
                     <div class="a4-paper rounded-sm relative">
                         <div class="border-b-2 border-slate-200 pb-4 mb-6 flex justify-between items-start">
@@ -260,7 +293,7 @@
                                 <span class="px-4 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded text-xs font-bold uppercase tracking-widest">مستند رسمي</span>
                                 <div id="admin-task-actions" class="hidden flex gap-2">
                                     <button onclick="deleteCurrentTask()" class="px-3 py-1 bg-red-100 text-red-600 rounded text-xs font-bold hover:bg-red-200 border border-red-200"><i class="fas fa-trash-alt"></i> حذف</button>
-                                    <button onclick="alert('تعديل المهمة متاح قريباً')" class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-xs font-bold hover:bg-blue-200 border border-blue-200"><i class="fas fa-edit"></i> تعديل</button>
+                                    <button onclick="openEditTaskModal()" class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-xs font-bold hover:bg-blue-200 border border-blue-200"><i class="fas fa-edit"></i> تعديل</button>
                                 </div>
                             </div>
                         </div>
@@ -295,11 +328,11 @@
     <div id="modal-create-task" class="fixed inset-0 z-[160] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-700">
             <h3 class="text-xl font-bold mb-6 dark:text-white flex items-center gap-2 border-b pb-4 dark:border-slate-700">
-                <i class="fas fa-plus-circle text-primary-500"></i> إسناد مهمة جديدة
+                <i class="fas fa-clipboard-list text-primary-500"></i> <span id="task-modal-title">إسناد مهمة جديدة</span>
             </h3>
-            <form onsubmit="submitNewTask(event)" class="space-y-5">
+            <form onsubmit="submitTaskForm(event)" class="space-y-5">
                 <input type="hidden" id="new-task-target-email">
-                <div>
+                <input type="hidden" id="task-edit-id"> <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">عنوان المهمة</label>
                     <input type="text" id="new-task-title" class="form-input font-bold text-lg" placeholder="مثال: تقرير SEO الشهري" required>
                 </div>
@@ -312,7 +345,7 @@
                     <input type="file" id="new-task-file" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
                 </div>
                 <div class="flex gap-3 pt-4 border-t dark:border-slate-700">
-                    <button type="submit" class="flex-1 bg-primary-600 text-white py-3 rounded-xl font-bold hover:bg-primary-700 transition shadow-lg">إرسال المهمة للموظف</button>
+                    <button type="submit" class="flex-1 bg-primary-600 text-white py-3 rounded-xl font-bold hover:bg-primary-700 transition shadow-lg">حفظ المهمة</button>
                     <button type="button" onclick="document.getElementById('modal-create-task').classList.add('hidden')" class="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition">إلغاء</button>
                 </div>
             </form>
@@ -616,7 +649,7 @@
                 
                 if (hasStatusChange && userProfile && userProfile.role === 'admin') { playStatusNotification(); }
                 
-                // Force render
+                // Force render initially if data loaded
                 renderGrid();
                 
                 updateReportDropdown();
@@ -641,24 +674,28 @@
             const grid = document.getElementById('grid-users');
             grid.innerHTML = '';
             
+            // NOTE: We ignore 'showOffline' if filter is 'all', based on user request to show everyone.
+            const showOffline = document.getElementById('show-offline-toggle').checked;
             const isAdmin = userProfile.role === 'admin';
             let displayedCount = 0;
 
             allUsersData.forEach(u => {
+                // Safety check for valid user data
                 if (!u.email) return;
 
                 const isMe = (currentUser.email === u.email);
                 let effStatus = u.status || 'Offline';
                 if (u.isIdle) effStatus = 'Idle'; 
 
-                // FIX: If filter is 'all', showing everyone is mandatory.
+                // Filter Logic Correction
                 if (!isMe) {
-                    if (currentFilter !== 'all') {
-                        if (currentFilter === 'Idle') {
-                            if (!u.isIdle) return;
-                        } else {
-                            if (effStatus !== currentFilter && u.status !== currentFilter) return;
-                        }
+                    if (currentFilter === 'all') {
+                        // Show EVERYONE. Do not return.
+                    } else if (currentFilter === 'Idle') {
+                        if (!u.isIdle) return;
+                    } else {
+                        // Specific status filter (Online, Meeting, Break, Offline)
+                        if (effStatus !== currentFilter && u.status !== currentFilter) return;
                     }
                 }
 
@@ -673,6 +710,7 @@
                 else if(u.status === 'Meeting') stripColor = "bg-blue-500";
                 else if(u.status === 'Break') stripColor = "bg-orange-500";
 
+                // Message Badge Logic
                 const unreadCount = unreadCounts[u.email] || 0;
 
                 const card = `
@@ -709,31 +747,31 @@
                     
                     <div class="grid grid-cols-4 border-t border-slate-100 dark:border-slate-700/50 divide-x divide-x-reverse divide-slate-100 dark:divide-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
                         <div class="p-3 text-center">
-                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Active</p>
-                            <p class="text-[11px] font-mono font-black text-green-600 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Active</p>
+                            <p class="text-xs font-black text-green-600 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
                         </div>
                         <div class="p-3 text-center">
-                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Break</p>
-                            <p class="text-[11px] font-mono font-black text-orange-500 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Break</p>
+                            <p class="text-xs font-black text-orange-500 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
                         </div>
                         <div class="p-3 text-center">
-                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Meet</p>
-                            <p class="text-[11px] font-mono font-black text-blue-500 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Meet</p>
+                            <p class="text-xs font-black text-blue-500 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
                         </div>
                         <div class="p-3 text-center ${u.isIdle ? 'bg-red-50 dark:bg-red-900/20' : ''}">
-                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Idle</p>
-                            <p class="text-[11px] font-mono font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Idle</p>
+                            <p class="text-xs font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
                         </div>
                     </div>
                     
                     <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800">
-                        <button onclick="viewLogs('${u.email}')" class="text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition flex items-center gap-1">
-                            <i class="fas fa-history"></i> السجل
+                        <button onclick="viewLogs('${u.email}')" class="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">
+                            <i class="fas fa-list-alt ml-1"></i> سجل الحركات
                         </button>
                         ${isAdmin && !isMe ? `
-                            <div class="flex gap-3">
-                                <button onclick="requestScreenshot('${u.email}')" title="طلب لقطة شاشة" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-camera"></i></button>
-                                <button onclick="openEditModal('${u.email}')" title="تعديل" class="text-slate-400 hover:text-blue-500 transition"><i class="fas fa-cog"></i></button>
+                            <div class="flex gap-2 mr-2">
+                                <button onclick="requestScreenshot('${u.email}')" title="طلب لقطة شاشة" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-camera"></i></button>
+                                <button onclick="openEditModal('${u.email}')" title="تعديل" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-cog"></i></button>
                             </div>
                         ` : ''}
                     </div>
@@ -743,6 +781,15 @@
 
             if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
             else document.getElementById('empty-state').classList.add('hidden');
+        }
+
+        function getStatusColor(s, isFocus, isIdle) {
+            if (isIdle) return { border: 'border-red-600 border-r-4', text: 'text-red-800', badge: 'bg-red-200 text-red-900', shadow: 'shadow-xl shadow-red-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-red-100/50 dark:bg-red-900/40 border-red-200' };
+            if (s === 'Offline') return { border: 'border-slate-500 border-r-4', text: 'text-slate-700', badge: 'bg-slate-300 text-slate-800', shadow: 'shadow-xl shadow-slate-900/20', cardBg: 'bg-slate-100 dark:bg-slate-900', innerGlow: 'bg-slate-200 dark:bg-slate-800 border-slate-300' };
+            if (s === 'Online') return { border: 'border-green-600 border-r-4', text: 'text-green-800', badge: 'bg-green-200 text-green-900', shadow: 'shadow-xl shadow-green-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-green-100/50 dark:bg-green-900/40 border-green-200' };
+            if (s === 'Meeting') return { border: 'border-blue-600 border-r-4', text: 'text-blue-800', badge: 'bg-blue-200 text-blue-900', shadow: 'shadow-xl shadow-blue-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-blue-100/50 dark:bg-blue-900/40 border-blue-200' };
+            if (s === 'Break') return { border: 'border-yellow-500 border-r-4', text: 'text-yellow-800', badge: 'bg-yellow-200 text-yellow-900', shadow: 'shadow-xl shadow-yellow-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-yellow-100/50 dark:bg-yellow-900/40 border-yellow-200' };
+            return { border: 'border-slate-300', text: 'text-slate-600', badge: 'bg-slate-200', shadow: 'shadow-md', cardBg: 'bg-white', innerGlow: 'bg-slate-50' };
         }
         
         async function setStatus(targetEmail, newStatus, isAuto = false) {
@@ -1010,7 +1057,6 @@
             document.getElementById('task-detail-desc').innerText = task.desc;
             document.getElementById('task-detail-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
             
-            // Show Who assigned the task
             const assigner = task.createdBy || "Admin"; 
             document.getElementById('task-detail-owner').innerText = assigner;
             
@@ -1075,17 +1121,42 @@
             openTaskCenter(); 
         }
 
-        function openAddTaskModal(targetEmail) {
+        // Open Modal to Edit EXISTING Task
+        async function openEditTaskModal() {
+            const taskId = parseInt(document.getElementById('current-task-id').value);
+            const targetEmail = document.getElementById('current-task-owner-email').value;
+
+            // Fetch current task data
+            const doc = await db.collection('users').doc(targetEmail).get();
+            const tasks = doc.data().tasks || [];
+            const task = tasks.find(t => t.id === taskId);
+
+            if (!task) return;
+
             document.getElementById('new-task-target-email').value = targetEmail;
-            document.getElementById('new-task-title').value = '';
-            document.getElementById('new-task-desc').value = '';
-            document.getElementById('new-task-file').value = '';
+            document.getElementById('task-edit-id').value = task.id; // Mark as editing
+            document.getElementById('new-task-title').value = task.title;
+            document.getElementById('new-task-desc').value = task.desc;
+            document.getElementById('task-modal-title').innerText = "تعديل المهمة";
+            
             document.getElementById('modal-create-task').classList.remove('hidden');
         }
 
-        async function submitNewTask(e) {
+        // Open Modal to Create NEW Task
+        function openAddTaskModal(targetEmail) {
+            document.getElementById('new-task-target-email').value = targetEmail;
+            document.getElementById('task-edit-id').value = ""; // Clear edit ID
+            document.getElementById('new-task-title').value = '';
+            document.getElementById('new-task-desc').value = '';
+            document.getElementById('new-task-file').value = '';
+            document.getElementById('task-modal-title').innerText = "إسناد مهمة جديدة";
+            document.getElementById('modal-create-task').classList.remove('hidden');
+        }
+
+        async function submitTaskForm(e) {
             e.preventDefault();
             const targetEmail = document.getElementById('new-task-target-email').value;
+            const editId = document.getElementById('task-edit-id').value;
             const title = document.getElementById('new-task-title').value;
             const desc = document.getElementById('new-task-desc').value;
             const fileInput = document.getElementById('new-task-file');
@@ -1099,25 +1170,42 @@
                 });
             }
 
-            const newTask = {
-                id: Date.now(),
-                title: title,
-                desc: desc,
-                file: fileBase64,
-                comments: [],
-                createdBy: userProfile.name, // Store readable name
-                status: 'open'
-            };
-
             const userRef = db.collection('users').doc(targetEmail);
             const doc = await userRef.get();
             let tasks = doc.data().tasks || [];
-            tasks.push(newTask);
+
+            if (editId) {
+                // UPDATE EXISTING TASK
+                const taskIndex = tasks.findIndex(t => t.id == editId);
+                if (taskIndex > -1) {
+                    tasks[taskIndex].title = title;
+                    tasks[taskIndex].desc = desc;
+                    if (fileBase64) tasks[taskIndex].file = fileBase64;
+                    // Preserve comments and other data
+                }
+            } else {
+                // CREATE NEW TASK
+                const newTask = {
+                    id: Date.now(),
+                    title: title,
+                    desc: desc,
+                    file: fileBase64,
+                    comments: [],
+                    createdBy: userProfile.name, 
+                    status: 'open'
+                };
+                tasks.push(newTask);
+            }
             
             await userRef.update({ tasks: tasks });
             
-            alert('✅ تم إرسال المهمة بنجاح');
+            alert(editId ? '✅ تم تعديل المهمة' : '✅ تم إسناد المهمة');
             document.getElementById('modal-create-task').classList.add('hidden');
+            
+            // If task center is open, refresh it
+            if(!document.getElementById('modal-task-center').classList.contains('hidden')) {
+                openTaskCenter();
+            }
         }
 
         async function addTaskNote(e) {
@@ -1652,7 +1740,7 @@
                 
                 container.innerHTML = "";
                 if(allMsgs.length === 0) {
-                    container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-300 opacity-50 space-y-2"><i class="fas fa-comments text-4xl"></i><p class="text-xs">لا توجد رسائل سابقة</p></div>`;
+                    container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-300 opacity-50 space-y-2"><i class="fas fa-comments text-4xl"></i><p class="text-xs">بداية المحادثة</p></div>`;
                 } else {
                     allMsgs.forEach(m => {
                         const isMe = (m.sender === myEmail);
