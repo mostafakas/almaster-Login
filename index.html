@@ -6,10 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALMASTER TEAM DASHBOARD</title>
     <meta name="theme-color" content="#0ea5e9">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -38,15 +37,13 @@
         .dark-mode body { background-color: #0f172a; color: white; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .hidden-section { display: none !important; }
-        .form-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-size: 14px; transition: all 0.3s; }
+        .form-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; font-size: 14px; transition: all 0.3s; }
         .form-input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); outline: none; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
         
-        /* Dropdown Animation */
         .dropdown-menu { transform-origin: top left; transition: all 0.2s ease-out; transform: scale(0.95); opacity: 0; pointer-events: none; }
         .dropdown-menu.active { transform: scale(1); opacity: 1; pointer-events: auto; }
 
-        /* Animations */
         .pulse-green { animation: pulse-g 2s infinite; }
         @keyframes pulse-g { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
         
@@ -58,12 +55,11 @@
         .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
         .chat-header { cursor: move; user-select: none; }
         
-        /* Scrollbar Styling */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
 
-        /* --- New Professional Card Design --- */
+        /* Professional Card Design */
         .pro-card-design {
             background: white;
             border-radius: 1.5rem;
@@ -75,47 +71,30 @@
             flex-direction: column;
         }
         .dark-mode .pro-card-design { background: #1e293b; border-color: #334155; }
-        .pro-card-design:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .pro-card-design:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
 
-        /* --- Task Center & Word Sheet Styles --- */
-        .task-sidebar-item {
-            border-bottom: 1px solid #f1f5f9;
-            transition: all 0.2s;
-            border-right: 4px solid transparent;
-        }
-        .dark-mode .task-sidebar-item { border-bottom-color: #334155; }
-        .task-sidebar-item:hover { background-color: #f8fafc; }
-        .dark-mode .task-sidebar-item:hover { background-color: #1e293b; }
-        .task-sidebar-item.active { background-color: #eff6ff; border-right-color: #0ea5e9; }
-        .dark-mode .task-sidebar-item.active { background-color: #1e293b; border-right-color: #0ea5e9; }
-
+        /* Word Sheet & Task Interface */
         .a4-paper {
             background: white;
             width: 100%;
             max-width: 210mm;
             min-height: 200mm;
-            padding: 25mm;
+            padding: 20mm;
             margin: 0 auto;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             color: #1f2937;
             font-family: 'Times New Roman', serif;
             font-size: 14pt;
-            line-height: 1.8;
+            line-height: 1.6;
             border: 1px solid #e5e7eb;
         }
-        .dark-mode .a4-paper { background: #f8fafc; color: #0f172a; } 
+        .dark-mode .a4-paper { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
 
-        .chat-bubble {
-            border-radius: 12px;
-            padding: 10px 14px;
-            font-size: 13px;
-            line-height: 1.5;
-            position: relative;
-            max-width: 85%;
-        }
-        .chat-bubble.me { background-color: #e0f2fe; color: #0c4a6e; border-bottom-left-radius: 2px; }
-        .chat-bubble.other { background-color: #f1f5f9; color: #334155; border-bottom-right-radius: 2px; }
-        .dark-mode .chat-bubble.other { background-color: #334155; color: #e2e8f0; }
+        .task-list-item { transition: background-color 0.2s; border-right: 4px solid transparent; }
+        .task-list-item:hover { background-color: #f1f5f9; }
+        .dark-mode .task-list-item:hover { background-color: #334155; }
+        .task-list-item.active { background-color: #eff6ff; border-right-color: #3b82f6; }
+        .dark-mode .task-list-item.active { background-color: #1e293b; border-right-color: #3b82f6; }
     </style>
 </head>
 
@@ -184,6 +163,13 @@
                 </button>
 
                 <div id="main-dropdown" class="dropdown-menu absolute top-14 left-0 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-[100] flex flex-col overflow-hidden">
+                    <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
+                        <img id="menu-user-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500 bg-slate-200">
+                        <div class="overflow-hidden">
+                            <p id="menu-user-name" class="text-sm font-bold text-slate-800 dark:text-white truncate">User</p>
+                            <p id="menu-user-role" class="text-[10px] text-primary-500 font-bold uppercase">Role</p>
+                        </div>
+                    </div>
                     <div class="p-2 space-y-1 overflow-y-auto max-h-[400px] custom-scrollbar">
                         <div class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">القائمة الرئيسية</div>
                         <button onclick="toggleMainMenu()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
@@ -282,64 +268,57 @@
 
     <div id="modal-task-center" class="fixed inset-0 z-[150] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-6xl h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-slate-200 dark:border-slate-700">
-            <div class="w-full md:w-80 border-l border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col">
-                <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+            <div class="w-full md:w-80 border-l border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col">
+                <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800">
                     <h3 class="font-bold text-slate-700 dark:text-slate-200">مهامي</h3>
-                    <span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded shadow-sm text-slate-500 font-bold">Inbox</span>
+                    <span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded shadow-sm text-slate-500">Inbox</span>
                 </div>
-                <div id="task-list-container" class="flex-1 overflow-y-auto custom-scrollbar p-0"></div>
+                <div id="task-list-container" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2"></div>
             </div>
             
-            <div class="flex-1 flex flex-col bg-slate-100 dark:bg-[#0f172a] relative overflow-hidden">
+            <div class="flex-1 flex flex-col bg-slate-200 dark:bg-[#0f172a] relative overflow-hidden">
                 <button onclick="document.getElementById('modal-task-center').classList.add('hidden')" class="absolute top-4 left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 transition shadow-md"><i class="fas fa-times"></i></button>
                 
-                <div id="task-detail-view" class="flex-1 flex flex-col h-full hidden overflow-y-auto custom-scrollbar p-6 md:p-10 items-center">
+                <div id="task-detail-view" class="flex-1 flex flex-col h-full hidden overflow-y-auto custom-scrollbar p-8 items-center pb-32">
                     
-                    <div class="a4-paper rounded-sm relative mb-6">
+                    <div class="a4-paper rounded-sm relative">
                         <div class="border-b-2 border-slate-200 pb-4 mb-6 flex justify-between items-start">
                             <div>
-                                <h1 id="task-detail-title" class="text-4xl font-bold mb-2 font-serif text-black">Task Title</h1>
-                                <div class="flex items-center gap-4 text-sm text-gray-500 italic">
-                                    <span><i class="far fa-calendar-alt"></i> <span id="task-detail-date"></span></span>
-                                    <span><i class="fas fa-user-tie"></i> بواسطة: <span id="task-detail-owner" class="font-bold text-black">Admin</span></span>
-                                </div>
+                                <h1 id="task-detail-title" class="text-3xl font-bold mb-2 font-serif text-black dark:text-black">Task Title</h1>
+                                <p class="text-sm text-gray-500 italic">
+                                    <span id="task-detail-date"></span> | تم الإسناد بواسطة: <span id="task-detail-owner" class="font-bold text-primary-600">Admin</span>
+                                </p>
                             </div>
                             <div class="flex gap-2">
-                                <span class="px-4 py-1 bg-gray-800 text-white border border-gray-900 rounded text-xs font-bold uppercase tracking-widest shadow-sm">Official</span>
+                                <span class="px-4 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded text-xs font-bold uppercase tracking-widest">مستند رسمي</span>
                                 <div id="admin-task-actions" class="hidden flex gap-2">
-                                    <button onclick="deleteCurrentTask()" class="px-3 py-1 bg-red-100 text-red-600 rounded text-xs font-bold hover:bg-red-200 border border-red-200"><i class="fas fa-trash-alt"></i></button>
+                                    <button onclick="deleteCurrentTask()" class="px-3 py-1 bg-red-100 text-red-600 rounded text-xs font-bold hover:bg-red-200 border border-red-200"><i class="fas fa-trash-alt"></i> حذف</button>
                                     <button onclick="openEditTaskModal()" class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-xs font-bold hover:bg-blue-200 border border-blue-200"><i class="fas fa-edit"></i> تعديل</button>
                                 </div>
                             </div>
                         </div>
-
-                        <div id="task-detail-desc" class="text-lg text-justify whitespace-pre-wrap font-serif min-h-[300px] text-black">
-                            </div>
-
-                        <div id="task-detail-attachments" class="mt-8 pt-6 border-t border-gray-100">
-                            </div>
+                        <div id="task-detail-desc" class="text-lg text-justify whitespace-pre-wrap font-serif min-h-[300px] text-black dark:text-black"></div>
+                        <div id="task-detail-attachments" class="mt-8 pt-6 border-t border-gray-100"></div>
                     </div>
 
-                    <div class="w-full max-w-[210mm] bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-10 flex flex-col">
+                    <div class="w-full max-w-[210mm] bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
                         <div class="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30">
-                            <h4 class="font-bold text-sm flex items-center gap-2 text-slate-700 dark:text-white"><i class="fas fa-comments text-primary-500"></i> ملاحظات التنفيذ والردود</h4>
+                            <h4 class="font-bold text-sm flex items-center gap-2"><i class="fas fa-comments text-primary-500"></i> ملاحظات التنفيذ والردود</h4>
                         </div>
-                        
-                        <div id="task-comments-list" class="p-6 space-y-4 max-h-[350px] overflow-y-auto custom-scrollbar bg-slate-50/30 dark:bg-slate-900/20"></div>
-
+                        <div id="task-comments-list" class="p-4 space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-slate-900/20"></div>
                         <form onsubmit="addTaskNote(event)" class="p-4 bg-white dark:bg-slate-800 border-t dark:border-slate-700 flex gap-3 items-center">
                             <input type="hidden" id="current-task-id">
                             <input type="hidden" id="current-task-owner-email">
                             <input type="file" id="note-attachment" class="hidden">
-                            <button type="button" onclick="document.getElementById('note-attachment').click()" class="text-slate-400 hover:text-primary-500 p-2 rounded-full hover:bg-slate-100 transition"><i class="fas fa-paperclip text-lg"></i></button>
-                            <input type="text" id="note-input" class="flex-1 bg-slate-100 dark:bg-slate-700 border-none rounded-xl px-5 py-3 text-sm focus:ring-2 ring-primary-500 transition" placeholder="أضف ملاحظة أو استفسار..." autocomplete="off">
-                            <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white w-10 h-10 rounded-xl shadow-lg flex items-center justify-center transition transform hover:scale-105"><i class="fas fa-paper-plane"></i></button>
+                            <button type="button" onclick="document.getElementById('note-attachment').click()" class="text-slate-400 hover:text-primary-500"><i class="fas fa-paperclip text-lg"></i></button>
+                            <input type="text" id="note-input" class="flex-1 bg-slate-100 dark:bg-slate-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 ring-primary-500" placeholder="أضف ملاحظة أو استفسار..." autocomplete="off">
+                            <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white w-10 h-10 rounded-xl shadow-lg flex items-center justify-center transition"><i class="fas fa-paper-plane"></i></button>
                         </form>
                     </div>
                 </div>
 
                 <div id="task-empty-view" class="flex-1 flex flex-col items-center justify-center text-slate-400">
-                    <i class="far fa-folder-open text-6xl mb-4 opacity-20"></i>
+                    <i class="far fa-folder-open text-6xl mb-4 opacity-30"></i>
                     <p class="font-bold text-lg">اختر مهمة من القائمة لعرض المستند</p>
                 </div>
             </div>
@@ -501,7 +480,6 @@
         const auth = firebase.auth();
 
         let currentUser = null, userProfile = null, lastActionTime = Date.now(), allUsersData = [], dismissedAlerts = [], currentFilter = 'all', attachedFileBase64 = null, attachedFileName = "", openPrivateChats = {};
-        let presenceCheckActive = false; // Declared once globally
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
         let unreadCounts = {}; 
 
@@ -711,16 +689,13 @@
 
                 // Filter Logic Correction
                 if (!isMe) {
-                    if (currentFilter !== 'all') {
-                        if (currentFilter === 'Idle') {
-                            if (!u.isIdle) return;
-                        } else {
-                            // Specific status filter (Online, Meeting, Break, Offline)
-                            if (effStatus !== currentFilter && u.status !== currentFilter) return;
-                        }
+                    if (currentFilter === 'all') {
+                        // Show EVERYONE. Do not return.
+                    } else if (currentFilter === 'Idle') {
+                        if (!u.isIdle) return;
                     } else {
-                        // If 'all', we check showOffline toggle, UNLESS the user wants *absolutely everyone* when clicking ALL.
-                        // Based on user feedback "All must show all employees", we SKIP the offline toggle check here.
+                        // Specific status filter (Online, Meeting, Break, Offline)
+                        if (effStatus !== currentFilter && u.status !== currentFilter) return;
                     }
                 }
 
@@ -772,31 +747,31 @@
                     
                     <div class="grid grid-cols-4 border-t border-slate-100 dark:border-slate-700/50 divide-x divide-x-reverse divide-slate-100 dark:divide-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
                         <div class="p-3 text-center">
-                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Active</p>
-                            <p class="text-sm font-black text-green-600 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Active</p>
+                            <p class="text-xs font-black text-green-600 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
                         </div>
                         <div class="p-3 text-center">
-                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Break</p>
-                            <p class="text-sm font-black text-orange-500 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Break</p>
+                            <p class="text-xs font-black text-orange-500 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
                         </div>
                         <div class="p-3 text-center">
-                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Meet</p>
-                            <p class="text-sm font-black text-blue-500 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Meet</p>
+                            <p class="text-xs font-black text-blue-500 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
                         </div>
                         <div class="p-3 text-center ${u.isIdle ? 'bg-red-50 dark:bg-red-900/20' : ''}">
-                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Idle</p>
-                            <p class="text-sm font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Idle</p>
+                            <p class="text-xs font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
                         </div>
                     </div>
                     
                     <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800">
-                        <button onclick="viewLogs('${u.email}')" class="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2">
+                        <button onclick="viewLogs('${u.email}')" class="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">
                             <i class="fas fa-list-alt ml-1"></i> سجل الحركات
                         </button>
                         ${isAdmin && !isMe ? `
                             <div class="flex gap-2 mr-2">
-                                <button onclick="requestScreenshot('${u.email}')" title="طلب لقطة شاشة" class="w-9 h-9 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-camera"></i></button>
-                                <button onclick="openEditModal('${u.email}')" title="تعديل" class="w-9 h-9 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-cog"></i></button>
+                                <button onclick="requestScreenshot('${u.email}')" title="طلب لقطة شاشة" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-camera"></i></button>
+                                <button onclick="openEditModal('${u.email}')" title="تعديل" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-cog"></i></button>
                             </div>
                         ` : ''}
                     </div>
@@ -807,28 +782,75 @@
             if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
             else document.getElementById('empty-state').classList.add('hidden');
         }
+
+        function getStatusColor(s, isFocus, isIdle) {
+            if (isIdle) return { border: 'border-red-600 border-r-4', text: 'text-red-800', badge: 'bg-red-200 text-red-900', shadow: 'shadow-xl shadow-red-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-red-100/50 dark:bg-red-900/40 border-red-200' };
+            if (s === 'Offline') return { border: 'border-slate-500 border-r-4', text: 'text-slate-700', badge: 'bg-slate-300 text-slate-800', shadow: 'shadow-xl shadow-slate-900/20', cardBg: 'bg-slate-100 dark:bg-slate-900', innerGlow: 'bg-slate-200 dark:bg-slate-800 border-slate-300' };
+            if (s === 'Online') return { border: 'border-green-600 border-r-4', text: 'text-green-800', badge: 'bg-green-200 text-green-900', shadow: 'shadow-xl shadow-green-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-green-100/50 dark:bg-green-900/40 border-green-200' };
+            if (s === 'Meeting') return { border: 'border-blue-600 border-r-4', text: 'text-blue-800', badge: 'bg-blue-200 text-blue-900', shadow: 'shadow-xl shadow-blue-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-blue-100/50 dark:bg-blue-900/40 border-blue-200' };
+            if (s === 'Break') return { border: 'border-yellow-500 border-r-4', text: 'text-yellow-800', badge: 'bg-yellow-200 text-yellow-900', shadow: 'shadow-xl shadow-yellow-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-yellow-100/50 dark:bg-yellow-900/40 border-yellow-200' };
+            return { border: 'border-slate-300', text: 'text-slate-600', badge: 'bg-slate-200', shadow: 'shadow-md', cardBg: 'bg-white', innerGlow: 'bg-slate-50' };
+        }
         
         async function setStatus(targetEmail, newStatus, isAuto = false) {
             const userRef = db.collection('users').doc(targetEmail);
             const snapshot = await userRef.get();
             const uData = snapshot.data();
+            
             if(!uData || (uData.status === newStatus && !isAuto)) return;
+
             playStatusNotification(); 
+
             const now = Date.now();
             let currentIdleBank = uData.idleBank || 0;
+            
             if (uData.isIdle && uData.idleSince) {
                 const idleStart = getMillis(uData.idleSince);
-                currentIdleBank += (now - idleStart);
-                await db.collection('logs').add({ user: targetEmail, name: uData.name, from_status: 'Idle (Auto)', to_status: newStatus, start_time: uData.idleSince, end_time: firebase.firestore.FieldValue.serverTimestamp(), duration_ms: (now - idleStart), auto: true });
+                const idleDuration = now - idleStart;
+                currentIdleBank += idleDuration;
+
+                await db.collection('logs').add({
+                    user: targetEmail,
+                    name: uData.name,
+                    from_status: 'Idle (Auto)',
+                    to_status: newStatus, 
+                    start_time: uData.idleSince,
+                    end_time: firebase.firestore.FieldValue.serverTimestamp(),
+                    duration_ms: idleDuration,
+                    auto: true
+                });
             }
-            const duration = now - getMillis(uData.lastChange);
+
+            const lastTime = getMillis(uData.lastChange);
+            const duration = now - lastTime;
+            
             let timeBank = uData.timeBank || {};
             const oldStatus = uData.status || 'Offline';
+            
             if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
             timeBank[oldStatus] += duration;
+            
             const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-            await db.collection('logs').add({ user: targetEmail, name: uData.name, from_status: oldStatus, to_status: newStatus, start_time: uData.lastChange || timestamp, end_time: timestamp, duration_ms: duration, auto: isAuto });
-            await userRef.update({ status: newStatus, lastChange: timestamp, timeBank: timeBank, isIdle: false, idleSince: null, idleBank: currentIdleBank });
+
+            await db.collection('logs').add({ 
+                user: targetEmail, 
+                name: uData.name, 
+                from_status: oldStatus, 
+                to_status: newStatus, 
+                start_time: uData.lastChange || timestamp, 
+                end_time: timestamp, 
+                duration_ms: duration, 
+                auto: isAuto 
+            });
+
+            await userRef.update({ 
+                status: newStatus, 
+                lastChange: timestamp, 
+                timeBank: timeBank, 
+                isIdle: false, 
+                idleSince: null,
+                idleBank: currentIdleBank 
+            });
         }
 
         function updateTimers() {
@@ -876,39 +898,1503 @@
         }
         
         let presenceCheckActive = false; 
+
         function startIdleTracker() {
-            ['mousedown', 'keydown', 'scroll', 'mousemove'].forEach(evt => document.addEventListener(evt, () => { if (presenceCheckActive || !document.hidden) { lastActionTime = Date.now(); presenceCheckActive = false; } }, true));
+            const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'visibilitychange', 'mousemove'];
+            
+            activityEvents.forEach(evt => {
+                document.addEventListener(evt, () => {
+                    if (presenceCheckActive || document.hidden === false) {
+                        lastActionTime = Date.now();
+                        presenceCheckActive = false; 
+                    }
+                }, true);
+            });
+
             setInterval(() => {
                 if(!userProfile || userProfile.role === 'admin' || userProfile.isIdle || userProfile.status !== 'Online') return;
-                const timeDiff = Date.now() - lastActionTime;
-                const activeLimit = (parseInt(userProfile.idleLimit) || 5) * 60000;
-                if (timeDiff > activeLimit && !presenceCheckActive) {
-                    presenceCheckActive = true; playNotification();
-                    if (Notification.permission === "granted") { const n = new Notification("⏳ إثبات تواجد", { body: "يرجى تأكيد التواجد", requireInteraction: true }); n.onclick = function() { window.focus(); this.close(); lastActionTime = Date.now(); presenceCheckActive = false; }; }
+
+                const now = Date.now();
+                const timeDiff = now - lastActionTime;
+                
+                const activePageLimit = (parseInt(userProfile.idleLimit) || 5); 
+                const backgroundPageLimit = (parseInt(userProfile.backgroundLimit) || 60); 
+                const warningDuration = 5 * 60 * 1000;
+
+                let currentLimit = document.hidden ? (backgroundPageLimit * 60 * 1000) : (activePageLimit * 60 * 1000);
+
+                if (timeDiff > currentLimit && !presenceCheckActive) {
+                    presenceCheckActive = true; 
+                    
+                    const alertSound = document.getElementById('alert-sound');
+                    if (alertSound) {
+                        alertSound.currentTime = 0;
+                        alertSound.play().catch(e => console.log("Sound blocked"));
+                    } else {
+                        playNotification();
+                    }
+
+                    if (Notification.permission === "granted") {
+                        const uniqueTag = "presence-" + Date.now(); 
+                        const n = new Notification("⏳ إثبات تواجد", {
+                            body: `مرت ${Math.floor(timeDiff/60000)} دقيقة على وضع Online. اضغط لتأكيد العمل.`,
+                            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png",
+                            requireInteraction: true,
+                            tag: uniqueTag, 
+                            renotify: true  
+                        });
+                        
+                        n.onclick = function() {
+                            window.focus();
+                            this.close();
+                            lastActionTime = Date.now();
+                            presenceCheckActive = false;
+                        };
+                    }
                 }
-                if (presenceCheckActive && timeDiff > (activeLimit + 300000)) { db.collection('users').doc(currentUser.email).update({ isIdle: true, idleSince: firebase.firestore.FieldValue.serverTimestamp() }); presenceCheckActive = false; }
-            }, 5000);
+
+                if (presenceCheckActive && timeDiff > (currentLimit + warningDuration)) {
+                    db.collection('users').doc(currentUser.email).update({ 
+                        isIdle: true, 
+                        idleSince: firebase.firestore.FieldValue.serverTimestamp() 
+                    });
+
+                    presenceCheckActive = false;
+                    
+                    if (Notification.permission === "granted") {
+                        new Notification("⚠️ تم تحويلك للخمول", {
+                            body: "لم يتم تأكيد التواجد، تم تغيير الحالة تلقائياً.",
+                            icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png",
+                            tag: "idle-alert-" + Date.now()
+                        });
+                    }
+                }
+
+            }, 5000); 
+        }
+        
+        function playNotification() {
+            const sound = document.getElementById('notification-sound');
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("Audio play blocked"));
+        }
+        
+        function playStatusNotification() {
+            const sound = document.getElementById('status-sound');
+            if (sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Audio status sound blocked"));
+            }
         }
 
-        function playNotification() { document.getElementById('notification-sound').play().catch(()=>{}); }
-        function playStatusNotification() { document.getElementById('status-sound').play().catch(()=>{}); }
+        // --- TASKS SYSTEM LOGIC ---
         
-        // --- Chat & File Handlers ---
-        function handleFileSelect(input) { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { attachedFileBase64 = e.target.result; attachedFileName = file.name; document.getElementById('attachment-preview').classList.remove('hidden'); document.getElementById('file-name').innerText = attachedFileName; }; reader.readAsDataURL(file); }
-        function clearAttachment() { attachedFileBase64 = null; attachedFileName = ""; document.getElementById('attachment-preview').classList.add('hidden'); document.getElementById('chat-file').value = ""; }
-        function initChat(){ db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s=>{ const t=document.getElementById("chat-messages"); let isNew=false; s.docChanges().forEach(c=>{if(c.type==="added")isNew=true;}); t.innerHTML=""; s.forEach(d=>{t.innerHTML+=renderMessage(d.data(), d.data().user===currentUser.email);}); t.scrollTop=t.scrollHeight; if(isNew && !s.metadata.hasPendingWrites) { playNotification(); if(document.getElementById("chat-window").classList.contains("hidden")) document.getElementById("chat-badge").classList.remove("hidden"); } }); }
-        function renderMessage(m, isMe) { const t=m.time?moment(m.time.toDate()).format("h:mm A"):".."; return `<div class="flex ${isMe?'justify-end':'justify-start'} mb-2"><div class="px-4 py-2 rounded-xl text-sm ${isMe?'bg-primary-600 text-white':'bg-white dark:bg-slate-700 text-slate-800 dark:text-white'} shadow-sm max-w-[80%]"><p>${m.text}</p>${m.file?`<p class="mt-1 text-xs underline cursor-pointer" onclick="openImagePreview('${m.file}')">مرفق</p>`:''}<span class="text-[9px] opacity-70 block text-left mt-1">${t}</span></div></div>`; }
-        function toggleChat(){ document.getElementById("chat-window").classList.toggle("hidden"); document.getElementById("chat-badge").classList.add("hidden"); }
+        function openTaskCenter() {
+            document.getElementById('modal-task-center').classList.remove('hidden');
+            const listContainer = document.getElementById('task-list-container');
+            listContainer.innerHTML = '<div class="text-center p-4"><div class="animate-spin w-6 h-6 border-2 border-primary-500 rounded-full inline-block"></div></div>';
+            
+            let tasksToShow = [];
+            
+            if(userProfile.role === 'admin') {
+                allUsersData.forEach(u => {
+                    if(u.tasks) {
+                        u.tasks.forEach(t => {
+                            const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
+                            tasksToShow.push(taskWithInfo);
+                        });
+                    }
+                });
+            } else {
+                if(userProfile.tasks) {
+                    userProfile.tasks.forEach(t => {
+                        const taskWithInfo = {...t, ownerName: "Me", ownerEmail: userProfile.email};
+                        tasksToShow.push(taskWithInfo);
+                    });
+                }
+            }
+            
+            renderTaskList(tasksToShow);
+        }
 
-        // --- Other Functions ---
-        function openImagePreview(src) { document.getElementById('preview-img-target').src = src; document.getElementById('download-link-target').href = src; document.getElementById('image-preview-modal').classList.remove('hidden'); }
-        function closeImagePreview() { document.getElementById('image-preview-modal').classList.add('hidden'); }
+        function renderTaskList(tasks) {
+            const listContainer = document.getElementById('task-list-container');
+            listContainer.innerHTML = '';
+            
+            if (!tasks || tasks.length === 0) {
+                listContainer.innerHTML = '<div class="text-center text-slate-400 p-8 text-sm font-bold flex flex-col items-center gap-2"><i class="fas fa-clipboard-check text-2xl opacity-50"></i><p>لا توجد مهام حالياً</p></div>';
+                return;
+            }
+
+            tasks.sort((a, b) => b.id - a.id);
+
+            tasks.forEach((task, idx) => {
+                const el = document.createElement('div');
+                el.className = `task-list-item p-4 mb-2 bg-white dark:bg-slate-800 rounded-2xl cursor-pointer shadow-sm border border-slate-100 dark:border-slate-700/50`;
+                el.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate max-w-[150px]">${task.title}</h4>
+                            ${userProfile.role === 'admin' ? `<p class="text-[9px] text-primary-500 font-bold">${task.ownerName}</p>` : ''}
+                        </div>
+                        <span class="text-[9px] bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-500">${moment(task.id).format('DD/MM')}</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 truncate">${task.desc ? task.desc.substring(0, 40) + '...' : 'لا يوجد وصف'}</p>
+                `;
+                el.onclick = () => showTaskDetail(task, idx);
+                listContainer.appendChild(el);
+            });
+        }
+
+        function showTaskDetail(task, idx) {
+            document.querySelectorAll('.task-list-item').forEach(e => e.classList.remove('active'));
+            if(document.querySelectorAll('.task-list-item')[idx]) document.querySelectorAll('.task-list-item')[idx].classList.add('active');
+
+            document.getElementById('task-empty-view').classList.add('hidden');
+            document.getElementById('task-detail-view').classList.remove('hidden');
+
+            document.getElementById('task-detail-title').innerText = task.title;
+            document.getElementById('task-detail-desc').innerText = task.desc;
+            document.getElementById('task-detail-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
+            
+            const assigner = task.createdBy || "Admin"; 
+            document.getElementById('task-detail-owner').innerText = assigner;
+            
+            // Show Admin Actions
+            if(userProfile.role === 'admin') {
+                document.getElementById('admin-task-actions').classList.remove('hidden');
+            } else {
+                document.getElementById('admin-task-actions').classList.add('hidden');
+            }
+
+            const attContainer = document.getElementById('task-detail-attachments');
+            attContainer.innerHTML = '';
+            if (task.file) {
+                attContainer.innerHTML = `
+                    <a href="${task.file}" download="task_attachment" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold text-primary-600 hover:bg-primary-50 transition border border-slate-200 dark:border-slate-600">
+                        <i class="fas fa-paperclip"></i> تحميل المرفق الرئيسي
+                    </a>
+                `;
+            }
+
+            const commentsContainer = document.getElementById('task-comments-list');
+            commentsContainer.innerHTML = '';
+            
+            if(!task.comments || task.comments.length === 0) {
+                commentsContainer.innerHTML = '<p class="text-center text-xs text-slate-400 py-4 italic">لا توجد ملاحظات بعد...</p>';
+            } else {
+                task.comments.forEach(c => {
+                    const isMe = c.user === currentUser.email;
+                    commentsContainer.innerHTML += `
+                        <div class="flex gap-3 ${isMe ? 'flex-row-reverse' : ''}">
+                            <img src="${DEFAULT_PHOTO + encodeURIComponent(c.name)}" class="w-8 h-8 rounded-full border border-slate-200 bg-white">
+                            <div class="max-w-[85%] p-3 rounded-2xl ${isMe ? 'bg-primary-50 border border-primary-100 text-slate-800' : 'bg-white border border-slate-200'} text-xs leading-relaxed shadow-sm">
+                                <p class="font-bold text-[9px] mb-1 opacity-60 ${isMe ? 'text-left' : 'text-right'}">${c.name} • ${moment(c.time).fromNow()}</p>
+                                <p>${c.text}</p>
+                                ${c.file ? `<div class="mt-2"><img src="${c.file}" class="max-w-[150px] rounded-lg border cursor-pointer hover:opacity-90" onclick="openImagePreview(this.src)"></div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            commentsContainer.scrollTop = commentsContainer.scrollHeight;
+
+            document.getElementById('current-task-id').value = task.id; 
+            document.getElementById('current-task-owner-email').value = task.ownerEmail; 
+        }
+
+        async function deleteCurrentTask() {
+            if(!confirm("هل أنت متأكد من حذف هذه المهمة نهائياً؟")) return;
+            
+            const taskId = parseInt(document.getElementById('current-task-id').value);
+            const targetEmail = document.getElementById('current-task-owner-email').value;
+            
+            const userRef = db.collection('users').doc(targetEmail);
+            const doc = await userRef.get();
+            let tasks = doc.data().tasks || [];
+            
+            const newTasks = tasks.filter(t => t.id !== taskId);
+            
+            await userRef.update({ tasks: newTasks });
+            
+            alert("تم حذف المهمة بنجاح");
+            openTaskCenter(); 
+        }
+
+        // Open Modal to Edit EXISTING Task
+        async function openEditTaskModal() {
+            const taskId = parseInt(document.getElementById('current-task-id').value);
+            const targetEmail = document.getElementById('current-task-owner-email').value;
+
+            // Fetch current task data
+            const doc = await db.collection('users').doc(targetEmail).get();
+            const tasks = doc.data().tasks || [];
+            const task = tasks.find(t => t.id === taskId);
+
+            if (!task) return;
+
+            document.getElementById('new-task-target-email').value = targetEmail;
+            document.getElementById('task-edit-id').value = task.id; // Mark as editing
+            document.getElementById('new-task-title').value = task.title;
+            document.getElementById('new-task-desc').value = task.desc;
+            document.getElementById('task-modal-title').innerText = "تعديل المهمة";
+            
+            document.getElementById('modal-create-task').classList.remove('hidden');
+        }
+
+        // Open Modal to Create NEW Task
+        function openAddTaskModal(targetEmail) {
+            document.getElementById('new-task-target-email').value = targetEmail;
+            document.getElementById('task-edit-id').value = ""; // Clear edit ID
+            document.getElementById('new-task-title').value = '';
+            document.getElementById('new-task-desc').value = '';
+            document.getElementById('new-task-file').value = '';
+            document.getElementById('task-modal-title').innerText = "إسناد مهمة جديدة";
+            document.getElementById('modal-create-task').classList.remove('hidden');
+        }
+
+        async function submitTaskForm(e) {
+            e.preventDefault();
+            const targetEmail = document.getElementById('new-task-target-email').value;
+            const editId = document.getElementById('task-edit-id').value;
+            const title = document.getElementById('new-task-title').value;
+            const desc = document.getElementById('new-task-desc').value;
+            const fileInput = document.getElementById('new-task-file');
+            
+            let fileBase64 = null;
+            if (fileInput.files[0]) {
+                const reader = new FileReader();
+                fileBase64 = await new Promise(resolve => {
+                    reader.onload = e => resolve(e.target.result);
+                    reader.readAsDataURL(fileInput.files[0]);
+                });
+            }
+
+            const userRef = db.collection('users').doc(targetEmail);
+            const doc = await userRef.get();
+            let tasks = doc.data().tasks || [];
+
+            if (editId) {
+                // UPDATE EXISTING TASK
+                const taskIndex = tasks.findIndex(t => t.id == editId);
+                if (taskIndex > -1) {
+                    tasks[taskIndex].title = title;
+                    tasks[taskIndex].desc = desc;
+                    if (fileBase64) tasks[taskIndex].file = fileBase64;
+                    // Preserve comments and other data
+                }
+            } else {
+                // CREATE NEW TASK
+                const newTask = {
+                    id: Date.now(),
+                    title: title,
+                    desc: desc,
+                    file: fileBase64,
+                    comments: [],
+                    createdBy: userProfile.name, 
+                    status: 'open'
+                };
+                tasks.push(newTask);
+            }
+            
+            await userRef.update({ tasks: tasks });
+            
+            alert(editId ? '✅ تم تعديل المهمة' : '✅ تم إسناد المهمة');
+            document.getElementById('modal-create-task').classList.add('hidden');
+            
+            // If task center is open, refresh it
+            if(!document.getElementById('modal-task-center').classList.contains('hidden')) {
+                openTaskCenter();
+            }
+        }
+
+        async function addTaskNote(e) {
+            e.preventDefault();
+            const taskId = parseInt(document.getElementById('current-task-id').value);
+            const txt = document.getElementById('note-input').value;
+            const fileInput = document.getElementById('note-attachment');
+            const targetUserEmail = document.getElementById('current-task-owner-email').value;
+            
+            if (!txt && !fileInput.files[0]) return;
+
+            let fileBase64 = null;
+            if (fileInput.files[0]) {
+                const reader = new FileReader();
+                fileBase64 = await new Promise(resolve => {
+                    reader.onload = e => resolve(e.target.result);
+                    reader.readAsDataURL(fileInput.files[0]);
+                });
+            }
+
+            const userRef = db.collection('users').doc(targetUserEmail); 
+            const doc = await userRef.get();
+            let tasks = doc.data().tasks || [];
+            
+            const taskIndex = tasks.findIndex(t => t.id === taskId);
+            if (taskIndex > -1) {
+                const newComment = {
+                    user: currentUser.email,
+                    name: userProfile.name,
+                    text: txt,
+                    file: fileBase64,
+                    time: Date.now()
+                };
+                if (!tasks[taskIndex].comments) tasks[taskIndex].comments = [];
+                tasks[taskIndex].comments.push(newComment);
+                
+                await userRef.update({ tasks: tasks });
+                
+                document.getElementById('note-input').value = '';
+                document.getElementById('note-attachment').value = '';
+                
+                const taskWithInfo = {...tasks[taskIndex], ownerName: tasks[taskIndex].ownerName, ownerEmail: targetUserEmail}; 
+                showTaskDetail(taskWithInfo, taskIndex);
+            }
+        }
+
+        async function addTask(email) {
+            alert("يرجى استخدام زر إسناد المهام في البطاقة (الأيقونة الجديدة)");
+        }
+        async function toggleTask(email, idx, done) { /* Legacy */ }
+        async function deleteTask(email, idx) { /* Legacy */ }
+
+        // --- Standard Logic Preserved ---
+        function handleFileSelect(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                attachedFileBase64 = e.target.result;
+                attachedFileName = file.name;
+                document.getElementById('attachment-preview').classList.remove('hidden');
+                document.getElementById('file-name').innerText = attachedFileName;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearAttachment() {
+            attachedFileBase64 = null;
+            attachedFileName = "";
+            document.getElementById('attachment-preview').classList.add('hidden');
+            document.getElementById('chat-file').value = "";
+        }
+
+        function initChat(){
+            db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s=>{
+                const t=document.getElementById("chat-messages"); 
+                let isNew = false;
+                s.docChanges().forEach(change => { if(change.type === "added") isNew = true; });
+
+                t.innerHTML="";
+                s.forEach(d=>{ 
+                    const m=d.data(); const isMe=m.user===currentUser.email;
+                    t.innerHTML += renderMessage(m, isMe);
+                });
+                t.scrollTop=t.scrollHeight;
+                if(isNew && !s.metadata.hasPendingWrites) {
+                    playNotification();
+                    if(document.getElementById("chat-window").classList.contains("hidden")) {
+                        document.getElementById("chat-badge").classList.remove("hidden");
+                    }
+                }
+            });
+        }
+
+        function listenToPrivateMessages() {
+            if(!currentUser) return;
+            
+            db.collection("private_messages")
+                .where("receiver", "==", currentUser.email.toLowerCase())
+                .onSnapshot(s => {
+                    if(!s.metadata.hasPendingWrites) { 
+                        s.docChanges().forEach(change => {
+                            if (change.type === "added") {
+                                const m = change.doc.data();
+                                const msgTime = m.time ? m.time.toMillis() : Date.now();
+                                if (msgTime > (Date.now() - 10000)) { 
+                                    playNotification();
+                                    
+                                    // Update Badge Count for Specific Sender
+                                    if(!unreadCounts[m.sender]) unreadCounts[m.sender] = 0;
+                                    unreadCounts[m.sender]++;
+                                    
+                                    const safeId = m.sender.replace(/[@.]/g, "_");
+                                    const badgeEl = document.getElementById(`badge-${safeId}`);
+                                    if(badgeEl) {
+                                        badgeEl.innerText = unreadCounts[m.sender];
+                                        badgeEl.classList.remove('hidden');
+                                    }
+
+                                    if (Notification.permission === "granted") {
+                                        const notification = new Notification(`رسالة من ${m.name || "زميل"}`, {
+                                            body: m.text || "📎 أرسل مرفقاً جديداً",
+                                            icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
+                                            tag: "chat-message" 
+                                        });
+                                        notification.onclick = function() { window.focus(); this.close(); if (!openPrivateChats[m.sender]) openPrivateChat(m.sender, m.name || "مستخدم"); };
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }, err => console.log("Listener Warning", err)); 
+        }
+
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingTimer = null;
+        let recordingSeconds = 0;
+        let currentRecordChatId = null; 
+
+        async function startRecording(chatId, targetEmail = null) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                currentRecordChatId = chatId;
+
+                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+
+                toggleRecordUI(chatId, true);
+
+                recordingSeconds = 0;
+                updateRecordTimer(chatId);
+                recordingTimer = setInterval(() => {
+                    recordingSeconds++;
+                    updateRecordTimer(chatId);
+                }, 1000);
+
+                mediaRecorder.start();
+
+            } catch (err) {
+                alert("يرجى السماح بصلاحية المايكروفون للتسجيل.");
+                console.error(err);
+            }
+        }
+
+        function stopAndSendRecording(chatId, targetEmail = null) {
+            if (!mediaRecorder) return;
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = async () => {
+                    const base64Audio = reader.result;
+                    
+                    if (chatId === 'public') {
+                        await db.collection("messages").add({
+                            user: currentUser.email,
+                            name: userProfile.name,
+                            text: "", 
+                            file: base64Audio, 
+                            fileName: "voice_note.webm",
+                            type: "voice", 
+                            time: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } else {
+                        if(targetEmail) {
+                            await db.collection("private_messages").add({
+                                sender: currentUser.email.toLowerCase(),
+                                receiver: targetEmail.toLowerCase(),
+                                text: "",
+                                file: base64Audio,
+                                fileName: "voice_note.webm",
+                                type: "voice",
+                                time: firebase.firestore.FieldValue.serverTimestamp(),
+                                name: userProfile.name
+                            });
+                        }
+                    }
+                    
+                    cleanupRecording(chatId);
+                };
+            };
+
+            mediaRecorder.stop();
+        }
+
+        function cancelRecording(chatId = currentRecordChatId) {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                mediaRecorder = null;
+            }
+            cleanupRecording(chatId);
+        }
+
+        function cleanupRecording(chatId) {
+            clearInterval(recordingTimer);
+            if(mediaRecorder) mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            toggleRecordUI(chatId, false);
+            audioChunks = [];
+        }
+
+        function toggleRecordUI(chatId, isRecording) {
+            if (chatId === 'public') {
+                const inputArea = document.getElementById('chat-input-area');
+                const recordArea = document.getElementById('chat-recording-area');
+                if(isRecording) { inputArea.classList.add('hidden'); recordArea.classList.remove('hidden'); }
+                else { inputArea.classList.remove('hidden'); recordArea.classList.add('hidden'); }
+            } else {
+                const inputArea = document.getElementById(`input-area-${chatId}`);
+                const recordArea = document.getElementById(`record-area-${chatId}`);
+                if (inputArea && recordArea) {
+                    if(isRecording) { inputArea.classList.add('hidden'); recordArea.classList.remove('hidden'); }
+                    else { inputArea.classList.remove('hidden'); recordArea.classList.add('hidden'); }
+                }
+            }
+        }
+
+        function updateRecordTimer(chatId) {
+            const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+            const secs = (recordingSeconds % 60).toString().padStart(2, '0');
+            const timeString = `${mins}:${secs}`;
+            
+            if (chatId === 'public') {
+                const el = document.getElementById('recording-timer-public');
+                if(el) el.innerText = timeString;
+            } else {
+                const el = document.getElementById(`timer-${chatId}`);
+                if(el) el.innerText = timeString;
+            }
+        }
+
+        async function sendMessage(e){ 
+            e.preventDefault(); 
+            const i=document.getElementById("chat-input"); 
+            if(i.value.trim() || attachedFileBase64){ 
+                const msg = {
+                    text:i.value.trim(),
+                    user:currentUser.email,
+                    name:userProfile.name,
+                    time:firebase.firestore.FieldValue.serverTimestamp(),
+                    file: attachedFileBase64,
+                    fileName: attachedFileName
+                };
+                await db.collection("messages").add(msg); 
+                i.value=""; clearAttachment();
+            } 
+        }
+
+       function renderMessage(m, isMe) {
+            const timeFull = m.time ? moment(m.time.toDate()).format("D/M/YYYY h:mm A") : "...";
+            const senderEmail = m.user || m.sender || 'unknown';
+            let senderAvatar = DEFAULT_PHOTO + encodeURIComponent(m.name || 'User'); 
+            if (typeof allUsersData !== 'undefined') {
+                const senderData = allUsersData.find(u => u.email.toLowerCase() === senderEmail.toLowerCase());
+                if (senderData && senderData.photo) senderAvatar = senderData.photo;
+            }
+
+            let content = "";
+            
+            if (m.text) {
+                content += `<p class="text-sm leading-relaxed whitespace-pre-wrap ${isMe ? 'text-white' : 'text-slate-800 dark:text-slate-200'}">${m.text}</p>`;
+            }
+
+            if (m.file) {
+                const mt = m.text ? "mt-3" : ""; 
+                
+                if (m.type === 'voice' || m.file.startsWith("data:audio") || (m.fileName && m.fileName.endsWith('webm'))) {
+                    content += `
+                    <div class="${mt} flex items-center gap-2 min-w-[200px]">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center ${isMe ? 'bg-white/20' : 'bg-primary-100 text-primary-600'}">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                        <audio controls controlsList="nodownload" class="h-8 w-48 rounded-lg opacity-90">
+                            <source src="${m.file}" type="audio/webm">
+                        </audio>
+                    </div>`;
+                } 
+                else if (m.file.startsWith("data:image")) {
+                    content += `
+                    <div class="${mt} relative overflow-hidden rounded-lg border ${isMe ? 'border-white/20' : 'border-slate-200 dark:border-slate-600'}">
+                        <img src="${m.file}" class="max-w-[220px] max-h-[200px] object-cover cursor-pointer hover:scale-105 transition-transform duration-500" onclick="openImagePreview(this.src)">
+                    </div>`;
+                } 
+                else {
+                    content += `
+                    <a href="${m.file}" download="${m.fileName || 'file'}" class="${mt} flex items-center gap-3 p-2.5 rounded-lg border ${isMe ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-50'} transition group">
+                        <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-slate-600 text-primary-600 dark:text-primary-400">
+                            <i class="fas fa-file-alt text-base"></i>
+                        </div>
+                        <div class="flex-1 overflow-hidden">
+                            <p class="text-[11px] font-bold truncate w-32 group-hover:underline">${m.fileName || 'مرفق'}</p>
+                            <p class="text-[9px] opacity-70">انقر للتحميل</p>
+                        </div>
+                    </a>`;
+                }
+            }
+
+            if (isMe) {
+                return `
+                <div class="flex items-end gap-3 justify-end mb-5 pl-2 animate-fade-in">
+                    <div class="flex flex-col items-end max-w-[85%]">
+                        <div class="bg-primary-600 text-white px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm border border-primary-700">
+                            ${content}
+                        </div>
+                        <span class="text-[9px] text-slate-400 mt-1 mr-1 flex items-center gap-1 font-mono">
+                            ${timeFull} <i class="fas fa-check text-primary-500"></i>
+                        </span>
+                    </div>
+                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-700 shadow-sm self-end mb-4 object-cover bg-white">
+                </div>`;
+            } else {
+                return `
+                <div class="flex items-start gap-3 justify-start mb-5 pr-2 animate-fade-in">
+                    <img src="${senderAvatar}" class="w-8 h-8 rounded-full ring-2 ring-white dark:ring-slate-700 shadow-sm mt-1 object-cover bg-white">
+                    <div class="flex flex-col items-start max-w-[85%]">
+                        <div class="flex items-baseline gap-2 mb-1 mr-1">
+                            <span class="text-[11px] font-black text-slate-700 dark:text-slate-300">${m.name || 'User'}</span>
+                            <span class="text-[9px] text-slate-400 font-mono">${timeFull}</span>
+                        </div>
+                        <div class="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl rounded-tr-sm border border-slate-200 dark:border-slate-700 shadow-sm text-slate-800 dark:text-slate-200">
+                            ${content}
+                        </div>
+                    </div>
+                </div>`;
+            }
+        }
+        
+        function toggleChat(){ 
+            const chatWindow = document.getElementById("chat-window");
+            chatWindow.classList.toggle("hidden"); 
+            document.getElementById("chat-badge").classList.add("hidden"); 
+            makeDraggable(chatWindow);
+        }
+
+        // -- الدردشة الخاصة (Fixed Case Sensitivity) --
+        function closePrivateChat(email) {
+            const chatId = [currentUser.email.toLowerCase().trim(), email.toLowerCase().trim()].sort().join("_").replace(/[@.]/g, "_");
+            const el = document.getElementById(`chat-priv-${chatId}`);
+            if(el) el.remove();
+            delete openPrivateChats[email];
+            
+            // Reset Badge when opened
+            unreadCounts[email] = 0;
+            const safeId = email.replace(/[@.]/g, "_");
+            const badgeEl = document.getElementById(`badge-${safeId}`);
+            if(badgeEl) badgeEl.classList.add('hidden');
+        }
+
+        function handlePrivateFile(input, targetEmail) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            
+            const myEmail = currentUser.email.toLowerCase().trim();
+            const otherEmail = targetEmail.toLowerCase().trim();
+            const chatId = [myEmail, otherEmail].sort().join("_").replace(/[@.]/g, "_");
+
+            reader.onload = (e) => {
+                if(!openPrivateChats[otherEmail]) openPrivateChats[otherEmail] = {};
+                openPrivateChats[otherEmail].file = e.target.result;
+                openPrivateChats[otherEmail].fileName = file.name;
+                
+                const previewText = document.getElementById(`preview-${chatId}`);
+                if(previewText) {
+                    previewText.innerHTML = `<i class="fas fa-file-invoice mr-1"></i> ${file.name}`;
+                    previewText.parentElement.classList.remove('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function openPrivateChat(otherEmail, otherName) {
+            const myEmail = currentUser.email.toLowerCase().trim();
+            const targetEmail = otherEmail.toLowerCase().trim();
+
+            if(openPrivateChats[targetEmail]) return;
+            
+            // Reset Badge
+            unreadCounts[targetEmail] = 0;
+            const safeId = targetEmail.replace(/[@.]/g, "_");
+            const badgeEl = document.getElementById(`badge-${safeId}`);
+            if(badgeEl) badgeEl.classList.add('hidden');
+
+            const chatId = [myEmail, targetEmail].sort().join("_").replace(/[@.]/g, "_");
+            const windowId = `chat-priv-${chatId}`;
+            
+            const chatHtml = `
+            <div id="${windowId}" class="chat-window w-80 h-[450px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col" style="bottom: 100px; left: 350px; transition: transform 0.2s;">
+                
+                <div class="p-4 bg-slate-800 text-white flex justify-between items-center chat-header cursor-move select-none">
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <img src="${DEFAULT_PHOTO + encodeURIComponent(otherName)}" class="w-8 h-8 rounded-full border border-slate-600 bg-slate-700">
+                            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-slate-800 rounded-full"></span>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold leading-tight">${otherName}</h4>
+                            <p class="text-[9px] text-slate-400">محادثة خاصة</p>
+                        </div>
+                    </div>
+                    <button onclick="closePrivateChat('${targetEmail}')" class="text-slate-400 hover:text-white transition w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <div id="messages-${chatId}" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-[#0b1120] custom-scrollbar text-right">
+                    <div class="flex flex-col items-center justify-center h-full text-slate-300 opacity-50 space-y-2">
+                        <i class="fas fa-comments text-4xl"></i>
+                        <p class="text-xs">بداية المحادثة</p>
+                    </div>
+                </div>
+                
+                <div id="preview-box-${chatId}" class="hidden px-3 py-2 bg-slate-100 dark:bg-slate-700 border-t border-slate-200 dark:border-slate-600 flex justify-between items-center">
+                    <span id="preview-${chatId}" class="text-[10px] font-bold text-primary-600 dark:text-primary-400 truncate max-w-[200px]"></span>
+                    <button type="button" onclick="cancelPrivateFile('${targetEmail}', '${chatId}')" class="text-red-500 hover:bg-red-100 p-1 rounded-full"><i class="fas fa-times"></i></button>
+                </div>
+
+                <form onsubmit="sendPrivateMessage(event, '${targetEmail}', '${chatId}')" class="p-3 border-t dark:border-slate-700 bg-white dark:bg-slate-800">
+                    
+                    <div id="input-area-${chatId}" class="flex gap-2 items-center">
+                        <input type="file" id="file-${chatId}" class="hidden" onchange="handlePrivateFile(this, '${targetEmail}')">
+                        
+                        <button type="button" onclick="document.getElementById('file-${chatId}').click()" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-primary-600 transition">
+                            <i class="fas fa-paperclip text-sm"></i>
+                        </button>
+                        
+                        <input type="text" id="input-${chatId}" class="flex-1 bg-slate-100 dark:bg-slate-700/50 border border-transparent focus:border-primary-500 rounded-xl px-4 py-2 text-xs outline-none dark:text-white transition-all placeholder:text-slate-400" placeholder="اكتب..." autocomplete="off">
+                        
+                        <button type="button" onclick="startRecording('${chatId}', '${targetEmail}')" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-red-500 transition">
+                            <i class="fas fa-microphone text-sm"></i>
+                        </button>
+
+                        <button type="submit" class="w-9 h-9 bg-primary-600 hover:bg-primary-700 text-white rounded-xl flex items-center justify-center shadow-lg transition hover:scale-105">
+                            <i class="fas fa-paper-plane text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div id="record-area-${chatId}" class="hidden flex items-center justify-between bg-red-50 dark:bg-red-900/20 p-1.5 rounded-xl border border-red-100">
+                        <div class="flex items-center gap-2 text-red-600 px-2">
+                            <span class="animate-pulse text-[10px] font-bold">● تسجيل</span>
+                            <span id="timer-${chatId}" class="font-mono text-[10px]">00:00</span>
+                        </div>
+                        <div class="flex gap-1">
+                            <button type="button" onclick="cancelRecording('${chatId}')" class="w-7 h-7 rounded-full bg-white text-slate-500 hover:text-red-500 shadow-sm flex items-center justify-center"><i class="fas fa-times text-xs"></i></button>
+                            <button type="button" onclick="stopAndSendRecording('${chatId}', '${targetEmail}')" class="w-7 h-7 rounded-full bg-red-500 text-white shadow-sm flex items-center justify-center"><i class="fas fa-arrow-up text-xs"></i></button>
+                        </div>
+                    </div>
+                </form>
+            </div>`;
+            
+            document.getElementById('private-chats-container').insertAdjacentHTML('beforeend', chatHtml);
+            openPrivateChats[targetEmail] = { file: null, fileName: "" };
+            
+            makeDraggable(document.getElementById(windowId));
+            listenToSpecificChat(targetEmail, chatId);
+        }
+
+        function cancelPrivateFile(email, chatId) {
+            if(openPrivateChats[email]) {
+                openPrivateChats[email].file = null;
+                openPrivateChats[email].fileName = "";
+            }
+            document.getElementById(`preview-box-${chatId}`).classList.add('hidden');
+            document.getElementById(`file-${chatId}`).value = "";
+        }
+
+        async function sendPrivateMessage(e, otherEmail, chatId) {
+            e.preventDefault();
+            const input = document.getElementById(`input-${chatId}`);
+            const myEmail = currentUser.email.toLowerCase().trim();
+            const targetEmail = otherEmail.toLowerCase().trim();
+            
+            const fileData = openPrivateChats[targetEmail];
+            
+            if(input.value.trim() || (fileData && fileData.file)) {
+                const msg = {
+                    text: input.value.trim(),
+                    sender: myEmail,
+                    receiver: targetEmail,
+                    time: firebase.firestore.FieldValue.serverTimestamp(),
+                    file: fileData ? fileData.file : null,
+                    fileName: fileData ? fileData.fileName : "",
+                    name: userProfile.name
+                };
+                
+                try {
+                    await db.collection("private_messages").add(msg);
+                    
+                    input.value = "";
+                    if(fileData) { fileData.file = null; fileData.fileName = ""; }
+                    document.getElementById(`preview-box-${chatId}`).classList.add('hidden');
+                    
+                } catch(err) {
+                    console.error("Error:", err);
+                }
+            }
+        }
+
+        let activeListeners = []; 
+
+        function listenToSpecificChat(otherEmail, chatId) {
+            const myEmail = currentUser.email.toLowerCase().trim();
+            const targetEmail = otherEmail.toLowerCase().trim();
+            const container = document.getElementById(`messages-${chatId}`);
+            
+            let allMsgs = []; 
+
+            const render = () => {
+                if(!document.getElementById(`messages-${chatId}`)) return;
+                
+                allMsgs.sort((a, b) => (a.time?.seconds || 0) - (b.time?.seconds || 0));
+                
+                container.innerHTML = "";
+                if(allMsgs.length === 0) {
+                    container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-300 opacity-50 space-y-2"><i class="fas fa-comments text-4xl"></i><p class="text-xs">بداية المحادثة</p></div>`;
+                } else {
+                    allMsgs.forEach(m => {
+                        const isMe = (m.sender === myEmail);
+                        container.innerHTML += renderMessage(m, isMe);
+                    });
+                }
+                container.scrollTop = container.scrollHeight;
+            };
+
+            const unsub1 = db.collection("private_messages")
+                .where("sender", "==", myEmail)
+                .where("receiver", "==", targetEmail)
+                .onSnapshot(snapshot => {
+                    const sent = snapshot.docs.map(d => d.data());
+                    const received = allMsgs.filter(m => m.sender === targetEmail);
+                    allMsgs = [...sent, ...received];
+                    render();
+                });
+
+            const unsub2 = db.collection("private_messages")
+                .where("sender", "==", targetEmail)
+                .where("receiver", "==", myEmail)
+                .onSnapshot(snapshot => {
+                    const received = snapshot.docs.map(d => d.data());
+                    const sent = allMsgs.filter(m => m.sender === myEmail);
+                    allMsgs = [...sent, ...received];
+                    render();
+                    
+                    if(!snapshot.metadata.hasPendingWrites) {
+                        snapshot.docChanges().forEach(change => {
+                            if (change.type === "added") playNotification();
+                        });
+                    }
+                });
+        }
+
+        function makeDraggable(el) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            const header = el.querySelector(".chat-header");
+            if (header) header.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                el.style.top = (el.offsetTop - pos2) + "px";
+                el.style.left = (el.offsetLeft - pos1) + "px";
+                el.style.bottom = "auto";
+                el.style.right = "auto";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        // -- إدارة البيانات (Edit & Reports) --
+        async function openEditModal(e){
+            document.getElementById("modal-edit").classList.remove("hidden"); 
+            const t = document.getElementById("edit-email");
+            
+            if(e === "new"){ 
+                document.getElementById("form-edit").reset(); 
+                t.readOnly = false; 
+                t.setAttribute("data-mode", "new"); 
+                document.getElementById("edit-preview").src = DEFAULT_PHOTO + "New"; 
+                document.getElementById("edit-background-limit").value = 60; 
+            }
+            else { 
+                const d = (await db.collection("users").doc(e).get()).data(); 
+                t.readOnly = true; 
+                t.value = d.email; 
+                t.setAttribute("data-mode", "edit"); 
+                
+                document.getElementById("edit-name").value = d.name; 
+                document.getElementById("edit-title").value = d.title || ""; 
+                document.getElementById("edit-dept").value = d.department || "";
+                document.getElementById("edit-role").value = d.role || "employee"; 
+                document.getElementById("edit-idle").value = d.idleLimit || 5; 
+                document.getElementById("edit-background-limit").value = d.backgroundLimit || 60;
+
+                document.getElementById("edit-photo-base64").value = d.photo || ""; 
+                document.getElementById("edit-preview").src = d.photo || DEFAULT_PHOTO + d.name; 
+            }
+        }
+
+        async function saveUserChanges(e){
+            e.preventDefault(); 
+            const em = document.getElementById("edit-email").value.toLowerCase().trim();
+            
+            const data = { 
+                name: document.getElementById("edit-name").value, 
+                title: document.getElementById("edit-title").value, 
+                department: document.getElementById("edit-dept").value,
+                role: document.getElementById("edit-role").value, 
+                idleLimit: parseInt(document.getElementById("edit-idle").value) || 5, 
+                backgroundLimit: parseInt(document.getElementById("edit-background-limit").value) || 60,
+                photo: document.getElementById("edit-photo-base64").value 
+            };
+
+            if(document.getElementById("edit-email").getAttribute("data-mode") === "new"){ 
+                data.email = em; 
+                data.status = "Offline"; 
+                data.timeBank = {}; 
+                data.tasks = [];
+                await db.collection("users").doc(em).set(data); 
+            }
+            else await db.collection("users").doc(em).update(data);
+            
+            closeModal("modal-edit");
+        }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function handleImageUpload(el){ if(el.files && el.files[0]){ const r=new FileReader(); r.onload=function(e){ const i=new Image(); i.src=e.target.result; i.onload=function(){ const c=document.createElement("canvas"),ctx=c.getContext("2d"),s=300/i.width; c.width=300; c.height=i.height*s; ctx.drawImage(i,0,0,c.width,c.height); const b=c.toDataURL("image/jpeg",.7); document.getElementById("edit-preview").src=b; document.getElementById("edit-photo-base64").value=b; }; }; r.readAsDataURL(el.files[0]); } }
+        async function deleteUser(){ if(confirm("هل أنت متأكد من حذف هذا الموظف نهائياً؟")){ await db.collection("users").doc(document.getElementById("edit-email").value).delete(); closeModal("modal-edit"); } }
+        function openReportModal(){ document.getElementById("modal-report").classList.remove("hidden"); }
+        function updateReportDropdown(){ const e=document.getElementById("report-user-select"),v=e.value; e.innerHTML='<option value="all">-- جميع الموظفين --</option>'; allUsersData.forEach(u=>{e.innerHTML+=`<option value="${u.email}">${u.name}</option>`}); e.value=v; }
+        
+        async function generateProfessionalReport() {
+            const userEmail = document.getElementById("report-user-select").value;
+            const dateFrom = document.getElementById("report-date-from").value;
+            const dateTo = document.getElementById("report-date-to").value;
+            const statusEl = document.getElementById("export-status");
+            const resultsArea = document.getElementById("report-results-area");
+            const summaryCards = document.getElementById("daily-summary-cards");
+            const totalDurationText = document.getElementById("total-duration-text");
 
-        function listenForScreenshotRequests() { db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).onSnapshot(async (doc) => { const data = doc.data(); if (data && data.status === 'pending') { if (confirm("⚠️ طلب لقطة شاشة من الإدارة. موافق؟")) { captureAndSend(data.requestedBy); } else { db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ status: 'refused' }); } } }); }
-        async function captureAndSend(adminEmail) { try { const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false }); const video = document.createElement('video'); video.srcObject = stream; video.play(); video.onloadedmetadata = () => { setTimeout(async () => { const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0); const b64 = canvas.toDataURL('image/jpeg', 0.7); stream.getTracks().forEach(t => t.stop()); await db.collection("private_messages").add({ text: "📷 لقطة شاشة تلقائية", sender: currentUser.email.toLowerCase(), receiver: adminEmail.toLowerCase(), time: firebase.firestore.FieldValue.serverTimestamp(), file: b64, fileName: "ss.jpg", name: userProfile.name }); await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete(); }, 500); }; } catch (e) { console.error(e); } }
-        async function requestScreenshot(targetEmail) { await db.collection('screenshot_requests').doc(targetEmail.toLowerCase()).set({ requestedBy: currentUser.email, time: firebase.firestore.FieldValue.serverTimestamp(), status: 'pending' }); alert("تم إرسال الطلب"); }
-        async function addTask(email){alert("استخدم زر إسناد المهام في البطاقة");} // Legacy Override
+            if (!dateFrom || !dateTo) {
+                alert("يرجى تحديد الفترة الزمنية (من وإلى)");
+                return;
+            }
+
+            statusEl.innerText = "جاري تحليل سجلات الحركات بدقة...";
+            resultsArea.classList.add('hidden');
+
+            const start = new Date(dateFrom);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(dateTo);
+            end.setHours(23, 59, 59, 999);
+
+            try {
+                let query = db.collection("logs")
+                    .where("end_time", ">=", start)
+                    .where("end_time", "<=", end);
+
+                if (userEmail !== "all") {
+                    query = query.where("user", "==", userEmail);
+                }
+
+                const snapshot = await query.get();
+                if (snapshot.empty) {
+                    statusEl.innerText = "لا توجد حركات مسجلة لهذا الموظف في هذه الفترة.";
+                    return;
+                }
+
+                const dataGrouped = {};
+
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
+                    const userName = d.name || d.user;
+                    const status = d.from_status; 
+                    const duration = parseInt(d.duration_ms) || 0;
+
+                    if (status === 'Offline') return;
+
+                    if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
+                    if (!dataGrouped[dateKey][userName]) {
+                        dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+                    }
+
+                    if (dataGrouped[dateKey][userName].hasOwnProperty(status)) {
+                        dataGrouped[dateKey][userName][status] += duration;
+                        dataGrouped[dateKey][userName].Total += duration;
+                    }
+                });
+
+                if (Object.keys(dataGrouped).length === 0) {
+                    statusEl.innerText = "لم يتم العثور على ساعات عمل فعلية (بخلاف Offline).";
+                    return;
+                }
+
+                resultsArea.classList.remove('hidden');
+                summaryCards.innerHTML = "";
+                
+                let grandTotals = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+                
+                Object.values(dataGrouped).forEach(day => {
+                    Object.values(day).forEach(userStats => {
+                        grandTotals.Online += userStats.Online;
+                        grandTotals.Break += userStats.Break;
+                        grandTotals.Meeting += userStats.Meeting;
+                        grandTotals.Idle += userStats.Idle;
+                        grandTotals.Total += userStats.Total;
+                    });
+                });
+
+                const statusLabels = { Online: 'العمل', Break: 'استراحة', Meeting: 'اجتماع', Idle: 'خمول' };
+                const colors = { Online: 'text-green-600', Break: 'text-orange-500', Meeting: 'text-blue-500', Idle: 'text-red-500' };
+
+                Object.keys(statusLabels).forEach(key => {
+                    summaryCards.innerHTML += `
+                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 text-center">
+                            <p class="text-[10px] font-black text-slate-400 mb-1">${statusLabels[key]}</p>
+                            <p class="text-sm font-black ${colors[key]}">${formatDuration(grandTotals[key])}</p>
+                        </div>`;
+                });
+
+                totalDurationText.innerText = formatDuration(grandTotals.Total);
+
+                downloadDetailedExcel(dataGrouped, dateFrom, dateTo);
+                statusEl.innerText = "تم استخراج التقرير الفعلي بنجاح.";
+
+            } catch (error) {
+                console.error(error);
+                statusEl.innerText = "خطأ في الحساب: يرجى التأكد من استقرار الإنترنت.";
+            }
+        }
+
+        function downloadDetailedExcel(dataGrouped, from, to) {
+            let csvContent = "\ufeff"; 
+            csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
+            
+            const sortedDates = Object.keys(dataGrouped).sort().reverse();
+            
+            sortedDates.forEach(date => {
+                Object.keys(dataGrouped[date]).forEach(user => {
+                    const d = dataGrouped[date][user];
+                    csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
+                });
+            });
+            
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function formatDuration(ms) {
+            if (!ms || ms < 0) return "00:00:00";
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            return [
+                hours.toString().padStart(2, '0'),
+                minutes.toString().padStart(2, '0'),
+                seconds.toString().padStart(2, '0')
+            ].join(':');
+        }
+
+        async function viewLogs(email) {
+            const modal = document.getElementById('modal-logs');
+            const tableBody = document.getElementById('logs-table-body');
+            const loader = document.getElementById('logs-loader');
+            modal.classList.remove('hidden');
+            tableBody.innerHTML = '';
+            loader.classList.remove('hidden');
+            try {
+                const snapshot = await db.collection('logs').where('user', '==', email).orderBy('end_time', 'desc').limit(20).get();
+                loader.classList.add('hidden');
+                if (snapshot.empty) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-slate-400">لا توجد سجلات متاحة</td></tr>`;
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const log = doc.data();
+                    const timeStr = log.end_time ? moment(log.end_time.toDate()).format('hh:mm:ss A') : '---';
+                    tableBody.innerHTML += `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
+                            <td class="p-4 font-bold"><span class="text-slate-400 font-normal">${log.from_status}</span> <i class="fas fa-arrow-left mx-2 text-[10px] text-primary-400"></i> <span class="text-primary-600">${log.to_status}</span></td>
+                            <td class="p-4 text-slate-500 font-mono text-[11px]">${timeStr}</td>
+                            <td class="p-4 font-bold text-slate-700 dark:text-slate-300">${formatTime(log.duration_ms || 0)}</td>
+                            <td class="p-4">${log.auto ? '<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px]">تلقائي</span>' : '<span class="bg-blue-50 text-blue-500 px-2 py-0.5 rounded text-[10px]">يدوي</span>'}</td>
+                        </tr>`;
+                });
+            } catch (error) { loader.classList.add('hidden'); }
+        }
+
+        function renderAdminAlerts() {
+            const container = document.getElementById('admin-alerts-container');
+            
+            allUsersData.forEach(u => {
+                if(u.isIdle) {
+                    if (dismissedAlerts.includes(u.email)) return;
+
+                    let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
+                    
+                    if(!activeAlert) {
+                        const div = document.createElement('div');
+                        const safeId = u.email.replace(/[@.]/g, "_");
+                        div.id = `alert-active-${safeId}`;
+                        
+                        div.className = 'bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-2xl border-l-4 border-red-500 flex items-center justify-between gap-4 animate-bounce pulse-red pointer-events-auto w-80 relative';
+                        div.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <div class="bg-red-100 p-2 rounded-full text-red-600">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-red-500 uppercase">تنبيه خمول (كيبورد)</p>
+                                    <p class="text-xs font-bold dark:text-white">${u.name} متوقف</p>
+                                </div>
+                            </div>
+                            <button onclick="closeAdminAlert('${u.email}')" class="text-slate-400 hover:text-red-500 transition px-2">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        container.appendChild(div);
+                        playNotification(); 
+                    }
+                } else {
+                    let activeAlert = document.getElementById(`alert-active-${u.email.replace(/[@.]/g, "_")}`);
+                    if(activeAlert) activeAlert.remove();
+                    dismissedAlerts = dismissedAlerts.filter(e => e !== u.email);
+                }
+            });
+        }
+
+        function closeAdminAlert(email) {
+            dismissedAlerts.push(email);
+            const safeId = email.replace(/[@.]/g, "_");
+            const el = document.getElementById(`alert-active-${safeId}`);
+            if(el) el.remove();
+        }
+
+        async function addTask(email) {
+            const txt = prompt("أدخل تفاصيل المهمة الجديدة:");
+            if(txt && txt.trim()) {
+                const userRef = db.collection('users').doc(email);
+                const doc = await userRef.get();
+                const tasks = doc.data().tasks || [];
+                tasks.push({ text: txt.trim(), done: false });
+                await userRef.update({ tasks: tasks });
+            }
+        }
+
+        async function toggleTask(email, idx, done) {
+            const userRef = db.collection('users').doc(email);
+            const doc = await userRef.get();
+            const tasks = doc.data().tasks || [];
+            if(tasks[idx]) { tasks[idx].done = done; await userRef.update({ tasks: tasks }); }
+        }
+
+        async function deleteTask(email, idx) {
+            if(confirm("هل تريد حذف هذه المهمة؟")) {
+                const userRef = db.collection('users').doc(email);
+                const doc = await userRef.get();
+                const tasks = doc.data().tasks || [];
+                tasks.splice(idx, 1); await userRef.update({ tasks: tasks });
+            }
+        }
+
+        async function requestScreenshot(targetEmail) {
+            if (userProfile.role !== 'admin') return; 
+            
+            try {
+                await db.collection('screenshot_requests').doc(targetEmail.toLowerCase()).set({
+                    requestedBy: currentUser.email,
+                    time: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'pending'
+                });
+                alert("تم إرسال طلب لقطة الشاشة للموظف...");
+            } catch (e) {
+                console.error("Error requesting screenshot:", e);
+            }
+        } 
+
+        function listenForScreenshotRequests() {
+            db.collection('screenshot_requests').doc(currentUser.email.toLowerCase())
+                .onSnapshot(async (doc) => {
+                    const data = doc.data();
+                    
+                    if (data && data.status === 'pending') {
+                        const alertSound = document.getElementById('alert-sound');
+                        if (alertSound) {
+                            alertSound.currentTime = 0;
+                            alertSound.play().catch(e => console.log("Sound blocked"));
+                        }
+
+                        if (Notification.permission === "granted") {
+                            const notification = new Notification("⚠️ تنبيه إداري", {
+                                body: "مطلوب لقطة شاشة حالاً. اضغط للموافقة.",
+                                icon: "https://cdn-icons-png.flaticon.com/512/681/681498.png",
+                                requireInteraction: true,
+                                tag: "screenshot-alert"
+                            });
+
+                            notification.onclick = function() {
+                                window.focus();
+                                this.close();
+                            };
+                        }
+
+                        await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
+                            status: 'processing' 
+                        });
+                        
+                        setTimeout(() => {
+                            const confirmCapture = confirm("⚠️ تنبيه: الإدارة تطلب لقطة شاشة لسطح المكتب.\n\nاضغط OK للموافقة والإرسال.");
+                            if (confirmCapture) {
+                                captureAndSend(data.requestedBy);
+                            } else {
+                                db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).update({ 
+                                    status: 'refused' 
+                                });
+                            }
+                        }, 500);
+                    }
+                });
+        }
+
+        async function captureAndSend(adminEmail) {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+
+                video.onloadedmetadata = () => {
+                    setTimeout(async () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        canvas.getContext('2d').drawImage(video, 0, 0);
+                        const screenshotBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                        stream.getTracks().forEach(track => track.stop());
+
+                        const chatId = [currentUser.email.toLowerCase(), adminEmail.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+                        
+                        await db.collection("private_messages").add({
+                            text: "📷 تم إرسال لقطة شاشة تلقائية بطلب من الإدارة",
+                            sender: currentUser.email.toLowerCase(),
+                            receiver: adminEmail.toLowerCase(),
+                            time: firebase.firestore.FieldValue.serverTimestamp(),
+                            file: screenshotBase64,
+                            fileName: "screenshot.jpg",
+                            name: userProfile.name
+                        });
+
+                        await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
+                    }, 500); 
+                };
+            } catch (err) {
+                console.error("Capture failed:", err);
+                await db.collection('screenshot_requests').doc(currentUser.email.toLowerCase()).delete();
+            }
+        }
+
+        function openImagePreview(src) {
+            const modal = document.getElementById('image-preview-modal');
+            const img = document.getElementById('preview-img-target');
+            const downloadLink = document.getElementById('download-link-target');
+            
+            img.src = src;
+            downloadLink.href = src;
+            modal.classList.remove('hidden');
+        }
+
+        function closeImagePreview() {
+            document.getElementById('image-preview-modal').classList.add('hidden');
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modals = [
+                    'modal-edit', 'modal-report', 'modal-logs', 'image-preview-modal', 'chat-window'
+                ];
+                modals.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element && !element.classList.contains('hidden')) {
+                        element.classList.add('hidden');
+                        if(id === 'image-preview-modal') {
+                            const img = document.getElementById('preview-img-target');
+                            if(img) img.src = ""; 
+                        }
+                    }
+                });
+            }
+        });
+
+        document.body.addEventListener('click', async () => {
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                await Notification.requestPermission();
+            }
+        }, { once: true });
+
+        // -- أرشيف --
+        async function archivePublicChat() {
+            if (!confirm("هل تريد أرشفة الشات العام؟\n\nسيتم تحميل ملف ZIP يحتوي على سجل Excel + الصور.")) return;
+            
+            const loader = document.getElementById('loader');
+            loader.classList.remove('hidden-section');
+
+            try {
+                const zip = new JSZip();
+                const snapshot = await db.collection("messages").orderBy("time", "asc").get();
+
+                if (snapshot.empty) {
+                    alert("لا توجد رسائل عامة قديمة للأرشفة.");
+                    loader.classList.add('hidden-section');
+                    return;
+                }
+
+                let csvContent = "\ufeffالتاريخ,الاسم,الرسالة,اسم الملف المرفق\n";
+                const mediaFolder = zip.folder("Media_Files");
+
+                snapshot.docs.forEach((doc, index) => {
+                    const m = doc.data();
+                    const time = m.time ? moment(m.time.toDate()).format('YYYY-MM-DD HH:mm:ss') : '-';
+                    const safeText = (m.text || "").replace(/,/g, "،").replace(/\n/g, " ");
+                    let fileName = "لا يوجد";
+
+                    if (m.file) {
+                        let extension = "bin";
+                        if (m.file.includes("image/jpeg")) extension = "jpg";
+                        else if (m.file.includes("image/png")) extension = "png";
+                        else if (m.file.includes("application/pdf")) extension = "pdf";
+                        else if (m.file.includes("audio")) extension = "webm";
+                        
+                        fileName = `File_${index}_${moment().format('HHmmss')}.${extension}`;
+                        const base64Data = m.file.split(',')[1];
+                        if(base64Data) mediaFolder.file(fileName, base64Data, {base64: true});
+                    }
+                    csvContent += `${time},${m.name},${safeText},${fileName}\n`;
+                });
+
+                zip.file("Public_Chat_Log.csv", csvContent);
+                const content = await zip.generateAsync({type:"blob"});
+                saveAs(content, `Public_Chat_Archive_${moment().format('YYYY-MM-DD')}.zip`);
+                
+                await deleteDocsInBatches(snapshot.docs, "messages", "الشات العام");
+
+            } catch (e) { console.error(e); alert("حدث خطأ."); } 
+            finally { loader.classList.add('hidden-section'); }
+        }
+
+        async function archivePrivateChats() {
+            await coreArchivePrivate("MY_CHATS", currentUser.email.toLowerCase());
+        }
+
+        async function archiveAllEmployeesPrivateChats() {
+            await coreArchivePrivate("FULL_DB_ARCHIVE", null); 
+        }
+
+        async function coreArchivePrivate(zipName, specificEmail) {
+            if (!confirm("هل أنت متأكد من بدء الأرشفة؟\n\nسيتم تحميل ملف ZIP وحذف الرسائل المؤرشفة من السيرفر.")) return;
+
+            const loader = document.getElementById('loader');
+            loader.classList.remove('hidden-section');
+
+            try {
+                const zip = new JSZip();
+                let allDocs = [];
+                
+                if (specificEmail) {
+                    const sent = await db.collection("private_messages").where("sender", "==", specificEmail).get(); 
+                    const received = await db.collection("private_messages").where("receiver", "==", specificEmail).get();
+                    allDocs = [...sent.docs, ...received.docs];
+                } else {
+                    const snapshot = await db.collection("private_messages").get();
+                    allDocs = snapshot.docs;
+                }
+
+                const uniqueDocs = Array.from(new Set(allDocs.map(a => a.id))).map(id => allDocs.find(a => a.id === id));
+
+                if (uniqueDocs.length === 0) {
+                    alert("لا توجد رسائل قديمة للأرشفة.");
+                    loader.classList.add('hidden-section');
+                    return;
+                }
+
+                let conversations = {};
+                uniqueDocs.forEach(doc => {
+                    const m = doc.data();
+                    const p1 = m.sender || "unknown";
+                    const p2 = m.receiver || "unknown";
+                    const convKey = [p1, p2].sort().join("_WITH_").replace(/[@.]/g, "_");
+                    
+                    if (!conversations[convKey]) conversations[convKey] = [];
+                    conversations[convKey].push(m);
+                });
+
+                Object.keys(conversations).forEach(folderName => {
+                    const folder = zip.folder(folderName);
+                    const mediaBox = folder.folder("Attachments");
+                    
+                    const msgs = conversations[folderName].sort((a, b) => (a.time?.seconds || 0) - (b.time?.seconds || 0));
+                    
+                    let csv = "\ufeffالتاريخ,المرسل,المستقبل,الرسالة,اسم الملف\n";
+                    
+                    msgs.forEach((m, idx) => {
+                        const time = m.time ? moment(m.time.toDate()).format('YYYY-MM-DD HH:mm:ss') : '-';
+                        const safeText = (m.text || "").replace(/,/g, "،").replace(/\n/g, " ");
+                        let fName = "لا يوجد";
+
+                        if (m.file) {
+                            let ext = "bin";
+                            if (m.file.includes("image")) ext = "jpg";
+                            else if (m.file.includes("pdf")) ext = "pdf";
+                            else if (m.file.includes("audio")) ext = "webm";
+                            
+                            fName = `Att_${idx}_${moment().format('ss')}.${ext}`;
+                            const b64 = m.file.split(',')[1];
+                            if(b64) mediaBox.file(fName, b64, {base64:true});
+                        }
+                        csv += `${time},${m.sender},${m.receiver},${safeText},${fName}\n`;
+                    });
+                    
+                    folder.file("Chat_History.csv", csv);
+                });
+
+                const content = await zip.generateAsync({type:"blob"});
+                saveAs(content, `${zipName}_${moment().format('YYYY-MM-DD')}.zip`);
+
+                await deleteDocsInBatches(uniqueDocs, "private_messages", "الرسائل الخاصة");
+
+            } catch (e) {
+                console.error(e);
+                alert("حدث خطأ أثناء الأرشفة: " + e.message);
+            } finally {
+                loader.classList.add('hidden-section');
+            }
+        }
+
+        async function deleteDocsInBatches(docs, colName, title) {
+            if (!confirm(`تم تجهيز الأرشيف (${title}) بعدد ${docs.length} رسالة.\n\nهل تريد حذفهم من السيرفر الآن؟`)) return;
+            
+            const batchSize = 400; 
+            const chunks = [];
+            for (let i = 0; i < docs.length; i += batchSize) chunks.push(docs.slice(i, i + batchSize));
+            
+            for (const chunk of chunks) {
+                const batch = db.batch();
+                chunk.forEach(d => batch.delete(db.collection(colName).doc(d.id)));
+                await batch.commit();
+            }
+            alert("تم التنظيف بنجاح! ✅");
+        }
     </script>
 </body>
 </html>
