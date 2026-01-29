@@ -217,6 +217,42 @@
         /* --- تحسينات الشات (الرسائل) --- */
         .animate-fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+                    /* --- ألوان حالات التاسك المخصصة (طلب خاص) --- */
+            /* 1. بدأ (Started) -> أخضر */
+            .status-custom-started { 
+                background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; 
+            }
+            .status-custom-started.active { 
+                background-color: #16a34a; color: white; border-color: #15803d; box-shadow: 0 0 10px rgba(22, 163, 74, 0.4);
+            }
+            
+            /* 2. جاري العمل (Working) -> أزرق */
+            .status-custom-working { 
+                background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; 
+            }
+            .status-custom-working.active { 
+                background-color: #2563eb; color: white; border-color: #1d4ed8; box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+            }
+            
+            /* 3. تم (Done) -> أحمر */
+            .status-custom-done { 
+                background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; 
+            }
+            .status-custom-done.active { 
+                background-color: #dc2626; color: white; border-color: #b91c1c; box-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
+            }
+            
+            /* --- خط كايرو للمحرر والتفاصيل --- */
+            .ql-editor, #task-detail-desc {
+                font-family: 'Cairo', sans-serif !important;
+                line-height: 1.8;
+            }
+            
+            /* --- تمييز التاسك عند المدير في القائمة --- */
+            .task-border-started { border-right: 4px solid #16a34a !important; }
+            .task-border-working { border-right: 4px solid #2563eb !important; }
+            .task-border-done { border-right: 4px solid #dc2626 !important; }
     </style>
 </head>
 
@@ -755,12 +791,16 @@
             db.collection('users').onSnapshot(snapshot => {
                 let hasStatusChange = false;
                 allUsersData = [];
+                
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     allUsersData.push(data);
+        
+                    // 1. تحديث البروفايل الخاص بي
                     if (currentUser && data.email === currentUser.email) { 
                         const oldTasks = userProfile.tasks || [];
                         const newTasks = data.tasks || [];
+                        // إشعار بمهمة جديدة
                         if (newTasks.length > oldTasks.length) {
                             playNotification();
                             if (Notification.permission === "granted") {
@@ -769,6 +809,7 @@
                         }
                         userProfile = data; 
                         
+                        // تحديث بادج المهام
                         const badge = document.getElementById('task-badge');
                         if (newTasks.length > 0) {
                             badge.innerText = newTasks.length;
@@ -777,32 +818,39 @@
                             badge.classList.add('hidden');
                         }
                     }
-                });
-
-                snapshot.docChanges().forEach(change => {
-                    if (change.type === "modified") {
-                        const newData = change.doc.data();
-                        if (currentUser && newData.email === currentUser.email) {
-                            const localSession = localStorage.getItem('my_session_id');
-                            if (newData.sessionId && newData.sessionId !== localSession) {
-                                alert("⚠️ تنبيه أمني:\nتم تسجيل الدخول إلى حسابك من جهاز آخر.\nسيتم تسجيل الخروج من هذا الجهاز الآن.");
-                                logout(); 
-                            }
+        
+                    // 2. (هام جداً) إصلاح تحديث شات التاسك المفتوح
+                    // نتحقق لو فيه تاسك مفتوح حالياً وصاحب التاسك ده حصله تحديث
+                    const currentOpenedTaskId = document.getElementById('current-task-id').value;
+                    const currentOpenedTaskOwner = document.getElementById('current-task-owner-email').value;
+        
+                    if (currentOpenedTaskId && currentOpenedTaskOwner === data.email) {
+                        const updatedTasks = data.tasks || [];
+                        const openedTask = updatedTasks.find(t => t.id == currentOpenedTaskId);
+                        
+                        if (openedTask) {
+                            // نقوم بتحديث الشات فقط (بدون إعادة رسم كل الصفحة عشان الكتابة متضعش)
+                            renderTaskComments(openedTask.comments || [], openedTask.ownerEmail);
+                            
+                            // تحديث الحالة في العنوان لو اتغيرت
+                            updateTaskDetailHeader(openedTask);
                         }
-                        if (userProfile && userProfile.role === 'admin' && !snapshot.metadata.hasPendingWrites) { hasStatusChange = true; }
                     }
                 });
-                
-                if (hasStatusChange && userProfile && userProfile.role === 'admin') { playStatusNotification(); }
-                
-                // Force render initially if data loaded
+        
+                // 3. إعادة رسم الشبكة الرئيسية
                 renderGrid();
                 
+                // 4. لو قائمة المهام مفتوحة، نعيد تحميلها لتحديث الحالات والألوان
+                if (!document.getElementById('modal-task-center').classList.contains('hidden')) {
+                    // ملاحظة: نعيد الرسم بحذر لعدم فقدان التركيز، لكن هنا سنعيد رسم القائمة الجانبية فقط
+                    // openTaskCenter(); // تم إيقافها لتجنب التقطيع، التحديث يتم عبر updateTaskStatus
+                }
+        
                 updateReportDropdown();
                 if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
             });
         }
-
         function setFilter(status) {
             currentFilter = status;
             document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -1171,45 +1219,62 @@
                 listContainer.innerHTML = '<div class="text-center text-slate-400 p-8 text-sm font-bold flex flex-col items-center gap-2"><i class="fas fa-clipboard-check text-2xl opacity-50"></i><p>لا توجد مهام حالياً</p></div>';
                 return;
             }
-
+        
             // ترتيب المهام: الأحدث أولاً
             tasks.sort((a, b) => b.id - a.id);
-
             const isAdmin = userProfile.role === 'admin';
-
+        
             tasks.forEach((task, idx) => {
                 const isMyTask = task.ownerEmail === currentUser.email;
-                const taskStatus = task.status || 'started'; // Default status
-
+                const taskStatus = task.status || 'started'; 
+        
+                // تحديد أيقونة ولون الحالة للمدير
+                let statusClass = '';
+                let statusIconHTML = '';
+                let statusText = '';
+        
+                if(taskStatus === 'started') {
+                    statusClass = 'task-border-started';
+                    statusIconHTML = '<i class="fas fa-play-circle text-green-600"></i>';
+                    statusText = '<span class="text-green-600 text-[10px]"> (بدأ)</span>';
+                } else if (taskStatus === 'working') {
+                    statusClass = 'task-border-working';
+                    statusIconHTML = '<i class="fas fa-spinner fa-spin text-blue-600"></i>';
+                    statusText = '<span class="text-blue-600 text-[10px]"> (جاري)</span>';
+                } else if (taskStatus === 'done') {
+                    statusClass = 'task-border-done';
+                    statusIconHTML = '<i class="fas fa-check-circle text-red-600"></i>';
+                    statusText = '<span class="text-red-600 text-[10px]"> (تم)</span>';
+                }
+        
                 const el = document.createElement('div');
-                el.className = `task-card-modern cursor-pointer group`;
+                // إضافة كلاس اللون للمدير
+                el.className = `task-card-modern cursor-pointer group ${isAdmin ? statusClass : ''}`;
+                
                 el.onclick = (e) => {
-                    // منع فتح التفاصيل عند الضغط على أزرار التحكم
                     if(e.target.closest('.no-click')) return;
                     showTaskDetail(task, idx);
                 };
-
-                // محتوى البطاقة
+        
+                // أزرار التحكم للموظف (بالألوان المطلوبة)
                 let statusControls = '';
-                let adminControls = '';
-
-                // 1. لو موظف (وهذه مهمته): عرض أزرار الحالة
                 if (!isAdmin && isMyTask) {
                     statusControls = `
-                    <div class="flex gap-1 mt-3 pt-2 border-t border-slate-100 dark:border-slate-700 no-click">
-                        <div onclick="updateTaskStatus(${task.id}, 'started', '${task.ownerEmail}')" class="status-pill status-started flex-1 ${taskStatus === 'started' ? 'active' : 'bg-slate-50 text-slate-400'}">
+                    <div class="flex gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-700 no-click">
+                        <div onclick="updateTaskStatus(${task.id}, 'started', '${task.ownerEmail}')" class="status-pill status-custom-started flex-1 ${taskStatus === 'started' ? 'active' : ''}">
                             <i class="fas fa-play text-[8px]"></i> بدأ
                         </div>
-                        <div onclick="updateTaskStatus(${task.id}, 'working', '${task.ownerEmail}')" class="status-pill status-working flex-1 ${taskStatus === 'working' ? 'active' : 'bg-slate-50 text-slate-400'}">
+                        <div onclick="updateTaskStatus(${task.id}, 'working', '${task.ownerEmail}')" class="status-pill status-custom-working flex-1 ${taskStatus === 'working' ? 'active' : ''}">
                             <i class="fas fa-spinner fa-spin text-[8px]"></i> جاري
                         </div>
-                        <div onclick="updateTaskStatus(${task.id}, 'done', '${task.ownerEmail}')" class="status-pill status-done flex-1 ${taskStatus === 'done' ? 'active' : 'bg-slate-50 text-slate-400'}">
+                        <div onclick="updateTaskStatus(${task.id}, 'done', '${task.ownerEmail}')" class="status-pill status-custom-done flex-1 ${taskStatus === 'done' ? 'active' : ''}">
                             <i class="fas fa-check text-[8px]"></i> تم
                         </div>
                     </div>`;
                 }
-
-                // 2. لو مدير: عرض أزرار التعديل والحذف + اسم الموظف
+        
+                // أزرار المدير
+                let adminControls = '';
                 if (isAdmin) {
                     adminControls = `
                     <div class="flex gap-2 items-center no-click">
@@ -1217,17 +1282,12 @@
                         <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; deleteCurrentTask()" class="admin-action-btn btn-delete" title="حذف"><i class="fas fa-trash"></i></button>
                     </div>`;
                 }
-
-                // أيقونة الحالة بجانب العنوان للمدير ليعرف حالة الموظف
-                let statusIcon = '';
-                if(taskStatus === 'done') statusIcon = '<i class="fas fa-check-circle text-green-500 ml-1"></i>';
-                else if(taskStatus === 'working') statusIcon = '<i class="fas fa-spinner fa-spin text-blue-500 ml-1"></i>';
-
+        
                 el.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-black text-sm text-slate-800 dark:text-white truncate flex items-center">
-                                ${statusIcon} ${task.title}
+                            <h4 class="font-black text-sm text-slate-800 dark:text-white truncate flex items-center gap-1">
+                                ${isAdmin ? statusIconHTML : ''} ${task.title} ${isAdmin ? statusText : ''}
                             </h4>
                             <p class="text-[10px] text-primary-600 font-bold mt-0.5">
                                 <i class="fas fa-user-tie ml-1"></i> ${task.createdBy || 'Admin'}
@@ -1240,8 +1300,8 @@
                         </div>
                     </div>
                     
-                    <p class="text-[10px] text-slate-400 truncate border-l-2 border-slate-200 pl-2 mb-1">
-                        ${task.desc ? task.desc.substring(0, 35) + '...' : 'لا يوجد تفاصيل'}
+                    <p class="text-[10px] text-slate-400 truncate border-l-2 border-slate-200 pl-2 mb-1 font-cairo">
+                       انقر لعرض التفاصيل...
                     </p>
                     
                     ${statusControls}
@@ -1252,37 +1312,40 @@
         }
 
         async function updateTaskStatus(taskId, newStatus, ownerEmail) {
-            // تحديث الواجهة فوراً لسرعة الاستجابة
-            // نعيد تحميل القائمة لاحقاً لتأكيد البيانات
-            
+            // 1. تحديث قاعدة البيانات
             const userRef = db.collection('users').doc(ownerEmail);
             const doc = await userRef.get();
             if (!doc.exists) return;
-
+        
             let tasks = doc.data().tasks || [];
             const taskIndex = tasks.findIndex(t => t.id === taskId);
             
             if (taskIndex > -1) {
+                // إذا كانت الحالة هي نفسها، لا تفعل شيئاً
+                if(tasks[taskIndex].status === newStatus) return;
+        
                 tasks[taskIndex].status = newStatus;
                 
-                // إضافة تعليق تلقائي في الشات عند تغيير الحالة (اختياري لجعل الأمر احترافي)
-                const statusNames = {'started': 'بدأ العمل 🟡', 'working': 'جاري العمل 🔵', 'done': 'أنهى المهمة 🟢'};
+                // 2. رسالة الشات التلقائية بالألوان
+                const statusNames = {'started': 'بدأ العمل 🟢', 'working': 'جاري العمل 🔵', 'done': 'أنهى المهمة 🔴'};
                 const sysComment = {
                     user: 'system',
                     name: 'النظام',
-                    text: `تم تغيير حالة المهمة إلى: ${statusNames[newStatus]}`,
+                    text: `قام ${userProfile.name} بتغيير الحالة إلى: ${statusNames[newStatus]}`,
                     time: Date.now()
                 };
                 if (!tasks[taskIndex].comments) tasks[taskIndex].comments = [];
                 tasks[taskIndex].comments.push(sysComment);
-
+        
                 await userRef.update({ tasks: tasks });
+        
+                // 3. تحديث الواجهة فوراً (إعادة تحميل القائمة والتفاصيل)
+                openTaskCenter(); 
                 
-                // تحديث العرض في حال كان التاسك مفتوحاً
+                // إذا كان التاسك مفتوحاً في التفاصيل، قم بتحديثه
                 if(document.getElementById('current-task-id').value == taskId) {
-                    // تحديث بسيط للهيدر أو إعادة فتح التاسك
-                    const updatedTask = {...tasks[taskIndex], ownerName: doc.data().name, ownerEmail: ownerEmail};
-                    showTaskDetail(updatedTask, taskIndex); // إعادة رسم التفاصيل
+                     const updatedTask = {...tasks[taskIndex], ownerName: userProfile.name, ownerEmail: ownerEmail};
+                     showTaskDetail(updatedTask, 0); // رقم 0 هنا مجرد placeholder مش هيأثر
                 }
             }
         }
@@ -1517,7 +1580,7 @@
             const targetUserEmail = document.getElementById('current-task-owner-email').value;
             
             if (!txt && !fileInput.files[0]) return;
-
+        
             let fileBase64 = null;
             if (fileInput.files[0]) {
                 const reader = new FileReader();
@@ -1526,7 +1589,11 @@
                     reader.readAsDataURL(fileInput.files[0]);
                 });
             }
-
+        
+            // مسح الحقل فوراً لتحسين التجربة
+            document.getElementById('note-input').value = '';
+            document.getElementById('note-attachment').value = '';
+        
             const userRef = db.collection('users').doc(targetUserEmail); 
             const doc = await userRef.get();
             let tasks = doc.data().tasks || [];
@@ -1545,14 +1612,10 @@
                 
                 await userRef.update({ tasks: tasks });
                 
-                document.getElementById('note-input').value = '';
-                document.getElementById('note-attachment').value = '';
-                
-                const taskWithInfo = {...tasks[taskIndex], ownerName: tasks[taskIndex].ownerName, ownerEmail: targetUserEmail}; 
-                showTaskDetail(taskWithInfo, taskIndex);
+                // تحديث محلي فوري (عشان تظهر الرسالة علطول)
+                renderTaskComments(tasks[taskIndex].comments, targetUserEmail);
             }
         }
-
         async function addTask(email) {
             alert("يرجى استخدام زر إسناد المهام في البطاقة (الأيقونة الجديدة)");
         }
@@ -2696,8 +2759,72 @@
             }
             alert("تم التنظيف بنجاح! ✅");
         }
+
+        // دالة لتحديث الشات فقط داخل التاسك
+        function renderTaskComments(comments, ownerEmail) {
+            const commentsContainer = document.getElementById('task-comments-list');
+            // نحفظ موضع السكرول الحالي
+            const scrollPos = commentsContainer.scrollTop;
+            const isAtBottom = (commentsContainer.scrollHeight - commentsContainer.scrollTop === commentsContainer.clientHeight);
+        
+            commentsContainer.innerHTML = '';
+            
+            if(!comments || comments.length === 0) {
+                commentsContainer.innerHTML = '<div class="flex flex-col items-center justify-center py-10 opacity-50"><i class="far fa-comments text-4xl mb-2 text-slate-300"></i><p class="text-xs text-slate-400">لا توجد مناقشات بعد.</p></div>';
+            } else {
+                comments.forEach(c => {
+                    const isSystem = c.user === 'system';
+                    if (isSystem) {
+                        commentsContainer.innerHTML += `
+                            <div class="flex justify-center my-2">
+                                <span class="bg-slate-100 text-slate-500 text-[9px] px-3 py-1 rounded-full font-bold border border-slate-200">
+                                    ${c.text} • ${moment(c.time).format('h:mm A')}
+                                </span>
+                            </div>`;
+                    } else {
+                        const isMe = c.user === currentUser.email;
+                        commentsContainer.innerHTML += `
+                            <div class="flex gap-3 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in">
+                                <img src="${DEFAULT_PHOTO + encodeURIComponent(c.name)}" class="w-8 h-8 rounded-full border border-slate-200 bg-white object-cover shadow-sm">
+                                <div class="max-w-[85%]">
+                                    <div class="flex items-center gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
+                                        <span class="text-[10px] font-bold text-slate-700">${c.name}</span>
+                                        <span class="text-[9px] text-slate-400">${moment(c.time).fromNow()}</span>
+                                    </div>
+                                    <div class="p-3 rounded-2xl ${isMe ? 'bg-primary-600 text-white rounded-tl-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tr-none'} text-xs leading-relaxed shadow-sm">
+                                        <p class="whitespace-pre-wrap font-cairo">${c.text}</p>
+                                        ${c.file ? `<div class="mt-2 pt-2 border-t ${isMe ? 'border-white/20' : 'border-slate-100'}"><img src="${c.file}" class="max-w-full rounded-lg cursor-pointer hover:opacity-90" onclick="openImagePreview(this.src)"></div>` : ''}
+                                    </div>
+                                </div>
+                            </div>`;
+                    }
+                });
+            }
+        
+            // لو كنت تحت خالص، انزل لتحت مع الرسالة الجديدة
+            if(isAtBottom) {
+                commentsContainer.scrollTop = commentsContainer.scrollHeight;
+            } else {
+                commentsContainer.scrollTop = scrollPos;
+            }
+        }
+        
+        // دالة لتحديث عنوان وحالة التاسك في التفاصيل
+        function updateTaskDetailHeader(task) {
+            const statusColors = {'started': 'bg-green-100 text-green-700', 'working': 'bg-blue-100 text-blue-700', 'done': 'bg-red-100 text-red-700'};
+            const statusNames = {'started': 'بدأ العمل', 'working': 'جاري العمل', 'done': 'تم الانتهاء'};
+            const currentStatus = task.status || 'started';
+            
+            const statusHTML = `<span class="px-3 py-1 ml-2 rounded-full text-xs font-black ${statusColors[currentStatus]}">${statusNames[currentStatus]}</span>`;
+            // نحدث فقط لو العنوان اتغير عشان منعملش ريفريش يضايق العين
+            const currentHTML = document.getElementById('task-detail-title').innerHTML;
+            if(!currentHTML.includes(statusNames[currentStatus])) {
+                document.getElementById('task-detail-title').innerHTML = task.title + statusHTML;
+            }
+        }
     </script>
 </body>
 </html>
+
 
 
