@@ -2479,13 +2479,12 @@ function createStatusControls(task, taskStatus) {
                 return;
             }
         
-            statusEl.innerText = "جاري تحليل البيانات واحتساب الوقت الجاري...";
+            statusEl.innerText = "جاري تنظيف البيانات واحتساب الأوقات...";
             resultsArea.classList.add('hidden');
         
             const oldDetails = document.getElementById('report-details-table');
             if(oldDetails) oldDetails.remove();
         
-            // ضبط التوقيت بدقة
             const start = new Date(dateFrom); start.setHours(0, 0, 0, 0);
             const end = new Date(dateTo); end.setHours(23, 59, 59, 999);
             const todayStr = moment().format('YYYY-MM-DD');
@@ -2503,118 +2502,97 @@ function createStatusControls(task, taskStatus) {
         
                 const snapshot = await query.get();
                 
-                // تجهيز المتغيرات
                 const dataGrouped = {};
                 let grandTotals = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
                 let tableRows = '';
         
-                // 1. حساب السجلات المغلقة (من الداتا بيز)
                 snapshot.forEach(doc => {
                     const d = doc.data();
                     const userName = d.name || d.user;
-                    const status = d.from_status; // الحالة التي قضاها
+                    const status = d.from_status; 
+                    const toStatus = d.to_status; // الحالة الجديدة
                     const duration = parseInt(d.duration_ms) || 0;
                     const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
         
+                    // 1. الحسابات (نحسب كل شيء بدقة حتى لو مكرر)
                     if (status !== 'Offline') {
-                        // التجميع للإكسيل
                         if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
                         if (!dataGrouped[dateKey][userName]) {
                             dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
                         }
                         
-                        // التأكد من وجود مفتاح للحالة لتجنب الأخطاء
                         if (!dataGrouped[dateKey][userName][status]) dataGrouped[dateKey][userName][status] = 0;
                         
                         dataGrouped[dateKey][userName][status] += duration;
                         dataGrouped[dateKey][userName].Total += duration;
                         
-                        // التجميع الكلي للبطاقات
                         if(grandTotals.hasOwnProperty(status)) {
                             grandTotals[status] += duration;
                             grandTotals.Total += duration;
                         }
                     }
         
-                    // بناء صفوف الجدول
-                    const logDate = moment(d.end_time.toDate());
-                    tableRows += `
-                        <tr class="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
-                            <td class="p-3 text-xs font-bold">${d.name}</td>
-                            <td class="p-3 text-[10px] text-slate-500">${logDate.format('YYYY-MM-DD')}</td>
-                            <td class="p-3 text-[10px] font-mono">${logDate.format('hh:mm A')}</td>
-                            <td class="p-3 text-xs">
-                                <span class="text-slate-400">${d.from_status}</span> 
-                                <i class="fas fa-arrow-left text-[8px] mx-1"></i> 
-                                <span class="font-bold text-primary-600">${d.to_status}</span>
-                            </td>
-                            <td class="p-3 text-xs font-bold font-mono">${formatTime(d.duration_ms)}</td>
-                        </tr>`;
+                    // 2. العرض في الجدول (هنا الفلتر الذكي)
+                    // الشرط: لا تعرض السطر إذا كانت الحالة السابقة = الحالة الحالية
+                    if (status !== toStatus) { 
+                        const logDate = moment(d.end_time.toDate());
+                        tableRows += `
+                            <tr class="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                                <td class="p-3 text-xs font-bold">${d.name}</td>
+                                <td class="p-3 text-[10px] text-slate-500">${logDate.format('YYYY-MM-DD')}</td>
+                                <td class="p-3 text-[10px] font-mono">${logDate.format('hh:mm A')}</td>
+                                <td class="p-3 text-xs">
+                                    <span class="text-slate-400">${d.from_status}</span> 
+                                    <i class="fas fa-arrow-left text-[8px] mx-1"></i> 
+                                    <span class="font-bold text-primary-600">${d.to_status}</span>
+                                </td>
+                                <td class="p-3 text-xs font-bold font-mono">${formatTime(d.duration_ms)}</td>
+                            </tr>`;
+                    }
                 });
         
-                // 2. (الجزء الجديد الهام) إضافة الوقت "الحي" الجاري الآن
-                // يتم هذا فقط إذا كان التقرير يشمل "اليوم"
+                // إضافة الوقت الجاري (كما هو)
                 if (isTodayIncluded) {
                     allUsersData.forEach(u => {
-                        // تصفية المستخدم المحدد
                         if (userEmail !== "all" && u.email !== userEmail) return;
-                        
-                        // هل المستخدم متصل الآن؟ (ليس Offline)
                         if (u.status !== 'Offline') {
                             const now = Date.now();
                             let liveStatus = u.status;
                             let startTime = getMillis(u.lastChange);
-                            
-                            // لو هو Idle حالياً، نحسب وقته في Idle
-                            if (u.isIdle) {
-                                liveStatus = 'Idle';
-                                startTime = getMillis(u.idleSince);
-                            }
-        
+                            if (u.isIdle) { liveStatus = 'Idle'; startTime = getMillis(u.idleSince); }
                             const liveDuration = now - startTime;
         
-                            // إضافة الوقت للإجماليات (البطاقات)
                             if (grandTotals.hasOwnProperty(liveStatus)) {
                                 grandTotals[liveStatus] += liveDuration;
                                 grandTotals.Total += liveDuration;
                             }
-        
-                            // إضافة الوقت لبيانات الإكسيل (تحت تاريخ اليوم)
                             if (!dataGrouped[todayStr]) dataGrouped[todayStr] = {};
-                            if (!dataGrouped[todayStr][u.name]) {
-                                dataGrouped[todayStr][u.name] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
-                            }
+                            if (!dataGrouped[todayStr][u.name]) dataGrouped[todayStr][u.name] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
                             if (!dataGrouped[todayStr][u.name][liveStatus]) dataGrouped[todayStr][u.name][liveStatus] = 0;
         
                             dataGrouped[todayStr][u.name][liveStatus] += liveDuration;
                             dataGrouped[todayStr][u.name].Total += liveDuration;
         
-                            // (اختياري) إضافة سطر في الجدول يوضح "جلسة جارية"
                             tableRows = `
                                 <tr class="bg-green-50 dark:bg-green-900/10 border-b border-green-100 animate-pulse">
                                     <td class="p-3 text-xs font-bold text-green-700">${u.name}</td>
                                     <td class="p-3 text-[10px] text-green-600">اليوم</td>
                                     <td class="p-3 text-[10px] font-mono">الآن</td>
-                                    <td class="p-3 text-xs text-green-700 font-bold">
-                                        ${liveStatus} (جلسة جارية)
-                                    </td>
+                                    <td class="p-3 text-xs text-green-700 font-bold">${liveStatus} (جلسة جارية)</td>
                                     <td class="p-3 text-xs font-bold font-mono text-green-700">${formatTime(liveDuration)}</td>
-                                </tr>
-                            ` + tableRows; // إضافتها في أول الجدول
+                                </tr>` + tableRows; 
                         }
                     });
                 }
         
-                // 3. عرض النتائج
                 if (grandTotals.Total === 0 && snapshot.empty) {
-                    statusEl.innerText = "لا توجد بيانات (سجلات أو نشاط حالي) في هذه الفترة.";
+                    statusEl.innerText = "لا توجد بيانات.";
                     return;
                 }
         
                 resultsArea.classList.remove('hidden');
                 summaryCards.innerHTML = "";
-                
-                const statusLabels = { Online: 'ساعات العمل', Break: 'الاستراحة', Meeting: 'الاجتماعات', Idle: 'وقت الخمول' };
+                const statusLabels = { Online: 'العمل', Break: 'الاستراحة', Meeting: 'الاجتماعات', Idle: 'وقت الخمول' };
                 const colors = { Online: 'text-green-600', Break: 'text-orange-500', Meeting: 'text-blue-500', Idle: 'text-red-500' };
         
                 Object.keys(statusLabels).forEach(key => {
@@ -2629,7 +2607,7 @@ function createStatusControls(task, taskStatus) {
                 const detailsSection = `
                     <div id="report-details-table" class="mt-8 border-t dark:border-slate-700 pt-6">
                         <h4 class="text-sm font-black mb-4 text-slate-600 dark:text-slate-300 flex items-center gap-2">
-                            <i class="fas fa-list-ul"></i> سجل الحركات التفصيلي
+                            <i class="fas fa-list-ul"></i> سجل الحركات الفعلي (التغيرات فقط)
                         </h4>
                         <div class="overflow-x-auto max-h-[300px] custom-scrollbar rounded-xl border border-slate-200 dark:border-slate-700">
                             <table class="w-full text-right bg-white dark:bg-slate-800">
@@ -2642,23 +2620,18 @@ function createStatusControls(task, taskStatus) {
                                         <th class="p-3">المدة</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    ${tableRows}
-                                </tbody>
+                                <tbody>${tableRows}</tbody>
                             </table>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 
                 resultsArea.insertAdjacentHTML('beforeend', detailsSection);
-        
-                // تحميل ملف Excel
                 downloadDetailedExcel(dataGrouped, dateFrom, dateTo);
-                statusEl.innerText = "تم احتساب الوقت الفعلي (السجلات + الوقت الجاري).";
+                statusEl.innerText = "تم استخراج التقرير الفعلي (بدون تكرار).";
         
             } catch (error) {
                 console.error(error);
-                statusEl.innerText = "خطأ في الاتصال بقاعدة البيانات.";
+                statusEl.innerText = "خطأ في الاتصال.";
             }
         }
         function downloadDetailedExcel(dataGrouped, from, to) {
@@ -2703,9 +2676,9 @@ function createStatusControls(task, taskStatus) {
             const loader = document.getElementById('logs-loader');
             const emptyState = document.getElementById('logs-empty');
             
-            // تحديث التاريخ في العنوان
+            if (!timelineContainer) { alert("خطأ HTML"); return; }
+        
             document.getElementById('logs-subtitle').innerText = `حركات اليوم: ${moment().format('dddd, DD MMMM YYYY')}`;
-            
             modal.classList.remove('hidden');
             timelineContainer.innerHTML = '';
             emptyState.classList.add('hidden');
@@ -2717,89 +2690,72 @@ function createStatusControls(task, taskStatus) {
             try {
                 const snapshot = await db.collection('logs')
                     .where('user', '==', email)
-                    .where('end_time', '>=', startOfDay)
-                    .where('end_time', '<=', endOfDay)
-                    .orderBy('end_time', 'desc')
+                    .limit(100) 
                     .get();
         
                 loader.classList.add('hidden');
                 
-                if (snapshot.empty) {
+                let logs = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const logDate = data.end_time.toDate();
+                    // فلتر 1: حركات اليوم فقط
+                    // فلتر 2: تجاهل الحركات المكررة (من نفس الحالة لنفس الحالة)
+                    if (logDate >= startOfDay && logDate <= endOfDay && data.from_status !== data.to_status) {
+                        logs.push(data);
+                    }
+                });
+        
+                logs.sort((a, b) => b.end_time.toDate() - a.end_time.toDate());
+        
+                if (logs.length === 0) {
                     emptyState.classList.remove('hidden');
                     return;
                 }
         
-                snapshot.forEach((doc, index) => {
-                    const log = doc.data();
+                logs.forEach((log, index) => {
                     const time = moment(log.end_time.toDate()).format('h:mm A');
-                    const date = moment(log.end_time.toDate()).format('YYYY-MM-DD');
-                    const duration = formatDurationText(log.duration_ms); // دالة مساعدة لتنسيق الوقت كنص
+                    const duration = formatDurationText(log.duration_ms); 
                     
-                    // إعدادات التصميم حسب الحالة الجديدة
                     let statusConfig = { color: 'bg-slate-500', icon: 'fa-power-off', text: 'text-slate-600', label: log.to_status, bg: 'bg-slate-50' };
-                    
-                    if(log.to_status === 'Online') {
-                        statusConfig = { color: 'bg-green-500', icon: 'fa-laptop', text: 'text-green-600', label: 'بدأ العمل (Online)', bg: 'bg-green-50' };
-                    } else if(log.to_status === 'Break') {
-                        statusConfig = { color: 'bg-orange-500', icon: 'fa-coffee', text: 'text-orange-600', label: 'استراحة (Break)', bg: 'bg-orange-50' };
-                    } else if(log.to_status === 'Meeting') {
-                        statusConfig = { color: 'bg-blue-500', icon: 'fa-users', text: 'text-blue-600', label: 'اجتماع (Meeting)', bg: 'bg-blue-50' };
-                    } else if(log.to_status === 'Idle' || log.from_status.includes('Idle')) { // التعامل مع حالات الخمول
-                        statusConfig = { color: 'bg-red-500', icon: 'fa-pause', text: 'text-red-600', label: 'توقف/خمول', bg: 'bg-red-50' };
-                    }
+                    if(log.to_status === 'Online') statusConfig = { color: 'bg-green-500', icon: 'fa-laptop', text: 'text-green-600', label: 'بدأ العمل (Online)', bg: 'bg-green-50' };
+                    else if(log.to_status === 'Break') statusConfig = { color: 'bg-orange-500', icon: 'fa-coffee', text: 'text-orange-600', label: 'استراحة (Break)', bg: 'bg-orange-50' };
+                    else if(log.to_status === 'Meeting') statusConfig = { color: 'bg-blue-500', icon: 'fa-users', text: 'text-blue-600', label: 'اجتماع (Meeting)', bg: 'bg-blue-50' };
+                    else if(log.to_status === 'Idle' || (log.from_status && log.from_status.includes('Idle'))) statusConfig = { color: 'bg-red-500', icon: 'fa-pause', text: 'text-red-600', label: 'توقف/خمول', bg: 'bg-red-50' };
         
-                    // تحديد من قام بالحركة
-                    let actorHTML = '';
-                    if (log.auto) {
-                        actorHTML = `<span class="flex items-center gap-1 text-[10px] text-slate-400 bg-slate-100 px-2 py-1 rounded-full"><i class="fas fa-robot text-slate-500"></i> النظام (تلقائي)</span>`;
-                    } else {
-                        actorHTML = `<span class="flex items-center gap-1 text-[10px] text-blue-500 bg-blue-50 px-2 py-1 rounded-full"><i class="fas fa-hand-pointer"></i> تغيير يدوي</span>`;
-                    }
+                    let actorHTML = log.auto ? `<span class="flex items-center gap-1 text-[10px] text-slate-400 bg-slate-100 px-2 py-1 rounded-full"><i class="fas fa-robot text-slate-500"></i> النظام</span>` : `<span class="flex items-center gap-1 text-[10px] text-blue-500 bg-blue-50 px-2 py-1 rounded-full"><i class="fas fa-hand-pointer"></i> يدوي</span>`;
         
-                    // إنشاء عنصر الخط الزمني
                     const html = `
                     <div class="relative animate-fade-in" style="animation-delay: ${index * 0.05}s">
                         <span class="absolute -right-[9px] top-4 w-4 h-4 rounded-full ${statusConfig.color} border-4 border-white dark:border-slate-800 shadow-sm z-10"></span>
-                        
                         <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
-                            
                             <div class="flex justify-between items-start mb-2">
                                 <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-lg ${statusConfig.bg} ${statusConfig.text} flex items-center justify-center">
-                                        <i class="fas ${statusConfig.icon}"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-sm font-bold ${statusConfig.text}">${statusConfig.label}</h4>
-                                        <p class="text-[10px] text-slate-400 font-mono">${time}</p>
-                                    </div>
+                                    <div class="w-8 h-8 rounded-lg ${statusConfig.bg} ${statusConfig.text} flex items-center justify-center"><i class="fas ${statusConfig.icon}"></i></div>
+                                    <div><h4 class="text-sm font-bold ${statusConfig.text}">${statusConfig.label}</h4><p class="text-[10px] text-slate-400 font-mono">${time}</p></div>
                                 </div>
                                 ${actorHTML}
                             </div>
-        
                             <div class="flex items-center gap-3 mt-3 pt-3 border-t border-slate-50 dark:border-slate-700">
                                 <div class="flex-1 text-center border-l border-slate-100 dark:border-slate-700 pl-3">
                                     <p class="text-[9px] text-slate-400 mb-1">الحالة السابقة</p>
-                                    <p class="text-xs font-bold text-slate-600 dark:text-slate-300">${log.from_status}</p>
+                                    <p class="text-xs font-bold text-slate-600 dark:text-slate-300">${log.from_status || 'غير معروف'}</p>
                                 </div>
                                 <div class="flex-1 text-center">
                                     <p class="text-[9px] text-slate-400 mb-1">المدة المستغرقة</p>
                                     <p class="text-xs font-black font-mono text-slate-800 dark:text-white">${duration}</p>
                                 </div>
                             </div>
-        
                         </div>
                     </div>`;
-                    
                     timelineContainer.innerHTML += html;
                 });
-        
             } catch (error) { 
                 console.error(error);
                 loader.classList.add('hidden');
-                timelineContainer.innerHTML = '<p class="text-center text-red-500 text-xs">حدث خطأ في جلب البيانات</p>';
+                timelineContainer.innerHTML = `<div class="p-4 text-center text-red-500 text-xs font-bold bg-red-50 rounded-xl">حدث خطأ في تحميل البيانات.</div>`;
             }
-        }
-        
+        }       
         // دالة مساعدة لتنسيق الوقت بشكل نصي مقروء
         function formatDurationText(ms) {
             if (!ms || ms < 0) return "0 دقيقة";
@@ -3252,6 +3208,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
