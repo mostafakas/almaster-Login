@@ -95,6 +95,61 @@
         .dark-mode .task-list-item:hover { background-color: #334155; }
         .task-list-item.active { background-color: #eff6ff; border-right-color: #3b82f6; }
         .dark-mode .task-list-item.active { background-color: #1e293b; border-right-color: #3b82f6; }
+        
+                /* --- تنسيقات حالات المهام الجديدة --- */
+        .status-pill {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0.6;
+        }
+        .status-pill:hover { opacity: 0.8; transform: scale(1.05); }
+        .status-pill.active { opacity: 1; border-color: rgba(0,0,0,0.1); box-shadow: 0 2px 4px rgba(0,0,0,0.1); transform: scale(1.05); }
+        
+        /* ألوان الحالات */
+        .status-started.active { background-color: #f3f4f6; color: #374151; border-color: #d1d5db; } /* رمادي */
+        .status-working.active { background-color: #e0f2fe; color: #0284c7; border-color: #7dd3fc; } /* أزرق */
+        .status-done.active { background-color: #dcfce7; color: #16a34a; border-color: #86efac; } /* أخضر */
+        
+        /* تحسين شكل بطاقة التاسك */
+        .task-card-modern {
+            background: white;
+            border: 1px solid #f1f5f9;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .dark-mode .task-card-modern { background: #1e293b; border-color: #334155; }
+        .task-card-modern:hover { border-color: #0ea5e9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .task-card-modern.active { border-right: 4px solid #0ea5e9; background: #f0f9ff; }
+        .dark-mode .task-card-modern.active { background: #0c4a6e; }
+        
+        /* أزرار الأكشن للمدير */
+        .admin-action-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .btn-edit { background: #eff6ff; color: #2563eb; }
+        .btn-edit:hover { background: #2563eb; color: white; }
+        .btn-delete { background: #fef2f2; color: #dc2626; }
+        .btn-delete:hover { background: #dc2626; color: white; }
     </style>
 </head>
 
@@ -1026,83 +1081,213 @@
                 return;
             }
 
+            // ترتيب المهام: الأحدث أولاً
             tasks.sort((a, b) => b.id - a.id);
 
+            const isAdmin = userProfile.role === 'admin';
+
             tasks.forEach((task, idx) => {
+                const isMyTask = task.ownerEmail === currentUser.email;
+                const taskStatus = task.status || 'started'; // Default status
+
                 const el = document.createElement('div');
-                el.className = `task-list-item p-4 mb-2 bg-white dark:bg-slate-800 rounded-2xl cursor-pointer shadow-sm border border-slate-100 dark:border-slate-700/50`;
-                el.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <div>
-                            <h4 class="font-bold text-sm text-slate-800 dark:text-white truncate max-w-[150px]">${task.title}</h4>
-                            ${userProfile.role === 'admin' ? `<p class="text-[9px] text-primary-500 font-bold">${task.ownerName}</p>` : ''}
+                el.className = `task-card-modern cursor-pointer group`;
+                el.onclick = (e) => {
+                    // منع فتح التفاصيل عند الضغط على أزرار التحكم
+                    if(e.target.closest('.no-click')) return;
+                    showTaskDetail(task, idx);
+                };
+
+                // محتوى البطاقة
+                let statusControls = '';
+                let adminControls = '';
+
+                // 1. لو موظف (وهذه مهمته): عرض أزرار الحالة
+                if (!isAdmin && isMyTask) {
+                    statusControls = `
+                    <div class="flex gap-1 mt-3 pt-2 border-t border-slate-100 dark:border-slate-700 no-click">
+                        <div onclick="updateTaskStatus(${task.id}, 'started', '${task.ownerEmail}')" class="status-pill status-started flex-1 ${taskStatus === 'started' ? 'active' : 'bg-slate-50 text-slate-400'}">
+                            <i class="fas fa-play text-[8px]"></i> بدأ
                         </div>
-                        <span class="text-[9px] bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-500">${moment(task.id).format('DD/MM')}</span>
+                        <div onclick="updateTaskStatus(${task.id}, 'working', '${task.ownerEmail}')" class="status-pill status-working flex-1 ${taskStatus === 'working' ? 'active' : 'bg-slate-50 text-slate-400'}">
+                            <i class="fas fa-spinner fa-spin text-[8px]"></i> جاري
+                        </div>
+                        <div onclick="updateTaskStatus(${task.id}, 'done', '${task.ownerEmail}')" class="status-pill status-done flex-1 ${taskStatus === 'done' ? 'active' : 'bg-slate-50 text-slate-400'}">
+                            <i class="fas fa-check text-[8px]"></i> تم
+                        </div>
+                    </div>`;
+                }
+
+                // 2. لو مدير: عرض أزرار التعديل والحذف + اسم الموظف
+                if (isAdmin) {
+                    adminControls = `
+                    <div class="flex gap-2 items-center no-click">
+                        <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; openEditTaskModal()" class="admin-action-btn btn-edit" title="تعديل"><i class="fas fa-pen"></i></button>
+                        <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; deleteCurrentTask()" class="admin-action-btn btn-delete" title="حذف"><i class="fas fa-trash"></i></button>
+                    </div>`;
+                }
+
+                // أيقونة الحالة بجانب العنوان للمدير ليعرف حالة الموظف
+                let statusIcon = '';
+                if(taskStatus === 'done') statusIcon = '<i class="fas fa-check-circle text-green-500 ml-1"></i>';
+                else if(taskStatus === 'working') statusIcon = '<i class="fas fa-spinner fa-spin text-blue-500 ml-1"></i>';
+
+                el.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-black text-sm text-slate-800 dark:text-white truncate flex items-center">
+                                ${statusIcon} ${task.title}
+                            </h4>
+                            <p class="text-[10px] text-primary-600 font-bold mt-0.5">
+                                <i class="fas fa-user-tie ml-1"></i> ${task.createdBy || 'Admin'}
+                            </p>
+                            ${isAdmin ? `<p class="text-[10px] text-slate-400 font-bold mt-0.5"><i class="fas fa-user ml-1"></i> الموظف: ${task.ownerName}</p>` : ''}
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="text-[9px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500 font-mono">${moment(task.id).format('DD/MM')}</span>
+                            ${adminControls}
+                        </div>
                     </div>
-                    <p class="text-[10px] text-slate-400 truncate">${task.desc ? task.desc.substring(0, 40) + '...' : 'لا يوجد وصف'}</p>
+                    
+                    <p class="text-[10px] text-slate-400 truncate border-l-2 border-slate-200 pl-2 mb-1">
+                        ${task.desc ? task.desc.substring(0, 35) + '...' : 'لا يوجد تفاصيل'}
+                    </p>
+                    
+                    ${statusControls}
                 `;
-                el.onclick = () => showTaskDetail(task, idx);
+                
                 listContainer.appendChild(el);
             });
         }
 
+        async function updateTaskStatus(taskId, newStatus, ownerEmail) {
+            // تحديث الواجهة فوراً لسرعة الاستجابة
+            // نعيد تحميل القائمة لاحقاً لتأكيد البيانات
+            
+            const userRef = db.collection('users').doc(ownerEmail);
+            const doc = await userRef.get();
+            if (!doc.exists) return;
+
+            let tasks = doc.data().tasks || [];
+            const taskIndex = tasks.findIndex(t => t.id === taskId);
+            
+            if (taskIndex > -1) {
+                tasks[taskIndex].status = newStatus;
+                
+                // إضافة تعليق تلقائي في الشات عند تغيير الحالة (اختياري لجعل الأمر احترافي)
+                const statusNames = {'started': 'بدأ العمل 🟡', 'working': 'جاري العمل 🔵', 'done': 'أنهى المهمة 🟢'};
+                const sysComment = {
+                    user: 'system',
+                    name: 'النظام',
+                    text: `تم تغيير حالة المهمة إلى: ${statusNames[newStatus]}`,
+                    time: Date.now()
+                };
+                if (!tasks[taskIndex].comments) tasks[taskIndex].comments = [];
+                tasks[taskIndex].comments.push(sysComment);
+
+                await userRef.update({ tasks: tasks });
+                
+                // تحديث العرض في حال كان التاسك مفتوحاً
+                if(document.getElementById('current-task-id').value == taskId) {
+                    // تحديث بسيط للهيدر أو إعادة فتح التاسك
+                    const updatedTask = {...tasks[taskIndex], ownerName: doc.data().name, ownerEmail: ownerEmail};
+                    showTaskDetail(updatedTask, taskIndex); // إعادة رسم التفاصيل
+                }
+            }
+        }
+
         function showTaskDetail(task, idx) {
-            document.querySelectorAll('.task-list-item').forEach(e => e.classList.remove('active'));
-            if(document.querySelectorAll('.task-list-item')[idx]) document.querySelectorAll('.task-list-item')[idx].classList.add('active');
+            // Active Class Styling
+            document.querySelectorAll('.task-card-modern').forEach(e => e.classList.remove('active'));
+            if(document.querySelectorAll('.task-card-modern')[idx]) document.querySelectorAll('.task-card-modern')[idx].classList.add('active');
 
             document.getElementById('task-empty-view').classList.add('hidden');
             document.getElementById('task-detail-view').classList.remove('hidden');
 
+            // Header Info
             document.getElementById('task-detail-title').innerText = task.title;
             document.getElementById('task-detail-desc').innerText = task.desc;
             document.getElementById('task-detail-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
-            
-            const assigner = task.createdBy || "Admin"; 
-            document.getElementById('task-detail-owner').innerText = assigner;
-            
-            // Show Admin Actions
-            if(userProfile.role === 'admin') {
-                document.getElementById('admin-task-actions').classList.remove('hidden');
-            } else {
-                document.getElementById('admin-task-actions').classList.add('hidden');
-            }
+            document.getElementById('task-detail-owner').innerText = task.createdBy || "Admin";
 
+            // Status Badge in Detail View
+            const statusColors = {'started': 'bg-gray-100 text-gray-600', 'working': 'bg-blue-100 text-blue-600', 'done': 'bg-green-100 text-green-600'};
+            const statusNames = {'started': 'لم يبدأ / جديد', 'working': 'جاري العمل', 'done': 'مكتملة'};
+            const currentStatus = task.status || 'started';
+            
+            // إضافة بادج الحالة بجوار العنوان
+            const statusHTML = `<span class="px-3 py-1 ml-2 rounded-full text-xs font-black ${statusColors[currentStatus]}">${statusNames[currentStatus]}</span>`;
+            document.getElementById('task-detail-title').innerHTML = task.title + statusHTML;
+
+            // Attachments
             const attContainer = document.getElementById('task-detail-attachments');
             attContainer.innerHTML = '';
             if (task.file) {
                 attContainer.innerHTML = `
-                    <a href="${task.file}" download="task_attachment" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold text-primary-600 hover:bg-primary-50 transition border border-slate-200 dark:border-slate-600">
-                        <i class="fas fa-paperclip"></i> تحميل المرفق الرئيسي
-                    </a>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-red-100 text-red-500 rounded-lg flex items-center justify-center"><i class="fas fa-file-pdf"></i></div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-700">مرفق المهمة الأساسي</p>
+                                <p class="text-[10px] text-slate-400">انقر للتحميل</p>
+                            </div>
+                        </div>
+                        <a href="${task.file}" download="task_attachment" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 w-8 h-8 flex items-center justify-center rounded-full transition shadow-sm">
+                            <i class="fas fa-download text-xs"></i>
+                        </a>
+                    </div>
                 `;
             }
 
+            // Chat / Comments Render
             const commentsContainer = document.getElementById('task-comments-list');
             commentsContainer.innerHTML = '';
             
             if(!task.comments || task.comments.length === 0) {
-                commentsContainer.innerHTML = '<p class="text-center text-xs text-slate-400 py-4 italic">لا توجد ملاحظات بعد...</p>';
+                commentsContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-10 opacity-50">
+                        <i class="far fa-comments text-4xl mb-2 text-slate-300"></i>
+                        <p class="text-xs text-slate-400">لا توجد مناقشات بعد. ابدأ المحادثة!</p>
+                    </div>`;
             } else {
                 task.comments.forEach(c => {
-                    const isMe = c.user === currentUser.email;
-                    commentsContainer.innerHTML += `
-                        <div class="flex gap-3 ${isMe ? 'flex-row-reverse' : ''}">
-                            <img src="${DEFAULT_PHOTO + encodeURIComponent(c.name)}" class="w-8 h-8 rounded-full border border-slate-200 bg-white">
-                            <div class="max-w-[85%] p-3 rounded-2xl ${isMe ? 'bg-primary-50 border border-primary-100 text-slate-800' : 'bg-white border border-slate-200'} text-xs leading-relaxed shadow-sm">
-                                <p class="font-bold text-[9px] mb-1 opacity-60 ${isMe ? 'text-left' : 'text-right'}">${c.name} • ${moment(c.time).fromNow()}</p>
-                                <p>${c.text}</p>
-                                ${c.file ? `<div class="mt-2"><img src="${c.file}" class="max-w-[150px] rounded-lg border cursor-pointer hover:opacity-90" onclick="openImagePreview(this.src)"></div>` : ''}
+                    const isSystem = c.user === 'system';
+                    if (isSystem) {
+                        commentsContainer.innerHTML += `
+                            <div class="flex justify-center my-2">
+                                <span class="bg-slate-100 text-slate-500 text-[9px] px-3 py-1 rounded-full font-bold border border-slate-200">
+                                    ${c.text} • ${moment(c.time).format('h:mm A')}
+                                </span>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    } else {
+                        const isMe = c.user === currentUser.email;
+                        commentsContainer.innerHTML += `
+                            <div class="flex gap-3 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in">
+                                <img src="${DEFAULT_PHOTO + encodeURIComponent(c.name)}" class="w-8 h-8 rounded-full border border-slate-200 bg-white object-cover shadow-sm">
+                                <div class="max-w-[85%]">
+                                    <div class="flex items-center gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
+                                        <span class="text-[10px] font-bold text-slate-700">${c.name}</span>
+                                        <span class="text-[9px] text-slate-400">${moment(c.time).fromNow()}</span>
+                                    </div>
+                                    <div class="p-3 rounded-2xl ${isMe ? 'bg-primary-600 text-white rounded-tl-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tr-none'} text-xs leading-relaxed shadow-sm">
+                                        <p class="whitespace-pre-wrap">${c.text}</p>
+                                        ${c.file ? `<div class="mt-2 pt-2 border-t ${isMe ? 'border-white/20' : 'border-slate-100'}"><img src="${c.file}" class="max-w-full rounded-lg cursor-pointer hover:opacity-90 border-2 ${isMe ? 'border-white/30' : 'border-white'}" onclick="openImagePreview(this.src)"></div>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
                 });
             }
-            commentsContainer.scrollTop = commentsContainer.scrollHeight;
+            // Auto scroll to bottom
+            setTimeout(() => { commentsContainer.scrollTop = commentsContainer.scrollHeight; }, 100);
 
+            // Set hidden inputs for interactions
             document.getElementById('current-task-id').value = task.id; 
             document.getElementById('current-task-owner-email').value = task.ownerEmail; 
         }
-
+        
         async function deleteCurrentTask() {
             if(!confirm("هل أنت متأكد من حذف هذه المهمة نهائياً؟")) return;
             
@@ -2398,3 +2583,4 @@
     </script>
 </body>
 </html>
+
