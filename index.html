@@ -929,6 +929,7 @@
                     if (currentUser && data.email === currentUser.email) { 
                         const oldTasks = userProfile.tasks || [];
                         const newTasks = data.tasks || [];
+                        
                         // إشعار بمهمة جديدة
                         if (newTasks.length > oldTasks.length) {
                             playNotification();
@@ -957,9 +958,7 @@
                         const openedTask = updatedTasks.find(t => t.id == currentOpenedTaskId);
                         
                         if (openedTask) {
-                            // تحديث الشات
                             renderTaskComments(openedTask.comments || [], openedTask.ownerEmail);
-                            // تحديث العنوان والحالة داخل التفاصيل
                             updateTaskDetailHeader(openedTask);
                         }
                     }
@@ -968,13 +967,15 @@
                 // 3. إعادة رسم الشبكة الرئيسية
                 renderGrid();
                 
-                // 4. (التعديل الجديد) تحديث القائمة الجانبية للمهام فوراً لتغيير الألوان عند المدير
+                // 4. (التصحيح هنا) تحديث القائمة الجانبية للمهام فوراً
                 const taskModal = document.getElementById('modal-task-center');
                 if (!taskModal.classList.contains('hidden')) {
                     let tasksToShow = [];
-                    
-                    if(userProfile.role === 'admin') {
-                        // تجميع كل مهام الموظفين للمدير
+                    const isAdmin = userProfile.role === 'admin';
+                    const isManager = hasPermission('can_manage_tasks'); // ليدر أو سوبر فايزر
+        
+                    if(isAdmin) {
+                        // المدير يرى كل شيء
                         allUsersData.forEach(u => {
                             if(u.tasks) {
                                 u.tasks.forEach(t => {
@@ -984,15 +985,32 @@
                             }
                         });
                     } else {
-                        // مهام الموظف فقط
+                        // أ. مهامي أنا (المسندة لي)
                         if(userProfile.tasks) {
                             userProfile.tasks.forEach(t => {
                                 const taskWithInfo = {...t, ownerName: "Me", ownerEmail: userProfile.email};
                                 tasksToShow.push(taskWithInfo);
                             });
                         }
+        
+                        // ب. (الجزء المضاف) المهام التي أنشأتها أنا للآخرين
+                        if (isManager) {
+                            allUsersData.forEach(u => {
+                                if (u.email === currentUser.email) return; // تخطي نفسي
+                                if (u.tasks) {
+                                    u.tasks.forEach(t => {
+                                        // الشرط: هل إيميل المنشئ هو إيميلي؟
+                                        if (t.createdByEmail === currentUser.email) {
+                                            const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
+                                            tasksToShow.push(taskWithInfo);
+                                        }
+                                    });
+                                }
+                            });
+                        }
                     }
-                    // إعادة الرسم (هتغير الألوان فوراً)
+                    
+                    // إعادة الرسم
                     renderTaskList(tasksToShow);
                 }
         
@@ -3237,6 +3255,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
