@@ -2465,21 +2465,23 @@ function createStatusControls(task, taskStatus) {
                 return;
             }
         
-            statusEl.innerText = "جاري تحليل البيانات...";
+            statusEl.innerText = "جاري تحليل البيانات واحتساب الوقت الجاري...";
             resultsArea.classList.add('hidden');
         
-            // إزالة أي جدول حركات قديم (لتجنب التكرار عند الضغط مرتين)
             const oldDetails = document.getElementById('report-details-table');
             if(oldDetails) oldDetails.remove();
         
+            // ضبط التوقيت بدقة
             const start = new Date(dateFrom); start.setHours(0, 0, 0, 0);
             const end = new Date(dateTo); end.setHours(23, 59, 59, 999);
+            const todayStr = moment().format('YYYY-MM-DD');
+            const isTodayIncluded = moment(todayStr).isBetween(dateFrom, dateTo, undefined, '[]');
         
             try {
                 let query = db.collection("logs")
                     .where("end_time", ">=", start)
                     .where("end_time", "<=", end)
-                    .orderBy("end_time", "desc"); // ترتيب تنازلي للأحدث
+                    .orderBy("end_time", "desc");
         
                 if (userEmail !== "all") {
                     query = query.where("user", "==", userEmail);
@@ -2487,42 +2489,114 @@ function createStatusControls(task, taskStatus) {
         
                 const snapshot = await query.get();
                 
-                if (snapshot.empty) {
-                    statusEl.innerText = "لا توجد حركات مسجلة في هذه الفترة.";
-                    return;
-                }
-        
-                // 1. حساب الإجماليات (الجزء القديم)
+                // تجهيز المتغيرات
                 const dataGrouped = {};
                 let grandTotals = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+                let tableRows = '';
         
+                // 1. حساب السجلات المغلقة (من الداتا بيز)
                 snapshot.forEach(doc => {
                     const d = doc.data();
                     const userName = d.name || d.user;
-                    const status = d.from_status;
+                    const status = d.from_status; // الحالة التي قضاها
                     const duration = parseInt(d.duration_ms) || 0;
                     const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
         
-                    // تجميع للـ Excel والإجماليات
                     if (status !== 'Offline') {
+                        // التجميع للإكسيل
                         if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
                         if (!dataGrouped[dateKey][userName]) {
                             dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
                         }
-                        if (dataGrouped[dateKey][userName].hasOwnProperty(status)) {
-                            dataGrouped[dateKey][userName][status] += duration;
-                            dataGrouped[dateKey][userName].Total += duration;
-                            
-                            // تجميع كلي للبطاقات
-                            if(grandTotals.hasOwnProperty(status)) {
-                                grandTotals[status] += duration;
-                                grandTotals.Total += duration;
-                            }
+                        
+                        // التأكد من وجود مفتاح للحالة لتجنب الأخطاء
+                        if (!dataGrouped[dateKey][userName][status]) dataGrouped[dateKey][userName][status] = 0;
+                        
+                        dataGrouped[dateKey][userName][status] += duration;
+                        dataGrouped[dateKey][userName].Total += duration;
+                        
+                        // التجميع الكلي للبطاقات
+                        if(grandTotals.hasOwnProperty(status)) {
+                            grandTotals[status] += duration;
+                            grandTotals.Total += duration;
                         }
                     }
+        
+                    // بناء صفوف الجدول
+                    const logDate = moment(d.end_time.toDate());
+                    tableRows += `
+                        <tr class="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                            <td class="p-3 text-xs font-bold">${d.name}</td>
+                            <td class="p-3 text-[10px] text-slate-500">${logDate.format('YYYY-MM-DD')}</td>
+                            <td class="p-3 text-[10px] font-mono">${logDate.format('hh:mm A')}</td>
+                            <td class="p-3 text-xs">
+                                <span class="text-slate-400">${d.from_status}</span> 
+                                <i class="fas fa-arrow-left text-[8px] mx-1"></i> 
+                                <span class="font-bold text-primary-600">${d.to_status}</span>
+                            </td>
+                            <td class="p-3 text-xs font-bold font-mono">${formatTime(d.duration_ms)}</td>
+                        </tr>`;
                 });
         
-                // عرض النتائج
+                // 2. (الجزء الجديد الهام) إضافة الوقت "الحي" الجاري الآن
+                // يتم هذا فقط إذا كان التقرير يشمل "اليوم"
+                if (isTodayIncluded) {
+                    allUsersData.forEach(u => {
+                        // تصفية المستخدم المحدد
+                        if (userEmail !== "all" && u.email !== userEmail) return;
+                        
+                        // هل المستخدم متصل الآن؟ (ليس Offline)
+                        if (u.status !== 'Offline') {
+                            const now = Date.now();
+                            let liveStatus = u.status;
+                            let startTime = getMillis(u.lastChange);
+                            
+                            // لو هو Idle حالياً، نحسب وقته في Idle
+                            if (u.isIdle) {
+                                liveStatus = 'Idle';
+                                startTime = getMillis(u.idleSince);
+                            }
+        
+                            const liveDuration = now - startTime;
+        
+                            // إضافة الوقت للإجماليات (البطاقات)
+                            if (grandTotals.hasOwnProperty(liveStatus)) {
+                                grandTotals[liveStatus] += liveDuration;
+                                grandTotals.Total += liveDuration;
+                            }
+        
+                            // إضافة الوقت لبيانات الإكسيل (تحت تاريخ اليوم)
+                            if (!dataGrouped[todayStr]) dataGrouped[todayStr] = {};
+                            if (!dataGrouped[todayStr][u.name]) {
+                                dataGrouped[todayStr][u.name] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
+                            }
+                            if (!dataGrouped[todayStr][u.name][liveStatus]) dataGrouped[todayStr][u.name][liveStatus] = 0;
+        
+                            dataGrouped[todayStr][u.name][liveStatus] += liveDuration;
+                            dataGrouped[todayStr][u.name].Total += liveDuration;
+        
+                            // (اختياري) إضافة سطر في الجدول يوضح "جلسة جارية"
+                            tableRows = `
+                                <tr class="bg-green-50 dark:bg-green-900/10 border-b border-green-100 animate-pulse">
+                                    <td class="p-3 text-xs font-bold text-green-700">${u.name}</td>
+                                    <td class="p-3 text-[10px] text-green-600">اليوم</td>
+                                    <td class="p-3 text-[10px] font-mono">الآن</td>
+                                    <td class="p-3 text-xs text-green-700 font-bold">
+                                        ${liveStatus} (جلسة جارية)
+                                    </td>
+                                    <td class="p-3 text-xs font-bold font-mono text-green-700">${formatTime(liveDuration)}</td>
+                                </tr>
+                            ` + tableRows; // إضافتها في أول الجدول
+                        }
+                    });
+                }
+        
+                // 3. عرض النتائج
+                if (grandTotals.Total === 0 && snapshot.empty) {
+                    statusEl.innerText = "لا توجد بيانات (سجلات أو نشاط حالي) في هذه الفترة.";
+                    return;
+                }
+        
                 resultsArea.classList.remove('hidden');
                 summaryCards.innerHTML = "";
                 
@@ -2538,36 +2612,10 @@ function createStatusControls(task, taskStatus) {
                 });
                 totalDurationText.innerText = formatDuration(grandTotals.Total);
         
-                // 2. (الجزء الجديد) إنشاء جدول الحركات التفصيلي
-                // سنقوم بإنشاء HTML Table وإضافته أسفل الإجماليات
-                let tableRows = '';
-                snapshot.forEach(doc => {
-                    const log = doc.data();
-                    const logDate = moment(log.end_time.toDate());
-                    
-                    // تخطي Offline لأنه مجرد خروج
-                    // إذا كنت تريد عرض تسجيلات الخروج أيضاً، احذف هذا الشرط
-                    // if(log.from_status === 'Offline') return; 
-        
-                    tableRows += `
-                        <tr class="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
-                            <td class="p-3 text-xs font-bold">${log.name}</td>
-                            <td class="p-3 text-[10px] text-slate-500">${logDate.format('YYYY-MM-DD')}</td>
-                            <td class="p-3 text-[10px] font-mono">${logDate.format('hh:mm A')}</td>
-                            <td class="p-3 text-xs">
-                                <span class="text-slate-400">${log.from_status}</span> 
-                                <i class="fas fa-arrow-left text-[8px] mx-1"></i> 
-                                <span class="font-bold text-primary-600">${log.to_status}</span>
-                            </td>
-                            <td class="p-3 text-xs font-bold font-mono">${formatTime(log.duration_ms)}</td>
-                        </tr>
-                    `;
-                });
-        
                 const detailsSection = `
                     <div id="report-details-table" class="mt-8 border-t dark:border-slate-700 pt-6">
                         <h4 class="text-sm font-black mb-4 text-slate-600 dark:text-slate-300 flex items-center gap-2">
-                            <i class="fas fa-list-ul"></i> سجل الحركات التفصيلي للفترة
+                            <i class="fas fa-list-ul"></i> سجل الحركات التفصيلي
                         </h4>
                         <div class="overflow-x-auto max-h-[300px] custom-scrollbar rounded-xl border border-slate-200 dark:border-slate-700">
                             <table class="w-full text-right bg-white dark:bg-slate-800">
@@ -2588,16 +2636,15 @@ function createStatusControls(task, taskStatus) {
                     </div>
                 `;
                 
-                // إضافة الجدول للواجهة
                 resultsArea.insertAdjacentHTML('beforeend', detailsSection);
         
-                // تحميل ملف Excel (كما هو)
+                // تحميل ملف Excel
                 downloadDetailedExcel(dataGrouped, dateFrom, dateTo);
-                statusEl.innerText = "تم عرض التقرير وتحميل ملف Excel.";
+                statusEl.innerText = "تم احتساب الوقت الفعلي (السجلات + الوقت الجاري).";
         
             } catch (error) {
                 console.error(error);
-                statusEl.innerText = "خطأ: قد تحتاج لإنشاء Index في Firebase (افحص الكونسول).";
+                statusEl.innerText = "خطأ في الاتصال بقاعدة البيانات.";
             }
         }
         function downloadDetailedExcel(dataGrouped, from, to) {
@@ -3140,6 +3187,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
