@@ -2699,25 +2699,22 @@ function createStatusControls(task, taskStatus) {
 
         async function viewLogs(email) {
             const modal = document.getElementById('modal-logs');
-            const tableBody = document.getElementById('logs-table-body');
+            const timelineContainer = document.getElementById('logs-timeline');
             const loader = document.getElementById('logs-loader');
+            const emptyState = document.getElementById('logs-empty');
             
-            // تغيير العنوان ليوضح أنه سجل اليوم
-            modal.querySelector('h3').innerHTML = `سجل حركات اليوم <span class="text-xs text-primary-500">(${moment().format('YYYY-MM-DD')})</span>`;
+            // تحديث التاريخ في العنوان
+            document.getElementById('logs-subtitle').innerText = `حركات اليوم: ${moment().format('dddd, DD MMMM YYYY')}`;
             
             modal.classList.remove('hidden');
-            tableBody.innerHTML = '';
+            timelineContainer.innerHTML = '';
+            emptyState.classList.add('hidden');
             loader.classList.remove('hidden');
         
-            // تحديد بداية ونهاية اليوم الحالي
-            const startOfDay = new Date();
-            startOfDay.setHours(0, 0, 0, 0);
-            
-            const endOfDay = new Date();
-            endOfDay.setHours(23, 59, 59, 999);
+            const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
         
             try {
-                // الاستعلام عن حركات اليوم فقط لهذا المستخدم
                 const snapshot = await db.collection('logs')
                     .where('user', '==', email)
                     .where('end_time', '>=', startOfDay)
@@ -2728,38 +2725,92 @@ function createStatusControls(task, taskStatus) {
                 loader.classList.add('hidden');
                 
                 if (snapshot.empty) {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-slate-400">لا توجد حركات مسجلة اليوم</td></tr>`;
+                    emptyState.classList.remove('hidden');
                     return;
                 }
         
-                snapshot.forEach(doc => {
+                snapshot.forEach((doc, index) => {
                     const log = doc.data();
-                    const timeStr = log.end_time ? moment(log.end_time.toDate()).format('hh:mm:ss A') : '---';
+                    const time = moment(log.end_time.toDate()).format('h:mm A');
+                    const date = moment(log.end_time.toDate()).format('YYYY-MM-DD');
+                    const duration = formatDurationText(log.duration_ms); // دالة مساعدة لتنسيق الوقت كنص
                     
-                    // تلوين الحالة للتمييز
-                    let statusColor = 'text-slate-600';
-                    if(log.to_status === 'Online') statusColor = 'text-green-600';
-                    else if(log.to_status === 'Break') statusColor = 'text-orange-500';
+                    // إعدادات التصميم حسب الحالة الجديدة
+                    let statusConfig = { color: 'bg-slate-500', icon: 'fa-power-off', text: 'text-slate-600', label: log.to_status, bg: 'bg-slate-50' };
                     
-                    tableBody.innerHTML += `
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition border-b dark:border-slate-700">
-                            <td class="p-4 font-bold">
-                                <span class="text-slate-400 font-normal text-xs">${log.from_status}</span> 
-                                <i class="fas fa-arrow-left mx-2 text-[10px] text-primary-400"></i> 
-                                <span class="${statusColor}">${log.to_status}</span>
-                            </td>
-                            <td class="p-4 text-slate-500 font-mono text-[11px]">${timeStr}</td>
-                            <td class="p-4 font-bold text-slate-700 dark:text-slate-300">${formatTime(log.duration_ms || 0)}</td>
-                            <td class="p-4">${log.auto ? '<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px]">تلقائي</span>' : '<span class="bg-blue-50 text-blue-500 px-2 py-0.5 rounded text-[10px]">يدوي</span>'}</td>
-                        </tr>`;
+                    if(log.to_status === 'Online') {
+                        statusConfig = { color: 'bg-green-500', icon: 'fa-laptop', text: 'text-green-600', label: 'بدأ العمل (Online)', bg: 'bg-green-50' };
+                    } else if(log.to_status === 'Break') {
+                        statusConfig = { color: 'bg-orange-500', icon: 'fa-coffee', text: 'text-orange-600', label: 'استراحة (Break)', bg: 'bg-orange-50' };
+                    } else if(log.to_status === 'Meeting') {
+                        statusConfig = { color: 'bg-blue-500', icon: 'fa-users', text: 'text-blue-600', label: 'اجتماع (Meeting)', bg: 'bg-blue-50' };
+                    } else if(log.to_status === 'Idle' || log.from_status.includes('Idle')) { // التعامل مع حالات الخمول
+                        statusConfig = { color: 'bg-red-500', icon: 'fa-pause', text: 'text-red-600', label: 'توقف/خمول', bg: 'bg-red-50' };
+                    }
+        
+                    // تحديد من قام بالحركة
+                    let actorHTML = '';
+                    if (log.auto) {
+                        actorHTML = `<span class="flex items-center gap-1 text-[10px] text-slate-400 bg-slate-100 px-2 py-1 rounded-full"><i class="fas fa-robot text-slate-500"></i> النظام (تلقائي)</span>`;
+                    } else {
+                        actorHTML = `<span class="flex items-center gap-1 text-[10px] text-blue-500 bg-blue-50 px-2 py-1 rounded-full"><i class="fas fa-hand-pointer"></i> تغيير يدوي</span>`;
+                    }
+        
+                    // إنشاء عنصر الخط الزمني
+                    const html = `
+                    <div class="relative animate-fade-in" style="animation-delay: ${index * 0.05}s">
+                        <span class="absolute -right-[9px] top-4 w-4 h-4 rounded-full ${statusConfig.color} border-4 border-white dark:border-slate-800 shadow-sm z-10"></span>
+                        
+                        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+                            
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg ${statusConfig.bg} ${statusConfig.text} flex items-center justify-center">
+                                        <i class="fas ${statusConfig.icon}"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold ${statusConfig.text}">${statusConfig.label}</h4>
+                                        <p class="text-[10px] text-slate-400 font-mono">${time}</p>
+                                    </div>
+                                </div>
+                                ${actorHTML}
+                            </div>
+        
+                            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-slate-50 dark:border-slate-700">
+                                <div class="flex-1 text-center border-l border-slate-100 dark:border-slate-700 pl-3">
+                                    <p class="text-[9px] text-slate-400 mb-1">الحالة السابقة</p>
+                                    <p class="text-xs font-bold text-slate-600 dark:text-slate-300">${log.from_status}</p>
+                                </div>
+                                <div class="flex-1 text-center">
+                                    <p class="text-[9px] text-slate-400 mb-1">المدة المستغرقة</p>
+                                    <p class="text-xs font-black font-mono text-slate-800 dark:text-white">${duration}</p>
+                                </div>
+                            </div>
+        
+                        </div>
+                    </div>`;
+                    
+                    timelineContainer.innerHTML += html;
                 });
+        
             } catch (error) { 
                 console.error(error);
-                loader.classList.add('hidden'); 
-                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-400">حدث خطأ في جلب البيانات (تأكد من الفهرسة/Index)</td></tr>`;
+                loader.classList.add('hidden');
+                timelineContainer.innerHTML = '<p class="text-center text-red-500 text-xs">حدث خطأ في جلب البيانات</p>';
             }
         }
-
+        
+        // دالة مساعدة لتنسيق الوقت بشكل نصي مقروء
+        function formatDurationText(ms) {
+            if (!ms || ms < 0) return "0 دقيقة";
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            
+            if (hours > 0) return `${hours} س و ${minutes} د`;
+            if (minutes > 0) return `${minutes} دقيقة`;
+            return `${totalSeconds} ثانية`;
+        }
         function renderAdminAlerts() {
             const container = document.getElementById('admin-alerts-container');
             
@@ -3201,6 +3252,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
