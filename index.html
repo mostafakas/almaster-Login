@@ -322,9 +322,10 @@
 
 <body class="min-h-screen text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-900 font-sans selection:bg-primary-500 selection:text-white">
 
-    <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
+    <audio id="msg-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
     <audio id="status-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
     <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+    <audio id="task-sound" src="https://assets.mixkit.co/active_storage/sfx/1040/1040-preview.mp3" preload="auto"></audio>
 
     <div id="loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
@@ -743,6 +744,30 @@
         setInterval(updateHeaderTime, 1000);
         updateHeaderTime();
 
+        // دالة مركزية للإشعارات (صوت + ويندوز)
+        function notifyUser(type, title, body) {
+                    // 1. تشغيل الصوت المناسب حسب النوع
+                    let soundId = 'msg-sound'; // الافتراضي
+                    if (type === 'task') soundId = 'task-sound';
+                    else if (type === 'alert') soundId = 'alert-sound';
+                    else if (type === 'status') soundId = 'status-sound';
+        
+                    const audio = document.getElementById(soundId);
+                    if (audio) {
+                        audio.currentTime = 0;
+                        audio.play().catch(e => console.log("Sound blocked:", e));
+                    }
+        
+                    // 2. إشعار الويندوز
+                    // ملاحظة: حالة (status) لا ترسل إشعار ويندوز (صوت فقط) لعدم الإزعاج
+                    if (type !== 'status' && Notification.permission === "granted") {
+                        new Notification(title, { 
+                            body: body, 
+                            icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
+                            tag: type + "-" + Date.now() // لمنع تجميع الإشعارات
+                        });
+                    }
+                }
         // دالة مركزية للتحقق من الصلاحيات
         function hasPermission(permName) {
             if (!userProfile) return false;
@@ -920,7 +945,18 @@
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
                 allUsersData = [];
+                // [جديد] مراقبة تغيرات الحالة للإشعار الصوتي فقط
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'modified') {
+                        const newUser = change.doc.data();
+                        // لو التغيير مش مني أنا، شغل صوت تكة
+                        if (newUser.email !== currentUser.email) {
+                            notifyUser('status', '', '');
+                        }
+                    }
+                });
                 
+                // ... (باقي الكود زي ما هو) ...
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     allUsersData.push(data);
@@ -931,10 +967,9 @@
                         const newTasks = data.tasks || [];
                         
                         // إشعار بمهمة جديدة
-                        if (newTasks.length > oldTasks.length) {
-                            playNotification();
-                            if (Notification.permission === "granted") {
-                                new Notification("📋 مهمة جديدة", { body: "تم إسناد مهمة جديدة إليك", icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png" });
+                        // إشعار بمهمة جديدة (صوت مخصص + إشعار ويندوز)
+                            if (newTasks.length > oldTasks.length) {
+                                notifyUser('task', '📋 مهمة جديدة', 'تم إسناد مهمة جديدة إليك');
                             }
                         }
                         userProfile = data; 
@@ -1863,8 +1898,9 @@ function createStatusControls(task, taskStatus) {
                 
                 if(isNew && !s.metadata.hasPendingWrites) {
                     playNotification();
-                    if(document.getElementById("chat-window").classList.contains("hidden")) {
-                        document.getElementById("chat-badge").classList.remove("hidden");
+                       if(isNew && !s.metadata.hasPendingWrites) {
+                        notifyUser('msg', 'رسالة عامة', 'رسالة جديدة في الشات العام');
+                        // ... (باقي كود البادج زي ما هو)
                     }
                 }
             });
@@ -1880,8 +1916,9 @@ function createStatusControls(task, taskStatus) {
                             if (change.type === "added") {
                                 const m = change.doc.data();
                                 const msgTime = m.time ? m.time.toMillis() : Date.now();
-                                if (msgTime > (Date.now() - 10000)) { 
-                                    playNotification();
+                              if (msgTime > (Date.now() - 10000)) { 
+                                    notifyUser('msg', `رسالة من ${m.name}`, m.text || "مرفق جديد");
+                                    // ... (باقي الكود زي ما هو)
                                     
                                     // Update Badge Count for Specific Sender
                                     if(!unreadCounts[m.sender]) unreadCounts[m.sender] = 0;
@@ -2913,6 +2950,8 @@ function createStatusControls(task, taskStatus) {
                         if (alertSound) {
                             alertSound.currentTime = 0;
                             alertSound.play().catch(e => console.log("Sound blocked"));
+                            // 2. إشعار صوتي (Alarm) + Notification
+                        notifyUser('alert', '📷 طلب إداري', 'يرجى إرسال لقطة شاشة عند العودة للنظام.');
                         }
 
                         if (Notification.permission === "granted") {
@@ -3255,6 +3294,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
