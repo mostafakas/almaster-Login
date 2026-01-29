@@ -818,7 +818,6 @@
 
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
-                let hasStatusChange = false;
                 allUsersData = [];
                 
                 snapshot.forEach(doc => {
@@ -848,8 +847,7 @@
                         }
                     }
         
-                    // 2. (هام جداً) إصلاح تحديث شات التاسك المفتوح
-                    // نتحقق لو فيه تاسك مفتوح حالياً وصاحب التاسك ده حصله تحديث
+                    // 2. تحديث شات وعنوان التاسك المفتوح حالياً (التفاصيل)
                     const currentOpenedTaskId = document.getElementById('current-task-id').value;
                     const currentOpenedTaskOwner = document.getElementById('current-task-owner-email').value;
         
@@ -858,10 +856,9 @@
                         const openedTask = updatedTasks.find(t => t.id == currentOpenedTaskId);
                         
                         if (openedTask) {
-                            // نقوم بتحديث الشات فقط (بدون إعادة رسم كل الصفحة عشان الكتابة متضعش)
+                            // تحديث الشات
                             renderTaskComments(openedTask.comments || [], openedTask.ownerEmail);
-                            
-                            // تحديث الحالة في العنوان لو اتغيرت
+                            // تحديث العنوان والحالة داخل التفاصيل
                             updateTaskDetailHeader(openedTask);
                         }
                     }
@@ -870,10 +867,32 @@
                 // 3. إعادة رسم الشبكة الرئيسية
                 renderGrid();
                 
-                // 4. لو قائمة المهام مفتوحة، نعيد تحميلها لتحديث الحالات والألوان
-                if (!document.getElementById('modal-task-center').classList.contains('hidden')) {
-                    // ملاحظة: نعيد الرسم بحذر لعدم فقدان التركيز، لكن هنا سنعيد رسم القائمة الجانبية فقط
-                    // openTaskCenter(); // تم إيقافها لتجنب التقطيع، التحديث يتم عبر updateTaskStatus
+                // 4. (التعديل الجديد) تحديث القائمة الجانبية للمهام فوراً لتغيير الألوان عند المدير
+                const taskModal = document.getElementById('modal-task-center');
+                if (!taskModal.classList.contains('hidden')) {
+                    let tasksToShow = [];
+                    
+                    if(userProfile.role === 'admin') {
+                        // تجميع كل مهام الموظفين للمدير
+                        allUsersData.forEach(u => {
+                            if(u.tasks) {
+                                u.tasks.forEach(t => {
+                                    const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
+                                    tasksToShow.push(taskWithInfo);
+                                });
+                            }
+                        });
+                    } else {
+                        // مهام الموظف فقط
+                        if(userProfile.tasks) {
+                            userProfile.tasks.forEach(t => {
+                                const taskWithInfo = {...t, ownerName: "Me", ownerEmail: userProfile.email};
+                                tasksToShow.push(taskWithInfo);
+                            });
+                        }
+                    }
+                    // إعادة الرسم (هتغير الألوان فوراً)
+                    renderTaskList(tasksToShow);
                 }
         
                 updateReportDropdown();
@@ -2604,19 +2623,41 @@
 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
+                // قائمة بكل النوافذ (Modals) في النظام
                 const modals = [
-                    'modal-edit', 'modal-report', 'modal-logs', 'image-preview-modal', 'chat-window'
+                    'modal-edit', 
+                    'modal-report', 
+                    'modal-logs', 
+                    'image-preview-modal', 
+                    'chat-window', 
+                    'modal-task-center', // نافذة المهام الرئيسية
+                    'modal-create-task'  // نافذة إنشاء/تعديل مهمة
                 ];
+        
                 modals.forEach(id => {
                     const element = document.getElementById(id);
                     if (element && !element.classList.contains('hidden')) {
                         element.classList.add('hidden');
+                        
+                        // تنظيف خاص عند إغلاق معاينة الصور
                         if(id === 'image-preview-modal') {
                             const img = document.getElementById('preview-img-target');
                             if(img) img.src = ""; 
                         }
+                        
+                        // تنظيف خاص عند إغلاق الشات
+                        if(id === 'chat-window') {
+                            document.getElementById("chat-badge").classList.add("hidden");
+                        }
                     }
                 });
+                
+                // إغلاق القائمة المنسدلة العلوية أيضاً
+                const menu = document.getElementById('main-dropdown');
+                if (menu && menu.classList.contains('active')) {
+                    menu.classList.remove('active');
+                    document.removeEventListener('click', closeMenuOutside);
+                }
             }
         });
 
@@ -2836,6 +2877,7 @@
     </script>
 </body>
 </html>
+
 
 
 
