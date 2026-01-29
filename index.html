@@ -282,6 +282,41 @@
             /* تعديل بسيط للنصوص داخل الكروت الملونة لتكون مقروءة */
             .card-style-started h4, .card-style-working h4, .card-style-done h4 { color: #1e293b !important; }
             .card-style-started p, .card-style-working p, .card-style-done p { color: #475569 !important; }
+
+                        /* --- تنسيق أزرار التفعيل (Toggle Switch) --- */
+            .toggle-checkbox:checked {
+                right: 0;
+                border-color: #10b981;
+            }
+            .toggle-checkbox:checked + .toggle-label {
+                background-color: #10b981;
+            }
+            .toggle-checkbox:checked + .toggle-label:before {
+                transform: translateX(100%);
+            }
+            
+            .toggle-label {
+                width: 40px;
+                height: 20px;
+                background-color: #e5e7eb;
+                border-radius: 9999px;
+                position: relative;
+                cursor: pointer;
+                transition: background-color 0.2s ease-in;
+            }
+            
+            .toggle-label:before {
+                content: '';
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 16px;
+                height: 16px;
+                background-color: white;
+                border-radius: 50%;
+                transition: transform 0.2s ease-in;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            }
     </style>
 </head>
 
@@ -588,6 +623,7 @@
             <div class="p-6 overflow-y-auto">
                 <form id="form-edit" onsubmit="saveUserChanges(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="hidden" id="edit-email-key">
+                    
                     <div class="md:col-span-2 flex justify-center mb-4">
                         <div class="relative group cursor-pointer" onclick="document.getElementById('edit-file').click()">
                             <img id="edit-preview" src="" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg group-hover:border-primary-500 transition">
@@ -598,18 +634,30 @@
                             <input type="hidden" id="edit-photo-base64">
                         </div>
                     </div>
+                
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">الاسم بالكامل</label><input type="text" id="edit-name" class="form-input" required></div>
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">المسمى الوظيفي</label><input type="text" id="edit-title" class="form-input" required></div>
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">الإدارة / القسم</label><input type="text" id="edit-dept" class="form-input"></div>
-                    <div><label class="text-[10px] font-bold uppercase text-slate-400">الصلاحية</label>
-                        <select id="edit-role" class="form-input font-bold">
+                    
+                    <div><label class="text-[10px] font-bold uppercase text-slate-400">الرتبة والصلاحية</label>
+                        <select id="edit-role" class="form-input font-bold" onchange="togglePermissionsView()">
                             <option value="employee">موظف (Employee)</option>
-                            <option value="admin">مدير (Admin)</option>
+                            <option value="leader">ليدر (Team Leader)</option>
+                            <option value="supervisor">مشرف (Supervisor)</option>
+                            <option value="admin">مدير عام (Admin)</option>
                         </select>
                     </div>
+                
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">حد الخمول (بالدقائق)</label><input type="number" id="edit-idle" class="form-input" min="1" value="5"></div>
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">حد الخلفية (بالدقائق)</label><input type="number" id="edit-background-limit" class="form-input" min="1" value="60"></div>
                     <div class="md:col-span-2"><label class="text-[10px] font-bold uppercase text-slate-400">البريد الإلكتروني</label><input type="email" id="edit-email" class="form-input text-left" dir="ltr" readonly></div>
+                
+                    <div id="permissions-wrapper" class="md:col-span-2 hidden bg-slate-50 dark:bg-slate-700/30 p-4 rounded-xl border border-slate-100 dark:border-slate-700 mt-2">
+                        <h4 class="text-xs font-bold text-primary-600 mb-3 border-b pb-2">تخصيص الصلاحيات</h4>
+                        <div class="grid grid-cols-2 gap-3" id="permissions-grid">
+                            </div>
+                    </div>
+                
                     <div class="md:col-span-2 pt-4 flex gap-3 border-t dark:border-slate-700 mt-2">
                         <button type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-primary-700 transition">حفظ التغييرات</button>
                         <button type="button" onclick="deleteUser()" id="btn-delete" class="px-6 text-red-500 border border-red-200 rounded-xl hover:bg-red-50"><i class="fas fa-trash"></i></button>
@@ -681,6 +729,16 @@
         setInterval(updateHeaderTime, 1000);
         updateHeaderTime();
 
+        // دالة مركزية للتحقق من الصلاحيات
+        function hasPermission(permName) {
+            if (!userProfile) return false;
+            // المدير يملك كل الصلاحيات دائماً
+            if (userProfile.role === 'admin') return true;
+            // التحقق من مصفوفة الصلاحيات لباقي الرتب
+            if (userProfile.permissions && userProfile.permissions[permName] === true) return true;
+            return false;
+        }
+
         function updateHeaderTime() {
             const now = moment();
             const timeEl = document.getElementById('header-time');
@@ -743,14 +801,44 @@
             document.getElementById('chat-fab').classList.remove('hidden-section');
             
             document.getElementById('header-user-name').innerText = userProfile.name;
-            document.getElementById('header-user-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
+            let roleName = 'موظف';
+            if(userProfile.role === 'admin') roleName = 'مدير النظام';
+            else if(userProfile.role === 'supervisor') roleName = 'مشرف';
+            else if(userProfile.role === 'leader') roleName = 'تيم ليدر';
+            
+            document.getElementById('header-user-role').innerText = roleName;
             document.getElementById('header-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
             
             document.getElementById('menu-user-name').innerText = userProfile.name;
-            document.getElementById('menu-user-role').innerText = userProfile.role === 'admin' ? 'مدير النظام' : 'موظف';
+            document.getElementById('menu-user-role').innerText = roleName;
             document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
             
-            if(userProfile.role === 'admin') { document.getElementById('admin-options').classList.remove('hidden-section'); }
+            // --- تطبيق الصلاحيات على القائمة الجانبية ---
+            const adminOptionsDiv = document.getElementById('admin-options');
+            // إخفاء الكل في البداية
+            adminOptionsDiv.classList.add('hidden-section'); 
+            
+            // إظهار القسم لو عنده أي صلاحية إدارية
+            if (userProfile.role === 'admin' || (userProfile.permissions && Object.values(userProfile.permissions).some(v => v === true))) {
+                adminOptionsDiv.classList.remove('hidden-section');
+                const btns = adminOptionsDiv.children; // الحصول على الأزرار بالترتيب
+                
+                // 1. أرشيف الشات العام (أول زر)
+                if (!hasPermission('can_archive_chat')) btns[1].classList.add('hidden-section');
+                else btns[1].classList.remove('hidden-section');
+        
+                // 2. أرشيف شامل (ثاني زر)
+                if (!hasPermission('can_archive_chat')) btns[2].classList.add('hidden-section');
+                else btns[2].classList.remove('hidden-section');
+        
+                // 3. إضافة موظف (ثالث زر)
+                if (!hasPermission('can_manage_users')) btns[3].classList.add('hidden-section');
+                else btns[3].classList.remove('hidden-section');
+        
+                // 4. التقارير (رابع زر)
+                if (!hasPermission('can_view_reports')) btns[4].classList.add('hidden-section');
+                else btns[4].classList.remove('hidden-section');
+            }
             
             // Run these without awaiting to unblock UI
             checkAndResetCounters(); 
@@ -763,7 +851,7 @@
             window.addEventListener('mousemove', resetIdleTimer);
             window.addEventListener('keydown', resetIdleTimer);
             if (userProfile.role !== 'admin') { listenForScreenshotRequests(); }
-
+        
             // تشغيل المحرر مرة واحدة
             if(!quillEditor) {
                 quillEditor = new Quill('#editor-container', {
@@ -781,7 +869,6 @@
                 });
             }
         }
-
         function toggleMainMenu() {
             const menu = document.getElementById('main-dropdown');
             menu.classList.toggle('active');
@@ -913,120 +1000,121 @@
 
         // --- Render Grid (Fixed: Shows All properly) ---
         function renderGrid() {
-    const grid = document.getElementById('grid-users');
-    grid.innerHTML = '';
-    
-    // NOTE: We ignore 'showOffline' if filter is 'all', based on user request.
-    const showOfflineToggle = document.getElementById('show-offline-toggle').checked;
-    const isAdmin = userProfile.role === 'admin';
-    let displayedCount = 0;
-
-    allUsersData.forEach(u => {
-        // Safety check for valid user data
-        if (!u.email) return;
-
-        const isMe = (currentUser.email === u.email);
-        let effStatus = u.status || 'Offline';
-        if (u.isIdle) effStatus = 'Idle'; 
-
-        // --- تعديل فلتر "الكل" ---
-        if (!isMe) {
-            if (currentFilter === 'all') {
-                // الطلب: "الكل" يظهر الجميع ما عدا Offline
-                if (effStatus === 'Offline' && !showOfflineToggle) return; 
-            } else if (currentFilter === 'Idle') {
-                if (!u.isIdle) return;
-            } else if (currentFilter === 'Offline') {
-                if (effStatus !== 'Offline') return;
-            } else {
-                // Online, Meeting, Break
-                if (effStatus !== currentFilter && u.status !== currentFilter) return;
-            }
-        }
-
-        displayedCount++;
-        const tb = u.timeBank || {};
-        const safeStart = getMillis(u.lastChange);
-        const canControl = (isAdmin || isMe);
+            const grid = document.getElementById('grid-users');
+            grid.innerHTML = '';
+            
+            const showOfflineToggle = document.getElementById('show-offline-toggle').checked;
+            // هنا لم نعد نعتمد على admin فقط، بل الصلاحيات
+            const canManageTasks = hasPermission('can_manage_tasks'); 
+            
+            let displayedCount = 0;
         
-        let stripColor = "bg-slate-300";
-        if(u.isIdle) stripColor = "bg-red-500";
-        else if(u.status === 'Online') stripColor = "bg-green-500";
-        else if(u.status === 'Meeting') stripColor = "bg-blue-500";
-        else if(u.status === 'Break') stripColor = "bg-orange-500";
-
-        // Message Badge Logic
-        const unreadCount = unreadCounts[u.email] || 0;
-
-        const card = `
-        <div class="pro-card-design group relative flex flex-col">
-            <div class="h-2 w-full ${stripColor} transition-colors duration-500"></div>
-            
-            <div class="p-5 flex items-start gap-4 flex-1">
-                <div class="relative">
-                    <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-2xl object-cover shadow-md border-2 border-white dark:border-slate-700">
-                    ${u.isIdle ? '<span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-ping border-2 border-white"></span>' : ''}
-                </div>
-                <div class="flex-1 min-w-0 pt-1">
-                    <h3 class="font-black text-lg text-slate-800 dark:text-white truncate">${u.name}</h3>
-                    <p class="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">${u.title || 'Member'}</p>
-                    
-                    <select onchange="setStatus('${u.email}', this.value)" ${!canControl ? 'disabled' : ''} class="text-[10px] font-bold py-1.5 px-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 border-none focus:ring-2 ring-primary-500/20 cursor-pointer w-full max-w-[120px] transition-all hover:bg-slate-200 dark:hover:bg-slate-600">
-                        <option value="Online" ${u.status === 'Online' ? 'selected' : ''}>🟢 Online</option>
-                        <option value="Break" ${u.status === 'Break' ? 'selected' : ''}>🟠 Break</option>
-                        <option value="Meeting" ${u.status === 'Meeting' ? 'selected' : ''}>🔵 Meeting</option>
-                        <option value="Offline" ${u.status === 'Offline' ? 'selected' : ''}>⚫ Offline</option>
-                    </select>
-                </div>
+            allUsersData.forEach(u => {
+                if (!u.email) return;
+        
+                const isMe = (currentUser.email === u.email);
+                let effStatus = u.status || 'Offline';
+                if (u.isIdle) effStatus = 'Idle'; 
+        
+                if (!isMe) {
+                    if (currentFilter === 'all') {
+                        if (effStatus === 'Offline' && !showOfflineToggle) return; 
+                    } else if (currentFilter === 'Idle') {
+                        if (!u.isIdle) return;
+                    } else if (currentFilter === 'Offline') {
+                        if (effStatus !== 'Offline') return;
+                    } else {
+                        if (effStatus !== currentFilter && u.status !== currentFilter) return;
+                    }
+                }
+        
+                displayedCount++;
+                const tb = u.timeBank || {};
+                const safeStart = getMillis(u.lastChange);
                 
-                <div class="flex flex-col gap-2">
-                     ${!isMe ? `
-                     <button onclick="openPrivateChat('${u.email}', '${u.name}')" title="محادثة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-primary-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1 relative">
-                        <i class="fas fa-comment-dots"></i>
-                        <span id="badge-${u.email.replace(/[@.]/g, "_")}" class="${unreadCount > 0 ? '' : 'hidden'} absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold border-2 border-white">${unreadCount}</span>
-                     </button>` : ''}
-                     
-                     ${isAdmin && !isMe ? `<button onclick="openAddTaskModal('${u.email}')" title="إسناد مهمة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-indigo-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1"><i class="fas fa-tasks"></i></button>` : ''}
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-4 border-t border-slate-100 dark:border-slate-700/50 divide-x divide-x-reverse divide-slate-100 dark:divide-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
-                <div class="p-3 text-center">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Active</p>
-                    <p class="text-xs font-black text-green-600 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
-                </div>
-                <div class="p-3 text-center">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Break</p>
-                    <p class="text-xs font-black text-orange-500 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
-                </div>
-                <div class="p-3 text-center">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Meet</p>
-                    <p class="text-xs font-black text-blue-500 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
-                </div>
-                <div class="p-3 text-center ${u.isIdle ? 'bg-red-50 dark:bg-red-900/20' : ''}">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Idle</p>
-                    <p class="text-xs font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800">
-                <button onclick="viewLogs('${u.email}')" class="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">
-                    <i class="fas fa-list-alt ml-1"></i> سجل الحركات
-                </button>
-                ${isAdmin && !isMe ? `
-                    <div class="flex gap-2 mr-2">
-                        <button onclick="requestScreenshot('${u.email}')" title="طلب لقطة شاشة" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-camera"></i></button>
-                        <button onclick="openEditModal('${u.email}')" title="تعديل" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-cog"></i></button>
+                // التحكم في الحالة (فقط المدير أو الشخص نفسه أو مشرف يملك صلاحية تعديل المستخدمين)
+                const canChangeStatus = (isMe || userProfile.role === 'admin' || hasPermission('can_manage_users'));
+                
+                let stripColor = "bg-slate-300";
+                if(u.isIdle) stripColor = "bg-red-500";
+                else if(u.status === 'Online') stripColor = "bg-green-500";
+                else if(u.status === 'Meeting') stripColor = "bg-blue-500";
+                else if(u.status === 'Break') stripColor = "bg-orange-500";
+        
+                const unreadCount = unreadCounts[u.email] || 0;
+        
+                const card = `
+                <div class="pro-card-design group relative flex flex-col">
+                    <div class="h-2 w-full ${stripColor} transition-colors duration-500"></div>
+                    
+                    <div class="p-5 flex items-start gap-4 flex-1">
+                        <div class="relative">
+                            <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-2xl object-cover shadow-md border-2 border-white dark:border-slate-700">
+                            ${u.isIdle ? '<span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-ping border-2 border-white"></span>' : ''}
+                        </div>
+                        <div class="flex-1 min-w-0 pt-1">
+                            <h3 class="font-black text-lg text-slate-800 dark:text-white truncate">${u.name}</h3>
+                            <p class="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">${u.title || 'Member'}</p>
+                            
+                            <select onchange="setStatus('${u.email}', this.value)" ${!canChangeStatus ? 'disabled' : ''} class="text-[10px] font-bold py-1.5 px-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 border-none focus:ring-2 ring-primary-500/20 cursor-pointer w-full max-w-[120px] transition-all hover:bg-slate-200 dark:hover:bg-slate-600">
+                                <option value="Online" ${u.status === 'Online' ? 'selected' : ''}>🟢 Online</option>
+                                <option value="Break" ${u.status === 'Break' ? 'selected' : ''}>🟠 Break</option>
+                                <option value="Meeting" ${u.status === 'Meeting' ? 'selected' : ''}>🔵 Meeting</option>
+                                <option value="Offline" ${u.status === 'Offline' ? 'selected' : ''}>⚫ Offline</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex flex-col gap-2">
+                             ${!isMe ? `
+                             <button onclick="openPrivateChat('${u.email}', '${u.name}')" title="محادثة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-primary-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1 relative">
+                                <i class="fas fa-comment-dots"></i>
+                                <span id="badge-${u.email.replace(/[@.]/g, "_")}" class="${unreadCount > 0 ? '' : 'hidden'} absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold border-2 border-white">${unreadCount}</span>
+                             </button>` : ''}
+                             
+                             ${canManageTasks && !isMe ? `<button onclick="openAddTaskModal('${u.email}')" title="إسناد مهمة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-indigo-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1"><i class="fas fa-tasks"></i></button>` : ''}
+                        </div>
                     </div>
-                ` : ''}
-            </div>
-        </div>`;
-        grid.innerHTML += card;
-    });
-
-    if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
-    else document.getElementById('empty-state').classList.add('hidden');
-}
+                    
+                    <div class="grid grid-cols-4 border-t border-slate-100 dark:border-slate-700/50 divide-x divide-x-reverse divide-slate-100 dark:divide-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
+                        <div class="p-3 text-center">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Active</p>
+                            <p class="text-xs font-black text-green-600 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
+                        </div>
+                        <div class="p-3 text-center">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Break</p>
+                            <p class="text-xs font-black text-orange-500 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
+                        </div>
+                        <div class="p-3 text-center">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Meet</p>
+                            <p class="text-xs font-black text-blue-500 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
+                        </div>
+                        <div class="p-3 text-center ${u.isIdle ? 'bg-red-50 dark:bg-red-900/20' : ''}">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Idle</p>
+                            <p class="text-xs font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800">
+                        ${(isMe || hasPermission('can_view_logs')) ? `
+                        <button onclick="viewLogs('${u.email}')" class="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">
+                            <i class="fas fa-list-alt ml-1"></i> سجل الحركات
+                        </button>` : '<span class="flex-1"></span>'}
+        
+                        ${!isMe ? `
+                            <div class="flex gap-2 mr-2">
+                                ${hasPermission('can_screenshot') ? `<button onclick="requestScreenshot('${u.email}')" title="طلب لقطة شاشة" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-camera"></i></button>` : ''}
+                                
+                                ${hasPermission('can_manage_users') ? `<button onclick="openEditModal('${u.email}')" title="تعديل" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-cog"></i></button>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>`;
+                grid.innerHTML += card;
+            });
+        
+            if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
+            else document.getElementById('empty-state').classList.add('hidden');
+        }
         function getStatusColor(s, isFocus, isIdle) {
             if (isIdle) return { border: 'border-red-600 border-r-4', text: 'text-red-800', badge: 'bg-red-200 text-red-900', shadow: 'shadow-xl shadow-red-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-red-100/50 dark:bg-red-900/40 border-red-200' };
             if (s === 'Offline') return { border: 'border-slate-500 border-r-4', text: 'text-slate-700', badge: 'bg-slate-300 text-slate-800', shadow: 'shadow-xl shadow-slate-900/20', cardBg: 'bg-slate-100 dark:bg-slate-900', innerGlow: 'bg-slate-200 dark:bg-slate-800 border-slate-300' };
@@ -1271,7 +1359,9 @@
     }
 
     tasks.sort((a, b) => b.id - a.id);
-    const isAdmin = userProfile.role === 'admin';
+    
+    // التحقق من صلاحية "إدارة المهام" بدلاً من "admin" فقط
+    const canManageTasks = hasPermission('can_manage_tasks'); 
 
     tasks.forEach((task, idx) => {
         const isMyTask = task.ownerEmail === currentUser.email;
@@ -1282,10 +1372,9 @@
         if(taskStatus === 'started') cardColorClass = 'card-style-started';
         else if(taskStatus === 'working') cardColorClass = 'card-style-working';
         else if(taskStatus === 'done') cardColorClass = 'card-style-done';
-        else cardColorClass = 'card-style-started'; // Default
+        else cardColorClass = 'card-style-started'; 
 
         const el = document.createElement('div');
-        // هنا تم إضافة كلاس اللون المتغير
         el.className = `task-card-modern cursor-pointer group ${cardColorClass}`;
         
         el.onclick = (e) => {
@@ -1293,24 +1382,18 @@
             showTaskDetail(task, idx);
         };
 
+        // أزرار الحالة للموظف (إذا كانت مهمته وهو ليس مدير مهام أو ليدر في وضع المشاهدة)
+        // الليدر والمشرف ممكن يكون عندهم مهام خاصة بيهم، فهنا يظهر لهم التحكم العادي
         let statusControls = '';
-        if (!isAdmin && isMyTask) {
-            statusControls = `
-            <div class="flex gap-2 mt-3 pt-2 border-t border-slate-100/20 dark:border-slate-700 no-click">
-                <div onclick="updateTaskStatus(${task.id}, 'started', '${task.ownerEmail}')" class="status-pill status-custom-started flex-1 ${taskStatus === 'started' ? 'active' : ''}">
-                    <i class="fas fa-play text-[8px]"></i> بدأ
-                </div>
-                <div onclick="updateTaskStatus(${task.id}, 'working', '${task.ownerEmail}')" class="status-pill status-custom-working flex-1 ${taskStatus === 'working' ? 'active' : ''}">
-                    <i class="fas fa-spinner fa-spin text-[8px]"></i> جاري
-                </div>
-                <div onclick="updateTaskStatus(${task.id}, 'done', '${task.ownerEmail}')" class="status-pill status-custom-done flex-1 ${taskStatus === 'done' ? 'active' : ''}">
-                    <i class="fas fa-check text-[8px]"></i> تم
-                </div>
-            </div>`;
+        if (isMyTask && !canManageTasks) { // الموظف العادي
+             statusControls = createStatusControls(task, taskStatus);
+        } else if (isMyTask && canManageTasks) { // الليدر لو دي مهمته الشخصية يقدر يغير حالتها برضه
+             statusControls = createStatusControls(task, taskStatus);
         }
 
+        // أزرار التحكم الإداري (تعديل/حذف) تظهر لمن يملك الصلاحية
         let adminControls = '';
-        if (isAdmin) {
+        if (canManageTasks) {
             adminControls = `
             <div class="flex gap-2 items-center no-click">
                 <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; openEditTaskModal()" class="admin-action-btn btn-edit" title="تعديل"><i class="fas fa-pen"></i></button>
@@ -1318,16 +1401,24 @@
             </div>`;
         }
 
+        // أيقونات الحالة للمدير/الليدر
+        let statusText = '';
+        if(canManageTasks) {
+             if(taskStatus === 'started') statusText = '<i class="fas fa-play-circle text-green-600"></i>';
+             else if (taskStatus === 'working') statusText = '<i class="fas fa-spinner fa-spin text-blue-600"></i>';
+             else if (taskStatus === 'done') statusText = '<i class="fas fa-check-circle text-red-600"></i>';
+        }
+
         el.innerHTML = `
             <div class="flex justify-between items-start mb-2">
                 <div class="flex-1 min-w-0">
                     <h4 class="font-black text-sm text-slate-800 dark:text-white truncate flex items-center gap-1">
-                        ${task.title}
+                        ${statusText} ${task.title}
                     </h4>
                     <p class="text-[10px] text-primary-600 font-bold mt-0.5">
                         <i class="fas fa-user-tie ml-1"></i> ${task.createdBy || 'Admin'}
                     </p>
-                    ${isAdmin ? `<p class="text-[10px] text-slate-500 font-bold mt-0.5"><i class="fas fa-user ml-1"></i> الموظف: ${task.ownerName}</p>` : ''}
+                    ${canManageTasks ? `<p class="text-[10px] text-slate-500 font-bold mt-0.5"><i class="fas fa-user ml-1"></i> الموظف: ${task.ownerName}</p>` : ''}
                 </div>
                 <div class="flex flex-col items-end gap-1">
                     <span class="text-[9px] bg-white/50 px-1.5 py-0.5 rounded text-slate-600 font-mono border border-slate-200">${moment(task.id).format('DD/MM')}</span>
@@ -1344,6 +1435,22 @@
         
         listContainer.appendChild(el);
     });
+}
+
+// دالة مساعدة لإنشاء أزرار الحالة (عشان الكود يكون أنظف)
+function createStatusControls(task, taskStatus) {
+    return `
+    <div class="flex gap-2 mt-3 pt-2 border-t border-slate-100/20 dark:border-slate-700 no-click">
+        <div onclick="updateTaskStatus(${task.id}, 'started', '${task.ownerEmail}')" class="status-pill status-custom-started flex-1 ${taskStatus === 'started' ? 'active' : ''}">
+            <i class="fas fa-play text-[8px]"></i> بدأ
+        </div>
+        <div onclick="updateTaskStatus(${task.id}, 'working', '${task.ownerEmail}')" class="status-pill status-custom-working flex-1 ${taskStatus === 'working' ? 'active' : ''}">
+            <i class="fas fa-spinner fa-spin text-[8px]"></i> جاري
+        </div>
+        <div onclick="updateTaskStatus(${task.id}, 'done', '${task.ownerEmail}')" class="status-pill status-custom-done flex-1 ${taskStatus === 'done' ? 'active' : ''}">
+            <i class="fas fa-check text-[8px]"></i> تم
+        </div>
+    </div>`;
 }
 
         async function updateTaskStatus(taskId, newStatus, ownerEmail) {
@@ -2211,18 +2318,43 @@
         }
 
         // -- إدارة البيانات (Edit & Reports) --
-        async function openEditModal(e){
+        async function openEditModal(e) {
             document.getElementById("modal-edit").classList.remove("hidden"); 
             const t = document.getElementById("edit-email");
             
-            if(e === "new"){ 
+            // قائمة الصلاحيات المتاحة
+            const allPerms = [
+                { id: 'can_manage_tasks', label: 'إدارة المهام (إضافة/تعديل)' },
+                { id: 'can_screenshot', label: 'طلب لقطة شاشة' },
+                { id: 'can_manage_users', label: 'إدارة الموظفين (إضافة/تعديل)' },
+                { id: 'can_view_logs', label: 'عرض سجل الحركات' },
+                { id: 'can_view_reports', label: 'استخدام التقارير' },
+                { id: 'can_archive_chat', label: 'أرشيف الشات' }
+            ];
+        
+            // رسم واجهة الصلاحيات
+            const permGrid = document.getElementById('permissions-grid');
+            permGrid.innerHTML = '';
+            allPerms.forEach(p => {
+                permGrid.innerHTML += `
+                    <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 perm-item" data-id="${p.id}">
+                        <span class="text-[10px] font-bold text-slate-600 dark:text-slate-300">${p.label}</span>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                            <input type="checkbox" id="perm-${p.id}" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                            <label for="perm-${p.id}" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
+                        </div>
+                    </div>
+                `;
+            });
+        
+            if (e === "new") { 
                 document.getElementById("form-edit").reset(); 
                 t.readOnly = false; 
                 t.setAttribute("data-mode", "new"); 
                 document.getElementById("edit-preview").src = DEFAULT_PHOTO + "New"; 
                 document.getElementById("edit-background-limit").value = 60; 
-            }
-            else { 
+                togglePermissionsView(); // تحديث العرض
+            } else { 
                 const d = (await db.collection("users").doc(e).get()).data(); 
                 t.readOnly = true; 
                 t.value = d.email; 
@@ -2234,34 +2366,82 @@
                 document.getElementById("edit-role").value = d.role || "employee"; 
                 document.getElementById("edit-idle").value = d.idleLimit || 5; 
                 document.getElementById("edit-background-limit").value = d.backgroundLimit || 60;
-
                 document.getElementById("edit-photo-base64").value = d.photo || ""; 
                 document.getElementById("edit-preview").src = d.photo || DEFAULT_PHOTO + d.name; 
+        
+                // تفعيل الصلاحيات المحفوظة
+                if (d.permissions) {
+                    allPerms.forEach(p => {
+                        document.getElementById(`perm-${p.id}`).checked = d.permissions[p.id] === true;
+                    });
+                }
+                
+                togglePermissionsView(); // تحديث العرض
             }
         }
-
-        async function saveUserChanges(e){
+        
+        // دالة مساعدة لإظهار/إخفاء الصلاحيات بناءً على الرتبة
+        function togglePermissionsView() {
+            const role = document.getElementById("edit-role").value;
+            const wrapper = document.getElementById("permissions-wrapper");
+            const items = document.querySelectorAll('.perm-item');
+        
+            if (role === 'admin' || role === 'employee') {
+                wrapper.classList.add('hidden'); // المدير والموظف لا يحتاجون تخصيص
+            } else {
+                wrapper.classList.remove('hidden');
+                
+                if (role === 'leader') {
+                    // الليدر يظهر له فقط إدارة المهام
+                    items.forEach(item => {
+                        if (item.dataset.id === 'can_manage_tasks') item.classList.remove('hidden');
+                        else item.classList.add('hidden');
+                    });
+                } else if (role === 'supervisor') {
+                    // السوبر فايزر يظهر له كل شيء
+                    items.forEach(item => item.classList.remove('hidden'));
+                }
+            }
+        }
+        
+        async function saveUserChanges(e) {
             e.preventDefault(); 
             const em = document.getElementById("edit-email").value.toLowerCase().trim();
+            const role = document.getElementById("edit-role").value;
             
+            // تجميع الصلاحيات
+            let permissions = {};
+            if (role === 'leader' || role === 'supervisor') {
+                const checkboxes = document.querySelectorAll('#permissions-grid input[type="checkbox"]');
+                checkboxes.forEach(cb => {
+                    // نحفظ الصلاحية فقط إذا كانت مرئية (لتجنب حفظ صلاحيات مخفية بالخطأ)
+                    const parent = cb.closest('.perm-item');
+                    if (!parent.classList.contains('hidden')) {
+                        permissions[cb.id.replace('perm-', '')] = cb.checked;
+                    }
+                });
+            }
+        
             const data = { 
                 name: document.getElementById("edit-name").value, 
                 title: document.getElementById("edit-title").value, 
                 department: document.getElementById("edit-dept").value,
-                role: document.getElementById("edit-role").value, 
+                role: role,
+                permissions: permissions, // حفظ المصفوفة الجديدة
                 idleLimit: parseInt(document.getElementById("edit-idle").value) || 5, 
                 backgroundLimit: parseInt(document.getElementById("edit-background-limit").value) || 60,
                 photo: document.getElementById("edit-photo-base64").value 
             };
-
-            if(document.getElementById("edit-email").getAttribute("data-mode") === "new"){ 
+        
+            if (document.getElementById("edit-email").getAttribute("data-mode") === "new") { 
                 data.email = em; 
                 data.status = "Offline"; 
                 data.timeBank = {}; 
                 data.tasks = [];
                 await db.collection("users").doc(em).set(data); 
+            } else {
+                await db.collection("users").doc(em).update(data);
             }
-            else await db.collection("users").doc(em).update(data);
             
             closeModal("modal-edit");
         }
@@ -2877,6 +3057,7 @@
     </script>
 </body>
 </html>
+
 
 
 
