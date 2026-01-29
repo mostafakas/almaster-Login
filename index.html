@@ -12,7 +12,8 @@
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -33,14 +34,18 @@
     </script>
 
     <style>
+        /* --- الأساسيات --- */
         body { background-color: #f8fafc; font-family: 'Outfit', 'Cairo', sans-serif; overflow-x: hidden; }
         .dark-mode body { background-color: #0f172a; color: white; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .hidden-section { display: none !important; }
+        
+        /* --- النماذج والإدخال --- */
         .form-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; font-size: 14px; transition: all 0.3s; }
         .form-input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); outline: none; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
         
+        /* --- القوائم والأنيميشن --- */
         .dropdown-menu { transform-origin: top left; transition: all 0.2s ease-out; transform: scale(0.95); opacity: 0; pointer-events: none; }
         .dropdown-menu.active { transform: scale(1); opacity: 1; pointer-events: auto; }
 
@@ -59,7 +64,7 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
 
-        /* Professional Card Design */
+        /* --- بطاقات الموظفين --- */
         .pro-card-design {
             background: white;
             border-radius: 1.5rem;
@@ -73,53 +78,93 @@
         .dark-mode .pro-card-design { background: #1e293b; border-color: #334155; }
         .pro-card-design:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
 
-        /* Word Sheet & Task Interface */
-        .a4-paper {
-            background: white;
-            width: 100%;
-            max-width: 210mm;
-            min-height: 200mm;
-            padding: 20mm;
-            margin: 0 auto;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            color: #1f2937;
-            font-family: 'Times New Roman', serif;
-            font-size: 14pt;
-            line-height: 1.6;
-            border: 1px solid #e5e7eb;
-        }
-        .dark-mode .a4-paper { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
+        /* ============================================================ */
+        /* تعديلات مركز المهام الجديدة (لحل مشكلة الشاشة والمحرر) */
+        /* ============================================================ */
 
-        .task-list-item { transition: background-color 0.2s; border-right: 4px solid transparent; }
-        .task-list-item:hover { background-color: #f1f5f9; }
-        .dark-mode .task-list-item:hover { background-color: #334155; }
-        .task-list-item.active { background-color: #eff6ff; border-right-color: #3b82f6; }
-        .dark-mode .task-list-item.active { background-color: #1e293b; border-right-color: #3b82f6; }
-        
-                /* --- تنسيقات حالات المهام الجديدة --- */
-        .status-pill {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 800;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: all 0.2s;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            opacity: 0.6;
+        /* 1. ضبط الصندوق الرئيسي للمودال ليناسب جميع الشاشات */
+        #modal-task-center > div {
+            height: 90vh !important;       /* ارتفاع ثابت 90% من الشاشة */
+            max-height: 90vh !important;
+            display: flex !important;
+            flex-direction: column !important; /* في الموبايل العناصر فوق بعض */
+            overflow: hidden !important;   /* ممنوع أي حاجة تخرج بره الصندوق */
+            width: 95% !important;         /* عرض مناسب للموبايل */
+            margin: auto;
         }
-        .status-pill:hover { opacity: 0.8; transform: scale(1.05); }
-        .status-pill.active { opacity: 1; border-color: rgba(0,0,0,0.1); box-shadow: 0 2px 4px rgba(0,0,0,0.1); transform: scale(1.05); }
+
+        @media (min-width: 768px) {
+            #modal-task-center > div {
+                flex-direction: row !important; /* في الكمبيوتر العناصر جنب بعض */
+                width: 100% !important;
+                max-width: 80rem !important;
+            }
+        }
+
+        /* 2. ضبط منطقة التفاصيل والشات (الجزء الأيسر/الأساسي) */
+        #task-detail-view {
+            flex: 1 !important;
+            height: 100% !important;
+            overflow-y: auto !important;   /* تفعيل السكرول الداخلي */
+            padding-bottom: 150px !important; /* مساحة فارغة تحت عشان الشات ميكنش مغطي الكلام */
+            display: block !important;
+            position: relative;
+            padding: 20px !important;
+        }
+
+        /* 3. ضبط منطقة القائمة الجانبية (Sidebar) */
+        #task-list-container {
+            overflow-y: auto !important;
+            padding-bottom: 20px;
+        }
         
-        /* ألوان الحالات */
-        .status-started.active { background-color: #f3f4f6; color: #374151; border-color: #d1d5db; } /* رمادي */
-        .status-working.active { background-color: #e0f2fe; color: #0284c7; border-color: #7dd3fc; } /* أزرق */
-        .status-done.active { background-color: #dcfce7; color: #16a34a; border-color: #86efac; } /* أخضر */
-        
-        /* تحسين شكل بطاقة التاسك */
+        /* في الموبايل، القائمة الجانبية تكون صغيرة */
+        @media (max-width: 768px) {
+            #modal-task-center > div > div:first-child {
+                height: 180px !important; /* ارتفاع صغير للقائمة في الموبايل */
+                flex: none !important;
+                overflow-y: auto !important;
+                border-left: none !important;
+                border-bottom: 1px solid #e2e8f0;
+            }
+        }
+
+        /* 4. تنسيق محرر النصوص (Quill Editor) */
+        .ql-toolbar { 
+            border-radius: 8px 8px 0 0; 
+            background: #f8fafc; 
+            direction: ltr; 
+            text-align: left; 
+            border-color: #cbd5e1 !important;
+        }
+        .ql-container { 
+            border-radius: 0 0 8px 8px; 
+            font-family: 'Cairo', sans-serif; 
+            font-size: 16px; 
+            height: 200px !important; /* ارتفاع ثابت للمحرر */
+            background: white; 
+            margin-bottom: 20px;
+            border-color: #cbd5e1 !important;
+        }
+        .ql-editor { 
+            direction: rtl; 
+            text-align: right; 
+        }
+
+        /* 5. ورقة العمل داخل عرض التفاصيل */
+        .a4-paper {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: auto !important;
+            padding: 0 !important; /* إزالة الحواف الزائدة */
+            margin: 0 auto !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: transparent !important;
+            font-family: 'Outfit', 'Cairo', sans-serif !important;
+        }
+
+        /* --- تنسيقات بطاقات المهام الجديدة (Modern Task Cards) --- */
         .task-card-modern {
             background: white;
             border: 1px solid #f1f5f9;
@@ -134,22 +179,44 @@
         .task-card-modern:hover { border-color: #0ea5e9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
         .task-card-modern.active { border-right: 4px solid #0ea5e9; background: #f0f9ff; }
         .dark-mode .task-card-modern.active { background: #0c4a6e; }
-        
-        /* أزرار الأكشن للمدير */
-        .admin-action-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
+
+        /* --- أزرار الحالات (Status Pills) --- */
+        .status-pill {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            transition: all 0.2s;
+            gap: 4px;
+            opacity: 0.7;
+        }
+        .status-pill:hover { opacity: 1; transform: scale(1.02); }
+        .status-pill.active { opacity: 1; transform: scale(1.05); font-weight: 900; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+        .status-started.active { background-color: #f3f4f6; color: #374151; border-color: #d1d5db; }
+        .status-working.active { background-color: #e0f2fe; color: #0284c7; border-color: #7dd3fc; }
+        .status-done.active { background-color: #dcfce7; color: #16a34a; border-color: #86efac; }
+
+        /* --- أزرار التحكم للمدير --- */
+        .admin-action-btn {
+            width: 28px; height: 28px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; transition: all 0.2s;
         }
         .btn-edit { background: #eff6ff; color: #2563eb; }
         .btn-edit:hover { background: #2563eb; color: white; }
         .btn-delete { background: #fef2f2; color: #dc2626; }
         .btn-delete:hover { background: #dc2626; color: white; }
+
+        /* --- تحسينات الشات (الرسائل) --- */
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 
@@ -385,21 +452,28 @@
             <h3 class="text-xl font-bold mb-6 dark:text-white flex items-center gap-2 border-b pb-4 dark:border-slate-700">
                 <i class="fas fa-clipboard-list text-primary-500"></i> <span id="task-modal-title">إسناد مهمة جديدة</span>
             </h3>
-            <form onsubmit="submitTaskForm(event)" class="space-y-5">
+            <form onsubmit="submitTaskForm(event)" class="space-y-4 flex flex-col h-full">
                 <input type="hidden" id="new-task-target-email">
-                <input type="hidden" id="task-edit-id"> <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">عنوان المهمة</label>
-                    <input type="text" id="new-task-title" class="form-input font-bold text-lg" placeholder="مثال: تقرير SEO الشهري" required>
-                </div>
+                <input type="hidden" id="task-edit-id"> 
+                
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">تفاصيل المهمة (مستند)</label>
-                    <textarea id="new-task-desc" class="form-input h-64 resize-none custom-scrollbar whitespace-pre-wrap font-serif text-lg leading-relaxed p-4" placeholder="اكتب تفاصيل المهمة هنا..." required></textarea>
+                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">عنوان المهمة</label>
+                    <input type="text" id="new-task-title" class="form-input font-bold text-lg" placeholder="مثال: تقرير مبيعات يناير" required>
                 </div>
+            
+                <div class="flex-1 flex flex-col min-h-0">
+                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">تفاصيل المهمة (محرر متطور)</label>
+                    <div class="bg-white rounded-lg border border-slate-300 flex-1 flex flex-col">
+                        <div id="editor-container"></div>
+                    </div>
+                </div>
+            
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">مرفقات (اختياري)</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">مرفق (ملف/صورة)</label>
                     <input type="file" id="new-task-file" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
                 </div>
-                <div class="flex gap-3 pt-4 border-t dark:border-slate-700">
+            
+                <div class="flex gap-3 pt-2 border-t dark:border-slate-700">
                     <button type="submit" class="flex-1 bg-primary-600 text-white py-3 rounded-xl font-bold hover:bg-primary-700 transition shadow-lg">حفظ المهمة</button>
                     <button type="button" onclick="document.getElementById('modal-create-task').classList.add('hidden')" class="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition">إلغاء</button>
                 </div>
@@ -533,7 +607,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-
+        var quillEditor = null; // متغير عام للمحرر
         let currentUser = null, userProfile = null, lastActionTime = Date.now(), allUsersData = [], dismissedAlerts = [], currentFilter = 'all', attachedFileBase64 = null, attachedFileName = "", openPrivateChats = {};
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
         let unreadCounts = {}; 
@@ -624,6 +698,23 @@
             window.addEventListener('mousemove', resetIdleTimer);
             window.addEventListener('keydown', resetIdleTimer);
             if (userProfile.role !== 'admin') { listenForScreenshotRequests(); }
+
+            // تشغيل المحرر مرة واحدة
+            if(!quillEditor) {
+                quillEditor = new Quill('#editor-container', {
+                    theme: 'snow',
+                    placeholder: 'اكتب تفاصيل المهمة هنا... يمكنك تنسيق النص وإضافة قوائم.',
+                    modules: {
+                        toolbar: [
+                            [{ 'header': [1, 2, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'direction': 'rtl' }, { 'align': [] }],
+                            ['link', 'clean']
+                        ]
+                    }
+                });
+            }
         }
 
         function toggleMainMenu() {
@@ -1206,8 +1297,7 @@
 
             // Header Info
             document.getElementById('task-detail-title').innerText = task.title;
-            document.getElementById('task-detail-desc').innerText = task.desc;
-            document.getElementById('task-detail-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
+            document.getElementById('task-detail-desc').innerHTML = task.desc; // استخدام HTML لعرض التنسيق            document.getElementById('task-detail-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
             document.getElementById('task-detail-owner').innerText = task.createdBy || "Admin";
 
             // Status Badge in Detail View
@@ -1310,89 +1400,115 @@
         async function openEditTaskModal() {
             const taskId = parseInt(document.getElementById('current-task-id').value);
             const targetEmail = document.getElementById('current-task-owner-email').value;
-
-            // Fetch current task data
+        
+            // جلب البيانات
             const doc = await db.collection('users').doc(targetEmail).get();
             const tasks = doc.data().tasks || [];
             const task = tasks.find(t => t.id === taskId);
-
+        
             if (!task) return;
-
+        
             document.getElementById('new-task-target-email').value = targetEmail;
-            document.getElementById('task-edit-id').value = task.id; // Mark as editing
+            document.getElementById('task-edit-id').value = task.id;
             document.getElementById('new-task-title').value = task.title;
-            document.getElementById('new-task-desc').value = task.desc;
-            document.getElementById('task-modal-title').innerText = "تعديل المهمة";
             
+            // وضع النص المنسق داخل المحرر
+            if(quillEditor) quillEditor.root.innerHTML = task.desc || '';
+            
+            document.getElementById('task-modal-title').innerText = "تعديل المهمة";
             document.getElementById('modal-create-task').classList.remove('hidden');
         }
-
         // Open Modal to Create NEW Task
         function openAddTaskModal(targetEmail) {
             document.getElementById('new-task-target-email').value = targetEmail;
-            document.getElementById('task-edit-id').value = ""; // Clear edit ID
+            document.getElementById('task-edit-id').value = ""; 
             document.getElementById('new-task-title').value = '';
-            document.getElementById('new-task-desc').value = '';
             document.getElementById('new-task-file').value = '';
+            
+            // تفريغ المحرر
+            if(quillEditor) quillEditor.root.innerHTML = '';
+            
             document.getElementById('task-modal-title').innerText = "إسناد مهمة جديدة";
             document.getElementById('modal-create-task').classList.remove('hidden');
         }
 
         async function submitTaskForm(e) {
             e.preventDefault();
-            const targetEmail = document.getElementById('new-task-target-email').value;
-            const editId = document.getElementById('task-edit-id').value;
-            const title = document.getElementById('new-task-title').value;
-            const desc = document.getElementById('new-task-desc').value;
-            const fileInput = document.getElementById('new-task-file');
             
-            let fileBase64 = null;
-            if (fileInput.files[0]) {
-                const reader = new FileReader();
-                fileBase64 = await new Promise(resolve => {
-                    reader.onload = e => resolve(e.target.result);
-                    reader.readAsDataURL(fileInput.files[0]);
-                });
-            }
-
-            const userRef = db.collection('users').doc(targetEmail);
-            const doc = await userRef.get();
-            let tasks = doc.data().tasks || [];
-
-            if (editId) {
-                // UPDATE EXISTING TASK
-                const taskIndex = tasks.findIndex(t => t.id == editId);
-                if (taskIndex > -1) {
-                    tasks[taskIndex].title = title;
-                    tasks[taskIndex].desc = desc;
-                    if (fileBase64) tasks[taskIndex].file = fileBase64;
-                    // Preserve comments and other data
+            // إظهار لودر أو تغيير نص الزر (اختياري لتحسين التجربة)
+            const btn = e.target.querySelector('button[type="submit"]');
+            const oldText = btn.innerText;
+            btn.innerText = "جاري الحفظ...";
+            btn.disabled = true;
+        
+            try {
+                const targetEmail = document.getElementById('new-task-target-email').value;
+                const editId = document.getElementById('task-edit-id').value;
+                const title = document.getElementById('new-task-title').value;
+                
+                // جلب النص من المحرر (HTML)
+                const desc = quillEditor ? quillEditor.root.innerHTML : '';
+                
+                const fileInput = document.getElementById('new-task-file');
+                
+                // قراءة الملف (إن وجد)
+                let fileBase64 = null;
+                if (fileInput.files.length > 0) {
+                    const reader = new FileReader();
+                    fileBase64 = await new Promise((resolve) => {
+                        reader.onload = (event) => resolve(event.target.result);
+                        reader.readAsDataURL(fileInput.files[0]);
+                    });
                 }
-            } else {
-                // CREATE NEW TASK
-                const newTask = {
-                    id: Date.now(),
-                    title: title,
-                    desc: desc,
-                    file: fileBase64,
-                    comments: [],
-                    createdBy: userProfile.name, 
-                    status: 'open'
-                };
-                tasks.push(newTask);
-            }
-            
-            await userRef.update({ tasks: tasks });
-            
-            alert(editId ? '✅ تم تعديل المهمة' : '✅ تم إسناد المهمة');
-            document.getElementById('modal-create-task').classList.add('hidden');
-            
-            // If task center is open, refresh it
-            if(!document.getElementById('modal-task-center').classList.contains('hidden')) {
+        
+                const userRef = db.collection('users').doc(targetEmail);
+                const doc = await userRef.get();
+                let tasks = doc.data().tasks || [];
+        
+                if (editId) {
+                    // --- تعديل مهمة ---
+                    const taskIndex = tasks.findIndex(t => t.id == editId);
+                    if (taskIndex > -1) {
+                        tasks[taskIndex].title = title;
+                        tasks[taskIndex].desc = desc; // حفظ النص المنسق
+                        if (fileBase64) tasks[taskIndex].file = fileBase64;
+                    }
+                } else {
+                    // --- إضافة مهمة جديدة ---
+                    const newTask = {
+                        id: Date.now(),
+                        title: title,
+                        desc: desc, // حفظ النص المنسق
+                        file: fileBase64,
+                        comments: [],
+                        createdBy: userProfile.name, 
+                        status: 'started',
+                        ownerEmail: targetEmail // مهم جداً للمدير
+                    };
+                    tasks.push(newTask);
+                }
+                
+                await userRef.update({ tasks: tasks });
+                
+                alert(editId ? '✅ تم التعديل بنجاح' : '✅ تم الإسناد بنجاح');
+                document.getElementById('modal-create-task').classList.add('hidden');
+                
+                // تحديث القائمة فوراً
                 openTaskCenter();
+                // لو كنا بنعدل تاسك مفتوح، نعيد تحميل تفاصيله
+                if(editId && document.getElementById('current-task-id').value == editId) {
+                     const updatedTask = tasks.find(t => t.id == editId);
+                     if(updatedTask) showTaskDetail({...updatedTask, ownerEmail: targetEmail}, 0);
+                }
+        
+            } catch (error) {
+                console.error(error);
+                alert("حدث خطأ أثناء الحفظ، تأكد من الاتصال.");
+            } finally {
+                btn.innerText = oldText;
+                btn.disabled = false;
             }
         }
-
         async function addTaskNote(e) {
             e.preventDefault();
             const taskId = parseInt(document.getElementById('current-task-id').value);
@@ -2583,4 +2699,5 @@
     </script>
 </body>
 </html>
+
 
