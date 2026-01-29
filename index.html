@@ -1341,8 +1341,11 @@
             listContainer.innerHTML = '<div class="text-center p-4"><div class="animate-spin w-6 h-6 border-2 border-primary-500 rounded-full inline-block"></div></div>';
             
             let tasksToShow = [];
-            
-            if(userProfile.role === 'admin') {
+            const isAdmin = userProfile.role === 'admin';
+            const isManager = hasPermission('can_manage_tasks'); // ليدر أو سوبر فايزر
+        
+            if(isAdmin) {
+                // المدير يرى كل شيء
                 allUsersData.forEach(u => {
                     if(u.tasks) {
                         u.tasks.forEach(t => {
@@ -1352,10 +1355,29 @@
                     }
                 });
             } else {
+                // 1. جلب المهام المسندة "إلي" (كموظف)
                 if(userProfile.tasks) {
                     userProfile.tasks.forEach(t => {
                         const taskWithInfo = {...t, ownerName: "Me", ownerEmail: userProfile.email};
                         tasksToShow.push(taskWithInfo);
+                    });
+                }
+        
+                // 2. [جديد] جلب المهام التي "أنشأتها أنا" لغيري (كليدر)
+                if (isManager) {
+                    allUsersData.forEach(u => {
+                        // تخطي نفسي لأن مهامي ضفتها في الخطوة 1
+                        if (u.email === currentUser.email) return;
+        
+                        if (u.tasks) {
+                            u.tasks.forEach(t => {
+                                // الشرط: هل إيميل المنشئ هو إيميلي؟
+                                if (t.createdByEmail === currentUser.email) {
+                                    const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
+                                    tasksToShow.push(taskWithInfo);
+                                }
+                            });
+                        }
                     });
                 }
             }
@@ -1364,92 +1386,104 @@
         }
 
         function renderTaskList(tasks) {
-    const listContainer = document.getElementById('task-list-container');
-    listContainer.innerHTML = '';
-    
-    if (!tasks || tasks.length === 0) {
-        listContainer.innerHTML = '<div class="text-center text-slate-400 p-8 text-sm font-bold flex flex-col items-center gap-2"><i class="fas fa-clipboard-check text-2xl opacity-50"></i><p>لا توجد مهام حالياً</p></div>';
-        return;
-    }
-
-    tasks.sort((a, b) => b.id - a.id);
-    
-    // التحقق من صلاحية "إدارة المهام" بدلاً من "admin" فقط
-    const canManageTasks = hasPermission('can_manage_tasks'); 
-
-    tasks.forEach((task, idx) => {
-        const isMyTask = task.ownerEmail === currentUser.email;
-        const taskStatus = task.status || 'started'; 
-
-        // تحديد لون البطاقة بناءً على الحالة
-        let cardColorClass = '';
-        if(taskStatus === 'started') cardColorClass = 'card-style-started';
-        else if(taskStatus === 'working') cardColorClass = 'card-style-working';
-        else if(taskStatus === 'done') cardColorClass = 'card-style-done';
-        else cardColorClass = 'card-style-started'; 
-
-        const el = document.createElement('div');
-        el.className = `task-card-modern cursor-pointer group ${cardColorClass}`;
+            const listContainer = document.getElementById('task-list-container');
+            listContainer.innerHTML = '';
+            
+            if (!tasks || tasks.length === 0) {
+                listContainer.innerHTML = '<div class="text-center text-slate-400 p-8 text-sm font-bold flex flex-col items-center gap-2"><i class="fas fa-clipboard-check text-2xl opacity-50"></i><p>لا توجد مهام حالياً</p></div>';
+                return;
+            }
         
-        el.onclick = (e) => {
-            if(e.target.closest('.no-click')) return;
-            showTaskDetail(task, idx);
-        };
-
-        // أزرار الحالة للموظف (إذا كانت مهمته وهو ليس مدير مهام أو ليدر في وضع المشاهدة)
-        // الليدر والمشرف ممكن يكون عندهم مهام خاصة بيهم، فهنا يظهر لهم التحكم العادي
-        let statusControls = '';
-        if (isMyTask && !canManageTasks) { // الموظف العادي
-             statusControls = createStatusControls(task, taskStatus);
-        } else if (isMyTask && canManageTasks) { // الليدر لو دي مهمته الشخصية يقدر يغير حالتها برضه
-             statusControls = createStatusControls(task, taskStatus);
-        }
-
-        // أزرار التحكم الإداري (تعديل/حذف) تظهر لمن يملك الصلاحية
-        let adminControls = '';
-        if (canManageTasks) {
-            adminControls = `
-            <div class="flex gap-2 items-center no-click">
-                <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; openEditTaskModal()" class="admin-action-btn btn-edit" title="تعديل"><i class="fas fa-pen"></i></button>
-                <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; deleteCurrentTask()" class="admin-action-btn btn-delete" title="حذف"><i class="fas fa-trash"></i></button>
-            </div>`;
-        }
-
-        // أيقونات الحالة للمدير/الليدر
-        let statusText = '';
-        if(canManageTasks) {
-             if(taskStatus === 'started') statusText = '<i class="fas fa-play-circle text-green-600"></i>';
-             else if (taskStatus === 'working') statusText = '<i class="fas fa-spinner fa-spin text-blue-600"></i>';
-             else if (taskStatus === 'done') statusText = '<i class="fas fa-check-circle text-red-600"></i>';
-        }
-
-        el.innerHTML = `
-            <div class="flex justify-between items-start mb-2">
-                <div class="flex-1 min-w-0">
-                    <h4 class="font-black text-sm text-slate-800 dark:text-white truncate flex items-center gap-1">
-                        ${statusText} ${task.title}
-                    </h4>
-                    <p class="text-[10px] text-primary-600 font-bold mt-0.5">
-                        <i class="fas fa-user-tie ml-1"></i> ${task.createdBy || 'Admin'}
+            tasks.sort((a, b) => b.id - a.id);
+            
+            const isAdmin = userProfile.role === 'admin';
+            const canManageTasks = hasPermission('can_manage_tasks'); 
+        
+            tasks.forEach((task, idx) => {
+                // هل هذه المهمة مسندة لي؟
+                const isAssignedToMe = task.ownerEmail === currentUser.email;
+                // هل أنا من أنشأت هذه المهمة؟ (لليدر)
+                const isCreatedByMe = task.createdByEmail === currentUser.email;
+                
+                const taskStatus = task.status || 'started'; 
+        
+                // تحديد لون البطاقة
+                let cardColorClass = '';
+                if(taskStatus === 'started') cardColorClass = 'card-style-started';
+                else if(taskStatus === 'working') cardColorClass = 'card-style-working';
+                else if(taskStatus === 'done') cardColorClass = 'card-style-done';
+                else cardColorClass = 'card-style-started'; 
+        
+                const el = document.createElement('div');
+                el.className = `task-card-modern cursor-pointer group ${cardColorClass}`;
+                
+                el.onclick = (e) => {
+                    if(e.target.closest('.no-click')) return;
+                    showTaskDetail(task, idx);
+                };
+        
+                // --- أزرار الحالة (للمنفذ للمهمة) ---
+                // تظهر لو المهمة مسندة لي (سواء كنت موظف أو ليدر)
+                let statusControls = '';
+                if (isAssignedToMe) { 
+                     statusControls = createStatusControls(task, taskStatus);
+                }
+        
+                // --- أزرار الإدارة (للمدير أو لمنشئ المهمة) ---
+                // تظهر لو أنا أدمن OR (أنا ليدر وهذه المهمة أنا من أنشأتها)
+                let adminControls = '';
+                if (isAdmin || (canManageTasks && isCreatedByMe)) {
+                    adminControls = `
+                    <div class="flex gap-2 items-center no-click">
+                        <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; openEditTaskModal()" class="admin-action-btn btn-edit" title="تعديل"><i class="fas fa-pen"></i></button>
+                        <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; deleteCurrentTask()" class="admin-action-btn btn-delete" title="حذف"><i class="fas fa-trash"></i></button>
+                    </div>`;
+                }
+        
+                // --- أيقونة الحالة واسم الموظف ---
+                // يظهر اسم الموظف لو أنا أدمن أو أنا منشئ المهمة (ليدر) وهي ليست لي
+                let statusText = '';
+                let employeeInfo = '';
+                
+                // لو أنا مدير أو ليدر يتابع مهامه
+                if(isAdmin || canManageTasks) {
+                     if(taskStatus === 'started') statusText = '<i class="fas fa-play-circle text-green-600"></i>';
+                     else if (taskStatus === 'working') statusText = '<i class="fas fa-spinner fa-spin text-blue-600"></i>';
+                     else if (taskStatus === 'done') statusText = '<i class="fas fa-check-circle text-red-600"></i>';
+                     
+                     // إظهار اسم الموظف إذا لم تكن المهمة لي
+                     if (!isAssignedToMe) {
+                         employeeInfo = `<p class="text-[10px] text-slate-500 font-bold mt-0.5"><i class="fas fa-user ml-1"></i> الموظف: ${task.ownerName}</p>`;
+                     }
+                }
+        
+                el.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-black text-sm text-slate-800 dark:text-white truncate flex items-center gap-1">
+                                ${statusText} ${task.title}
+                            </h4>
+                            <p class="text-[10px] text-primary-600 font-bold mt-0.5">
+                                <i class="fas fa-user-tie ml-1"></i> ${task.createdBy || 'Admin'}
+                            </p>
+                            ${employeeInfo}
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="text-[9px] bg-white/50 px-1.5 py-0.5 rounded text-slate-600 font-mono border border-slate-200">${moment(task.id).format('DD/MM')}</span>
+                            ${adminControls}
+                        </div>
+                    </div>
+                    
+                    <p class="text-[10px] text-slate-500 truncate border-l-2 border-slate-300 pl-2 mb-1 font-cairo">
+                       انقر لعرض التفاصيل...
                     </p>
-                    ${canManageTasks ? `<p class="text-[10px] text-slate-500 font-bold mt-0.5"><i class="fas fa-user ml-1"></i> الموظف: ${task.ownerName}</p>` : ''}
-                </div>
-                <div class="flex flex-col items-end gap-1">
-                    <span class="text-[9px] bg-white/50 px-1.5 py-0.5 rounded text-slate-600 font-mono border border-slate-200">${moment(task.id).format('DD/MM')}</span>
-                    ${adminControls}
-                </div>
-            </div>
-            
-            <p class="text-[10px] text-slate-500 truncate border-l-2 border-slate-300 pl-2 mb-1 font-cairo">
-               انقر لعرض التفاصيل...
-            </p>
-            
-            ${statusControls}
-        `;
-        
-        listContainer.appendChild(el);
-    });
-}
+                    
+                    ${statusControls}
+                `;
+                
+                listContainer.appendChild(el);
+            });
+        }
 
 // دالة مساعدة لإنشاء أزرار الحالة (عشان الكود يكون أنظف)
 function createStatusControls(task, taskStatus) {
@@ -1654,7 +1688,6 @@ function createStatusControls(task, taskStatus) {
         async function submitTaskForm(e) {
             e.preventDefault();
             
-            // إظهار لودر أو تغيير نص الزر (اختياري لتحسين التجربة)
             const btn = e.target.querySelector('button[type="submit"]');
             const oldText = btn.innerText;
             btn.innerText = "جاري الحفظ...";
@@ -1664,13 +1697,9 @@ function createStatusControls(task, taskStatus) {
                 const targetEmail = document.getElementById('new-task-target-email').value;
                 const editId = document.getElementById('task-edit-id').value;
                 const title = document.getElementById('new-task-title').value;
-                
-                // جلب النص من المحرر (HTML)
                 const desc = quillEditor ? quillEditor.root.innerHTML : '';
-                
                 const fileInput = document.getElementById('new-task-file');
                 
-                // قراءة الملف (إن وجد)
                 let fileBase64 = null;
                 if (fileInput.files.length > 0) {
                     const reader = new FileReader();
@@ -1689,20 +1718,22 @@ function createStatusControls(task, taskStatus) {
                     const taskIndex = tasks.findIndex(t => t.id == editId);
                     if (taskIndex > -1) {
                         tasks[taskIndex].title = title;
-                        tasks[taskIndex].desc = desc; // حفظ النص المنسق
+                        tasks[taskIndex].desc = desc; 
                         if (fileBase64) tasks[taskIndex].file = fileBase64;
+                        // لا نغير الـ createdByEmail عند التعديل للحفاظ على المرجعية
                     }
                 } else {
                     // --- إضافة مهمة جديدة ---
                     const newTask = {
                         id: Date.now(),
                         title: title,
-                        desc: desc, // حفظ النص المنسق
+                        desc: desc,
                         file: fileBase64,
                         comments: [],
-                        createdBy: userProfile.name, 
+                        createdBy: userProfile.name,
+                        createdByEmail: currentUser.email, // [جديد] تسجيل إيميل الليدر/المدير
                         status: 'started',
-                        ownerEmail: targetEmail // مهم جداً للمدير
+                        ownerEmail: targetEmail 
                     };
                     tasks.push(newTask);
                 }
@@ -1712,9 +1743,7 @@ function createStatusControls(task, taskStatus) {
                 alert(editId ? '✅ تم التعديل بنجاح' : '✅ تم الإسناد بنجاح');
                 document.getElementById('modal-create-task').classList.add('hidden');
                 
-                // تحديث القائمة فوراً
                 openTaskCenter();
-                // لو كنا بنعدل تاسك مفتوح، نعيد تحميل تفاصيله
                 if(editId && document.getElementById('current-task-id').value == editId) {
                      const updatedTask = tasks.find(t => t.id == editId);
                      if(updatedTask) showTaskDetail({...updatedTask, ownerEmail: targetEmail}, 0);
@@ -1722,7 +1751,7 @@ function createStatusControls(task, taskStatus) {
         
             } catch (error) {
                 console.error(error);
-                alert("حدث خطأ أثناء الحفظ، تأكد من الاتصال.");
+                alert("حدث خطأ أثناء الحفظ.");
             } finally {
                 btn.innerText = oldText;
                 btn.disabled = false;
@@ -3208,6 +3237,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
