@@ -2737,6 +2737,7 @@ function createStatusControls(task, taskStatus) {
             try {
                 const snapshot = await db.collection('logs')
                     .where('user', '==', email)
+                    .orderBy('end_time', 'desc') // ترتيب مباشر من قاعدة البيانات أفضل
                     .limit(100) 
                     .get();
         
@@ -2745,15 +2746,17 @@ function createStatusControls(task, taskStatus) {
                 let logs = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const logDate = data.end_time.toDate();
-                    // فلتر 1: حركات اليوم فقط
-                    // فلتر 2: تجاهل الحركات المكررة (من نفس الحالة لنفس الحالة)
-                    if (logDate >= startOfDay && logDate <= endOfDay && data.from_status !== data.to_status) {
-                        logs.push(data);
+                    
+                    // تحقق أمان: التأكد من وجود الحقل end_time قبل محاولة تحويله
+                    if (data && data.end_time) {
+                        const logDate = data.end_time.toDate();
+                        
+                        // فلتر: حركات اليوم + تجاهل الحركات المكررة
+                        if (logDate >= startOfDay && logDate <= endOfDay && data.from_status !== data.to_status) {
+                            logs.push(data);
+                        }
                     }
                 });
-        
-                logs.sort((a, b) => b.end_time.toDate() - a.end_time.toDate());
         
                 if (logs.length === 0) {
                     emptyState.classList.remove('hidden');
@@ -2761,6 +2764,9 @@ function createStatusControls(task, taskStatus) {
                 }
         
                 logs.forEach((log, index) => {
+                    // تحقق إضافي للأمان داخل الحلقة
+                    if (!log.end_time) return;
+        
                     const time = moment(log.end_time.toDate()).format('h:mm A');
                     const duration = formatDurationText(log.duration_ms); 
                     
@@ -2800,7 +2806,7 @@ function createStatusControls(task, taskStatus) {
             } catch (error) { 
                 console.error(error);
                 loader.classList.add('hidden');
-                timelineContainer.innerHTML = `<div class="p-4 text-center text-red-500 text-xs font-bold bg-red-50 rounded-xl">حدث خطأ في تحميل البيانات.</div>`;
+                timelineContainer.innerHTML = `<div class="p-4 text-center text-red-500 text-xs font-bold bg-red-50 rounded-xl">حدث خطأ في تحميل البيانات. تأكد من وجود Index في Firebase.</div>`;
             }
         }       
         // دالة مساعدة لتنسيق الوقت بشكل نصي مقروء
@@ -3255,3 +3261,4 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
