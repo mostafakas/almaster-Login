@@ -2540,16 +2540,14 @@ function createStatusControls(task, taskStatus) {
                 return;
             }
         
-            statusEl.innerText = "جاري تنظيف البيانات واحتساب الأوقات...";
+            statusEl.innerText = "جاري استخراج البيانات...";
             resultsArea.classList.add('hidden');
         
-            const oldDetails = document.getElementById('report-details-table');
+            const oldDetails = document.getElementById('report-details-area-new');
             if(oldDetails) oldDetails.remove();
         
             const start = new Date(dateFrom); start.setHours(0, 0, 0, 0);
             const end = new Date(dateTo); end.setHours(23, 59, 59, 999);
-            const todayStr = moment().format('YYYY-MM-DD');
-            const isTodayIncluded = moment(todayStr).isBetween(dateFrom, dateTo, undefined, '[]');
         
             try {
                 let query = db.collection("logs")
@@ -2557,165 +2555,125 @@ function createStatusControls(task, taskStatus) {
                     .where("end_time", "<=", end)
                     .orderBy("end_time", "desc");
         
-                if (userEmail !== "all") {
-                    query = query.where("user", "==", userEmail);
-                }
+                if (userEmail !== "all") query = query.where("user", "==", userEmail);
         
                 const snapshot = await query.get();
-                
-                const dataGrouped = {};
+                let logsMarkup = '';
                 let grandTotals = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
-                let tableRows = '';
+                const dataGrouped = {};
         
                 snapshot.forEach(doc => {
                     const d = doc.data();
-                    const userName = d.name || d.user;
-                    const status = d.from_status; 
-                    const toStatus = d.to_status; // الحالة الجديدة
                     const duration = parseInt(d.duration_ms) || 0;
+                    const status = d.from_status;
+                    const userName = d.name || d.user;
                     const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
         
-                    // 1. الحسابات (نحسب كل شيء بدقة حتى لو مكرر)
+                    // حساب الإحصائيات
                     if (status !== 'Offline') {
                         if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
-                        if (!dataGrouped[dateKey][userName]) {
-                            dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
-                        }
+                        if (!dataGrouped[dateKey][userName]) dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
                         
-                        if (!dataGrouped[dateKey][userName][status]) dataGrouped[dateKey][userName][status] = 0;
-                        
-                        dataGrouped[dateKey][userName][status] += duration;
-                        dataGrouped[dateKey][userName].Total += duration;
-                        
-                        if(grandTotals.hasOwnProperty(status)) {
+                        if (grandTotals.hasOwnProperty(status)) {
                             grandTotals[status] += duration;
                             grandTotals.Total += duration;
+                            dataGrouped[dateKey][userName][status] += duration;
+                            dataGrouped[dateKey][userName].Total += duration;
                         }
-                    }
         
-                    // 2. العرض في الجدول (هنا الفلتر الذكي)
-                    // الشرط: لا تعرض السطر إذا كانت الحالة السابقة = الحالة الحالية
-                    if (status !== toStatus) { 
-                        const logDate = moment(d.end_time.toDate());
-                        tableRows += `
-                            <tr class="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
-                                <td class="p-3 text-xs font-bold">${d.name}</td>
-                                <td class="p-3 text-[10px] text-slate-500">${logDate.format('YYYY-MM-DD')}</td>
-                                <td class="p-3 text-[10px] font-mono">${logDate.format('hh:mm A')}</td>
-                                <td class="p-3 text-xs">
-                                    <span class="text-slate-400">${d.from_status}</span> 
-                                    <i class="fas fa-arrow-left text-[8px] mx-1"></i> 
-                                    <span class="font-bold text-primary-600">${d.to_status}</span>
-                                </td>
-                                <td class="p-3 text-xs font-bold font-mono">${formatTime(d.duration_ms)}</td>
-                            </tr>`;
+                        // تصميم البطاقة الاحترافية للسجل
+                        let config = getStatusConfig(status);
+                        logsMarkup += `
+                        <div class="flex items-start gap-3 p-3 mb-2 rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+                            <div class="w-8 h-8 rounded-lg ${config.bgColor} ${config.textColor} flex items-center justify-center text-xs shadow-sm">
+                                <i class="fas ${config.icon}"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[11px] font-black text-slate-700 dark:text-slate-200">${userName}</span>
+                                    <span class="text-[9px] font-bold text-slate-400 font-mono">${moment(d.end_time.toDate()).format('hh:mm A')}</span>
+                                </div>
+                                <p class="text-[10px] text-slate-500">
+                                    استغرق <span class="font-bold ${config.textColor}">${formatDurationText(duration)}</span> في حالة <span class="underline">${status}</span> 
+                                    ثم انتقل إلى <span class="text-primary-500 font-bold">${d.to_status}</span>
+                                    ${d.auto ? '<span class="text-[8px] bg-slate-100 px-1 rounded ml-1">🤖 آلي</span>' : ''}
+                                </p>
+                            </div>
+                        </div>`;
                     }
                 });
         
-                // إضافة الوقت الجاري (كما هو)
-                if (isTodayIncluded) {
-                    allUsersData.forEach(u => {
-                        if (userEmail !== "all" && u.email !== userEmail) return;
-                        if (u.status !== 'Offline') {
-                            const now = Date.now();
-                            let liveStatus = u.status;
-                            let startTime = getMillis(u.lastChange);
-                            if (u.isIdle) { liveStatus = 'Idle'; startTime = getMillis(u.idleSince); }
-                            const liveDuration = now - startTime;
-        
-                            if (grandTotals.hasOwnProperty(liveStatus)) {
-                                grandTotals[liveStatus] += liveDuration;
-                                grandTotals.Total += liveDuration;
-                            }
-                            if (!dataGrouped[todayStr]) dataGrouped[todayStr] = {};
-                            if (!dataGrouped[todayStr][u.name]) dataGrouped[todayStr][u.name] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
-                            if (!dataGrouped[todayStr][u.name][liveStatus]) dataGrouped[todayStr][u.name][liveStatus] = 0;
-        
-                            dataGrouped[todayStr][u.name][liveStatus] += liveDuration;
-                            dataGrouped[todayStr][u.name].Total += liveDuration;
-        
-                            tableRows = `
-                                <tr class="bg-green-50 dark:bg-green-900/10 border-b border-green-100 animate-pulse">
-                                    <td class="p-3 text-xs font-bold text-green-700">${u.name}</td>
-                                    <td class="p-3 text-[10px] text-green-600">اليوم</td>
-                                    <td class="p-3 text-[10px] font-mono">الآن</td>
-                                    <td class="p-3 text-xs text-green-700 font-bold">${liveStatus} (جلسة جارية)</td>
-                                    <td class="p-3 text-xs font-bold font-mono text-green-700">${formatTime(liveDuration)}</td>
-                                </tr>` + tableRows; 
-                        }
-                    });
-                }
-        
                 if (grandTotals.Total === 0 && snapshot.empty) {
-                    statusEl.innerText = "لا توجد بيانات.";
+                    statusEl.innerText = "لا توجد بيانات لهذه الفترة.";
                     return;
                 }
         
                 resultsArea.classList.remove('hidden');
                 summaryCards.innerHTML = "";
-                const statusLabels = { Online: 'العمل', Break: 'الاستراحة', Meeting: 'الاجتماعات', Idle: 'وقت الخمول' };
+                const statusLabels = { Online: 'العمل', Break: 'استراحة', Meeting: 'اجتماع', Idle: 'خمول' };
                 const colors = { Online: 'text-green-600', Break: 'text-orange-500', Meeting: 'text-blue-500', Idle: 'text-red-500' };
         
                 Object.keys(statusLabels).forEach(key => {
                     summaryCards.innerHTML += `
-                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 text-center">
-                            <p class="text-[10px] font-black text-slate-400 mb-1">${statusLabels[key]}</p>
-                            <p class="text-sm font-black ${colors[key]}">${formatDuration(grandTotals[key])}</p>
+                        <div class="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700 text-center">
+                            <p class="text-[9px] font-black text-slate-400 mb-1">${statusLabels[key]}</p>
+                            <p class="text-xs font-black ${colors[key]}">${formatDuration(grandTotals[key])}</p>
                         </div>`;
                 });
                 totalDurationText.innerText = formatDuration(grandTotals.Total);
         
+                // إضافة قسم السجل المطور أسفل الملخص
                 const detailsSection = `
-                    <div id="report-details-table" class="mt-8 border-t dark:border-slate-700 pt-6">
-                        <h4 class="text-sm font-black mb-4 text-slate-600 dark:text-slate-300 flex items-center gap-2">
-                            <i class="fas fa-list-ul"></i> سجل الحركات الفعلي (التغيرات فقط)
+                    <div id="report-details-area-new" class="mt-6">
+                        <h4 class="text-xs font-black mb-3 text-slate-500 flex items-center gap-2">
+                            <i class="fas fa-history"></i> تفاصيل التحركات الزمنية:
                         </h4>
-                        <div class="overflow-x-auto max-h-[300px] custom-scrollbar rounded-xl border border-slate-200 dark:border-slate-700">
-                            <table class="w-full text-right bg-white dark:bg-slate-800">
-                                <thead class="bg-slate-100 dark:bg-slate-900 text-slate-500 text-[10px] sticky top-0">
-                                    <tr>
-                                        <th class="p-3">الموظف</th>
-                                        <th class="p-3">التاريخ</th>
-                                        <th class="p-3">الوقت</th>
-                                        <th class="p-3">نوع الحركة</th>
-                                        <th class="p-3">المدة</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${tableRows}</tbody>
-                            </table>
+                        <div class="max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                            ${logsMarkup}
                         </div>
                     </div>`;
                 
                 resultsArea.insertAdjacentHTML('beforeend', detailsSection);
                 downloadDetailedExcel(dataGrouped, dateFrom, dateTo);
-                statusEl.innerText = "تم استخراج التقرير الفعلي (بدون تكرار).";
+                statusEl.innerText = "تم استخراج التقرير بنجاح.";
         
             } catch (error) {
                 console.error(error);
-                statusEl.innerText = "خطأ في الاتصال.";
+                statusEl.innerText = "حدث خطأ في جلب البيانات.";
             }
         }
-        function downloadDetailedExcel(dataGrouped, from, to) {
-            let csvContent = "\ufeff"; 
-            csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
-            
-            const sortedDates = Object.keys(dataGrouped).sort().reverse();
-            
-            sortedDates.forEach(date => {
-                Object.keys(dataGrouped[date]).forEach(user => {
-                    const d = dataGrouped[date][user];
-                    csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
-                });
-            });
-            
-            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        
+        // دالة مساعدة للألوان والأيقونات (أضفها في أي مكان في السكريبت)
+        function getStatusConfig(status) {
+            switch(status) {
+                case 'Online': return { icon: 'fa-laptop-code', bgColor: 'bg-green-50', textColor: 'text-green-600' };
+                case 'Break': return { icon: 'fa-coffee', bgColor: 'bg-orange-50', textColor: 'text-orange-600' };
+                case 'Meeting': return { icon: 'fa-users', bgColor: 'bg-blue-50', textColor: 'text-blue-600' };
+                case 'Idle': return { icon: 'fa-keyboard', bgColor: 'bg-red-50', textColor: 'text-red-600' };
+                default: return { icon: 'fa-history', bgColor: 'bg-slate-50', textColor: 'text-slate-600' };
+            }
         }
+                function downloadDetailedExcel(dataGrouped, from, to) {
+                    let csvContent = "\ufeff"; 
+                    csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
+                    
+                    const sortedDates = Object.keys(dataGrouped).sort().reverse();
+                    
+                    sortedDates.forEach(date => {
+                        Object.keys(dataGrouped[date]).forEach(user => {
+                            const d = dataGrouped[date][user];
+                            csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
+                        });
+                    });
+                    
+                    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
 
         function formatDuration(ms) {
             if (!ms || ms < 0) return "00:00:00";
@@ -3265,6 +3223,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
