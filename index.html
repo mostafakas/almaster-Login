@@ -317,43 +317,60 @@
                 transition: transform 0.2s ease-in;
                 box-shadow: 0 1px 2px rgba(0,0,0,0.2);
             }
-
-                    /* الخلفية المتحركة الاحترافية */
             /* الخلفية المتحركة المعدلة لتكون أوضح */
-            .animated-bg {
-                background: linear-gradient(-45deg, #e2e8f0, #cbd5e1, #bae6fd, #e0f2fe);
-                background-size: 400% 400%;
-                animation: gradientBG 10s ease infinite; /* سرعنا الحركة قليلاً لكي تلاحظها */
-                position: fixed;
-                width: 100%;
-                height: 100%;
-                top: 0;
-                left: 0;
-                z-index: -1;
-            }
-            
-            /* في حالة الدارك مود - ألوان أعمق */
-            .dark-mode .animated-bg {
-                background: linear-gradient(-45deg, #020617, #0f172a, #1e293b, #083344);
-                background-size: 400% 400%;
-                animation: gradientBG 10s ease infinite;
-            }
-            
-            /* تأثير الزجاج للبطاقات - مهم جداً لكي ترى الخلفية */
-            .pro-card-design {
-                backdrop-filter: blur(15px) !important;
-                background: rgba(255, 255, 255, 0.7) !important;
-                border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            }
-            
-            .dark-mode .pro-card-design {
-                background: rgba(15, 23, 42, 0.6) !important;
-                border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            }
+          /* خلفية فضائية عميقة ومتحركة */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            /* ألوان داكنة جداً (أسود، كحلي عميق، بنفسجي ليلي) */
+            background: radial-gradient(circle at bottom right, #0f172a, #020617, #1e1b4b, #000000);
+            background-size: 200% 200%;
+            animation: spaceMove 20s ease-in-out infinite;
+        }
+
+        /* إضافة تأثير "الوهج" المتحرك في الخلفية */
+        .animated-bg::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png'); /* تأثير نجوم خفيف */
+            opacity: 0.3;
+        }
+        
+        @keyframes spaceMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* جعل البطاقات تبدو وكأنها قطع زجاجية عائمة فوق الفضاء */
+        .pro-card-design {
+            backdrop-filter: blur(20px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+            background-color: rgba(255, 255, 255, 0.05) !important; /* شفافة جداً */
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8) !important;
+        }
+        
+        /* نصوص البطاقات لتكون واضحة على الخلفية الغامقة */
+        .pro-card-design h3, .pro-card-design p {
+            color: #f1f5f9 !important;
+        }
+        
+        /* الهيدر ليكون متناسق مع العمق */
+        .glass {
+            background: rgba(2, 6, 23, 0.6) !important;
+            backdrop-filter: blur(15px) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
     </style>
 </head>
 
-<body class="min-h-screen text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-900 font-sans selection:bg-primary-500 selection:text-white">
+<body class="min-h-screen text-slate-100 font-sans selection:bg-primary-500 selection:text-white">   
     <div class="animated-bg"></div>
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
     <audio id="status-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
@@ -477,7 +494,7 @@
             </div>
         </header>
 
-    <main class="flex-1 bg-transparent relative overflow-hidden flex flex-col">
+<main class="flex-1 bg-transparent relative overflow-hidden flex flex-col">
     <div class="flex-1 overflow-auto p-6 md:p-8">
                 <div class="mb-8 flex flex-wrap gap-2 justify-center md:justify-end px-2" dir="ltr">
                     <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
@@ -3254,6 +3271,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
