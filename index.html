@@ -319,39 +319,36 @@
             }
 
                     /* الخلفية المتحركة الاحترافية */
+            /* الخلفية المتحركة المعدلة لتكون أوضح */
             .animated-bg {
-                background: linear-gradient(-45deg, #f1f5f9, #e2e8f0, #f0f9ff, #e0f2fe);
+                background: linear-gradient(-45deg, #e2e8f0, #cbd5e1, #bae6fd, #e0f2fe);
                 background-size: 400% 400%;
-                animation: gradientBG 15s ease infinite;
+                animation: gradientBG 10s ease infinite; /* سرعنا الحركة قليلاً لكي تلاحظها */
                 position: fixed;
                 width: 100%;
                 height: 100%;
                 top: 0;
                 left: 0;
-                z-index: -1; /* عشان تكون ورا كل حاجة */
+                z-index: -1;
             }
             
-            /* في حالة الدارك مود */
+            /* في حالة الدارك مود - ألوان أعمق */
             .dark-mode .animated-bg {
-                background: linear-gradient(-45deg, #0f172a, #1e293b, #0c4a6e, #1e1b4b);
+                background: linear-gradient(-45deg, #020617, #0f172a, #1e293b, #083344);
                 background-size: 400% 400%;
-                animation: gradientBG 15s ease infinite;
+                animation: gradientBG 10s ease infinite;
             }
             
-            @keyframes gradientBG {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-            }
-            
-            /* لمسة جمالية للبطاقات عشان تليق مع الخلفية */
+            /* تأثير الزجاج للبطاقات - مهم جداً لكي ترى الخلفية */
             .pro-card-design {
-                backdrop-filter: blur(10px);
-                background: rgba(255, 255, 255, 0.8) !important;
+                backdrop-filter: blur(15px) !important;
+                background: rgba(255, 255, 255, 0.7) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
             }
             
             .dark-mode .pro-card-design {
-                background: rgba(30, 41, 59, 0.7) !important;
+                background: rgba(15, 23, 42, 0.6) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
             }
     </style>
 </head>
@@ -391,8 +388,7 @@
 
     <div id="view-system" class="hidden-section flex flex-col min-h-screen">
         
-        <header class="bg-white dark:bg-slate-800 shadow-md h-20 px-6 flex items-center justify-between z-50 sticky top-0 relative">
-            
+            <header class="glass shadow-md h-20 px-6 flex items-center justify-between z-50 sticky top-0 border-b border-white/20">            
             <div class="flex items-center gap-3">
                 <img id="header-user-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500 object-cover shadow-sm bg-slate-200">
                 <div class="hidden md:block">
@@ -481,8 +477,8 @@
             </div>
         </header>
 
-            <main class="flex-1 bg-transparent relative overflow-hidden flex flex-col">      
-                <div class="flex-1 overflow-auto p-6 md:p-8">
+    <main class="flex-1 bg-transparent relative overflow-hidden flex flex-col">
+    <div class="flex-1 overflow-auto p-6 md:p-8">
                 <div class="mb-8 flex flex-wrap gap-2 justify-center md:justify-end px-2" dir="ltr">
                     <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
                         <span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline
@@ -3258,6 +3254,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
