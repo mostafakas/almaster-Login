@@ -34,133 +34,141 @@
     </script>
 
             <style>
-            /* --- الأساسيات وخلفية الفضاء المحدثة --- */
-            body { background-color: #020617; font-family: 'Outfit', 'Cairo', sans-serif; overflow-x: hidden; color: #f1f5f9; }
-            
-            .animated-bg {
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-                background: radial-gradient(circle at 20% 30%, #0f172a 0%, #020617 100%);
-                background-size: cover;
-            }
-        
-            .animated-bg::after {
-                content: ""; position: absolute; top: 0; left: 0; width: 200%; height: 200%;
-                background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
-                opacity: 0.2; animation: starsMove 100s linear infinite;
-            }
-            @keyframes starsMove { from { transform: translate(0,0); } to { transform: translate(-50%, -50%); } }
-        
-            /* --- تصميم البطاقة الاحترافي الجديد (Glass Card) --- */
-            .pro-card-design {
-                background: rgba(30, 41, 59, 0.4) !important;
-                backdrop-filter: blur(16px) saturate(120%) !important;
-                -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
-                border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                border-radius: 24px !important;
-                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-                position: relative;
-                overflow: visible !important;
-            }
-        
-            .pro-card-design:hover {
-                transform: translateY(-8px) scale(1.02);
-                background: rgba(30, 41, 59, 0.6) !important;
-                border-color: rgba(14, 165, 233, 0.4) !important;
-                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            }
-        
-            /* وهج الحالة (Status Glow) */
-            .status-glow {
-                position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
-                z-index: -1; border-radius: 24px; opacity: 0.15; transition: opacity 0.3s;
-            }
-            .glow-online { background: radial-gradient(circle, #22c55e 0%, transparent 70%); }
-            .glow-idle { background: radial-gradient(circle, #ef4444 0%, transparent 70%); }
-            .glow-meeting { background: radial-gradient(circle, #3b82f6 0%, transparent 70%); }
-            .glow-break { background: radial-gradient(circle, #f59e0b 0%, transparent 70%); }
-        
-            /* كبسولات التوقيت (Timer Capsules) */
-            .timer-capsule {
-                background: rgba(15, 23, 42, 0.6);
-                border: 1px solid rgba(255, 255, 255, 0.05);
-                border-radius: 12px;
-                padding: 8px 4px;
-                transition: all 0.3s;
-            }
-        
-            /* الأزرار العائمة داخل البطاقة */
-            .action-btn-float {
-                width: 36px; height: 36px;
-                border-radius: 10px;
-                display: flex; align-items: center; justify-content: center;
-                background: rgba(255, 255, 255, 0.05);
-                color: #94a3b8;
-                transition: all 0.2s;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-            }
-            .action-btn-float:hover { background: #0ea5e9; color: white; transform: scale(1.1); }
-        
-            /* --- أزرار الفلتر الاحترافية (Glass Capsules) --- */
-            .filter-btn {
-                background: rgba(30, 41, 59, 0.4) !important;
-                backdrop-filter: blur(8px);
-                border: 1px solid rgba(255, 255, 255, 0.05) !important;
-                color: #94a3b8 !important;
-                padding: 8px 16px !important;
-                border-radius: 12px !important;
-                font-size: 11px !important;
-                font-weight: 700 !important;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-                display: flex; align-items: center; gap: 8px;
-            }
-            .filter-btn:hover { background: rgba(30, 41, 59, 0.7) !important; color: #fff !important; }
-            .filter-btn.active {
-                background: #0ea5e9 !important;
-                color: white !important;
-                box-shadow: 0 0 20px rgba(14, 165, 233, 0.4) !important;
-                transform: scale(1.05);
-            }
-        
-            /* --- تعديل القائمة المنسدلة (Sidebar Fix) --- */
-            .dropdown-menu {
-                position: absolute; top: 70px; left: 20px; width: 280px;
-                background: rgba(15, 23, 42, 0.98) !important;
-                backdrop-filter: blur(25px);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 20px;
-                z-index: 1000;
-                opacity: 0; pointer-events: none;
-                transform: translateY(-10px) scale(0.95);
-                transition: all 0.3s ease;
-            }
-            .dropdown-menu.active { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
-        
-            /* --- زر سجل الحركات الاحترافي --- */
-            .log-link-btn {
-                color: #94a3b8; font-size: 11px; font-weight: 800;
-                display: flex; align-items: center; gap: 6px;
-                transition: all 0.3s; padding: 6px 10px; border-radius: 10px;
-            }
-            .log-link-btn:hover { color: #0ea5e9; background: rgba(14, 165, 233, 0.1); }
-            .log-link-btn i { animation: PulseIcon 2s infinite; }
-            @keyframes PulseIcon { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; transform: scale(1.1); } }
-        
-            /* نصوص البطاقات للقراءة الجيدة */
-            .card-title { font-family: 'Cairo', sans-serif; color: #ffffff !important; }
-            .card-subtitle { color: #0ea5e9 !important; font-weight: 700; }
-            
-            .status-select {
-                background: rgba(15, 23, 42, 0.8) !important;
-                border: 1px solid rgba(255, 255, 255, 0.1) !important;
-                color: #f1f5f9 !important;
-                border-radius: 10px; padding: 6px; outline: none; font-size: 12px;
-            }
-        
-            /* الهيدر والمودال */
-            .glass { background: rgba(2, 6, 23, 0.8) !important; backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-            .hidden-section { display: none !important; }
-            #modal-task-center > div { height: 90vh !important; width: 95% !important; margin: auto; }
-        </style>
+                /* --- 1. الأساسيات وخلفية الفضاء --- */
+                body { 
+                    background-color: #020617; 
+                    font-family: 'Outfit', 'Cairo', sans-serif; 
+                    overflow-x: hidden; 
+                    color: #f1f5f9; 
+                }
+                
+                .animated-bg {
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+                    background: radial-gradient(circle at 20% 30%, #0f172a 0%, #020617 100%);
+                }
+                
+                .animated-bg::after {
+                    content: ""; position: absolute; top: 0; left: 0; width: 200%; height: 200%;
+                    background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+                    opacity: 0.2; animation: starsMove 100s linear infinite;
+                }
+                @keyframes starsMove { from { transform: translate(0,0); } to { transform: translate(-50%, -50%); } }
+                
+                /* --- 2. الهيدر الفخم (Command Center) --- */
+                header.glass {
+                    background: rgba(15, 23, 42, 0.6) !important;
+                    backdrop-filter: blur(25px) saturate(150%) !important;
+                    -webkit-backdrop-filter: blur(25px) saturate(150%) !important;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+                    height: 85px !important;
+                    padding: 0 30px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    position: sticky; top: 0; z-index: 100;
+                }
+                
+                .header-avatar-glow {
+                    position: relative; padding: 2px; border-radius: 50%;
+                    background: linear-gradient(45deg, #0ea5e9, #22c55e);
+                    box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+                }
+                
+                .center-info {
+                    background: rgba(255, 255, 255, 0.03);
+                    padding: 8px 30px; border-radius: 50px;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    text-align: center;
+                }
+                
+                #header-time {
+                    font-size: 26px; font-weight: 900; letter-spacing: 2px;
+                    color: #fff; text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+                }
+                
+                #header-date { font-size: 10px; color: #38bdf8; font-weight: 700; text-transform: uppercase; }
+                
+                .header-btn {
+                    background: rgba(255, 255, 255, 0.05) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                    color: #f1f5f9 !important;
+                    padding: 10px 18px; border-radius: 14px; font-weight: 800; font-size: 12px;
+                    transition: all 0.3s; display: flex; align-items: center; gap: 8px;
+                }
+                .header-btn:hover { background: #0ea5e9 !important; transform: translateY(-2px); }
+                
+                /* --- 3. تصميم البطاقات الزجاجية (Ultra Modern) --- */
+                .pro-card-design {
+                    background: rgba(30, 41, 59, 0.4) !important;
+                    backdrop-filter: blur(16px) saturate(120%) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                    border-radius: 28px !important;
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                    position: relative; overflow: visible !important;
+                }
+                
+                .pro-card-design:hover {
+                    transform: translateY(-10px);
+                    background: rgba(30, 41, 59, 0.6) !important;
+                    border-color: rgba(14, 165, 233, 0.4) !important;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                }
+                
+                .status-glow {
+                    position: absolute; inset: -2px; z-index: -1; border-radius: 28px; opacity: 0.15;
+                }
+                .glow-online { background: radial-gradient(circle, #22c55e 0%, transparent 70%); }
+                .glow-idle { background: radial-gradient(circle, #ef4444 0%, transparent 70%); }
+                .glow-meeting { background: radial-gradient(circle, #3b82f6 0%, transparent 70%); }
+                .glow-break { background: radial-gradient(circle, #f59e0b 0%, transparent 70%); }
+                
+                .timer-capsule {
+                    background: rgba(15, 23, 42, 0.6);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border-radius: 14px; padding: 10px 5px;
+                }
+                
+                /* --- 4. أزرار الفلتر وسجل الحركات --- */
+                .filter-btn {
+                    background: rgba(30, 41, 59, 0.4) !important;
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                    color: #94a3b8 !important;
+                    padding: 10px 20px !important;
+                    border-radius: 15px !important;
+                    font-size: 12px !important; font-weight: 700 !important;
+                    transition: all 0.3s;
+                }
+                
+                .filter-btn.active {
+                    background: #0ea5e9 !important; color: white !important;
+                    box-shadow: 0 0 20px rgba(14, 165, 233, 0.4) !important;
+                }
+                
+                .log-link-btn {
+                    color: #94a3b8; font-size: 11px; font-weight: 800;
+                    display: flex; align-items: center; gap: 6px;
+                    padding: 6px 12px; border-radius: 10px; transition: all 0.3s;
+                }
+                .log-link-btn:hover { color: #38bdf8; background: rgba(14, 165, 233, 0.1); }
+                
+                /* --- 5. القائمة الجانبية (Sidebar) --- */
+                .dropdown-menu {
+                    position: absolute; top: 80px; left: 20px; width: 290px;
+                    background: rgba(15, 23, 42, 0.98) !important;
+                    backdrop-filter: blur(30px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 24px; z-index: 1000;
+                    opacity: 0; pointer-events: none; transform: translateY(-20px);
+                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                }
+                .dropdown-menu.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+                
+                /* الإضافات المخفية */
+                .hidden-section { display: none !important; }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+  </style>
 </head>
 
 <body class="min-h-screen text-slate-100 font-sans selection:bg-primary-500 selection:text-white">   
@@ -197,95 +205,63 @@
     </div>
 
     <div id="view-system" class="hidden-section flex flex-col min-h-screen">
-        
-            <header class="glass shadow-md h-20 px-6 flex items-center justify-between z-50 sticky top-0 border-b border-white/20">            
-            <div class="flex items-center gap-3">
-                <img id="header-user-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500 object-cover shadow-sm bg-slate-200">
-                <div class="hidden md:block">
-                    <p id="header-user-name" class="text-sm font-bold text-slate-800 dark:text-white leading-tight">User</p>
-                    <p id="header-user-role" class="text-[10px] text-primary-500 font-bold uppercase tracking-wider">Role</p>
-                </div>
-            </div>
-
-            <div class="hidden md:flex flex-col items-center justify-center absolute left-1/2 transform -translate-x-1/2">
-                <div id="header-time" class="text-2xl font-black font-mono text-slate-700 dark:text-slate-200 tracking-widest">00:00:00</div>
-                <div id="header-date" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loading...</div>
-            </div>
-
-            <div class="flex items-center gap-3 relative">
-                
-                <img src="MASTER_LOGO_WHPNG.png" class="h-8 w-auto object-contain opacity-80 hidden md:block" alt="Logo">
-
-                <button onclick="openTaskCenter()" class="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition-all border border-transparent hover:border-primary-200 group relative">
-                    <i class="fas fa-briefcase"></i>
-                    <span class="text-xs font-bold hidden sm:block">مركز المهام</span>
-                    <span id="task-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white text-[8px] text-white flex items-center justify-center font-bold">0</span>
-                </button>
-
-                <button onclick="toggleMainMenu()" id="menu-btn" class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/30 hover:bg-primary-700 hover:scale-105 transition-all">
-                    <i class="fas fa-bars text-lg"></i>
-                </button>
-
-                <div id="main-dropdown" class="dropdown-menu absolute top-14 left-0 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-[100] flex flex-col overflow-hidden">
-                    <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
-                        <img id="menu-user-img" src="" class="w-10 h-10 rounded-full border-2 border-primary-500 bg-slate-200">
-                        <div class="overflow-hidden">
-                            <p id="menu-user-name" class="text-sm font-bold text-slate-800 dark:text-white truncate">User</p>
-                            <p id="menu-user-role" class="text-[10px] text-primary-500 font-bold uppercase">Role</p>
-                        </div>
+        <header class="glass sticky top-0 z-[100]">
+                <div class="flex items-center gap-4">
+                    <div class="header-avatar-glow">
+                        <img id="header-user-img" src="" class="rounded-full object-cover" alt="User">
                     </div>
-                    <div class="p-2 space-y-1 overflow-y-auto max-h-[400px] custom-scrollbar">
-                        <div class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">القائمة الرئيسية</div>
-                        <button onclick="toggleMainMenu()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
-                            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fas fa-th-large"></i></div>
-                            <span class="text-xs font-bold text-slate-600 dark:text-slate-300">لوحة التحكم</span>
-                        </button>
-                        
-                        <div id="admin-options" class="hidden-section border-t border-slate-100 dark:border-slate-700 pt-2 mt-2">
-                            <div class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">أدوات المدير</div>
-                            <button onclick="archivePublicChat()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
-                                <div class="w-8 h-8 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center"><i class="fas fa-box-archive"></i></div>
-                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">أرشيف الشات العام</span>
-                            </button>
-                            <button onclick="archiveAllEmployeesPrivateChats()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
-                                <div class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center"><i class="fas fa-database"></i></div>
-                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">أرشيف شامل</span>
-                            </button>
-                            <button onclick="openEditModal('new')" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
-                                <div class="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center"><i class="fas fa-user-plus"></i></div>
-                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">إضافة موظف</span>
-                            </button>
-                            <button onclick="openReportModal()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
-                                <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fas fa-chart-pie"></i></div>
-                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">التقارير</span>
-                            </button>
+                    <div class="hidden lg:block">
+                        <h2 id="header-user-name" class="text-sm font-black text-white leading-none mb-1">Loading...</h2>
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                            <p id="header-user-role" class="text-[9px] font-bold text-sky-400 uppercase tracking-widest">Administrator</p>
                         </div>
-
-                        <div class="border-t border-slate-100 dark:border-slate-700 pt-2 mt-2">
-                            <button onclick="archivePrivateChats()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
-                                <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fas fa-comments"></i></div>
-                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">أرشيف محادثاتي</span>
-                            </button>
-                            <label class="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center"><i class="fas fa-eye-slash"></i></div>
-                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">عرض Offline</span>
-                                </div>
-                                <div class="relative">
-                                    <input type="checkbox" id="show-offline-toggle" onchange="renderGrid()" class="sr-only peer">
-                                    <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
-                        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition font-bold text-xs">
-                            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-                        </button>
                     </div>
                 </div>
-            </div>
-        </header>
+            
+                <div class="hidden md:block center-info">
+                    <div id="header-time">00:00:00</div>
+                    <div id="header-date">...</div>
+                </div>
+            
+                <div class="flex items-center gap-4">
+                    <div class="logo-container ml-4 hidden sm:block">
+                        <img src="MASTER_LOGO_WHPNG.png" alt="ALMASTER">
+                    </div>
+            
+                    <button onclick="openTaskCenter()" class="header-btn group relative">
+                        <i class="fas fa-layer-group text-sky-400 group-hover:text-white transition-colors"></i>
+                        <span class="hidden sm:inline">مركز المهام</span>
+                        <span id="task-badge" class="hidden absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full border-2 border-[#020617] text-[10px] text-white flex items-center justify-center font-black">0</span>
+                    </button>
+            
+                    <button onclick="toggleMainMenu()" id="menu-btn" class="menu-trigger-btn">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+            
+                    <div id="main-dropdown" class="dropdown-menu">
+                        <div class="p-5 border-b border-white/5 flex items-center gap-4 bg-white/5">
+                            <img id="menu-user-img" src="" class="w-12 h-12 rounded-xl border border-white/10">
+                            <div>
+                                <p id="menu-user-name" class="text-sm font-bold text-white">User</p>
+                                <p id="menu-user-role" class="text-[10px] text-sky-400 font-bold uppercase">Role</p>
+                            </div>
+                        </div>
+                        <div class="p-2 space-y-1 overflow-y-auto max-h-[400px] custom-scrollbar">
+                            <div class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Quick Access</div>
+                            <button onclick="toggleMainMenu()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition">
+                                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center"><i class="fas fa-chart-line"></i></div>
+                                <span class="text-xs font-bold text-slate-300">لوحة التحكم</span>
+                            </button>
+                            </div>
+                        <div class="p-3 border-t border-white/5">
+                            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition font-bold text-xs">
+                                <i class="fas fa-power-off"></i> تسجيل الخروج
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
 
 <main class="flex-1 bg-transparent relative overflow-hidden flex flex-col">
     <div class="flex-1 overflow-auto p-6 md:p-8">
@@ -3072,8 +3048,22 @@ function createStatusControls(task, taskStatus) {
                 document.getElementById('task-detail-title').innerHTML = task.title + statusHTML;
             }
         }
+
+        window.addEventListener('scroll', () => {
+    const header = document.querySelector('header');
+    if (window.scrollY > 20) {
+        header.style.height = '70px';
+        header.style.background = 'rgba(2, 6, 23, 0.9)';
+        header.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+    } else {
+        header.style.height = '85px';
+        header.style.background = 'rgba(15, 23, 42, 0.6)';
+        header.style.boxShadow = 'none';
+    }
+});
     </script>
 </body>
 </html>
+
 
 
