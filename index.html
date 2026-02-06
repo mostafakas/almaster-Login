@@ -33,105 +33,134 @@
         }
     </script>
 
-    <style>
-    /* --- الأساسيات وخلفية الفضاء المحدثة --- */
-    body { background-color: #020617; font-family: 'Outfit', 'Cairo', sans-serif; overflow-x: hidden; color: #f1f5f9; }
-    
-    .animated-bg {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-        background: radial-gradient(circle at 20% 30%, #0f172a 0%, #020617 100%);
-        background-size: cover;
-    }
-
-    /* تأثير النجوم المتحركة بشكل أفضل */
-    .animated-bg::after {
-        content: ""; position: absolute; top: 0; left: 0; width: 200%; height: 200%;
-        background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
-        opacity: 0.2; animation: starsMove 100s linear infinite;
-    }
-    @keyframes starsMove { from { transform: translate(0,0); } to { transform: translate(-50%, -50%); } }
-
-    /* --- تصميم البطاقة الاحترافي الجديد (Glass Card) --- */
-    .pro-card-design {
-        background: rgba(30, 41, 59, 0.4) !important; /* لون داكن شفاف */
-        backdrop-filter: blur(16px) saturate(120%) !important;
-        -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 24px !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        position: relative;
-        overflow: visible !important; /* للسماح بوهج الحالة */
-    }
-
-    .pro-card-design:hover {
-        transform: translateY(-8px) scale(1.02);
-        background: rgba(30, 41, 59, 0.6) !important;
-        border-color: rgba(14, 165, 233, 0.4) !important;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    }
-
-    /* وهج الحالة (Status Glow) */
-    .status-glow {
-        position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
-        z-index: -1; border-radius: 24px; opacity: 0.15; transition: opacity 0.3s;
-    }
-    .pro-card-design:hover .status-glow { opacity: 0.3; }
-
-    /* ألوان الوهج */
-    .glow-online { background: radial-gradient(circle, #22c55e 0%, transparent 70%); }
-    .glow-idle { background: radial-gradient(circle, #ef4444 0%, transparent 70%); }
-    .glow-meeting { background: radial-gradient(circle, #3b82f6 0%, transparent 70%); }
-    .glow-break { background: radial-gradient(circle, #f59e0b 0%, transparent 70%); }
-
-    /* كبسولات التوقيت (Timer Capsules) */
-    .timer-capsule {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        padding: 8px 4px;
-        transition: all 0.3s;
-    }
-    .pro-card-design:hover .timer-capsule {
-        border-color: rgba(255, 255, 255, 0.15);
-        background: rgba(15, 23, 42, 0.8);
-    }
-
-    /* الأزرار العائمة */
-    .action-btn-float {
-        width: 36px; height: 36px;
-        border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        background: rgba(255, 255, 255, 0.05);
-        color: #94a3b8;
-        transition: all 0.2s;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .action-btn-float:hover {
-        background: #0ea5e9; color: white; transform: scale(1.1);
-    }
-
-    /* تعديل النصوص للقراءة */
-    .card-title { font-family: 'Cairo', sans-serif; color: #ffffff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-    .card-subtitle { color: #0ea5e9 !important; font-weight: 700; letter-spacing: 0.05em; }
-    
-    .status-select {
-        background: rgba(15, 23, 42, 0.8) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: #f1f5f9 !important;
-        border-radius: 10px !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-    }
-
-    /* الهيدر المطور */
-    .glass {
-        background: rgba(2, 6, 23, 0.8) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }
-    
-    /* منع اختفاء الأزرار */
-    .hidden-section { display: none !important; }
-</style>
+            <style>
+            /* --- الأساسيات وخلفية الفضاء المحدثة --- */
+            body { background-color: #020617; font-family: 'Outfit', 'Cairo', sans-serif; overflow-x: hidden; color: #f1f5f9; }
+            
+            .animated-bg {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+                background: radial-gradient(circle at 20% 30%, #0f172a 0%, #020617 100%);
+                background-size: cover;
+            }
+        
+            .animated-bg::after {
+                content: ""; position: absolute; top: 0; left: 0; width: 200%; height: 200%;
+                background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+                opacity: 0.2; animation: starsMove 100s linear infinite;
+            }
+            @keyframes starsMove { from { transform: translate(0,0); } to { transform: translate(-50%, -50%); } }
+        
+            /* --- تصميم البطاقة الاحترافي الجديد (Glass Card) --- */
+            .pro-card-design {
+                background: rgba(30, 41, 59, 0.4) !important;
+                backdrop-filter: blur(16px) saturate(120%) !important;
+                -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+                border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                border-radius: 24px !important;
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                position: relative;
+                overflow: visible !important;
+            }
+        
+            .pro-card-design:hover {
+                transform: translateY(-8px) scale(1.02);
+                background: rgba(30, 41, 59, 0.6) !important;
+                border-color: rgba(14, 165, 233, 0.4) !important;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            }
+        
+            /* وهج الحالة (Status Glow) */
+            .status-glow {
+                position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+                z-index: -1; border-radius: 24px; opacity: 0.15; transition: opacity 0.3s;
+            }
+            .glow-online { background: radial-gradient(circle, #22c55e 0%, transparent 70%); }
+            .glow-idle { background: radial-gradient(circle, #ef4444 0%, transparent 70%); }
+            .glow-meeting { background: radial-gradient(circle, #3b82f6 0%, transparent 70%); }
+            .glow-break { background: radial-gradient(circle, #f59e0b 0%, transparent 70%); }
+        
+            /* كبسولات التوقيت (Timer Capsules) */
+            .timer-capsule {
+                background: rgba(15, 23, 42, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 12px;
+                padding: 8px 4px;
+                transition: all 0.3s;
+            }
+        
+            /* الأزرار العائمة داخل البطاقة */
+            .action-btn-float {
+                width: 36px; height: 36px;
+                border-radius: 10px;
+                display: flex; align-items: center; justify-content: center;
+                background: rgba(255, 255, 255, 0.05);
+                color: #94a3b8;
+                transition: all 0.2s;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            .action-btn-float:hover { background: #0ea5e9; color: white; transform: scale(1.1); }
+        
+            /* --- أزرار الفلتر الاحترافية (Glass Capsules) --- */
+            .filter-btn {
+                background: rgba(30, 41, 59, 0.4) !important;
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                color: #94a3b8 !important;
+                padding: 8px 16px !important;
+                border-radius: 12px !important;
+                font-size: 11px !important;
+                font-weight: 700 !important;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                display: flex; align-items: center; gap: 8px;
+            }
+            .filter-btn:hover { background: rgba(30, 41, 59, 0.7) !important; color: #fff !important; }
+            .filter-btn.active {
+                background: #0ea5e9 !important;
+                color: white !important;
+                box-shadow: 0 0 20px rgba(14, 165, 233, 0.4) !important;
+                transform: scale(1.05);
+            }
+        
+            /* --- تعديل القائمة المنسدلة (Sidebar Fix) --- */
+            .dropdown-menu {
+                position: absolute; top: 70px; left: 20px; width: 280px;
+                background: rgba(15, 23, 42, 0.98) !important;
+                backdrop-filter: blur(25px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 20px;
+                z-index: 1000;
+                opacity: 0; pointer-events: none;
+                transform: translateY(-10px) scale(0.95);
+                transition: all 0.3s ease;
+            }
+            .dropdown-menu.active { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+        
+            /* --- زر سجل الحركات الاحترافي --- */
+            .log-link-btn {
+                color: #94a3b8; font-size: 11px; font-weight: 800;
+                display: flex; align-items: center; gap: 6px;
+                transition: all 0.3s; padding: 6px 10px; border-radius: 10px;
+            }
+            .log-link-btn:hover { color: #0ea5e9; background: rgba(14, 165, 233, 0.1); }
+            .log-link-btn i { animation: PulseIcon 2s infinite; }
+            @keyframes PulseIcon { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; transform: scale(1.1); } }
+        
+            /* نصوص البطاقات للقراءة الجيدة */
+            .card-title { font-family: 'Cairo', sans-serif; color: #ffffff !important; }
+            .card-subtitle { color: #0ea5e9 !important; font-weight: 700; }
+            
+            .status-select {
+                background: rgba(15, 23, 42, 0.8) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                color: #f1f5f9 !important;
+                border-radius: 10px; padding: 6px; outline: none; font-size: 12px;
+            }
+        
+            /* الهيدر والمودال */
+            .glass { background: rgba(2, 6, 23, 0.8) !important; backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+            .hidden-section { display: none !important; }
+            #modal-task-center > div { height: 90vh !important; width: 95% !important; margin: auto; }
+        </style>
 </head>
 
 <body class="min-h-screen text-slate-100 font-sans selection:bg-primary-500 selection:text-white">   
@@ -260,24 +289,24 @@
 
 <main class="flex-1 bg-transparent relative overflow-hidden flex flex-col">
     <div class="flex-1 overflow-auto p-6 md:p-8">
-                <div class="mb-8 flex flex-wrap gap-2 justify-center md:justify-end px-2" dir="ltr">
-                    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-200 border border-slate-200 shadow-sm transition-all">
-                        <span class="w-2 h-2 rounded-full bg-slate-400 inline-block ml-1"></span> Offline
+               <div class="mb-8 flex flex-wrap gap-3 justify-center md:justify-end px-2" dir="ltr">
+                    <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn">
+                        <span class="w-2 h-2 rounded-full bg-slate-400"></span> Offline
                     </button>
-                    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-red-50 border border-slate-200 shadow-sm transition-all">
-                        <span class="w-2 h-2 rounded-full bg-red-500 inline-block ml-1"></span> Idle
+                    <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn">
+                        <span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span> Idle
                     </button>
-                    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-blue-50 border border-slate-200 shadow-sm transition-all">
-                        <span class="w-2 h-2 rounded-full bg-blue-500 inline-block ml-1"></span> Meeting
+                    <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></span> Meeting
                     </button>
-                    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-orange-50 border border-slate-200 shadow-sm transition-all">
-                        <span class="w-2 h-2 rounded-full bg-orange-500 inline-block ml-1"></span> Break
+                    <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn">
+                        <span class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8_#f59e0b]"></span> Break
                     </button>
-                    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-green-50 border border-slate-200 shadow-sm transition-all">
-                        <span class="w-2 h-2 rounded-full bg-green-500 inline-block ml-1"></span> Online
+                    <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn">
+                        <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></span> Online
                     </button>
-                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all">
-                        الكل
+                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn active">
+                        <i class="fas fa-users"></i> الكل
                     </button>
                 </div>
                 
@@ -720,15 +749,26 @@
                 });
             }
         }
-        function toggleMainMenu() {
+       function toggleMainMenu() {
             const menu = document.getElementById('main-dropdown');
-            menu.classList.toggle('active');
-            if (menu.classList.contains('active')) { document.addEventListener('click', closeMenuOutside); } else { document.removeEventListener('click', closeMenuOutside); }
+            const isAlreadyActive = menu.classList.contains('active');
+            
+            // إغلاق أي قائمة مفتوحة أولاً
+            menu.classList.remove('active');
+            
+            if (!isAlreadyActive) {
+                menu.classList.add('active');
+                // إضافة مستمع نقرات لإغلاق القائمة عند الضغط خارجها
+                setTimeout(() => {
+                    document.addEventListener('click', closeMenuOutside);
+                }, 10);
+            }
         }
-
+        
         function closeMenuOutside(event) {
             const menu = document.getElementById('main-dropdown');
             const btn = document.getElementById('menu-btn');
+            
             if (!menu.contains(event.target) && !btn.contains(event.target)) {
                 menu.classList.remove('active');
                 document.removeEventListener('click', closeMenuOutside);
@@ -871,17 +911,17 @@
                 if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
             });
         }
-        function setFilter(status) {
-            currentFilter = status;
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 hover:bg-slate-100 border border-slate-200 shadow-sm transition-all";
-            });
-            const activeBtn = document.getElementById(`filter-${status}`);
-            if(activeBtn) {
-                activeBtn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 text-white shadow-md transition-all transform scale-105";
+            function setFilter(status) {
+                currentFilter = status;
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active'); // هذا السطر يزيل التحديد عن الأزرار القديمة
+                });
+                
+                const activeBtn = document.getElementById(`filter-${status}`);
+                if(activeBtn) activeBtn.classList.add('active'); // هذا السطر يضيء الزر الجديد
+                
+                renderGrid();
             }
-            renderGrid();
-        }
 
         // --- Render Grid (Fixed: Shows All properly) ---
         function renderGrid() {
@@ -982,10 +1022,11 @@
                         </div>
             
                         <div class="flex items-center justify-between p-3 px-4">
-                            ${(isMe || hasPermission('can_view_logs')) ? `
-                            <button onclick="viewLogs('${u.email}')" class="text-[10px] font-bold text-slate-400 hover:text-white transition flex items-center gap-1">
-                                <i class="fas fa-fingerprint text-primary-500"></i> سجل النشاط
-                            </button>` : '<span></span>'}
+                           ${(isMe || hasPermission('can_view_logs')) ? `
+                                <button onclick="viewLogs('${u.email}')" class="log-link-btn">
+                                    <i class="fas fa-satellite-dish"></i>
+                                    <span>سجل النشاط</span>
+                                </button>` : '<span></span>'}
                             
                             <div class="flex gap-2">
                                 ${!isMe && hasPermission('can_screenshot') ? `<button onclick="requestScreenshot('${u.email}')" class="text-slate-400 hover:text-red-400 transition"><i class="fas fa-camera"></i></button>` : ''}
@@ -3034,4 +3075,5 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
