@@ -34,141 +34,149 @@
     </script>
 
             <style>
-                /* --- 1. الأساسيات وخلفية الفضاء --- */
-                body { 
-                    background-color: #020617; 
-                    font-family: 'Outfit', 'Cairo', sans-serif; 
-                    overflow-x: hidden; 
-                    color: #f1f5f9; 
+
+                /* تحسين استقرار أبعاد الهيدر */
+                .logo-container img {
+                    height: 45px !important;
+                    width: auto !important;
+                    object-fit: contain;
                 }
+                
+                #header-user-img {
+                    width: 42px !important;
+                    height: 42px !important;
+                    min-width: 42px;
+                    object-fit: cover;
+                }
+                
+                /* تنعيم حركة تصغير الهيدر */
+                header.glass {
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                }
+                
+                /* تحسين شكل القائمة المنسدلة في الشاشات الصغيرة */
+                @media (max-width: 768px) {
+                    .dropdown-menu {
+                        left: 10px;
+                        right: 10px;
+                        width: calc(100% - 20px);
+                    }
+                }
+                /* --- 1. الأساسيات وخلفية الفضاء --- */
+                body { background-color: #020617; font-family: 'Outfit', 'Cairo', sans-serif; overflow-x: hidden; color: #f1f5f9; }
                 
                 .animated-bg {
                     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
                     background: radial-gradient(circle at 20% 30%, #0f172a 0%, #020617 100%);
                 }
-                
+            
                 .animated-bg::after {
                     content: ""; position: absolute; top: 0; left: 0; width: 200%; height: 200%;
                     background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
-                    opacity: 0.2; animation: starsMove 100s linear infinite;
+                    opacity: 0.15; animation: starsMove 100s linear infinite;
                 }
                 @keyframes starsMove { from { transform: translate(0,0); } to { transform: translate(-50%, -50%); } }
-                
-                /* --- 2. الهيدر الفخم (Command Center) --- */
+            
+                /* --- 2. الهيدر المطور (Command Center) --- */
                 header.glass {
-                    background: rgba(15, 23, 42, 0.6) !important;
-                    backdrop-filter: blur(25px) saturate(150%) !important;
-                    -webkit-backdrop-filter: blur(25px) saturate(150%) !important;
+                    background: rgba(15, 23, 42, 0.7) !important;
+                    backdrop-filter: blur(20px) saturate(160%) !important;
+                    -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
                     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-                    height: 85px !important;
-                    padding: 0 30px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: space-between !important;
-                    position: sticky; top: 0; z-index: 100;
+                    height: 85px; padding: 0 25px;
+                    display: flex; align-items: center; justify-content: space-between;
+                    position: sticky; top: 0; z-index: 1000;
                 }
-                
+            
                 .header-avatar-glow {
-                    position: relative; padding: 2px; border-radius: 50%;
+                    padding: 2px; border-radius: 50%;
                     background: linear-gradient(45deg, #0ea5e9, #22c55e);
-                    box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+                    box-shadow: 0 0 15px rgba(14, 165, 233, 0.3);
                 }
-                
+            
                 .center-info {
                     background: rgba(255, 255, 255, 0.03);
-                    padding: 8px 30px; border-radius: 50px;
+                    padding: 10px 25px; border-radius: 50px;
                     border: 1px solid rgba(255, 255, 255, 0.05);
                     text-align: center;
                 }
-                
-                #header-time {
-                    font-size: 26px; font-weight: 900; letter-spacing: 2px;
-                    color: #fff; text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
-                }
-                
+            
+                #header-time { font-size: 24px; font-weight: 900; letter-spacing: 2px; color: #fff; }
                 #header-date { font-size: 10px; color: #38bdf8; font-weight: 700; text-transform: uppercase; }
-                
+            
                 .header-btn {
                     background: rgba(255, 255, 255, 0.05) !important;
                     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-                    color: #f1f5f9 !important;
-                    padding: 10px 18px; border-radius: 14px; font-weight: 800; font-size: 12px;
-                    transition: all 0.3s; display: flex; align-items: center; gap: 8px;
+                    color: #fff !important; padding: 10px 16px; border-radius: 12px;
+                    font-weight: 700; font-size: 12px; transition: 0.3s;
+                    display: flex; align-items: center; gap: 8px;
                 }
-                .header-btn:hover { background: #0ea5e9 !important; transform: translateY(-2px); }
-                
-                /* --- 3. تصميم البطاقات الزجاجية (Ultra Modern) --- */
+                .header-btn:hover { background: #0ea5e9 !important; border-color: transparent; }
+            
+                .menu-trigger-btn {
+                    width: 42px; height: 42px; border-radius: 12px;
+                    background: #0ea5e9 !important; color: white;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 18px; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+                }
+            
+                /* --- 3. تصميم البطاقات (The Glass Cards) --- */
                 .pro-card-design {
-                    background: rgba(30, 41, 59, 0.4) !important;
-                    backdrop-filter: blur(16px) saturate(120%) !important;
-                    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                    border-radius: 28px !important;
-                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                    background: rgba(30, 41, 59, 0.5) !important;
+                    backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                    border-radius: 24px !important; transition: 0.4s ease;
                     position: relative; overflow: visible !important;
                 }
-                
-                .pro-card-design:hover {
-                    transform: translateY(-10px);
-                    background: rgba(30, 41, 59, 0.6) !important;
-                    border-color: rgba(14, 165, 233, 0.4) !important;
-                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-                }
-                
-                .status-glow {
-                    position: absolute; inset: -2px; z-index: -1; border-radius: 28px; opacity: 0.15;
-                }
+                .pro-card-design:hover { transform: translateY(-8px); border-color: rgba(14, 165, 233, 0.5) !important; }
+            
+                .status-glow { position: absolute; inset: -2px; z-index: -1; border-radius: 24px; opacity: 0.2; }
                 .glow-online { background: radial-gradient(circle, #22c55e 0%, transparent 70%); }
                 .glow-idle { background: radial-gradient(circle, #ef4444 0%, transparent 70%); }
                 .glow-meeting { background: radial-gradient(circle, #3b82f6 0%, transparent 70%); }
                 .glow-break { background: radial-gradient(circle, #f59e0b 0%, transparent 70%); }
-                
-                .timer-capsule {
-                    background: rgba(15, 23, 42, 0.6);
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    border-radius: 14px; padding: 10px 5px;
-                }
-                
-                /* --- 4. أزرار الفلتر وسجل الحركات --- */
+            
+                /* --- 4. أزرار الفلتر الاحترافية --- */
                 .filter-btn {
-                    background: rgba(30, 41, 59, 0.4) !important;
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.05) !important;
-                    color: #94a3b8 !important;
-                    padding: 10px 20px !important;
-                    border-radius: 15px !important;
-                    font-size: 12px !important; font-weight: 700 !important;
-                    transition: all 0.3s;
+                    background: rgba(30, 41, 59, 0.6) !important;
+                    backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                    color: #94a3b8 !important; padding: 10px 18px !important;
+                    border-radius: 14px !important; font-size: 11px !important; font-weight: 800 !important;
+                    transition: 0.3s ease; display: flex; align-items: center; gap: 8px;
                 }
-                
-                .filter-btn.active {
+                .filter-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #fff !important; }
+                .filter-btn.active { 
                     background: #0ea5e9 !important; color: white !important;
-                    box-shadow: 0 0 20px rgba(14, 165, 233, 0.4) !important;
+                    box-shadow: 0 0 15px rgba(14, 165, 233, 0.4) !important;
                 }
-                
+            
+                /* --- 5. القائمة الجانبية (Sidebar) --- */
+                .dropdown-menu {
+                    position: absolute; top: 75px; left: 0; width: 280px;
+                    background: rgba(15, 23, 42, 0.95) !important;
+                    backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 20px; z-index: 2000;
+                    opacity: 0; pointer-events: none; transform: translateY(-10px);
+                    transition: 0.3s ease;
+                }
+                .dropdown-menu.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+            
+                /* --- 6. زر سجل الحركات المطور --- */
                 .log-link-btn {
                     color: #94a3b8; font-size: 11px; font-weight: 800;
                     display: flex; align-items: center; gap: 6px;
-                    padding: 6px 12px; border-radius: 10px; transition: all 0.3s;
+                    padding: 5px 10px; border-radius: 8px; transition: 0.3s;
                 }
-                .log-link-btn:hover { color: #38bdf8; background: rgba(14, 165, 233, 0.1); }
+                .log-link-btn:hover { color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
+                .log-link-btn i { font-size: 13px; color: #0ea5e9; }
+            
+                /* نصوص البطاقة */
+                .card-title { font-family: 'Cairo', sans-serif; color: #fff; font-weight: 700; }
+                .card-subtitle { color: #38bdf8; font-size: 10px; font-weight: 700; text-transform: uppercase; }
                 
-                /* --- 5. القائمة الجانبية (Sidebar) --- */
-                .dropdown-menu {
-                    position: absolute; top: 80px; left: 20px; width: 290px;
-                    background: rgba(15, 23, 42, 0.98) !important;
-                    backdrop-filter: blur(30px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 24px; z-index: 1000;
-                    opacity: 0; pointer-events: none; transform: translateY(-20px);
-                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                }
-                .dropdown-menu.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
-                
-                /* الإضافات المخفية */
+                .timer-capsule { background: rgba(0, 0, 0, 0.3); border-radius: 12px; padding: 8px 4px; border: 1px solid rgba(255,255,255,0.03); }
+            
                 .hidden-section { display: none !important; }
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-  </style>
+              </style>
 </head>
 
 <body class="min-h-screen text-slate-100 font-sans selection:bg-primary-500 selection:text-white">   
@@ -205,84 +213,113 @@
     </div>
 
     <div id="view-system" class="hidden-section flex flex-col min-h-screen">
-        <header class="glass sticky top-0 z-[100]">
-                <div class="flex items-center gap-4">
-                    <div class="header-avatar-glow">
-                        <img id="header-user-img" src="" class="rounded-full object-cover" alt="User">
-                    </div>
-                    <div class="hidden lg:block">
-                        <h2 id="header-user-name" class="text-sm font-black text-white leading-none mb-1">Loading...</h2>
-                        <div class="flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                            <p id="header-user-role" class="text-[9px] font-bold text-sky-400 uppercase tracking-widest">Administrator</p>
-                        </div>
-                    </div>
-                </div>
-            
-                <div class="hidden md:block center-info">
-                    <div id="header-time">00:00:00</div>
-                    <div id="header-date">...</div>
-                </div>
-            
-                <div class="flex items-center gap-4">
-                    <div class="logo-container ml-4 hidden sm:block">
-                        <img src="MASTER_LOGO_WHPNG.png" alt="ALMASTER">
-                    </div>
-            
-                    <button onclick="openTaskCenter()" class="header-btn group relative">
-                        <i class="fas fa-layer-group text-sky-400 group-hover:text-white transition-colors"></i>
-                        <span class="hidden sm:inline">مركز المهام</span>
-                        <span id="task-badge" class="hidden absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full border-2 border-[#020617] text-[10px] text-white flex items-center justify-center font-black">0</span>
-                    </button>
-            
-                    <button onclick="toggleMainMenu()" id="menu-btn" class="menu-trigger-btn">
-                        <i class="fas fa-th-large"></i>
-                    </button>
-            
-                    <div id="main-dropdown" class="dropdown-menu">
-                        <div class="p-5 border-b border-white/5 flex items-center gap-4 bg-white/5">
-                            <img id="menu-user-img" src="" class="w-12 h-12 rounded-xl border border-white/10">
-                            <div>
-                                <p id="menu-user-name" class="text-sm font-bold text-white">User</p>
-                                <p id="menu-user-role" class="text-[10px] text-sky-400 font-bold uppercase">Role</p>
-                            </div>
-                        </div>
-                        <div class="p-2 space-y-1 overflow-y-auto max-h-[400px] custom-scrollbar">
-                            <div class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Quick Access</div>
-                            <button onclick="toggleMainMenu()" class="w-full text-right flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition">
-                                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center"><i class="fas fa-chart-line"></i></div>
-                                <span class="text-xs font-bold text-slate-300">لوحة التحكم</span>
-                            </button>
-                            </div>
-                        <div class="p-3 border-t border-white/5">
-                            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition font-bold text-xs">
-                                <i class="fas fa-power-off"></i> تسجيل الخروج
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </header>
+        <header class="glass sticky top-0 z-[1000]">
+    <div class="flex items-center gap-3">
+        <div class="header-avatar-glow">
+            <img id="header-user-img" src="" class="w-[42px] h-[42px] rounded-full object-cover border-2 border-[#0f172a]" alt="User">
+        </div>
+        <div class="hidden lg:block">
+            <h2 id="header-user-name" class="text-sm font-black text-white leading-none mb-1">Loading...</h2>
+            <div class="flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                <p id="header-user-role" class="text-[9px] font-bold text-sky-400 uppercase tracking-widest">Team Member</p>
+            </div>
+        </div>
+    </div>
 
+    <div class="hidden md:block center-info">
+        <div id="header-time" class="font-mono">00:00:00</div>
+        <div id="header-date">...</div>
+    </div>
+
+    <div class="flex items-center gap-3 relative">
+        <div class="logo-container ml-2 hidden sm:block">
+            <img src="MASTER_LOGO_WHPNG.png" class="max-h-[40px] w-auto object-contain drop-shadow-lg" alt="ALMASTER">
+        </div>
+
+        <button onclick="openTaskCenter()" class="header-btn group relative">
+            <i class="fas fa-tasks text-sky-400 group-hover:text-white transition-colors"></i>
+            <span class="hidden sm:inline">مركز المهام</span>
+            <span id="task-badge" class="hidden absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full border-2 border-[#020617] text-[10px] text-white flex items-center justify-center font-black">0</span>
+        </button>
+
+        <button onclick="toggleMainMenu()" id="menu-btn" class="menu-trigger-btn hover:scale-105 active:scale-95 transition-all">
+            <i class="fas fa-th-large"></i>
+        </button>
+
+        <div id="main-dropdown" class="dropdown-menu overflow-hidden shadow-2xl border border-white/10">
+            <div class="p-4 bg-white/5 border-b border-white/5 flex items-center gap-3">
+                <img id="menu-user-img" src="" class="w-10 h-10 rounded-lg border border-white/10 object-cover">
+                <div>
+                    <p id="menu-user-name" class="text-xs font-bold text-white">User</p>
+                    <p id="menu-user-role" class="text-[9px] text-sky-400 font-bold uppercase">Role</p>
+                </div>
+            </div>
+            
+            <div class="p-2 space-y-1">
+                <div class="px-3 py-2 text-[9px] font-bold text-slate-500 uppercase tracking-widest">القائمة الرئيسية</div>
+                <button onclick="toggleMainMenu()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 transition group">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all"><i class="fas fa-chart-pie"></i></div>
+                    <span class="text-xs font-bold text-slate-300">لوحة التحكم</span>
+                </button>
+                
+                <div id="admin-options" class="hidden-section border-t border-white/5 mt-2 pt-2">
+                    <button onclick="archivePublicChat()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 transition group">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all"><i class="fas fa-database"></i></div>
+                        <span class="text-xs font-bold text-slate-300">أرشيف الشات</span>
+                    </button>
+                    <button onclick="openEditModal('new')" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 transition group">
+                        <div class="w-8 h-8 rounded-lg bg-green-500/10 text-green-400 flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-all"><i class="fas fa-user-plus"></i></div>
+                        <span class="text-xs font-bold text-slate-300">إضافة موظف</span>
+                    </button>
+                    <button onclick="openReportModal()" class="w-full text-right flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 transition group">
+                        <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-all"><i class="fas fa-file-contract"></i></div>
+                        <span class="text-xs font-bold text-slate-300">التقارير</span>
+                    </button>
+                </div>
+
+                <div class="border-t border-white/5 mt-2 pt-2">
+                    <label class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-500/10 text-slate-400 flex items-center justify-center"><i class="fas fa-eye-slash"></i></div>
+                            <span class="text-xs font-bold text-slate-300">عرض Offline</span>
+                        </div>
+                        <div class="relative">
+                            <input type="checkbox" id="show-offline-toggle" onchange="renderGrid()" class="sr-only peer">
+                            <div class="w-8 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary-500"></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-white/5 bg-red-500/5">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition font-bold text-xs">
+                    <i class="fas fa-power-off"></i> تسجيل الخروج
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
 <main class="flex-1 bg-transparent relative overflow-hidden flex flex-col">
-    <div class="flex-1 overflow-auto p-6 md:p-8">
-               <div class="mb-8 flex flex-wrap gap-3 justify-center md:justify-end px-2" dir="ltr">
+                    <div class="flex-1 overflow-auto p-6 md:p-8">
+                               <div class="mb-10 flex flex-wrap gap-3 justify-center md:justify-end px-4" dir="ltr">
                     <button onclick="setFilter('Offline')" id="filter-Offline" class="filter-btn">
                         <span class="w-2 h-2 rounded-full bg-slate-400"></span> Offline
                     </button>
                     <button onclick="setFilter('Idle')" id="filter-Idle" class="filter-btn">
-                        <span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span> Idle
+                        <span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_#ef4444]"></span> Idle
                     </button>
                     <button onclick="setFilter('Meeting')" id="filter-Meeting" class="filter-btn">
-                        <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></span> Meeting
+                        <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_#3b82f6]"></span> Meeting
                     </button>
                     <button onclick="setFilter('Break')" id="filter-Break" class="filter-btn">
-                        <span class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8_#f59e0b]"></span> Break
+                        <span class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_10px_#f59e0b]"></span> Break
                     </button>
                     <button onclick="setFilter('Online')" id="filter-Online" class="filter-btn">
-                        <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></span> Online
+                        <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]"></span> Online
                     </button>
                     <button onclick="setFilter('all')" id="filter-all" class="filter-btn active">
-                        <i class="fas fa-users"></i> الكل
+                        <i class="fas fa-th-large text-[10px]"></i> الكل
                     </button>
                 </div>
                 
@@ -725,31 +762,31 @@
                 });
             }
         }
-       function toggleMainMenu() {
-            const menu = document.getElementById('main-dropdown');
-            const isAlreadyActive = menu.classList.contains('active');
-            
-            // إغلاق أي قائمة مفتوحة أولاً
-            menu.classList.remove('active');
-            
-            if (!isAlreadyActive) {
-                menu.classList.add('active');
-                // إضافة مستمع نقرات لإغلاق القائمة عند الضغط خارجها
-                setTimeout(() => {
-                    document.addEventListener('click', closeMenuOutside);
-                }, 10);
-            }
-        }
-        
-        function closeMenuOutside(event) {
-            const menu = document.getElementById('main-dropdown');
-            const btn = document.getElementById('menu-btn');
-            
-            if (!menu.contains(event.target) && !btn.contains(event.target)) {
+      function toggleMainMenu() {
+                const menu = document.getElementById('main-dropdown');
+                const isAlreadyActive = menu.classList.contains('active');
+                
+                // إغلاق أي حالة سابقة
                 menu.classList.remove('active');
-                document.removeEventListener('click', closeMenuOutside);
+                
+                if (!isAlreadyActive) {
+                    menu.classList.add('active');
+                    // إضافة مستمع نقرات لإغلاق القائمة عند الضغط خارجها
+                    setTimeout(() => {
+                        document.addEventListener('click', closeMenuOutside);
+                    }, 10);
+                }
             }
-        }
+            
+         function closeMenuOutside(event) {
+                const menu = document.getElementById('main-dropdown');
+                const btn = document.getElementById('menu-btn');
+                
+                if (!menu.contains(event.target) && !btn.contains(event.target)) {
+                    menu.classList.remove('active');
+                    document.removeEventListener('click', closeMenuOutside);
+                }
+            }
 
         async function checkAndResetCounters() {
             // شيلنا سطر الـ if (role !== 'admin') عشان أي يوزر ينفذها
@@ -887,18 +924,19 @@
                 if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
             });
         }
-            function setFilter(status) {
-                currentFilter = status;
-                document.querySelectorAll('.filter-btn').forEach(btn => {
-                    btn.classList.remove('active'); // هذا السطر يزيل التحديد عن الأزرار القديمة
-                });
-                
-                const activeBtn = document.getElementById(`filter-${status}`);
-                if(activeBtn) activeBtn.classList.add('active'); // هذا السطر يضيء الزر الجديد
-                
-                renderGrid();
-            }
-
+                function setFilter(status) {
+                    currentFilter = status;
+                    // إزالة اللون الأزرق من كل الأزرار
+                    document.querySelectorAll('.filter-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // إضافة اللون الأزرق للزر اللي ضغطت عليه بس
+                    const activeBtn = document.getElementById(`filter-${status}`);
+                    if(activeBtn) activeBtn.classList.add('active');
+                    
+                    renderGrid();
+                }
         // --- Render Grid (Fixed: Shows All properly) ---
         function renderGrid() {
                 const grid = document.getElementById('grid-users');
@@ -933,7 +971,7 @@
                     const safeStart = getMillis(u.lastChange);
                     const canChangeStatus = (isMe || userProfile.role === 'admin' || hasPermission('can_manage_users'));
                     
-                    // تحديد لون الوهج والخط العلوي بناءً على الحالة
+                    // تحديد لون الوهج والحالة
                     let glowClass = "glow-offline";
                     let stripColor = "bg-slate-500";
                     if(u.isIdle) { glowClass = "glow-idle"; stripColor = "bg-red-500"; }
@@ -944,32 +982,32 @@
                     const unreadCount = unreadCounts[u.email] || 0;
             
                     const card = `
-                    <div class="pro-card-design group flex flex-col">
+                    <div class="pro-card-design group flex flex-col animate-fade-in">
                         <div class="status-glow ${glowClass}"></div>
-                        <div class="h-1.5 w-full ${stripColor} rounded-t-full opacity-80"></div>
+                        <div class="h-1.5 w-full ${stripColor} rounded-t-full opacity-60"></div>
                         
-                        <div class="p-6 flex flex-col gap-4 flex-1">
-                            <div class="flex items-center gap-4">
+                        <div class="p-5 flex flex-col gap-4 flex-1">
+                            <div class="flex items-start gap-4">
                                 <div class="relative">
-                                    <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-2xl object-cover border-2 border-white/10 shadow-lg">
+                                    <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-2xl object-cover border-2 border-white/10 shadow-2xl">
                                     ${u.isIdle ? '<span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-ping border-2 border-[#020617]"></span>' : ''}
                                 </div>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="card-title font-black text-lg truncate">${u.name}</h3>
-                                    <p class="card-subtitle text-[10px] uppercase tracking-tighter">${u.title || 'Team Member'}</p>
+                                <div class="flex-1 min-w-0 pt-1">
+                                    <h3 class="card-title text-lg truncate mb-0.5">${u.name}</h3>
+                                    <p class="card-subtitle tracking-wider">${u.title || 'Team Member'}</p>
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     ${!isMe ? `
-                                    <button onclick="openPrivateChat('${u.email}', '${u.name}')" class="action-btn-float relative">
+                                    <button onclick="openPrivateChat('${u.email}', '${u.name}')" title="محادثة خاصة" class="action-btn-float relative">
                                         <i class="fas fa-comment-dots"></i>
-                                        <span id="badge-${u.email.replace(/[@.]/g, "_")}" class="${unreadCount > 0 ? '' : 'hidden'} absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center border-2 border-[#020617]">${unreadCount}</span>
+                                        <span id="badge-${u.email.replace(/[@.]/g, "_")}" class="${unreadCount > 0 ? '' : 'hidden'} absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-black border-2 border-[#020617]">${unreadCount}</span>
                                     </button>` : ''}
-                                    ${canManageTasks && !isMe ? `<button onclick="openAddTaskModal('${u.email}')" class="action-btn-float"><i class="fas fa-plus-circle"></i></button>` : ''}
+                                    ${canManageTasks && !isMe ? `<button onclick="openAddTaskModal('${u.email}')" title="إسناد مهمة" class="action-btn-float text-indigo-400"><i class="fas fa-plus-circle"></i></button>` : ''}
                                 </div>
                             </div>
             
                             <div class="w-full">
-                                <select onchange="setStatus('${u.email}', this.value)" ${!canChangeStatus ? 'disabled' : ''} class="status-select w-full p-2 outline-none">
+                                <select onchange="setStatus('${u.email}', this.value)" ${!canChangeStatus ? 'disabled' : ''} class="status-select w-full outline-none cursor-pointer hover:bg-white/10 transition-all">
                                     <option value="Online" ${u.status === 'Online' ? 'selected' : ''}>🟢 Online</option>
                                     <option value="Break" ${u.status === 'Break' ? 'selected' : ''}>🟠 Break</option>
                                     <option value="Meeting" ${u.status === 'Meeting' ? 'selected' : ''}>🔵 Meeting</option>
@@ -978,35 +1016,35 @@
                             </div>
                         </div>
                         
-                        <div class="grid grid-cols-4 gap-1 p-2 bg-black/20 rounded-b-[24px]">
+                        <div class="grid grid-cols-4 gap-1 px-3 py-3 bg-black/30">
                             <div class="timer-capsule text-center">
-                                <p class="text-[8px] font-bold text-slate-500 uppercase">Active</p>
+                                <p class="text-[8px] font-bold text-slate-500 uppercase mb-1">Active</p>
                                 <p class="text-[10px] font-black text-green-400 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
                             </div>
                             <div class="timer-capsule text-center">
-                                <p class="text-[8px] font-bold text-slate-500 uppercase">Break</p>
+                                <p class="text-[8px] font-bold text-slate-500 uppercase mb-1">Break</p>
                                 <p class="text-[10px] font-black text-orange-400 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
                             </div>
                             <div class="timer-capsule text-center">
-                                <p class="text-[8px] font-bold text-slate-500 uppercase">Meet</p>
+                                <p class="text-[8px] font-bold text-slate-500 uppercase mb-1">Meet</p>
                                 <p class="text-[10px] font-black text-blue-400 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
                             </div>
                             <div class="timer-capsule text-center ${u.isIdle ? 'ring-1 ring-red-500/50' : ''}">
-                                <p class="text-[8px] font-bold text-slate-500 uppercase">Idle</p>
+                                <p class="text-[8px] font-bold text-slate-500 uppercase mb-1">Idle</p>
                                 <p class="text-[10px] font-black text-red-400 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
                             </div>
                         </div>
             
-                        <div class="flex items-center justify-between p-3 px-4">
-                           ${(isMe || hasPermission('can_view_logs')) ? `
-                                <button onclick="viewLogs('${u.email}')" class="log-link-btn">
-                                    <i class="fas fa-satellite-dish"></i>
-                                    <span>سجل النشاط</span>
-                                </button>` : '<span></span>'}
+                        <div class="flex items-center justify-between p-3 px-4 bg-white/[0.02] rounded-b-[24px]">
+                            ${(isMe || hasPermission('can_view_logs')) ? `
+                            <button onclick="viewLogs('${u.email}')" class="log-link-btn group">
+                                <i class="fas fa-fingerprint transition-transform group-hover:scale-110"></i>
+                                <span>سجل النشاط</span>
+                            </button>` : '<span></span>'}
                             
                             <div class="flex gap-2">
-                                ${!isMe && hasPermission('can_screenshot') ? `<button onclick="requestScreenshot('${u.email}')" class="text-slate-400 hover:text-red-400 transition"><i class="fas fa-camera"></i></button>` : ''}
-                                ${!isMe && hasPermission('can_manage_users') ? `<button onclick="openEditModal('${u.email}')" class="text-slate-400 hover:text-blue-400 transition"><i class="fas fa-user-edit"></i></button>` : ''}
+                                ${!isMe && hasPermission('can_screenshot') ? `<button onclick="requestScreenshot('${u.email}')" title="لقطة شاشة" class="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-camera text-xs"></i></button>` : ''}
+                                ${!isMe && hasPermission('can_manage_users') ? `<button onclick="openEditModal('${u.email}')" title="إعدادات" class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all"><i class="fas fa-cog text-xs"></i></button>` : ''}
                             </div>
                         </div>
                     </div>`;
@@ -3049,21 +3087,22 @@ function createStatusControls(task, taskStatus) {
             }
         }
 
-        window.addEventListener('scroll', () => {
-    const header = document.querySelector('header');
-    if (window.scrollY > 20) {
-        header.style.height = '70px';
-        header.style.background = 'rgba(2, 6, 23, 0.9)';
-        header.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-    } else {
-        header.style.height = '85px';
-        header.style.background = 'rgba(15, 23, 42, 0.6)';
-        header.style.boxShadow = 'none';
-    }
-});
+       window.addEventListener('scroll', () => {
+                const header = document.querySelector('header.glass');
+                if (window.scrollY > 20) {
+                    header.style.height = '70px';
+                    header.style.background = 'rgba(2, 6, 23, 0.95)'; // بيغمق شوية عشان الوضوح
+                    header.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+                } else {
+                    header.style.height = '85px';
+                    header.style.background = 'rgba(15, 23, 42, 0.7)';
+                    header.style.boxShadow = 'none';
+                }
+            });
     </script>
 </body>
 </html>
+
 
 
 
