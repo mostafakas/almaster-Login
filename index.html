@@ -924,25 +924,36 @@
         }
 
         async function checkAndResetCounters() {
-            if (!userProfile || userProfile.role !== 'admin') return;
+            // شيلنا سطر الـ if (role !== 'admin') عشان أي يوزر ينفذها
+            if (!userProfile) return; 
+        
             const today = moment().format('YYYY-MM-DD');
             try {
                 const settingsDoc = await db.collection('system_settings').doc('daily_reset').get();
                 const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
+        
+                // لو تاريخ اليوم في الداتابيز مختلف عن تاريخ اليوم الحقيقي
                 if (lastResetDate !== today) {
+                    console.log("يوم جديد! جاري تصفير عدادات الوقت لجميع الموظفين...");
+                    
                     const usersSnapshot = await db.collection('users').get();
                     const batch = db.batch();
+                    
                     usersSnapshot.forEach((doc) => {
                         const userRef = db.collection('users').doc(doc.id);
-                        // تم إزالة 'tasks: []' من هنا لضمان بقائها
+                        // بنصفر الوقت والـ Idle بس، وبنسيب الـ tasks زي ما هي (عشان ميزتها اللي عملناها)
                         batch.update(userRef, { 
                             'timeBank': {}, 
                             'idleBank': 0, 
                             'lastChange': firebase.firestore.FieldValue.serverTimestamp() 
                         });
                     });
+        
+                    // تحديث تاريخ آخر تصفير في السيستم عشان ميتكررش مع كل يوزر
                     batch.set(db.collection('system_settings').doc('daily_reset'), { lastDate: today }, { merge: true });
+                    
                     await batch.commit();
+                    console.log("تم التصفير بنجاح.");
                 }
             } catch (e) { console.error("Reset Warning:", e.message); }
         }
@@ -2720,15 +2731,13 @@ function createStatusControls(task, taskStatus) {
             ].join(':');
         }
 
-        async function viewLogs(email) {
+       async function viewLogs(email) {
             const modal = document.getElementById('modal-logs');
             const timelineContainer = document.getElementById('logs-timeline');
             const loader = document.getElementById('logs-loader');
             const emptyState = document.getElementById('logs-empty');
             
-            if (!timelineContainer) { alert("خطأ HTML"); return; }
-        
-            document.getElementById('logs-subtitle').innerText = `حركات اليوم: ${moment().format('dddd, DD MMMM YYYY')}`;
+            document.getElementById('logs-subtitle').innerText = `سجل نشاط: ${email}`;
             modal.classList.remove('hidden');
             timelineContainer.innerHTML = '';
             emptyState.classList.add('hidden');
@@ -2740,76 +2749,68 @@ function createStatusControls(task, taskStatus) {
             try {
                 const snapshot = await db.collection('logs')
                     .where('user', '==', email)
-                    .orderBy('end_time', 'desc') // ترتيب مباشر من قاعدة البيانات أفضل
-                    .limit(100) 
+                    .where('end_time', '>=', startOfDay)
+                    .where('end_time', '<=', endOfDay)
+                    .orderBy('end_time', 'desc')
                     .get();
         
                 loader.classList.add('hidden');
-                
-                let logs = [];
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    
-                    // تحقق أمان: التأكد من وجود الحقل end_time قبل محاولة تحويله
-                    if (data && data.end_time) {
-                        const logDate = data.end_time.toDate();
-                        
-                        // فلتر: حركات اليوم + تجاهل الحركات المكررة
-                        if (logDate >= startOfDay && logDate <= endOfDay && data.from_status !== data.to_status) {
-                            logs.push(data);
-                        }
-                    }
-                });
         
-                if (logs.length === 0) {
+                if (snapshot.empty) {
                     emptyState.classList.remove('hidden');
                     return;
                 }
         
-                logs.forEach((log, index) => {
-                    // تحقق إضافي للأمان داخل الحلقة
-                    if (!log.end_time) return;
-        
-                    const time = moment(log.end_time.toDate()).format('h:mm A');
-                    const duration = formatDurationText(log.duration_ms); 
+                snapshot.forEach((doc) => {
+                    const log = doc.data();
+                    const time = moment(log.end_time.toDate()).format('hh:mm A');
+                    const duration = formatDurationText(log.duration_ms);
                     
-                    let statusConfig = { color: 'bg-slate-500', icon: 'fa-power-off', text: 'text-slate-600', label: log.to_status, bg: 'bg-slate-50' };
-                    if(log.to_status === 'Online') statusConfig = { color: 'bg-green-500', icon: 'fa-laptop', text: 'text-green-600', label: 'بدأ العمل (Online)', bg: 'bg-green-50' };
-                    else if(log.to_status === 'Break') statusConfig = { color: 'bg-orange-500', icon: 'fa-coffee', text: 'text-orange-600', label: 'استراحة (Break)', bg: 'bg-orange-50' };
-                    else if(log.to_status === 'Meeting') statusConfig = { color: 'bg-blue-500', icon: 'fa-users', text: 'text-blue-600', label: 'اجتماع (Meeting)', bg: 'bg-blue-50' };
-                    else if(log.to_status === 'Idle' || (log.from_status && log.from_status.includes('Idle'))) statusConfig = { color: 'bg-red-500', icon: 'fa-pause', text: 'text-red-600', label: 'توقف/خمول', bg: 'bg-red-50' };
-        
-                    let actorHTML = log.auto ? `<span class="flex items-center gap-1 text-[10px] text-slate-400 bg-slate-100 px-2 py-1 rounded-full"><i class="fas fa-robot text-slate-500"></i> النظام</span>` : `<span class="flex items-center gap-1 text-[10px] text-blue-500 bg-blue-50 px-2 py-1 rounded-full"><i class="fas fa-hand-pointer"></i> يدوي</span>`;
+                    // تحديد اللون والأيقونة بناءً على الحالة اللي كان فيها "From"
+                    let config = { color: 'bg-slate-400', icon: 'fa-ghost', label: 'غير معروف', textColor: 'text-slate-500' };
+                    
+                    if(log.from_status === 'Online') config = { color: 'bg-green-500', icon: 'fa-laptop-code', label: 'وقت عمل فعلي', textColor: 'text-green-600' };
+                    else if(log.from_status === 'Break') config = { color: 'bg-orange-500', icon: 'fa-coffee', label: 'وقت استراحة', textColor: 'text-orange-600' };
+                    else if(log.from_status === 'Meeting') config = { color: 'bg-blue-500', icon: 'fa-users', label: 'في اجتماع', textColor: 'text-blue-600' };
+                    else if(log.from_status.includes('Idle')) config = { color: 'bg-red-500', icon: 'fa-keyboard', label: 'وقت خمول (توقف)', textColor: 'text-red-600' };
+                    else if(log.from_status === 'Offline') config = { color: 'bg-slate-700', icon: 'fa-moon', label: 'خارج النظام', textColor: 'text-slate-700' };
         
                     const html = `
-                    <div class="relative animate-fade-in" style="animation-delay: ${index * 0.05}s">
-                        <span class="absolute -right-[9px] top-4 w-4 h-4 rounded-full ${statusConfig.color} border-4 border-white dark:border-slate-800 shadow-sm z-10"></span>
-                        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
-                            <div class="flex justify-between items-start mb-2">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-lg ${statusConfig.bg} ${statusConfig.text} flex items-center justify-center"><i class="fas ${statusConfig.icon}"></i></div>
-                                    <div><h4 class="text-sm font-bold ${statusConfig.text}">${statusConfig.label}</h4><p class="text-[10px] text-slate-400 font-mono">${time}</p></div>
-                                </div>
-                                ${actorHTML}
+                    <div class="relative pl-8 pb-6 border-r-2 border-slate-100 dark:border-slate-700 mr-4 last:border-0">
+                        <div class="absolute -right-[9px] top-0 w-4 h-4 rounded-full ${config.color} border-4 border-white dark:border-slate-900 shadow-sm"></div>
+                        
+                        <div class="flex flex-col gap-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-black text-slate-400 font-mono">${time}</span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">
+                                    ${log.auto ? '🤖 آلي' : '👤 يدوي'}
+                                </span>
                             </div>
-                            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-slate-50 dark:border-slate-700">
-                                <div class="flex-1 text-center border-l border-slate-100 dark:border-slate-700 pl-3">
-                                    <p class="text-[9px] text-slate-400 mb-1">الحالة السابقة</p>
-                                    <p class="text-xs font-bold text-slate-600 dark:text-slate-300">${log.from_status || 'غير معروف'}</p>
-                                </div>
-                                <div class="flex-1 text-center">
-                                    <p class="text-[9px] text-slate-400 mb-1">المدة المستغرقة</p>
-                                    <p class="text-xs font-black font-mono text-slate-800 dark:text-white">${duration}</p>
+                            
+                            <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-3 rounded-xl shadow-sm">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg ${config.color} text-white flex items-center justify-center text-xs">
+                                        <i class="fas ${config.icon}"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                            استغرق <span class="${config.textColor}">${duration}</span> في حالة <span class="underline">${log.from_status}</span>
+                                        </p>
+                                        <p class="text-[10px] text-slate-400 mt-0.5">
+                                            ثم تحول إلى <span class="font-bold text-primary-500">${log.to_status}</span>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>`;
                     timelineContainer.innerHTML += html;
                 });
-            } catch (error) { 
+        
+            } catch (error) {
                 console.error(error);
                 loader.classList.add('hidden');
-                timelineContainer.innerHTML = `<div class="p-4 text-center text-red-500 text-xs font-bold bg-red-50 rounded-xl">حدث خطأ في تحميل البيانات. تأكد من وجود Index في Firebase.</div>`;
+                timelineContainer.innerHTML = `<p class="text-center text-red-500 text-xs p-4">خطأ في تحميل السجل</p>`;
             }
         }       
         // دالة مساعدة لتنسيق الوقت بشكل نصي مقروء
@@ -3264,6 +3265,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
