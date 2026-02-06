@@ -34,340 +34,104 @@
     </script>
 
     <style>
-        /* --- الأساسيات --- */
-        body { background-color: #f8fafc; font-family: 'Outfit', 'Cairo', sans-serif; overflow-x: hidden; }
-        .dark-mode body { background-color: #0f172a; color: white; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .hidden-section { display: none !important; }
-        
-        /* --- النماذج والإدخال --- */
-        .form-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; font-size: 14px; transition: all 0.3s; }
-        .form-input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); outline: none; }
-        .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
-        
-        /* --- القوائم والأنيميشن --- */
-        .dropdown-menu { transform-origin: top left; transition: all 0.2s ease-out; transform: scale(0.95); opacity: 0; pointer-events: none; }
-        .dropdown-menu.active { transform: scale(1); opacity: 1; pointer-events: auto; }
+    /* --- الأساسيات وخلفية الفضاء المحدثة --- */
+    body { background-color: #020617; font-family: 'Outfit', 'Cairo', sans-serif; overflow-x: hidden; color: #f1f5f9; }
+    
+    .animated-bg {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        background: radial-gradient(circle at 20% 30%, #0f172a 0%, #020617 100%);
+        background-size: cover;
+    }
 
-        .pulse-green { animation: pulse-g 2s infinite; }
-        @keyframes pulse-g { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
-        
-        .pulse-red { animation: pulse-r 2s infinite; }
-        @keyframes pulse-r { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    /* تأثير النجوم المتحركة بشكل أفضل */
+    .animated-bg::after {
+        content: ""; position: absolute; top: 0; left: 0; width: 200%; height: 200%;
+        background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+        opacity: 0.2; animation: starsMove 100s linear infinite;
+    }
+    @keyframes starsMove { from { transform: translate(0,0); } to { transform: translate(-50%, -50%); } }
 
-        #admin-alerts-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        
-        .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
-        .chat-header { cursor: move; user-select: none; }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
+    /* --- تصميم البطاقة الاحترافي الجديد (Glass Card) --- */
+    .pro-card-design {
+        background: rgba(30, 41, 59, 0.4) !important; /* لون داكن شفاف */
+        backdrop-filter: blur(16px) saturate(120%) !important;
+        -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 24px !important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative;
+        overflow: visible !important; /* للسماح بوهج الحالة */
+    }
 
-        /* --- بطاقات الموظفين --- */
-        .pro-card-design {
-            background: white;
-            border-radius: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            flex-direction: column;
-        }
-        .dark-mode .pro-card-design { background: #1e293b; border-color: #334155; }
-        .pro-card-design:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+    .pro-card-design:hover {
+        transform: translateY(-8px) scale(1.02);
+        background: rgba(30, 41, 59, 0.6) !important;
+        border-color: rgba(14, 165, 233, 0.4) !important;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
 
-        /* ============================================================ */
-        /* تعديلات مركز المهام الجديدة (لحل مشكلة الشاشة والمحرر) */
-        /* ============================================================ */
+    /* وهج الحالة (Status Glow) */
+    .status-glow {
+        position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+        z-index: -1; border-radius: 24px; opacity: 0.15; transition: opacity 0.3s;
+    }
+    .pro-card-design:hover .status-glow { opacity: 0.3; }
 
-        /* 1. ضبط الصندوق الرئيسي للمودال ليناسب جميع الشاشات */
-        #modal-task-center > div {
-            height: 90vh !important;       /* ارتفاع ثابت 90% من الشاشة */
-            max-height: 90vh !important;
-            display: flex !important;
-            flex-direction: column !important; /* في الموبايل العناصر فوق بعض */
-            overflow: hidden !important;   /* ممنوع أي حاجة تخرج بره الصندوق */
-            width: 95% !important;         /* عرض مناسب للموبايل */
-            margin: auto;
-        }
+    /* ألوان الوهج */
+    .glow-online { background: radial-gradient(circle, #22c55e 0%, transparent 70%); }
+    .glow-idle { background: radial-gradient(circle, #ef4444 0%, transparent 70%); }
+    .glow-meeting { background: radial-gradient(circle, #3b82f6 0%, transparent 70%); }
+    .glow-break { background: radial-gradient(circle, #f59e0b 0%, transparent 70%); }
 
-        @media (min-width: 768px) {
-            #modal-task-center > div {
-                flex-direction: row !important; /* في الكمبيوتر العناصر جنب بعض */
-                width: 100% !important;
-                max-width: 80rem !important;
-            }
-        }
+    /* كبسولات التوقيت (Timer Capsules) */
+    .timer-capsule {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 8px 4px;
+        transition: all 0.3s;
+    }
+    .pro-card-design:hover .timer-capsule {
+        border-color: rgba(255, 255, 255, 0.15);
+        background: rgba(15, 23, 42, 0.8);
+    }
 
-        /* 2. ضبط منطقة التفاصيل والشات (الجزء الأيسر/الأساسي) */
-        #task-detail-view {
-            flex: 1 !important;
-            height: 100% !important;
-            overflow-y: auto !important;   /* تفعيل السكرول الداخلي */
-            padding-bottom: 150px !important; /* مساحة فارغة تحت عشان الشات ميكنش مغطي الكلام */
-            display: block !important;
-            position: relative;
-            padding: 20px !important;
-        }
+    /* الأزرار العائمة */
+    .action-btn-float {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        color: #94a3b8;
+        transition: all 0.2s;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .action-btn-float:hover {
+        background: #0ea5e9; color: white; transform: scale(1.1);
+    }
 
-        /* 3. ضبط منطقة القائمة الجانبية (Sidebar) */
-        #task-list-container {
-            overflow-y: auto !important;
-            padding-bottom: 20px;
-        }
-        
-        /* في الموبايل، القائمة الجانبية تكون صغيرة */
-        @media (max-width: 768px) {
-            #modal-task-center > div > div:first-child {
-                height: 180px !important; /* ارتفاع صغير للقائمة في الموبايل */
-                flex: none !important;
-                overflow-y: auto !important;
-                border-left: none !important;
-                border-bottom: 1px solid #e2e8f0;
-            }
-        }
+    /* تعديل النصوص للقراءة */
+    .card-title { font-family: 'Cairo', sans-serif; color: #ffffff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    .card-subtitle { color: #0ea5e9 !important; font-weight: 700; letter-spacing: 0.05em; }
+    
+    .status-select {
+        background: rgba(15, 23, 42, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #f1f5f9 !important;
+        border-radius: 10px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+    }
 
-        /* 4. تنسيق محرر النصوص (Quill Editor) */
-        .ql-toolbar { 
-            border-radius: 8px 8px 0 0; 
-            background: #f8fafc; 
-            direction: ltr; 
-            text-align: left; 
-            border-color: #cbd5e1 !important;
-        }
-        .ql-container { 
-            border-radius: 0 0 8px 8px; 
-            font-family: 'Cairo', sans-serif; 
-            font-size: 16px; 
-            height: 200px !important; /* ارتفاع ثابت للمحرر */
-            background: white; 
-            margin-bottom: 20px;
-            border-color: #cbd5e1 !important;
-        }
-        .ql-editor { 
-            direction: rtl; 
-            text-align: right; 
-        }
-
-        /* 5. ورقة العمل داخل عرض التفاصيل */
-        .a4-paper {
-            width: 100% !important;
-            max-width: 100% !important;
-            min-height: auto !important;
-            padding: 0 !important; /* إزالة الحواف الزائدة */
-            margin: 0 auto !important;
-            box-shadow: none !important;
-            border: none !important;
-            background: transparent !important;
-            font-family: 'Outfit', 'Cairo', sans-serif !important;
-        }
-
-        /* --- تنسيقات بطاقات المهام الجديدة (Modern Task Cards) --- */
-        .task-card-modern {
-            background: white;
-            border: 1px solid #f1f5f9;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-        .dark-mode .task-card-modern { background: #1e293b; border-color: #334155; }
-        .task-card-modern:hover { border-color: #0ea5e9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-        .task-card-modern.active { border-right: 4px solid #0ea5e9; background: #f0f9ff; }
-        .dark-mode .task-card-modern.active { background: #0c4a6e; }
-
-        /* --- أزرار الحالات (Status Pills) --- */
-        .status-pill {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 800;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: all 0.2s;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            opacity: 0.7;
-        }
-        .status-pill:hover { opacity: 1; transform: scale(1.02); }
-        .status-pill.active { opacity: 1; transform: scale(1.05); font-weight: 900; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-
-        .status-started.active { background-color: #f3f4f6; color: #374151; border-color: #d1d5db; }
-        .status-working.active { background-color: #e0f2fe; color: #0284c7; border-color: #7dd3fc; }
-        .status-done.active { background-color: #dcfce7; color: #16a34a; border-color: #86efac; }
-
-        /* --- أزرار التحكم للمدير --- */
-        .admin-action-btn {
-            width: 28px; height: 28px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; transition: all 0.2s;
-        }
-        .btn-edit { background: #eff6ff; color: #2563eb; }
-        .btn-edit:hover { background: #2563eb; color: white; }
-        .btn-delete { background: #fef2f2; color: #dc2626; }
-        .btn-delete:hover { background: #dc2626; color: white; }
-
-        /* --- تحسينات الشات (الرسائل) --- */
-        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-                    /* --- ألوان حالات التاسك المخصصة (طلب خاص) --- */
-            /* 1. بدأ (Started) -> أخضر */
-            .status-custom-started { 
-                background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; 
-            }
-            .status-custom-started.active { 
-                background-color: #16a34a; color: white; border-color: #15803d; box-shadow: 0 0 10px rgba(22, 163, 74, 0.4);
-            }
-            
-            /* 2. جاري العمل (Working) -> أزرق */
-            .status-custom-working { 
-                background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; 
-            }
-            .status-custom-working.active { 
-                background-color: #2563eb; color: white; border-color: #1d4ed8; box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
-            }
-            
-            /* 3. تم (Done) -> أحمر */
-            .status-custom-done { 
-                background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; 
-            }
-            .status-custom-done.active { 
-                background-color: #dc2626; color: white; border-color: #b91c1c; box-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
-            }
-            
-            /* --- خط كايرو للمحرر والتفاصيل --- */
-            .ql-editor, #task-detail-desc {
-                font-family: 'Cairo', sans-serif !important;
-                line-height: 1.8;
-            }
-            
-            /* --- تمييز التاسك عند المدير في القائمة --- */
-            .task-border-started { border-right: 4px solid #16a34a !important; }
-            .task-border-working { border-right: 4px solid #2563eb !important; }
-            .task-border-done { border-right: 4px solid #dc2626 !important; }
-
-                        /* --- تنسيقات بطاقات المهام الملونة (طلب خاص) --- */
-            /* الحالة: بدأ (أخضر فاتح + شادو غامق) */
-            .card-style-started { 
-                background-color: #f0fdf4 !important; /* أخضر فاتح جداً */
-                border: 1px solid #86efac !important;
-                box-shadow: 4px 4px 0px #16a34a !important; /* شادو صريح غامق */
-                transform: translate(-2px, -2px); /* تأثير بسيط */
-            }
-            
-            /* الحالة: جاري (أزرق فاتح + شادو غامق) */
-            .card-style-working { 
-                background-color: #eff6ff !important; /* أزرق فاتح جداً */
-                border: 1px solid #93c5fd !important;
-                box-shadow: 4px 4px 0px #2563eb !important;
-                transform: translate(-2px, -2px);
-            }
-            
-            /* الحالة: تم (أحمر فاتح + شادو غامق) */
-            .card-style-done { 
-                background-color: #fef2f2 !important; /* أحمر فاتح جداً */
-                border: 1px solid #fca5a5 !important;
-                box-shadow: 4px 4px 0px #dc2626 !important;
-                transform: translate(-2px, -2px);
-            }
-            
-            /* تعديل بسيط للنصوص داخل الكروت الملونة لتكون مقروءة */
-            .card-style-started h4, .card-style-working h4, .card-style-done h4 { color: #1e293b !important; }
-            .card-style-started p, .card-style-working p, .card-style-done p { color: #475569 !important; }
-
-                        /* --- تنسيق أزرار التفعيل (Toggle Switch) --- */
-            .toggle-checkbox:checked {
-                right: 0;
-                border-color: #10b981;
-            }
-            .toggle-checkbox:checked + .toggle-label {
-                background-color: #10b981;
-            }
-            .toggle-checkbox:checked + .toggle-label:before {
-                transform: translateX(100%);
-            }
-            
-            .toggle-label {
-                width: 40px;
-                height: 20px;
-                background-color: #e5e7eb;
-                border-radius: 9999px;
-                position: relative;
-                cursor: pointer;
-                transition: background-color 0.2s ease-in;
-            }
-            
-            .toggle-label:before {
-                content: '';
-                position: absolute;
-                top: 2px;
-                left: 2px;
-                width: 16px;
-                height: 16px;
-                background-color: white;
-                border-radius: 50%;
-                transition: transform 0.2s ease-in;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            }
-            /* الخلفية المتحركة المعدلة لتكون أوضح */
-          /* خلفية فضائية عميقة ومتحركة */
-        .animated-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            /* ألوان داكنة جداً (أسود، كحلي عميق، بنفسجي ليلي) */
-            background: radial-gradient(circle at bottom right, #0f172a, #020617, #1e1b4b, #000000);
-            background-size: 200% 200%;
-            animation: spaceMove 20s ease-in-out infinite;
-        }
-
-        /* إضافة تأثير "الوهج" المتحرك في الخلفية */
-        .animated-bg::after {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: url('https://www.transparenttextures.com/patterns/stardust.png'); /* تأثير نجوم خفيف */
-            opacity: 0.3;
-        }
-        
-        @keyframes spaceMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        /* جعل البطاقات تبدو وكأنها قطع زجاجية عائمة فوق الفضاء */
-        .pro-card-design {
-            backdrop-filter: blur(20px) saturate(180%) !important;
-            -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-            background-color: rgba(255, 255, 255, 0.05) !important; /* شفافة جداً */
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8) !important;
-        }
-        
-        /* نصوص البطاقات لتكون واضحة على الخلفية الغامقة */
-        .pro-card-design h3, .pro-card-design p {
-            color: #f1f5f9 !important;
-        }
-        
-        /* الهيدر ليكون متناسق مع العمق */
-        .glass {
-            background: rgba(2, 6, 23, 0.6) !important;
-            backdrop-filter: blur(15px) !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-        }
-    </style>
+    /* الهيدر المطور */
+    .glass {
+        background: rgba(2, 6, 23, 0.8) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    /* منع اختفاء الأزرار */
+    .hidden-section { display: none !important; }
+</style>
 </head>
 
 <body class="min-h-screen text-slate-100 font-sans selection:bg-primary-500 selection:text-white">   
@@ -1121,121 +885,120 @@
 
         // --- Render Grid (Fixed: Shows All properly) ---
         function renderGrid() {
-            const grid = document.getElementById('grid-users');
-            grid.innerHTML = '';
+                const grid = document.getElementById('grid-users');
+                grid.innerHTML = '';
+                
+                const showOfflineToggle = document.getElementById('show-offline-toggle').checked;
+                const canManageTasks = hasPermission('can_manage_tasks'); 
+                
+                let displayedCount = 0;
             
-            const showOfflineToggle = document.getElementById('show-offline-toggle').checked;
-            // هنا لم نعد نعتمد على admin فقط، بل الصلاحيات
-            const canManageTasks = hasPermission('can_manage_tasks'); 
+                allUsersData.forEach(u => {
+                    if (!u.email) return;
             
-            let displayedCount = 0;
-        
-            allUsersData.forEach(u => {
-                if (!u.email) return;
-        
-                const isMe = (currentUser.email === u.email);
-                let effStatus = u.status || 'Offline';
-                if (u.isIdle) effStatus = 'Idle'; 
-        
-                if (!isMe) {
-                    if (currentFilter === 'all') {
-                        if (effStatus === 'Offline' && !showOfflineToggle) return; 
-                    } else if (currentFilter === 'Idle') {
-                        if (!u.isIdle) return;
-                    } else if (currentFilter === 'Offline') {
-                        if (effStatus !== 'Offline') return;
-                    } else {
-                        if (effStatus !== currentFilter && u.status !== currentFilter) return;
+                    const isMe = (currentUser.email === u.email);
+                    let effStatus = u.status || 'Offline';
+                    if (u.isIdle) effStatus = 'Idle'; 
+            
+                    if (!isMe) {
+                        if (currentFilter === 'all') {
+                            if (effStatus === 'Offline' && !showOfflineToggle) return; 
+                        } else if (currentFilter === 'Idle') {
+                            if (!u.isIdle) return;
+                        } else if (currentFilter === 'Offline') {
+                            if (effStatus !== 'Offline') return;
+                        } else {
+                            if (effStatus !== currentFilter && u.status !== currentFilter) return;
+                        }
                     }
-                }
-        
-                displayedCount++;
-                const tb = u.timeBank || {};
-                const safeStart = getMillis(u.lastChange);
-                
-                // التحكم في الحالة (فقط المدير أو الشخص نفسه أو مشرف يملك صلاحية تعديل المستخدمين)
-                const canChangeStatus = (isMe || userProfile.role === 'admin' || hasPermission('can_manage_users'));
-                
-                let stripColor = "bg-slate-300";
-                if(u.isIdle) stripColor = "bg-red-500";
-                else if(u.status === 'Online') stripColor = "bg-green-500";
-                else if(u.status === 'Meeting') stripColor = "bg-blue-500";
-                else if(u.status === 'Break') stripColor = "bg-orange-500";
-        
-                const unreadCount = unreadCounts[u.email] || 0;
-        
-                const card = `
-                <div class="pro-card-design group relative flex flex-col">
-                    <div class="h-2 w-full ${stripColor} transition-colors duration-500"></div>
+            
+                    displayedCount++;
+                    const tb = u.timeBank || {};
+                    const safeStart = getMillis(u.lastChange);
+                    const canChangeStatus = (isMe || userProfile.role === 'admin' || hasPermission('can_manage_users'));
                     
-                    <div class="p-5 flex items-start gap-4 flex-1">
-                        <div class="relative">
-                            <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-2xl object-cover shadow-md border-2 border-white dark:border-slate-700">
-                            ${u.isIdle ? '<span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-ping border-2 border-white"></span>' : ''}
-                        </div>
-                        <div class="flex-1 min-w-0 pt-1">
-                            <h3 class="font-black text-lg text-slate-800 dark:text-white truncate">${u.name}</h3>
-                            <p class="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">${u.title || 'Member'}</p>
-                            
-                            <select onchange="setStatus('${u.email}', this.value)" ${!canChangeStatus ? 'disabled' : ''} class="text-[10px] font-bold py-1.5 px-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 border-none focus:ring-2 ring-primary-500/20 cursor-pointer w-full max-w-[120px] transition-all hover:bg-slate-200 dark:hover:bg-slate-600">
-                                <option value="Online" ${u.status === 'Online' ? 'selected' : ''}>🟢 Online</option>
-                                <option value="Break" ${u.status === 'Break' ? 'selected' : ''}>🟠 Break</option>
-                                <option value="Meeting" ${u.status === 'Meeting' ? 'selected' : ''}>🔵 Meeting</option>
-                                <option value="Offline" ${u.status === 'Offline' ? 'selected' : ''}>⚫ Offline</option>
-                            </select>
+                    // تحديد لون الوهج والخط العلوي بناءً على الحالة
+                    let glowClass = "glow-offline";
+                    let stripColor = "bg-slate-500";
+                    if(u.isIdle) { glowClass = "glow-idle"; stripColor = "bg-red-500"; }
+                    else if(u.status === 'Online') { glowClass = "glow-online"; stripColor = "bg-green-500"; }
+                    else if(u.status === 'Meeting') { glowClass = "glow-meeting"; stripColor = "bg-blue-500"; }
+                    else if(u.status === 'Break') { glowClass = "glow-break"; stripColor = "bg-orange-500"; }
+            
+                    const unreadCount = unreadCounts[u.email] || 0;
+            
+                    const card = `
+                    <div class="pro-card-design group flex flex-col">
+                        <div class="status-glow ${glowClass}"></div>
+                        <div class="h-1.5 w-full ${stripColor} rounded-t-full opacity-80"></div>
+                        
+                        <div class="p-6 flex flex-col gap-4 flex-1">
+                            <div class="flex items-center gap-4">
+                                <div class="relative">
+                                    <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-2xl object-cover border-2 border-white/10 shadow-lg">
+                                    ${u.isIdle ? '<span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-ping border-2 border-[#020617]"></span>' : ''}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="card-title font-black text-lg truncate">${u.name}</h3>
+                                    <p class="card-subtitle text-[10px] uppercase tracking-tighter">${u.title || 'Team Member'}</p>
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    ${!isMe ? `
+                                    <button onclick="openPrivateChat('${u.email}', '${u.name}')" class="action-btn-float relative">
+                                        <i class="fas fa-comment-dots"></i>
+                                        <span id="badge-${u.email.replace(/[@.]/g, "_")}" class="${unreadCount > 0 ? '' : 'hidden'} absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center border-2 border-[#020617]">${unreadCount}</span>
+                                    </button>` : ''}
+                                    ${canManageTasks && !isMe ? `<button onclick="openAddTaskModal('${u.email}')" class="action-btn-float"><i class="fas fa-plus-circle"></i></button>` : ''}
+                                </div>
+                            </div>
+            
+                            <div class="w-full">
+                                <select onchange="setStatus('${u.email}', this.value)" ${!canChangeStatus ? 'disabled' : ''} class="status-select w-full p-2 outline-none">
+                                    <option value="Online" ${u.status === 'Online' ? 'selected' : ''}>🟢 Online</option>
+                                    <option value="Break" ${u.status === 'Break' ? 'selected' : ''}>🟠 Break</option>
+                                    <option value="Meeting" ${u.status === 'Meeting' ? 'selected' : ''}>🔵 Meeting</option>
+                                    <option value="Offline" ${u.status === 'Offline' ? 'selected' : ''}>⚫ Offline</option>
+                                </select>
+                            </div>
                         </div>
                         
-                        <div class="flex flex-col gap-2">
-                             ${!isMe ? `
-                             <button onclick="openPrivateChat('${u.email}', '${u.name}')" title="محادثة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-primary-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1 relative">
-                                <i class="fas fa-comment-dots"></i>
-                                <span id="badge-${u.email.replace(/[@.]/g, "_")}" class="${unreadCount > 0 ? '' : 'hidden'} absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold border-2 border-white">${unreadCount}</span>
-                             </button>` : ''}
-                             
-                             ${canManageTasks && !isMe ? `<button onclick="openAddTaskModal('${u.email}')" title="إسناد مهمة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-indigo-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1"><i class="fas fa-tasks"></i></button>` : ''}
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-4 border-t border-slate-100 dark:border-slate-700/50 divide-x divide-x-reverse divide-slate-100 dark:divide-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
-                        <div class="p-3 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Active</p>
-                            <p class="text-xs font-black text-green-600 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
-                        </div>
-                        <div class="p-3 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Break</p>
-                            <p class="text-xs font-black text-orange-500 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
-                        </div>
-                        <div class="p-3 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Meet</p>
-                            <p class="text-xs font-black text-blue-500 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
-                        </div>
-                        <div class="p-3 text-center ${u.isIdle ? 'bg-red-50 dark:bg-red-900/20' : ''}">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Idle</p>
-                            <p class="text-xs font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800">
-                        ${(isMe || hasPermission('can_view_logs')) ? `
-                        <button onclick="viewLogs('${u.email}')" class="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition">
-                            <i class="fas fa-list-alt ml-1"></i> سجل الحركات
-                        </button>` : '<span class="flex-1"></span>'}
-        
-                        ${!isMe ? `
-                            <div class="flex gap-2 mr-2">
-                                ${hasPermission('can_screenshot') ? `<button onclick="requestScreenshot('${u.email}')" title="طلب لقطة شاشة" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-camera"></i></button>` : ''}
-                                
-                                ${hasPermission('can_manage_users') ? `<button onclick="openEditModal('${u.email}')" title="تعديل" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-cog"></i></button>` : ''}
+                        <div class="grid grid-cols-4 gap-1 p-2 bg-black/20 rounded-b-[24px]">
+                            <div class="timer-capsule text-center">
+                                <p class="text-[8px] font-bold text-slate-500 uppercase">Active</p>
+                                <p class="text-[10px] font-black text-green-400 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
                             </div>
-                        ` : ''}
-                    </div>
-                </div>`;
-                grid.innerHTML += card;
-            });
-        
-            if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
-            else document.getElementById('empty-state').classList.add('hidden');
-        }
+                            <div class="timer-capsule text-center">
+                                <p class="text-[8px] font-bold text-slate-500 uppercase">Break</p>
+                                <p class="text-[10px] font-black text-orange-400 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
+                            </div>
+                            <div class="timer-capsule text-center">
+                                <p class="text-[8px] font-bold text-slate-500 uppercase">Meet</p>
+                                <p class="text-[10px] font-black text-blue-400 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
+                            </div>
+                            <div class="timer-capsule text-center ${u.isIdle ? 'ring-1 ring-red-500/50' : ''}">
+                                <p class="text-[8px] font-bold text-slate-500 uppercase">Idle</p>
+                                <p class="text-[10px] font-black text-red-400 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
+                            </div>
+                        </div>
+            
+                        <div class="flex items-center justify-between p-3 px-4">
+                            ${(isMe || hasPermission('can_view_logs')) ? `
+                            <button onclick="viewLogs('${u.email}')" class="text-[10px] font-bold text-slate-400 hover:text-white transition flex items-center gap-1">
+                                <i class="fas fa-fingerprint text-primary-500"></i> سجل النشاط
+                            </button>` : '<span></span>'}
+                            
+                            <div class="flex gap-2">
+                                ${!isMe && hasPermission('can_screenshot') ? `<button onclick="requestScreenshot('${u.email}')" class="text-slate-400 hover:text-red-400 transition"><i class="fas fa-camera"></i></button>` : ''}
+                                ${!isMe && hasPermission('can_manage_users') ? `<button onclick="openEditModal('${u.email}')" class="text-slate-400 hover:text-blue-400 transition"><i class="fas fa-user-edit"></i></button>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+                    grid.innerHTML += card;
+                });
+            
+                if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
+                else document.getElementById('empty-state').classList.add('hidden');
+            }
         function getStatusColor(s, isFocus, isIdle) {
             if (isIdle) return { border: 'border-red-600 border-r-4', text: 'text-red-800', badge: 'bg-red-200 text-red-900', shadow: 'shadow-xl shadow-red-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-red-100/50 dark:bg-red-900/40 border-red-200' };
             if (s === 'Offline') return { border: 'border-slate-500 border-r-4', text: 'text-slate-700', badge: 'bg-slate-300 text-slate-800', shadow: 'shadow-xl shadow-slate-900/20', cardBg: 'bg-slate-100 dark:bg-slate-900', innerGlow: 'bg-slate-200 dark:bg-slate-800 border-slate-300' };
@@ -3271,3 +3034,4 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
