@@ -348,25 +348,48 @@
         }
         
         /* جعل البطاقات تبدو وكأنها قطع زجاجية عائمة فوق الفضاء */
-        .pro-card-design {
-            backdrop-filter: blur(20px) saturate(180%) !important;
-            -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-            background-color: rgba(255, 255, 255, 0.05) !important; /* شفافة جداً */
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8) !important;
-        }
-        
-        /* نصوص البطاقات لتكون واضحة على الخلفية الغامقة */
-        .pro-card-design h3, .pro-card-design p {
-            color: #f1f5f9 !important;
-        }
-        
-        /* الهيدر ليكون متناسق مع العمق */
-        .glass {
-            background: rgba(2, 6, 23, 0.6) !important;
-            backdrop-filter: blur(15px) !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-        }
+        /* تصميم البطاقة الكريستالية الغامقة */
+            .pro-card-design {
+                background: rgba(255, 255, 255, 0.03) !important; /* شفافة جداً */
+                backdrop-filter: blur(12px) saturate(150%) !important;
+                -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
+                border-radius: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                overflow: hidden;
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+            }
+            
+            /* تأثير الإضاءة عند التمرير */
+            .pro-card-design:hover {
+                transform: translateY(-10px);
+                background: rgba(255, 255, 255, 0.07) !important;
+                border-color: rgba(14, 165, 233, 0.5) !important; /* توهج أزرق خفيف */
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            }
+            
+            /* تعديل النصوص داخل البطاقة لتكون ناصعة */
+            .pro-card-design h3 {
+                color: #ffffff !important;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+            
+            .pro-card-design p {
+                color: #cbd5e1 !important; /* رمادي فاتح جداً مقروء */
+            }
+            
+            /* تعديل السكرول داخل البطاقة */
+            .pro-card-design select {
+                background: rgba(255, 255, 255, 0.1) !important;
+                color: white !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            }
+            
+            /* شريط المؤقتات في أسفل البطاقة */
+            .stat-box-dark {
+                background: rgba(0, 0, 0, 0.2);
+                border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
     </style>
 </head>
 
@@ -1165,55 +1188,68 @@
                 const unreadCount = unreadCounts[u.email] || 0;
         
                 const card = `
-                <div class="pro-card-design group relative flex flex-col">
-                    <div class="h-2 w-full ${stripColor} transition-colors duration-500"></div>
-                    
-                    <div class="p-5 flex items-start gap-4 flex-1">
+            <div class="pro-card-design group flex flex-col h-full">
+                <div class="h-1.5 w-full ${stripColor} shadow-[0_0_15px_rgba(0,0,0,0.5)]"></div>
+                
+                <div class="p-6 flex flex-col flex-1">
+                    <div class="flex items-center gap-5 mb-6">
                         <div class="relative">
-                            <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-2xl object-cover shadow-md border-2 border-white dark:border-slate-700">
-                            ${u.isIdle ? '<span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-ping border-2 border-white"></span>' : ''}
-                        </div>
-                        <div class="flex-1 min-w-0 pt-1">
-                            <h3 class="font-black text-lg text-slate-800 dark:text-white truncate">${u.name}</h3>
-                            <p class="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">${u.title || 'Member'}</p>
-                            
-                            <select onchange="setStatus('${u.email}', this.value)" ${!canChangeStatus ? 'disabled' : ''} class="text-[10px] font-bold py-1.5 px-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 border-none focus:ring-2 ring-primary-500/20 cursor-pointer w-full max-w-[120px] transition-all hover:bg-slate-200 dark:hover:bg-slate-600">
-                                <option value="Online" ${u.status === 'Online' ? 'selected' : ''}>🟢 Online</option>
-                                <option value="Break" ${u.status === 'Break' ? 'selected' : ''}>🟠 Break</option>
-                                <option value="Meeting" ${u.status === 'Meeting' ? 'selected' : ''}>🔵 Meeting</option>
-                                <option value="Offline" ${u.status === 'Offline' ? 'selected' : ''}>⚫ Offline</option>
-                            </select>
+                            <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-lg group-hover:border-primary-500 transition-colors">
+                            ${u.isIdle ? '<span class="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full animate-pulse border-2 border-slate-900"></span>' : ''}
                         </div>
                         
-                        <div class="flex flex-col gap-2">
-                             ${!isMe ? `
-                             <button onclick="openPrivateChat('${u.email}', '${u.name}')" title="محادثة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-primary-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1 relative">
-                                <i class="fas fa-comment-dots"></i>
-                                <span id="badge-${u.email.replace(/[@.]/g, "_")}" class="${unreadCount > 0 ? '' : 'hidden'} absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold border-2 border-white">${unreadCount}</span>
-                             </button>` : ''}
-                             
-                             ${canManageTasks && !isMe ? `<button onclick="openAddTaskModal('${u.email}')" title="إسناد مهمة" class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:bg-indigo-500 hover:text-white flex items-center justify-center transition shadow-sm hover:shadow-md hover:-translate-y-1"><i class="fas fa-tasks"></i></button>` : ''}
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-black text-xl tracking-tight truncate">${u.name}</h3>
+                            <p class="text-[11px] font-bold text-primary-400 uppercase tracking-widest">${u.title || 'Team Member'}</p>
                         </div>
                     </div>
+            
+                    <div class="mb-6">
+                        <select onchange="setStatus('${u.email}', this.value)" ${!canChangeStatus ? 'disabled' : ''} 
+                            class="w-full text-xs font-bold py-2.5 px-4 rounded-xl outline-none cursor-pointer transition-all hover:bg-white/20">
+                            <option value="Online" ${u.status === 'Online' ? 'selected' : ''}>🟢 Online</option>
+                            <option value="Break" ${u.status === 'Break' ? 'selected' : ''}>🟠 Break</option>
+                            <option value="Meeting" ${u.status === 'Meeting' ? 'selected' : ''}>🔵 Meeting</option>
+                            <option value="Offline" ${u.status === 'Offline' ? 'selected' : ''}>⚫ Offline</option>
+                        </select>
+                    </div>
+            
+                    <div class="flex gap-2 mb-6">
+                        ${!isMe ? `
+                            <button onclick="openPrivateChat('${u.email}', '${u.name}')" class="flex-1 bg-white/10 hover:bg-primary-600 text-white py-2 rounded-xl transition flex items-center justify-center gap-2 border border-white/10 relative">
+                                <i class="fas fa-comment-dots text-sm"></i>
+                                <span class="text-[10px] font-bold">دردشة</span>
+                                <span id="badge-${u.email.replace(/[@.]/g, "_")}" class="${unreadCount > 0 ? '' : 'hidden'} absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-[10px] rounded-full flex items-center justify-center border-2 border-slate-900">${unreadCount}</span>
+                            </button>
+                            ${canManageTasks ? `<button onclick="openAddTaskModal('${u.email}')" class="w-12 bg-white/10 hover:bg-indigo-600 text-white py-2 rounded-xl transition border border-white/10 flex items-center justify-center"><i class="fas fa-tasks"></i></button>` : ''}
+                        ` : `<div class="flex-1 text-center py-2 text-[10px] font-bold text-slate-500 italic">هذا هو حسابك الشخصي</div>`}
+                    </div>
+            
+                    <div class="grid grid-cols-2 gap-2 mt-auto">
+                        <div class="bg-black/20 p-3 rounded-2xl border border-white/5 text-center">
+                            <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">العمل</p>
+                            <p class="text-sm font-black text-green-400 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
+                        </div>
+                        <div class="bg-black/20 p-3 rounded-2xl border border-white/5 text-center">
+                            <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">الخمول</p>
+                            <p class="text-sm font-black text-red-400 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
+                        </div>
+                    </div>
+                </div>
+            
+                <div class="stat-box-dark px-6 py-4 flex items-center justify-between">
+                    ${(isMe || hasPermission('can_view_logs')) ? `
+                        <button onclick="viewLogs('${u.email}')" class="text-[10px] font-bold text-slate-400 hover:text-white transition flex items-center gap-2">
+                            <i class="fas fa-fingerprint text-primary-500"></i> سجل النشاط
+                        </button>
+                    ` : '<span></span>'}
                     
-                    <div class="grid grid-cols-4 border-t border-slate-100 dark:border-slate-700/50 divide-x divide-x-reverse divide-slate-100 dark:divide-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
-                        <div class="p-3 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Active</p>
-                            <p class="text-xs font-black text-green-600 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online'}" data-start="${safeStart}">00:00</p>
-                        </div>
-                        <div class="p-3 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Break</p>
-                            <p class="text-xs font-black text-orange-500 stat-timer" data-val="${tb['Break'] || 0}" data-active="${u.status === 'Break'}" data-start="${safeStart}">00:00</p>
-                        </div>
-                        <div class="p-3 text-center">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Meet</p>
-                            <p class="text-xs font-black text-blue-500 stat-timer" data-val="${tb['Meeting'] || 0}" data-active="${u.status === 'Meeting'}" data-start="${safeStart}">00:00</p>
-                        </div>
-                        <div class="p-3 text-center ${u.isIdle ? 'bg-red-50 dark:bg-red-900/20' : ''}">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Idle</p>
-                            <p class="text-xs font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
-                        </div>
+                    <div class="flex gap-2">
+                        ${(!isMe && hasPermission('can_screenshot')) ? `<button onclick="requestScreenshot('${u.email}')" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-red-500/20 text-red-400 transition flex items-center justify-center border border-white/5"><i class="fas fa-camera text-[10px]"></i></button>` : ''}
+                        ${(!isMe && hasPermission('can_manage_users')) ? `<button onclick="openEditModal('${u.email}')" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-primary-500/20 text-primary-400 transition flex items-center justify-center border border-white/5"><i class="fas fa-cog text-[10px]"></i></button>` : ''}
                     </div>
+                </div>
+            </div>`;
                     
                     <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800">
                         ${(isMe || hasPermission('can_view_logs')) ? `
@@ -3271,6 +3307,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
