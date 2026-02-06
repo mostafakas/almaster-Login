@@ -491,12 +491,19 @@
     <div id="modal-task-center" class="fixed inset-0 z-[150] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-6xl h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-slate-200 dark:border-slate-700">
             <div class="w-full md:w-80 border-l border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col">
-               <div class="p-5 border-b dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800">
-                    <h3 class="font-bold text-slate-700 dark:text-slate-200">مركز المهام</h3>
-                    
-                    <div class="flex gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
-                        <button onclick="openTaskCenter()" class="text-[10px] font-bold px-2 py-1 rounded bg-white dark:bg-slate-600 shadow-sm">الحالية</button>
-                        <button onclick="toggleHistoryView()" class="text-[10px] font-bold px-2 py-1 rounded text-slate-500 hover:bg-white/50 transition">الأرشيف</button>
+               <div class="p-4 border-b dark:border-slate-700 flex flex-col gap-3 bg-white dark:bg-slate-800">
+                    <h3 class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                        <i class="fas fa-tasks text-primary-500"></i> مركز المهام
+                    </h3>
+                    <div class="flex p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
+                        <button onclick="openTaskCenter(); Object.values(document.querySelectorAll('.tab-btn')).forEach(b=>b.classList.remove('bg-white','shadow-sm')); this.classList.add('bg-white','shadow-sm')" 
+                                class="tab-btn flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all bg-white shadow-sm">
+                            المهام الحالية
+                        </button>
+                        <button onclick="toggleHistoryView(); Object.values(document.querySelectorAll('.tab-btn')).forEach(b=>b.classList.remove('bg-white','shadow-sm')); this.classList.add('bg-white','shadow-sm')" 
+                                class="tab-btn flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all text-slate-500">
+                            الأرشيف
+                        </button>
                     </div>
                 </div>
                                 
@@ -1425,58 +1432,54 @@
             
             renderTaskList(tasksToShow);
         }
-
-       function renderTaskList(tasks, isHistoryView = false) {
+        function renderTaskList(tasks, isHistoryView = false) {
             const listContainer = document.getElementById('task-list-container');
             listContainer.innerHTML = '';
             
             if (!tasks || tasks.length === 0) {
-                listContainer.innerHTML = '<div class="text-center text-slate-400 p-8 text-sm font-bold"><p>لا توجد مهام حالياً</p></div>';
+                listContainer.innerHTML = '<div class="text-center text-slate-400 p-8 text-[11px] font-bold"><p>لا توجد مهام في هذا القسم</p></div>';
                 return;
             }
         
-            // ترتيب من الأحدث للأقدم
             tasks.sort((a, b) => b.id - a.id);
-            
             const isAdmin = userProfile.role === 'admin';
             const canManageTasks = hasPermission('can_manage_tasks'); 
         
             tasks.forEach((task, idx) => {
-                // إذا كنا في العرض العادي، لا تظهر المهام التي تم أرشفتها
                 if (!isHistoryView && task.archived) return;
-                // إذا كنا في الهيستوري، أظهر المؤرشف فقط
                 if (isHistoryView && !task.archived) return;
         
                 const isAssignedToMe = task.ownerEmail === currentUser.email;
                 const isCreatedByMe = task.createdByEmail === currentUser.email;
                 const taskStatus = task.status || 'started'; 
         
-                let cardColorClass = '';
-                if(taskStatus === 'started') cardColorClass = 'card-style-started';
-                else if(taskStatus === 'working') cardColorClass = 'card-style-working';
-                else if(taskStatus === 'done') cardColorClass = 'card-style-done';
+                let cardColorClass = taskStatus === 'started' ? 'card-style-started' : (taskStatus === 'working' ? 'card-style-working' : 'card-style-done');
         
                 const el = document.createElement('div');
                 el.className = `task-card-modern cursor-pointer group ${cardColorClass}`;
                 el.onclick = (e) => { if(!e.target.closest('.no-click')) showTaskDetail(task, idx); };
         
+                // أزرار التحكم
                 let adminControls = '';
                 if (isAdmin || (canManageTasks && isCreatedByMe)) {
                     adminControls = `
                     <div class="flex gap-1 items-center no-click">
+                        <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; openEditTaskModal()" class="admin-action-btn bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white" title="تعديل"><i class="fas fa-pen text-[10px]"></i></button>
+                        
                         ${!task.archived ? 
-                            `<button onclick="archiveTaskAction(${task.id}, '${task.ownerEmail}')" class="admin-action-btn bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white" title="أرشفة"><i class="fas fa-box-archive"></i></button>` 
-                            : ''
+                            `<button onclick="archiveTaskAction(${task.id}, '${task.ownerEmail}', true)" class="admin-action-btn bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white" title="أرشفة"><i class="fas fa-box-archive"></i></button>` 
+                            : `<button onclick="archiveTaskAction(${task.id}, '${task.ownerEmail}', false)" class="admin-action-btn bg-green-50 text-green-600 hover:bg-green-600 hover:text-white" title="استعادة"><i class="fas fa-undo"></i></button>`
                         }
-                        <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; deleteCurrentTask()" class="admin-action-btn btn-delete" title="حذف نهائي"><i class="fas fa-trash"></i></button>
+                        
+                        <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; deleteCurrentTask()" class="admin-action-btn bg-red-50 text-red-600 hover:bg-red-600 hover:text-white" title="حذف نهائي"><i class="fas fa-trash text-[10px]"></i></button>
                     </div>`;
                 }
         
                 el.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
+                    <div class="flex justify-between items-start mb-1">
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-black text-sm text-slate-800 dark:text-white truncate">${task.title}</h4>
-                            <p class="text-[9px] text-slate-500 font-bold">${task.ownerName || ''}</p>
+                            <h4 class="font-black text-[12px] text-slate-800 dark:text-white truncate">${task.title}</h4>
+                            <p class="text-[9px] text-primary-600 font-bold">${task.ownerName || ''}</p>
                         </div>
                         ${adminControls}
                     </div>
@@ -1485,9 +1488,9 @@
                 listContainer.appendChild(el);
             });
         }
-
-        async function archiveTaskAction(taskId, ownerEmail) {
-            if(!confirm("هل تريد نقل هذه المهمة للأرشيف؟ لن تظهر في القائمة الرئيسية.")) return;
+       async function archiveTaskAction(taskId, ownerEmail, shouldArchive) {
+            const actionText = shouldArchive ? "أرشفة هذه المهمة؟" : "استعادة هذه المهمة للقائمة الحالية؟";
+            if(!confirm("هل تريد " + actionText)) return;
             
             const userRef = db.collection('users').doc(ownerEmail);
             const doc = await userRef.get();
@@ -1495,10 +1498,11 @@
             
             const taskIndex = tasks.findIndex(t => t.id === taskId);
             if (taskIndex > -1) {
-                tasks[taskIndex].archived = true; // إضافة علامة الأرشفة
+                tasks[taskIndex].archived = shouldArchive; // true للأرشفة، false للاستعادة
                 await userRef.update({ tasks: tasks });
-                alert("تمت الأرشفة بنجاح");
-                openTaskCenter(); // تحديث القائمة
+                
+                // لو بنعمل استعادة، نرجع نفتح القائمة الحالية، لو أرشفة نفتح الأرشيف
+                if(shouldArchive) openTaskCenter(); else toggleHistoryView();
             }
         }
 
@@ -3260,5 +3264,6 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
