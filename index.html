@@ -924,39 +924,50 @@
         }
 
         async function checkAndResetCounters() {
-            // شيلنا سطر الـ if (role !== 'admin') عشان أي يوزر ينفذها
-            if (!userProfile) return; 
-        
-            const today = moment().format('YYYY-MM-DD');
-            try {
-                const settingsDoc = await db.collection('system_settings').doc('daily_reset').get();
-                const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
-        
-                // لو تاريخ اليوم في الداتابيز مختلف عن تاريخ اليوم الحقيقي
-                if (lastResetDate !== today) {
-                    console.log("يوم جديد! جاري تصفير عدادات الوقت لجميع الموظفين...");
-                    
-                    const usersSnapshot = await db.collection('users').get();
-                    const batch = db.batch();
-                    
-                    usersSnapshot.forEach((doc) => {
-                        const userRef = db.collection('users').doc(doc.id);
-                        // بنصفر الوقت والـ Idle بس، وبنسيب الـ tasks زي ما هي (عشان ميزتها اللي عملناها)
-                        batch.update(userRef, { 
-                            'timeBank': {}, 
-                            'idleBank': 0, 
-                            'lastChange': firebase.firestore.FieldValue.serverTimestamp() 
+                if (!userProfile) return; 
+            
+                const today = moment().format('YYYY-MM-DD');
+                const resetRef = db.collection('system_settings').doc('daily_reset');
+            
+                try {
+                    // استخدام Transaction لضمان أن عملية القراءة والكتابة تتم بشكل ذري (Atomic)
+                    await db.runTransaction(async (transaction) => {
+                        const settingsDoc = await transaction.get(resetRef);
+                        const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
+            
+                        // لو التاريخ هو هو بتاع النهاردة، اخرج فوراً ومتعملش حاجة
+                        if (lastResetDate === today) {
+                            console.log("العدادات مصفرة بالفعل لليوم.");
+                            return;
+                        }
+            
+                        console.log("يوم جديد اكتشفه: " + userProfile.name + ". جاري تصفير العدادات...");
+            
+                        const usersSnapshot = await db.collection('users').get();
+                        
+                        usersSnapshot.forEach((doc) => {
+                            const userRef = db.collection('users').doc(doc.id);
+                            // التصفير بيتم فقط للوقت والخمول
+                            transaction.update(userRef, { 
+                                'timeBank': {}, 
+                                'idleBank': 0, 
+                                'lastChange': firebase.firestore.FieldValue.serverTimestamp() 
+                            });
                         });
+            
+                        // تحديث تاريخ آخر تصفير "داخل الترانزاكشن" عشان نمنع أي حد تاني يدخل ينفذه
+                        transaction.set(resetRef, { 
+                            lastDate: today,
+                            resetBy: userProfile.email,
+                            resetAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
                     });
-        
-                    // تحديث تاريخ آخر تصفير في السيستم عشان ميتكررش مع كل يوزر
-                    batch.set(db.collection('system_settings').doc('daily_reset'), { lastDate: today }, { merge: true });
-                    
-                    await batch.commit();
-                    console.log("تم التصفير بنجاح.");
+            
+                    console.log("تم تصفير العدادات بنجاح لليوم الجديد.");
+                } catch (e) { 
+                    console.error("Reset Warning:", e.message); 
                 }
-            } catch (e) { console.error("Reset Warning:", e.message); }
-        }
+            }
 
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
@@ -3223,4 +3234,5 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
