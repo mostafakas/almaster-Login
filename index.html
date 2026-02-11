@@ -833,88 +833,69 @@
         }
 
       function initSystem() {
-            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') { 
-                Notification.requestPermission(); 
-            }
-            
-            document.getElementById('loader').classList.add('hidden-section');
-            document.getElementById('view-login').classList.add('hidden-section');
-            document.getElementById('view-system').classList.remove('hidden-section');
-            document.getElementById('chat-fab').classList.remove('hidden-section');
-            
-            document.getElementById('header-user-name').innerText = userProfile.name;
-            let roleName = 'موظف';
-            if(userProfile.role === 'admin') roleName = 'مدير النظام';
-            else if(userProfile.role === 'supervisor') roleName = 'مشرف';
-            else if(userProfile.role === 'leader') roleName = 'تيم ليدر';
-            
-            document.getElementById('header-user-role').innerText = roleName;
-            document.getElementById('header-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
-            
-            document.getElementById('menu-user-name').innerText = userProfile.name;
-            document.getElementById('menu-user-role').innerText = roleName;
-            document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
-            
-            // --- تطبيق الصلاحيات على القائمة الجانبية ---
-            const adminOptionsDiv = document.getElementById('admin-options');
-            adminOptionsDiv.classList.add('hidden-section'); 
-            
-            if (userProfile.role === 'admin' || (userProfile.permissions && Object.values(userProfile.permissions).some(v => v === true))) {
-                adminOptionsDiv.classList.remove('hidden-section');
-                const btns = adminOptionsDiv.children; 
-                
-                if (!hasPermission('can_archive_chat')) btns[1].classList.add('hidden-section');
-                else btns[1].classList.remove('hidden-section');
-        
-                if (!hasPermission('can_archive_chat')) btns[2].classList.add('hidden-section');
-                else btns[2].classList.remove('hidden-section');
-        
-                if (!hasPermission('can_manage_users')) btns[3].classList.add('hidden-section');
-                else btns[3].classList.remove('hidden-section');
-        
-                if (!hasPermission('can_view_reports')) btns[4].classList.add('hidden-section');
-                else btns[4].classList.remove('hidden-section');
-            }
-            
-            // --- منطق اليوم الجديد والعمليات التلقائية ---
-            
-            // 1. فحص فوري: لو الموظف سجل دخول في يوم جديد لم يتم تصفيره بعد
-            checkAndResetCounters(); 
-        
-            // 2. تحديث التاريخ المحلي لضمان المزامنة مع المراقب
-            localStorage.setItem('last_daily_reset_date', moment().format('YYYY-MM-DD'));
-        
-            // 3. بدء مراقب منتصف الليل: لو الموظف ساب الصفحة مفتوحة لليوم التالي سيتم إخراجه فوراً
-            startDailyAutoWatcher(); 
-        
-            // --- باقي Listeners النظام ---
-            listenToAllUsers();
-            initChat();
-            listenToPrivateMessages(); 
-            startIdleTracker();
-            setInterval(updateTimers, 1000);
-            
-            window.addEventListener('mousemove', resetIdleTimer);
-            window.addEventListener('keydown', resetIdleTimer);
-            if (userProfile.role !== 'admin') { listenForScreenshotRequests(); }
-        
-            // تشغيل المحرر مرة واحدة
-            if(!quillEditor) {
-                quillEditor = new Quill('#editor-container', {
-                    theme: 'snow',
-                    placeholder: 'اكتب تفاصيل المهمة هنا... يمكنك تنسيق النص وإضافة قوائم.',
-                    modules: {
-                        toolbar: [
-                            [{ 'header': [1, 2, false] }],
-                            ['bold', 'italic', 'underline', 'strike'],
-                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                            [{ 'direction': 'rtl' }, { 'align': [] }],
-                            ['link', 'clean']
-                        ]
-                    }
-                });
-            }
-        }
+    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') { 
+        Notification.requestPermission(); 
+    }
+    
+    document.getElementById('loader').classList.add('hidden-section');
+    document.getElementById('view-login').classList.add('hidden-section');
+    document.getElementById('view-system').classList.remove('hidden-section');
+    document.getElementById('chat-fab').classList.remove('hidden-section');
+    
+    document.getElementById('header-user-name').innerText = userProfile.name;
+    let roleName = 'موظف';
+    if(userProfile.role === 'admin') roleName = 'مدير النظام';
+    else if(userProfile.role === 'supervisor') roleName = 'مشرف';
+    else if(userProfile.role === 'leader') roleName = 'تيم ليدر';
+    
+    document.getElementById('header-user-role').innerText = roleName;
+    document.getElementById('header-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
+    
+    document.getElementById('menu-user-name').innerText = userProfile.name;
+    document.getElementById('menu-user-role').innerText = roleName;
+    document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
+    
+    const adminOptionsDiv = document.getElementById('admin-options');
+    adminOptionsDiv.classList.add('hidden-section'); 
+    
+    if (userProfile.role === 'admin' || (userProfile.permissions && Object.values(userProfile.permissions).some(v => v === true))) {
+        adminOptionsDiv.classList.remove('hidden-section');
+        const btns = adminOptionsDiv.children; 
+        if (!hasPermission('can_archive_chat')) btns[1].classList.add('hidden-section');
+        if (!hasPermission('can_archive_chat')) btns[2].classList.add('hidden-section');
+        if (!hasPermission('can_manage_users')) btns[3].classList.add('hidden-section');
+        if (!hasPermission('can_view_reports')) btns[4].classList.add('hidden-section');
+    }
+    
+    // الترتيب الصحيح لمنع التعليق:
+    // 1. تحديث التاريخ المحلي أولاً "صمتاً"
+    const today = moment().format('YYYY-MM-DD');
+    localStorage.setItem('last_daily_reset_date', today);
+
+    // 2. الفحص الفوري (بدون تمرير true عشان ميعملش ريفريش أول ما يفتح)
+    checkAndResetCounters(false); 
+
+    // 3. تشغيل مراقب منتصف الليل
+    startDailyAutoWatcher(); 
+
+    listenToAllUsers();
+    initChat();
+    listenToPrivateMessages(); 
+    startIdleTracker();
+    setInterval(updateTimers, 1000);
+    
+    window.addEventListener('mousemove', resetIdleTimer);
+    window.addEventListener('keydown', resetIdleTimer);
+    if (userProfile.role !== 'admin') { listenForScreenshotRequests(); }
+
+    if(!quillEditor) {
+        quillEditor = new Quill('#editor-container', {
+            theme: 'snow',
+            placeholder: 'اكتب تفاصيل المهمة هنا...',
+            modules: { toolbar: [[{ 'header': [1, 2, false] }], ['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], [{ 'direction': 'rtl' }], ['link']] }
+        });
+    }
+}
         
         // دالة المراقب المعدلة (لعمل Logout)
         function startDailyAutoWatcher() {
@@ -974,67 +955,65 @@
             }
         }
 
-        async function checkAndResetCounters() {
-            if (!userProfile) return;
-        
-            const today = moment().format('YYYY-MM-DD');
-            const resetRef = db.collection('system_settings').doc('daily_reset');
-        
-            try {
-                await db.runTransaction(async (transaction) => {
-                    const settingsDoc = await transaction.get(resetRef);
-                    const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
-        
-                    if (lastResetDate === today) {
-                        // حفظ التاريخ محلياً للمتصفح حتى لو لم يقم هو بالتصفير
-                        localStorage.setItem('last_daily_reset_date', today);
-                        return;
-                    }
-        
-                    console.log("يوم جديد اكتشفه: " + userProfile.name + ". جاري تصفير العدادات...");
-        
-                    const usersSnapshot = await db.collection('users').get();
-                    usersSnapshot.forEach((doc) => {
-                        const userRef = db.collection('users').doc(doc.id);
-                        transaction.update(userRef, {
-                            'timeBank': {},
-                            'idleBank': 0,
-                            'lastChange': firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    });
-        
-                    transaction.set(resetRef, {
-                        lastDate: today,
-                        resetBy: userProfile.email,
-                        resetAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                });
-        
-                localStorage.setItem('last_daily_reset_date', today);
-                console.log("تم تصفير العدادات بنجاح. إعادة تحميل الصفحة لليوم الجديد...");
-                location.reload(); // إعادة تحميل الصفحة لضمان نظافة البيانات في الواجهة
-        
-            } catch (e) {
-                console.error("Reset Warning:", e.message);
-            }
-        }
-
-        function startDailyAutoWatcher() {
-            // تخزين تاريخ اللحظة الحالية عند الفتح
-            if (!localStorage.getItem('last_daily_reset_date')) {
-                localStorage.setItem('last_daily_reset_date', moment().format('YYYY-MM-DD'));
-            }
-        
-            // فحص كل دقيقة
-            setInterval(() => {
+        async function checkAndResetCounters(isAutoReset = false) {
+                if (!userProfile) return;
+            
                 const today = moment().format('YYYY-MM-DD');
-                const lastDateInBrowser = localStorage.getItem('last_daily_reset_date');
-        
-                if (today !== lastDateInBrowser) {
-                    console.log("تنبيه: حلول منتصف الليل! جاري تصفير اليوم الجديد...");
-                    checkAndResetCounters();
+                const resetRef = db.collection('system_settings').doc('daily_reset');
+            
+                try {
+                    await db.runTransaction(async (transaction) => {
+                        const settingsDoc = await transaction.get(resetRef);
+                        const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
+            
+                        if (lastResetDate === today) {
+                            localStorage.setItem('last_daily_reset_date', today);
+                            return;
+                        }
+            
+                        console.log("يوم جديد اكتشفه: " + userProfile.name + ". جاري تصفير العدادات...");
+            
+                        const usersSnapshot = await db.collection('users').get();
+                        usersSnapshot.forEach((doc) => {
+                            const userRef = db.collection('users').doc(doc.id);
+                            transaction.update(userRef, {
+                                'timeBank': {},
+                                'idleBank': 0,
+                                'lastChange': firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        });
+            
+                        transaction.set(resetRef, {
+                            lastDate: today,
+                            resetBy: userProfile.email,
+                            resetAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+            
+                    localStorage.setItem('last_daily_reset_date', today);
+                    
+                    // لو التصفير حصل واليوزر شغال (وقت نص الليل)، بنعمل لوج اوت زي ما طلبت
+                    if (isAutoReset) {
+                        console.log("تصفير تلقائي.. جاري تسجيل الخروج");
+                        forceLogoutForNewDay();
+                    }
+            
+                } catch (e) {
+                    console.error("Reset Warning:", e.message);
                 }
-            }, 60000); // 60 ثانية
+            }
+
+       function startDailyAutoWatcher() {
+            setInterval(async () => {
+                const today = moment().format('YYYY-MM-DD');
+                const lastReset = localStorage.getItem('last_daily_reset_date');
+        
+                if (lastReset && lastReset !== today) {
+                    console.log("Midnight detected! Resetting and logging out...");
+                    // نمرر true هنا عشان السيستم يعرف إنه لازم يخرج اليوزر
+                    await checkAndResetCounters(true); 
+                }
+            }, 60000);
         }
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
@@ -3301,6 +3280,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
