@@ -832,8 +832,11 @@
             auth.signOut().then(() => location.reload());
         }
 
-        function initSystem() {
-            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') { Notification.requestPermission(); }
+      function initSystem() {
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') { 
+                Notification.requestPermission(); 
+            }
+            
             document.getElementById('loader').classList.add('hidden-section');
             document.getElementById('view-login').classList.add('hidden-section');
             document.getElementById('view-system').classList.remove('hidden-section');
@@ -854,33 +857,37 @@
             
             // --- تطبيق الصلاحيات على القائمة الجانبية ---
             const adminOptionsDiv = document.getElementById('admin-options');
-            // إخفاء الكل في البداية
             adminOptionsDiv.classList.add('hidden-section'); 
             
-            // إظهار القسم لو عنده أي صلاحية إدارية
             if (userProfile.role === 'admin' || (userProfile.permissions && Object.values(userProfile.permissions).some(v => v === true))) {
                 adminOptionsDiv.classList.remove('hidden-section');
-                const btns = adminOptionsDiv.children; // الحصول على الأزرار بالترتيب
+                const btns = adminOptionsDiv.children; 
                 
-                // 1. أرشيف الشات العام (أول زر)
                 if (!hasPermission('can_archive_chat')) btns[1].classList.add('hidden-section');
                 else btns[1].classList.remove('hidden-section');
         
-                // 2. أرشيف شامل (ثاني زر)
                 if (!hasPermission('can_archive_chat')) btns[2].classList.add('hidden-section');
                 else btns[2].classList.remove('hidden-section');
         
-                // 3. إضافة موظف (ثالث زر)
                 if (!hasPermission('can_manage_users')) btns[3].classList.add('hidden-section');
                 else btns[3].classList.remove('hidden-section');
         
-                // 4. التقارير (رابع زر)
                 if (!hasPermission('can_view_reports')) btns[4].classList.add('hidden-section');
                 else btns[4].classList.remove('hidden-section');
             }
             
-            // Run these without awaiting to unblock UI
+            // --- منطق اليوم الجديد والعمليات التلقائية ---
+            
+            // 1. فحص فوري: لو الموظف سجل دخول في يوم جديد لم يتم تصفيره بعد
             checkAndResetCounters(); 
+        
+            // 2. تحديث التاريخ المحلي لضمان المزامنة مع المراقب
+            localStorage.setItem('last_daily_reset_date', moment().format('YYYY-MM-DD'));
+        
+            // 3. بدء مراقب منتصف الليل: لو الموظف ساب الصفحة مفتوحة لليوم التالي سيتم إخراجه فوراً
+            startDailyAutoWatcher(); 
+        
+            // --- باقي Listeners النظام ---
             listenToAllUsers();
             initChat();
             listenToPrivateMessages(); 
@@ -908,6 +915,50 @@
                 });
             }
         }
+        
+        // دالة المراقب المعدلة (لعمل Logout)
+        function startDailyAutoWatcher() {
+            setInterval(async () => {
+                const today = moment().format('YYYY-MM-DD');
+                const lastReset = localStorage.getItem('last_daily_reset_date');
+        
+                if (lastReset && lastReset !== today) {
+                    console.log("Midnight detected! Resetting database and forcing logout...");
+                    
+                    // تحديث محلي سريع لمنع تكرار العملية
+                    localStorage.setItem('last_daily_reset_date', today);
+                    
+                    // 1. تصفير الداتابيز للكل (أول واحد يكتشف اليوم الجديد هو اللي بيصفر)
+                    await checkAndResetCounters();
+                    
+                    // 2. تحويل حالة المستخدم الحالي لـ Offline
+                    if(currentUser) await setStatus(currentUser.email, 'Offline', true);
+                    
+                    // 3. تسجيل الخروج الفعلي
+                    auth.signOut().then(() => {
+                        alert("انتهى يوم العمل. تم تسجيل خروجك تلقائياً لبدء يوم جديد.");
+                        location.reload();
+                    });
+                }
+            }, 60000); // فحص كل دقيقة
+        }
+        
+        // دالة جديدة للخروج الإجباري مع التصفير
+        async function forceLogoutForNewDay() {
+            if (currentUser) {
+                // 1. تحويل الحالة لـ Offline في الداتابيز
+                await setStatus(currentUser.email, 'Offline', true);
+                
+                // 2. تشغيل دالة التصفير لضمان أن أول شخص خرج (أو دخل) صفر الداتابيز
+                await checkAndResetCounters(); 
+                
+                // 3. تسجيل الخروج من Firebase والريفريش
+                auth.signOut().then(() => {
+                    alert("انتهى يوم العمل. تم تسجيل خروجك تلقائياً لبدء يوم جديد.");
+                    location.reload();
+                });
+            }
+        }
         function toggleMainMenu() {
             const menu = document.getElementById('main-dropdown');
             menu.classList.toggle('active');
@@ -924,51 +975,67 @@
         }
 
         async function checkAndResetCounters() {
-                if (!userProfile) return; 
-            
-                const today = moment().format('YYYY-MM-DD');
-                const resetRef = db.collection('system_settings').doc('daily_reset');
-            
-                try {
-                    // استخدام Transaction لضمان أن عملية القراءة والكتابة تتم بشكل ذري (Atomic)
-                    await db.runTransaction(async (transaction) => {
-                        const settingsDoc = await transaction.get(resetRef);
-                        const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
-            
-                        // لو التاريخ هو هو بتاع النهاردة، اخرج فوراً ومتعملش حاجة
-                        if (lastResetDate === today) {
-                            console.log("العدادات مصفرة بالفعل لليوم.");
-                            return;
-                        }
-            
-                        console.log("يوم جديد اكتشفه: " + userProfile.name + ". جاري تصفير العدادات...");
-            
-                        const usersSnapshot = await db.collection('users').get();
-                        
-                        usersSnapshot.forEach((doc) => {
-                            const userRef = db.collection('users').doc(doc.id);
-                            // التصفير بيتم فقط للوقت والخمول
-                            transaction.update(userRef, { 
-                                'timeBank': {}, 
-                                'idleBank': 0, 
-                                'lastChange': firebase.firestore.FieldValue.serverTimestamp() 
-                            });
+            if (!userProfile) return;
+        
+            const today = moment().format('YYYY-MM-DD');
+            const resetRef = db.collection('system_settings').doc('daily_reset');
+        
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const settingsDoc = await transaction.get(resetRef);
+                    const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
+        
+                    if (lastResetDate === today) {
+                        // حفظ التاريخ محلياً للمتصفح حتى لو لم يقم هو بالتصفير
+                        localStorage.setItem('last_daily_reset_date', today);
+                        return;
+                    }
+        
+                    console.log("يوم جديد اكتشفه: " + userProfile.name + ". جاري تصفير العدادات...");
+        
+                    const usersSnapshot = await db.collection('users').get();
+                    usersSnapshot.forEach((doc) => {
+                        const userRef = db.collection('users').doc(doc.id);
+                        transaction.update(userRef, {
+                            'timeBank': {},
+                            'idleBank': 0,
+                            'lastChange': firebase.firestore.FieldValue.serverTimestamp()
                         });
-            
-                        // تحديث تاريخ آخر تصفير "داخل الترانزاكشن" عشان نمنع أي حد تاني يدخل ينفذه
-                        transaction.set(resetRef, { 
-                            lastDate: today,
-                            resetBy: userProfile.email,
-                            resetAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
                     });
-            
-                    console.log("تم تصفير العدادات بنجاح لليوم الجديد.");
-                } catch (e) { 
-                    console.error("Reset Warning:", e.message); 
-                }
+        
+                    transaction.set(resetRef, {
+                        lastDate: today,
+                        resetBy: userProfile.email,
+                        resetAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
+        
+                localStorage.setItem('last_daily_reset_date', today);
+                console.log("تم تصفير العدادات بنجاح. إعادة تحميل الصفحة لليوم الجديد...");
+                location.reload(); // إعادة تحميل الصفحة لضمان نظافة البيانات في الواجهة
+        
+            } catch (e) {
+                console.error("Reset Warning:", e.message);
             }
+        }
 
+        function startDailyAutoWatcher() {
+            // تخزين تاريخ اللحظة الحالية عند الفتح
+            if (!localStorage.getItem('last_daily_reset_date')) {
+                localStorage.setItem('last_daily_reset_date', moment().format('YYYY-MM-DD'));
+            }
+        
+            // فحص كل دقيقة
+            setInterval(() => {
+                const today = moment().format('YYYY-MM-DD');
+                const lastDateInBrowser = localStorage.getItem('last_daily_reset_date');
+        
+                if (today !== lastDateInBrowser) {
+                    console.log("تنبيه: حلول منتصف الليل! جاري تصفير اليوم الجديد...");
+                    checkAndResetCounters();
+                }
+            }, 60000); // 60 ثانية
+        }
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
                 allUsersData = [];
@@ -3234,5 +3301,6 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
