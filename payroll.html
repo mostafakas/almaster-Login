@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALMASTER | النظام المالي الشامل</title>
+    <title>ALMASTER | الإدارة المالية المتقدمة</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -14,274 +14,314 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #f1f5f9; text-align: right; overflow-x: hidden; }
-        .table-container { height: calc(100vh - 280px); overflow-y: auto; }
-        ::-webkit-scrollbar { width: 5px; }
+        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; text-align: right; overflow-x: hidden; }
+        .table-container { height: calc(100vh - 280px); overflow-y: auto; border-radius: 20px; }
+        ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .loader-spin { border-top-color: #10b981; animation: spinner 1s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .group:hover .group-hover\:flex { display: flex !important; }
-        .stat-card { transition: all 0.3s; border: 1px solid #e2e8f0; }
+        .stat-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.05); }
+        .btn-action { transition: all 0.2s; }
+        .btn-action:hover { transform: scale(1.1); }
         
-        /* قوالب التقارير المخفية */
-        #report-image-template, #slip-image-template { 
-            position: absolute; left: -9999px; top: 0; background: white;
-        }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        /* قوالب الصور المخفية */
+        #report-image-template, #slip-image-template { position: absolute; left: -9999px; top: 0; background: white; }
+        
+        .modal-animate { animation: modalIn 0.3s ease-out; }
+        @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="text-slate-800">
 
     <div id="payroll-loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
-        <div class="loader-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full mb-4"></div>
-        <p class="font-bold tracking-widest animate-pulse text-emerald-400">ALMASTER FINANCIAL ENGINE</p>
+        <div class="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="font-black tracking-widest animate-pulse text-emerald-400">ALMASTER FINANCIAL UNIT</p>
     </div>
 
-    <header class="bg-white shadow-md h-20 px-6 flex items-center justify-between sticky top-0 z-50">
+    <header class="bg-white/80 backdrop-blur-md shadow-sm h-20 px-8 flex items-center justify-between sticky top-0 z-50 border-b border-slate-100">
         <div class="flex items-center gap-4">
             <div class="bg-slate-900 w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg border-b-4 border-emerald-500">
-                <i class="fas fa-vault text-xl text-emerald-400"></i>
+                <i class="fas fa-chart-line text-xl text-emerald-400"></i>
             </div>
             <div>
-                <h1 class="text-xl font-black text-slate-900">ALMASTER FINANCE</h1>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">المحاسبة والتقارير الاحترافية</p>
+                <h1 class="text-xl font-black text-slate-900 tracking-tight">ALMASTER FINANCE</h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">نظام التقارير المالية الذكي</p>
             </div>
         </div>
         
-        <div class="flex items-center gap-4">
-            <div>
-                <p class="text-[9px] font-black text-slate-400 mr-2 uppercase text-left">الشهر الضريبي</p>
-                <select id="month-picker" onchange="changeMonth()" class="bg-slate-100 border-none rounded-xl px-4 py-1.5 text-xs font-bold focus:ring-2 ring-emerald-500 cursor-pointer"></select>
+        <div class="flex items-center gap-5">
+            <div class="flex flex-col">
+                <span class="text-[9px] font-black text-slate-400 mr-1">الفترة المالية</span>
+                <select id="month-picker" onchange="changeMonth()" class="bg-slate-50 border-slate-200 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 ring-emerald-500 cursor-pointer outline-none"></select>
             </div>
-            <button onclick="generateMonthlyReportImage()" class="bg-slate-900 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-lg">
-                <i class="fas fa-file-invoice"></i> استخراج تقرير الشهر (HD)
+            <button onclick="generateMonthlyReportImage()" class="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition shadow-xl shadow-slate-200">
+                <i class="fas fa-file-invoice-dollar text-emerald-400 text-sm"></i> استخراج التقرير الشهري HD
             </button>
-            <button onclick="window.location.href='index.html'" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-900 hover:text-white transition shadow-sm">
+            <button onclick="window.location.href='index.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white transition shadow-sm border border-slate-100">
                 <i class="fas fa-home"></i>
             </button>
         </div>
     </header>
 
-    <main class="p-4 md:p-6 max-w-[1900px] mx-auto">
+    <main class="p-6 max-w-[1900px] mx-auto">
         
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
-            <div class="bg-slate-900 p-4 rounded-3xl shadow-xl text-white stat-card relative overflow-hidden">
-                <p class="text-[10px] font-bold text-emerald-400 uppercase mb-1">إجمالي الخزنة</p>
-                <h3 id="vault-balance" class="text-xl font-black">0</h3>
-                <div class="flex gap-2 mt-2">
-                    <button onclick="openVaultModal()" class="w-6 h-6 bg-emerald-500 text-white rounded flex items-center justify-center hover:bg-emerald-600 shadow-sm" title="إضافة رصيد"><i class="fas fa-plus text-[8px]"></i></button>
-                    <button onclick="openVaultLogs()" class="w-6 h-6 bg-white/10 text-white rounded flex items-center justify-center hover:bg-white/20 shadow-sm" title="سجل الحركة"><i class="fas fa-history text-[8px]"></i></button>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+            <div class="bg-slate-900 p-5 rounded-[32px] shadow-2xl text-white stat-card relative overflow-hidden">
+                <p class="text-[10px] font-bold text-emerald-400 uppercase mb-2">إجمالي الخزنة</p>
+                <h3 id="vault-balance" class="text-2xl font-black">0</h3>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="openVaultModal()" class="w-8 h-8 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center hover:bg-emerald-500 hover:text-white transition"><i class="fas fa-plus-circle"></i></button>
+                    <button onclick="openVaultLogs()" class="w-8 h-8 bg-white/10 text-white rounded-xl flex items-center justify-center hover:bg-white/20 transition"><i class="fas fa-scroll"></i></button>
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-3xl shadow-sm stat-card border-blue-200">
-                <p class="text-[10px] font-bold text-blue-600 uppercase mb-1">السيولة المتاحة</p>
-                <h3 id="remaining-vault" class="text-xl font-black text-blue-700">0</h3>
-                <p class="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">الرصيد الفعلي حالياً</p>
+            <div class="bg-white p-5 rounded-[32px] shadow-sm stat-card border-blue-50">
+                <p class="text-[10px] font-bold text-blue-500 uppercase mb-2">السيولة المتاحة</p>
+                <h3 id="remaining-vault" class="text-2xl font-black text-blue-700">0</h3>
+                <p class="text-[9px] text-slate-400 font-bold mt-1 tracking-tighter">الرصيد الفعلي حالياً</p>
             </div>
 
-            <div class="bg-emerald-500 p-4 rounded-3xl shadow-lg text-white stat-card">
-                <p class="text-[10px] font-bold opacity-90 uppercase mb-1">إجمالي المنصرف</p>
-                <h3 id="total-spent" class="text-xl font-black">0</h3>
-                <p class="text-[8px] opacity-70">رواتب (مدفوعة) + نثريات</p>
+            <div class="bg-emerald-500 p-5 rounded-[32px] shadow-lg text-white stat-card border-none">
+                <p class="text-[10px] font-bold opacity-90 uppercase mb-2">إجمالي المنصرف</p>
+                <h3 id="total-spent" class="text-2xl font-black">0</h3>
+                <p class="text-[9px] opacity-70 mt-1">رواتب مدفوعة + نثريات</p>
             </div>
 
-            <div class="bg-white p-4 rounded-3xl shadow-sm stat-card border-emerald-100">
-                <p class="text-[10px] font-bold text-green-600 uppercase mb-1">الرواتب المحولة</p>
-                <h3 id="total-paid-salaries-sum" class="text-xl font-black text-emerald-700">0</h3>
-                <p class="text-[8px] text-slate-400 font-bold tracking-tight">صافي ما تم إرساله</p>
+            <div class="bg-white p-5 rounded-[32px] shadow-sm stat-card">
+                <p class="text-[10px] font-bold text-emerald-600 uppercase mb-2">الرواتب المحولة</p>
+                <h3 id="total-paid-salaries-sum" class="text-2xl font-black text-slate-800">0</h3>
+                <p class="text-[9px] text-slate-400 font-bold mt-1">صافي ما تم إرساله</p>
             </div>
 
-            <div class="bg-orange-50 p-4 rounded-3xl shadow-sm stat-card border-orange-200">
-                <p class="text-[10px] font-bold text-orange-600 uppercase mb-1">رواتب معتمدة</p>
-                <h3 id="pending-approved-total" class="text-xl font-black text-orange-700">0</h3>
-                <p class="text-[8px] text-orange-500 font-bold">بانتظار التحويل</p>
+            <div class="bg-orange-50 p-5 rounded-[32px] shadow-sm stat-card border-orange-100">
+                <p class="text-[10px] font-bold text-orange-600 uppercase mb-2">رواتب معتمدة</p>
+                <h3 id="pending-approved-total" class="text-2xl font-black text-orange-700">0</h3>
+                <p class="text-[9px] text-orange-400 font-black mt-1">جاهزة للإرسال</p>
             </div>
 
-            <div class="bg-slate-50 p-4 rounded-3xl shadow-sm stat-card border-slate-200">
-                <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">انتظار اعتماد</p>
-                <h3 id="pending-waiting-total" class="text-xl font-black text-slate-700">0</h3>
-                <p class="text-[8px] text-slate-400">لم تراجع بعد</p>
+            <div class="bg-slate-50 p-5 rounded-[32px] shadow-sm stat-card">
+                <p class="text-[10px] font-bold text-slate-500 uppercase mb-2">تحت الاعتماد</p>
+                <h3 id="pending-waiting-total" class="text-2xl font-black text-slate-600">0</h3>
+                <p class="text-[9px] text-slate-400 mt-1">لم تراجع بعد</p>
             </div>
 
-            <div class="bg-red-50 p-4 rounded-3xl shadow-sm stat-card border-red-100 text-right">
-                <div class="flex items-center justify-between mb-1">
+            <div class="bg-red-50 p-5 rounded-[32px] shadow-sm stat-card border-red-100">
+                <div class="flex items-center justify-between mb-2">
                     <p class="text-[10px] font-bold text-red-600 uppercase">النثريات</p>
-                    <button onclick="openExpenseModal()" class="w-5 h-5 bg-red-600 text-white rounded flex items-center justify-center hover:bg-red-700 transition shadow-sm"><i class="fas fa-plus text-[9px]"></i></button>
+                    <button onclick="openExpenseModal()" class="w-6 h-6 bg-red-600 text-white rounded-lg flex items-center justify-center shadow-md hover:bg-red-700 transition"><i class="fas fa-plus text-[9px]"></i></button>
                 </div>
-                <h3 id="total-expenses" class="text-xl font-black text-red-700">0</h3>
+                <h3 id="total-expenses" class="text-2xl font-black text-red-700">0</h3>
             </div>
         </div>
 
-        <div class="flex flex-col lg:flex-row gap-6">
-            <div class="flex-[3] bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full min-h-[600px]">
-                <div class="p-4 border-b bg-slate-50/50 flex justify-between items-center">
-                    <h4 class="font-black text-sm text-slate-700 flex items-center gap-2"><i class="fas fa-list-check text-emerald-500"></i> سجل مستحقات الموظفين</h4>
-                    <input type="text" id="search-input" oninput="renderPayroll()" placeholder="بحث بالاسم..." class="bg-white border-slate-200 rounded-xl px-4 py-1.5 text-xs w-48 focus:ring-1 ring-emerald-500">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <div class="flex-[3] bg-white rounded-[35px] shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-[650px]">
+                <div class="p-6 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
+                    <h4 class="font-black text-slate-800 flex items-center gap-3"><i class="fas fa-users-viewfinder text-emerald-500"></i> قاعدة بيانات مستحقات الموظفين</h4>
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                        <input type="text" id="search-input" oninput="renderPayroll()" placeholder="ابحث عن موظف..." class="bg-white border border-slate-200 rounded-2xl pl-10 pr-6 py-2.5 text-xs w-72 focus:ring-2 ring-emerald-500 transition-all outline-none">
+                    </div>
                 </div>
                 <div class="overflow-x-auto table-container">
-                    <table class="w-full text-right border-collapse text-[11px]">
-                        <thead class="bg-white sticky top-0 z-10 font-black">
-                            <tr class="text-slate-400 uppercase border-b shadow-sm">
+                    <table class="w-full text-right border-separate border-spacing-y-2 px-6">
+                        <thead>
+                            <tr class="text-slate-400 text-[10px] font-black uppercase">
                                 <th class="p-4">الموظف</th>
                                 <th class="p-4">الأساسي</th>
                                 <th class="p-4 text-green-600">مكافآت</th>
                                 <th class="p-4 text-blue-600">حوافز</th>
                                 <th class="p-4 text-red-500">خصومات</th>
-                                <th class="p-4 font-black text-slate-900 bg-slate-50/50 text-center">الصافي</th>
+                                <th class="p-4 text-slate-900 bg-slate-50 rounded-xl text-center">الصافي</th>
                                 <th class="p-4 text-center">الوصولات</th>
                                 <th class="p-4 text-center">الحالة</th>
                                 <th class="p-4 text-center">الإجراء</th>
                             </tr>
                         </thead>
-                        <tbody id="payroll-body" class="divide-y divide-slate-50"></tbody>
+                        <tbody id="payroll-body"></tbody>
                     </table>
                 </div>
             </div>
 
-            <div class="flex-1 bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col h-[calc(100vh-280px)] overflow-hidden">
-                <div class="p-4 border-b bg-red-50/30 flex justify-between items-center text-red-600 font-black">
-                    <h4 class="text-sm"><i class="fas fa-receipt ml-1"></i> حركة النثريات</h4>
-                    <span id="expense-count" class="bg-red-100 text-[10px] px-2 py-0.5 rounded-full">0</span>
+            <div class="flex-1 bg-white rounded-[35px] shadow-sm border border-slate-100 flex flex-col h-[calc(100vh-280px)] overflow-hidden">
+                <div class="p-6 border-b bg-red-50/20 flex justify-between items-center text-red-600 font-black">
+                    <h4 class="text-sm">حركة النثريات</h4>
+                    <span id="expense-count" class="bg-red-100 text-[10px] px-3 py-1 rounded-full">0</span>
                 </div>
-                <div id="expenses-list" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar"></div>
+                <div id="expenses-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"></div>
             </div>
         </div>
     </main>
 
-    <div id="modal-vault" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-right">
-            <h3 class="text-lg font-black mb-4">إضافة مبلغ للخزنة</h3>
-            <div class="space-y-4">
-                <input type="number" id="vault-amount-input" placeholder="المبلغ" class="w-full bg-slate-100 border-none rounded-xl px-4 py-3 font-black text-xl text-center">
-                <input type="text" id="vault-note-input" placeholder="سبب الإيداع (ملحوظة)" class="w-full bg-slate-100 border-none rounded-xl px-4 py-2 text-sm">
+    <div id="modal-finance" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden border border-white modal-animate">
+            <div class="p-8 border-b bg-slate-50/80 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <div class="bg-slate-900 w-12 h-12 rounded-2xl flex items-center justify-center text-white"><i class="fas fa-user-edit text-lg"></i></div>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900">تعديل المخصصات والخصومات</h3>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">تحديث الملف المالي للموظف</p>
+                    </div>
+                </div>
+                <button onclick="closeFinanceModal()" class="w-10 h-10 rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 transition flex items-center justify-center text-xl"><i class="fas fa-times"></i></button>
             </div>
-            <div class="flex gap-2 mt-6">
-                <button onclick="saveVaultTransaction()" class="flex-1 bg-slate-900 text-white font-black py-3 rounded-xl hover:bg-emerald-600 transition">تأكيد الإيداع</button>
-                <button onclick="closeVaultModal()" class="px-4 bg-slate-100 text-slate-400 rounded-xl">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-vault-logs" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[70vh]">
-            <div class="p-6 border-b flex justify-between bg-slate-900 text-white">
-                <h3 class="font-black">سجل حركات الخزنة</h3>
-                <button onclick="document.getElementById('modal-vault-logs').classList.add('hidden')" class="text-slate-400"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="vault-logs-list" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 custom-scrollbar"></div>
-        </div>
-    </div>
-
-    <div id="modal-expense" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 text-right">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
-            <h3 id="exp-modal-title" class="text-lg font-black mb-4 text-red-600">إضافة نثريات</h3>
-            <input type="hidden" id="edit-expense-idx">
-            <div class="space-y-3">
-                <input type="text" id="exp-title" placeholder="عنوان المصروف" class="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold text-right">
-                <input type="number" id="exp-amount" placeholder="المبلغ" class="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold text-right">
-                <input type="date" id="exp-date" class="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold text-right">
-            </div>
-            <button onclick="saveExpense()" class="w-full bg-red-600 text-white font-black py-3 rounded-xl mt-4 shadow-lg">حفظ البيانات</button>
-        </div>
-    </div>
-
-    <div id="modal-finance" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 text-right">
-        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border">
-            <div class="p-6 border-b flex justify-between bg-slate-50">
-                <h3 class="text-lg font-black text-slate-800">التفاصيل المالية والخصومات</h3>
-                <button onclick="closeFinanceModal()" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            <form onsubmit="saveFinanceData(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            
+            <form onsubmit="saveFinanceData(event)" class="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
                 <input type="hidden" id="fin-email">
-                <div class="grid grid-cols-2 gap-4 text-right">
-                    <div><label class="block text-[10px] font-black text-slate-400 mb-1">الراتب الأساسي</label><input type="number" id="fin-salary" class="w-full bg-slate-50 border-none rounded-xl px-4 py-2 focus:ring-2 ring-emerald-500 font-bold"></div>
-                    <div><label class="block text-[10px] font-black text-slate-400 mb-1">المسمى الوظيفي</label><input type="text" id="fin-title" class="w-full bg-slate-50 border-none rounded-xl px-4 py-2 focus:ring-2 ring-emerald-500 font-bold"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-[10px] font-black text-green-600 mb-1">مكافآت</label><input type="number" id="fin-bonus" class="w-full bg-green-50 border-none rounded-xl px-4 py-2 font-black"></div>
-                    <div><label class="block text-[10px] font-black text-blue-600 mb-1">حوافز</label><input type="number" id="fin-incentive" class="w-full bg-blue-50 border-none rounded-xl px-4 py-2 font-black"></div>
-                </div>
-
-                <div class="border-t pt-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <label class="text-[11px] font-black text-red-600 uppercase">قائمة الخصومات</label>
-                        <button type="button" onclick="addDeductionRow()" class="text-[10px] bg-red-50 text-red-600 px-3 py-1 rounded-lg font-black hover:bg-red-100">+ إضافة بند خصم</button>
+                
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-slate-500 mr-2 uppercase">الراتب الأساسي (EGP)</label>
+                        <input type="number" id="fin-salary" step="0.01" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 focus:ring-4 ring-emerald-500/10 focus:border-emerald-500 font-black outline-none transition-all">
                     </div>
-                    <div id="deductions-container" class="space-y-2"></div>
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-slate-500 mr-2 uppercase">المسمى الوظيفي</label>
+                        <input type="text" id="fin-title" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 focus:ring-4 ring-emerald-500/10 focus:border-emerald-500 font-bold outline-none transition-all">
+                    </div>
                 </div>
 
-                <div class="border-t pt-4 mt-2">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">رفع وصولات التحويل (متعدد)</label>
-                    <div class="flex items-center gap-3">
+                <div class="grid grid-cols-2 gap-6 bg-emerald-50/30 p-6 rounded-[30px] border border-emerald-100/50">
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-emerald-600 mr-2 uppercase">المكافآت الاستثنائية</label>
+                        <input type="number" id="fin-bonus" step="0.01" class="w-full bg-white border border-emerald-100 rounded-2xl px-5 py-3 focus:ring-4 ring-emerald-500/20 font-black outline-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-blue-600 mr-2 uppercase">حوافز الأداء</label>
+                        <input type="number" id="fin-incentive" step="0.01" class="w-full bg-white border border-blue-100 rounded-2xl px-5 py-3 focus:ring-4 ring-blue-500/20 font-black outline-none">
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center px-2">
+                        <div>
+                            <h4 class="text-sm font-black text-red-600">الخصومات المسببة</h4>
+                            <p class="text-[9px] text-slate-400 font-bold italic">سيتم ذكر السبب في بيان الراتب</p>
+                        </div>
+                        <button type="button" onclick="addDeductionRow()" class="bg-red-600 text-white text-[10px] font-black px-4 py-2 rounded-xl shadow-lg shadow-red-200 hover:bg-red-700 transition">+ إضافة بند خصم</button>
+                    </div>
+                    <div id="deductions-container" class="space-y-3"></div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-6">
+                    <label class="block text-[10px] font-black text-slate-500 mb-3 uppercase mr-2">إدارة وصولات التحويل (متعدد)</label>
+                    <div class="flex items-center gap-4">
                         <input type="file" id="fin-receipt-multi" accept="image/*" class="hidden" onchange="addMultipleReceipts(this)">
-                        <button type="button" onclick="document.getElementById('fin-receipt-multi').click()" class="flex-1 bg-slate-100 py-3 rounded-xl text-[10px] font-bold">تحميل وصل جديد</button>
-                        <div id="receipts-preview-list" class="flex gap-2"></div>
+                        <button type="button" onclick="document.getElementById('fin-receipt-multi').click()" class="flex-1 bg-slate-900 text-white py-4 rounded-2xl text-xs font-black shadow-xl shadow-slate-200 hover:bg-slate-800 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-cloud-upload-alt text-emerald-400"></i> رفع وصل تحويل جديد
+                        </button>
+                        <div id="receipts-preview-list" class="flex gap-2 min-w-max"></div>
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-emerald-600 transition shadow-lg">حفظ التعديلات</button>
+                <button type="submit" class="w-full bg-emerald-600 text-white font-black py-5 rounded-[25px] hover:bg-emerald-700 transition shadow-2xl shadow-emerald-200 text-lg flex items-center justify-center gap-3 mt-4">
+                    <i class="fas fa-check-double"></i> حفظ وإغلاق الملف المالي
+                </button>
             </form>
         </div>
     </div>
 
+    <div id="modal-vault" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-[35px] shadow-2xl p-8 text-right modal-animate">
+            <h3 class="text-xl font-black mb-2 text-slate-900">إيداع مبالغ نقدية</h3>
+            <p class="text-xs text-slate-400 mb-6 font-bold">أدخل قيمة المبلغ المراد إضافته لرصيد الخزنة</p>
+            <div class="space-y-4">
+                <input type="number" id="vault-amount-input" placeholder="0.00" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 font-black text-2xl text-center focus:ring-4 ring-emerald-500/10">
+                <input type="text" id="vault-note-input" placeholder="ملحوظة الإيداع (مثلاً: دفعة رأس مال)" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3 text-xs font-bold">
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button onclick="saveVaultTransaction()" class="flex-1 bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl transition hover:bg-emerald-600">تأكيد الإيداع</button>
+                <button onclick="closeVaultModal()" class="px-6 bg-slate-100 text-slate-400 rounded-2xl font-bold">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-expense" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 text-right">
+        <div class="bg-white w-full max-w-sm rounded-[35px] p-8 shadow-2xl modal-animate">
+            <h3 id="exp-modal-title" class="text-xl font-black mb-6 text-red-600">إضافة نثريات</h3>
+            <input type="hidden" id="edit-expense-idx">
+            <div class="space-y-4">
+                <input type="text" id="exp-title" placeholder="بيان المصروف" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3 text-sm font-bold">
+                <input type="number" id="exp-amount" placeholder="القيمة" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3 text-sm font-black">
+                <input type="date" id="exp-date" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3 text-sm font-bold">
+            </div>
+            <button onclick="saveExpense()" id="exp-save-btn" class="w-full bg-red-600 text-white font-black py-4 rounded-2xl mt-8 shadow-xl shadow-red-100 hover:bg-red-700 transition">حفظ التعديلات</button>
+        </div>
+    </div>
+
+    <div id="modal-vault-logs" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[35px] shadow-2xl overflow-hidden flex flex-col h-[75vh]">
+            <div class="p-8 border-b flex justify-between bg-slate-900 text-white">
+                <div>
+                    <h3 class="text-lg font-black tracking-tight">سجل حركات الخزنة</h3>
+                    <p class="text-[9px] text-emerald-400 font-bold uppercase mt-1">عرض جميع المقبوضات</p>
+                </div>
+                <button onclick="document.getElementById('modal-vault-logs').classList.add('hidden')" class="text-slate-400 hover:text-white transition text-2xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="vault-logs-list" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50 custom-scrollbar"></div>
+        </div>
+    </div>
+
     <div id="report-image-template" style="width: 1920px; height: 1080px; padding: 60px;">
-        <div style="border: 4px solid #1e293b; padding: 40px; height: 100%; border-radius: 40px; position: relative;">
-            <div style="text-align: center; border-bottom: 8px solid #1e293b; padding-bottom: 20px; margin-bottom: 40px;">
-                <h1 style="font-size: 72px; font-weight: 900; color: #1e293b;">MONTHLY FINANCIAL REPORT</h1>
-                <h2 style="font-size: 32px; font-weight: 900; color: #64748b;">ALMASTER TECH - <span id="rep-date"></span></h2>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
-                <div style="background: #f8fafc; padding: 30px; border-radius: 30px; font-size: 28px; line-height: 2;">
-                    <h3 style="font-weight: 900; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px;">قسم الرواتب</h3>
-                    <p>إجمالي الأساسي: <span id="rep-base" style="font-weight: 900;"></span></p>
-                    <p>إجمالي المكافآت: <span id="rep-bonus" style="font-weight: 900; color: #10b981;"></span></p>
-                    <p>إجمالي الحوافز: <span id="rep-incen" style="font-weight: 900; color: #3b82f6;"></span></p>
-                    <p>إجمالي الخصومات: <span id="rep-deduct" style="font-weight: 900; color: #ef4444;"></span></p>
-                    <p style="font-size: 36px; border-top: 4px solid #1e293b; margin-top: 20px; padding-top: 10px;">الصافي المدفوع: <span id="rep-paid-sal" style="font-weight: 900; color: #10b981;"></span></p>
+        <div style="border: 6px solid #1e293b; padding: 60px; height: 100%; border-radius: 60px; position: relative; background: #fff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 10px solid #1e293b; padding-bottom: 30px; margin-bottom: 50px;">
+                <div style="text-align: right;">
+                    <h1 style="font-size: 84px; font-weight: 900; color: #1e293b; margin: 0;">Financial Report</h1>
+                    <p style="font-size: 36px; color: #64748b; font-weight: 900; margin-top: 10px;">ALMASTER TECH - <span id="rep-date"></span></p>
                 </div>
-                <div style="background: #1e293b; color: #fff; padding: 30px; border-radius: 30px; font-size: 28px; line-height: 2;">
-                    <h3 style="font-weight: 900; border-bottom: 2px solid #334155; margin-bottom: 20px;">قسم الخزينة</h3>
-                    <p>الرصيد الافتتاحي: <span id="rep-v-open"></span></p>
-                    <p>إجمالي المقبوضات: <span id="rep-v-in" style="color: #10b981;"></span></p>
-                    <p>إجمالي المدفوعات: <span id="rep-v-out" style="color: #ef4444;"></span></p>
-                    <p style="font-size: 48px; border-top: 4px solid #4ade80; margin-top: 40px; color: #4ade80; font-weight: 900;">الرصيد الختامي: <span id="rep-v-final"></span></p>
+                <div style="text-align: left;">
+                    <h2 style="font-size: 40px; font-weight: 900; color: #10b981; letter-spacing: 4px;">CONFIDENTIAL</h2>
                 </div>
             </div>
-            <div style="margin-top: 40px; padding: 20px; border: 2px solid #e2e8f0; border-radius: 20px; font-size: 22px;">
-                <p style="font-weight: 900;">ملخص مالي:</p>
-                <p id="rep-summary">جميع الالتزامات تم تسويتها بنجاح لهذا الشهر.</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px;">
+                <div style="background: #f8fafc; padding: 40px; border-radius: 40px; font-size: 32px; line-height: 2.2;">
+                    <h3 style="font-weight: 900; border-bottom: 3px solid #e2e8f0; margin-bottom: 30px; color: #1e293b;">📊 قسم الرواتب</h3>
+                    <p>إجمالي الأساسي: <span id="rep-base" style="float: left; font-weight: 900;"></span></p>
+                    <p>إجمالي المكافآت: <span id="rep-bonus" style="float: left; font-weight: 900; color: #10b981;"></span></p>
+                    <p>إجمالي الحوافز: <span id="rep-incen" style="float: left; font-weight: 900; color: #3b82f6;"></span></p>
+                    <p>إجمالي الخصومات: <span id="rep-deduct" style="float: left; font-weight: 900; color: #ef4444;"></span></p>
+                    <div style="font-size: 42px; border-top: 5px solid #1e293b; margin-top: 30px; padding-top: 20px;">الصافي المدفوع: <span id="rep-paid-sal" style="float: left; font-weight: 900; color: #10b981;"></span></div>
+                </div>
+                <div style="background: #1e293b; color: #fff; padding: 40px; border-radius: 40px; font-size: 32px; line-height: 2.2;">
+                    <h3 style="font-weight: 900; border-bottom: 3px solid #334155; margin-bottom: 30px; color: #4ade80;">🏦 قسم الخزينة</h3>
+                    <p>الرصيد الافتتاحي: <span id="rep-v-open" style="float: left;"></span></p>
+                    <p>إجمالي الإيداعات: <span id="rep-v-in" style="float: left; color: #4ade80;"></span></p>
+                    <p>إجمالي المدفوعات: <span id="rep-v-out" style="float: left; color: #f87171;"></span></p>
+                    <div style="font-size: 60px; border-top: 5px solid #4ade80; margin-top: 50px; padding-top: 30px; color: #4ade80; font-weight: 900;">الرصيد الختامي: <span id="rep-v-final" style="float: left;"></span></div>
+                </div>
+            </div>
+            <div style="margin-top: 60px; padding: 30px; border: 3px dashed #e2e8f0; border-radius: 30px; font-size: 26px; color: #64748b;">
+                <p style="font-weight: 900; color: #1e293b; margin-bottom: 10px;">التحليل المالي:</p>
+                <p id="rep-summary">تمت مراجعة التدفقات النقدية ومطابقتها للسجلات البنكية بنجاح.</p>
             </div>
         </div>
     </div>
 
     <div id="slip-image-template" style="width: 1080px; height: 1350px; padding: 80px; text-align: right;" dir="rtl">
-        <div style="border: 2px solid #1e293b; padding: 60px; height: 100%; border-radius: 50px;">
-            <div style="text-align: center; margin-bottom: 60px;">
-                <h1 style="font-size: 64px; font-weight: 900; color: #1e293b; margin-bottom: 10px;">بيان راتب شهري</h1>
-                <p style="font-size: 32px; color: #10b981; font-weight: 900;">شركة الماستر تك - <span id="s-month"></span></p>
+        <div style="border: 2px solid #1e293b; padding: 70px; height: 100%; border-radius: 60px; background: #fff; position: relative;">
+            <div style="text-align: center; margin-bottom: 80px;">
+                <h1 style="font-size: 72px; font-weight: 900; color: #1e293b; margin-bottom: 15px;">بيان راتب شهري</h1>
+                <p style="font-size: 34px; color: #10b981; font-weight: 900; background: #f0fdf4; display: inline-block; padding: 10px 40px; border-radius: 100px;">شركة الماستر تك - <span id="s-month"></span></p>
             </div>
-            <div style="background: #f1f5f9; padding: 40px; border-radius: 30px; margin-bottom: 50px; font-size: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div>الاسم: <span id="s-name" style="font-weight: 900;"></span></div>
-                <div>الوظيفة: <span id="s-title" style="font-weight: 900;"></span></div>
+            <div style="background: #f8fafc; padding: 50px; border-radius: 40px; margin-bottom: 60px; font-size: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; border: 1px solid #e2e8f0;">
+                <div>الاسم: <span id="s-name" style="font-weight: 900; color: #1e293b;"></span></div>
+                <div>الوظيفة: <span id="s-title" style="font-weight: 900; color: #1e293b;"></span></div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; font-size: 32px;">
-                <div style="border: 3px solid #e2e8f0; padding: 30px; border-radius: 30px;">
-                    <h3 style="color: #10b981; font-weight: 900; margin-bottom: 20px;">المستحقات (+)</h3>
-                    <p style="display: flex; justify-content: space-between;">الأساسي: <span id="s-base"></span></p>
-                    <p style="display: flex; justify-content: space-between;">مكافآت: <span id="s-bonus"></span></p>
-                    <p style="display: flex; justify-content: space-between;">حوافز: <span id="s-incen"></span></p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px; font-size: 34px;">
+                <div style="border-right: 4px solid #10b981; padding-right: 30px;">
+                    <h3 style="color: #10b981; font-weight: 900; margin-bottom: 30px;">المستحقات (+)</h3>
+                    <p style="display: flex; justify-content: space-between; margin-bottom: 15px;">الأساسي: <span id="s-base"></span></p>
+                    <p style="display: flex; justify-content: space-between; margin-bottom: 15px;">مكافآت: <span id="s-bonus"></span></p>
+                    <p style="display: flex; justify-content: space-between; margin-bottom: 15px;">حوافز: <span id="s-incen"></span></p>
                 </div>
-                <div style="border: 3px solid #fee2e2; padding: 30px; border-radius: 30px;">
-                    <h3 style="color: #ef4444; font-weight: 900; margin-bottom: 20px;">الخصومات (-)</h3>
-                    <div id="s-deduct-list" style="font-size: 24px; min-height: 100px;"></div>
+                <div style="border-right: 4px solid #ef4444; padding-right: 30px;">
+                    <h3 style="color: #ef4444; font-weight: 900; margin-bottom: 30px;">الخصومات (-)</h3>
+                    <div id="s-deduct-list" style="font-size: 26px; min-height: 120px;"></div>
                 </div>
             </div>
-            <div style="margin-top: 80px; text-align: center; background: #1e293b; color: #fff; padding: 50px; border-radius: 40px;">
-                <p style="font-size: 32px; opacity: 0.8;">الصافي المستلم</p>
-                <h2 id="s-net" style="font-size: 100px; font-weight: 900;"></h2>
+            <div style="margin-top: 100px; text-align: center; background: #1e293b; color: #fff; padding: 60px; border-radius: 50px; box-shadow: 0 20px 50px rgba(30,41,59,0.3);">
+                <p style="font-size: 36px; opacity: 0.8; margin-bottom: 10px;">صافي المبلغ المستلم</p>
+                <h2 id="s-net" style="font-size: 110px; font-weight: 900;"></h2>
             </div>
+            <div style="position: absolute; bottom: 80px; left: 80px; font-size: 22px; color: #94a3b8; font-weight: bold;">ALMASTER FINANCE UNIT</div>
         </div>
     </div>
 
@@ -321,26 +361,23 @@
             syncAllData();
         }
 
-        function changeMonth() {
-            currentSelectedMonth = document.getElementById('month-picker').value;
-            syncAllData();
-        }
+        function changeMonth() { currentSelectedMonth = document.getElementById('month-picker').value; syncAllData(); }
 
         function syncAllData() {
             db.collection("financial_months").doc(currentSelectedMonth).onSnapshot(doc => {
                 monthData = doc.exists ? doc.data() : { vault: 0, expenses: [], vault_logs: [] };
                 if(!doc.exists) db.collection("financial_months").doc(currentSelectedMonth).set(monthData);
-                updateStatsAndUIs();
+                updateSystemUIs();
             });
             db.collection("users").onSnapshot(snapshot => {
                 allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                updateStatsAndUIs();
+                updateSystemUIs();
             });
         }
 
-        function updateStatsAndUIs() {
+        function updateSystemUIs() {
             let baseT = 0, bonusT = 0, incenT = 0, deductT = 0, paidS = 0, apprvS = 0, waitS = 0;
-            let paidCount = 0, pendingCount = 0;
+            let paidCount = 0;
 
             allUsers.forEach(u => {
                 const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
@@ -350,7 +387,6 @@
                 const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
                 const net = base + bonus + incen - dSum;
 
-                baseT += base; bonusT += bonus; incenT += incen; deductT += dSum;
                 if (m.status === 'paid') { paidS += net; paidCount++; }
                 else if (m.status === 'approved') apprvS += net;
                 else waitS += net;
@@ -361,12 +397,12 @@
             const spent = paidS + expT;
 
             document.getElementById('vault-balance').innerText = vaultCap.toLocaleString();
-            document.getElementById('remaining-vault').innerText = (vaultCap - spent).toLocaleString() + " EGP";
-            document.getElementById('total-spent').innerText = spent.toLocaleString() + " EGP";
-            document.getElementById('total-paid-salaries-sum').innerText = paidS.toLocaleString() + " EGP";
-            document.getElementById('pending-approved-total').innerText = apprvS.toLocaleString() + " EGP";
-            document.getElementById('pending-waiting-total').innerText = waitS.toLocaleString() + " EGP";
-            document.getElementById('total-expenses').innerText = expT.toLocaleString() + " EGP";
+            document.getElementById('remaining-vault').innerText = (vaultCap - spent).toLocaleString();
+            document.getElementById('total-spent').innerText = spent.toLocaleString();
+            document.getElementById('total-paid-salaries-sum').innerText = paidS.toLocaleString();
+            document.getElementById('pending-approved-total').innerText = apprvS.toLocaleString();
+            document.getElementById('pending-waiting-total').innerText = waitS.toLocaleString();
+            document.getElementById('total-expenses').innerText = expT.toLocaleString();
             document.getElementById('expense-count').innerText = (monthData.expenses || []).length;
 
             renderPayroll();
@@ -385,24 +421,29 @@
                     const net = (parseFloat(u.salary_base) || 0) + (parseFloat(m.bonus) || 0) + (parseFloat(m.incentive) || 0) - dSum;
                     
                     tbody.innerHTML += `
-                        <tr class="hover:bg-slate-50 transition border-b">
-                            <td class="p-4 flex items-center gap-2 font-black text-slate-800">
-                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-8 h-8 rounded-lg shadow-sm"> ${u.name}
-                            </td>
-                            <td class="p-4 font-bold text-slate-500">${(u.salary_base || 0).toLocaleString()}</td>
-                            <td class="p-4 text-green-600 font-bold">+${(m.bonus || 0)}</td>
-                            <td class="p-4 text-blue-600 font-bold">+${(m.incentive || 0)}</td>
-                            <td class="p-4 text-red-600 font-bold">-${dSum}</td>
-                            <td class="p-4 font-black bg-slate-50 text-center">${net.toLocaleString()}</td>
-                            <td class="p-4 text-center">
-                                <div class="flex -space-x-2 justify-center">
-                                    ${(m.receipts || []).map(r => `<img src="${r}" class="w-6 h-6 rounded-full border-2 border-white cursor-pointer hover:scale-125 transition" onclick="window.open('${r}')">`).join('') || '--'}
+                        <tr class="bg-white hover:bg-slate-50 transition-all">
+                            <td class="p-4 rounded-r-2xl border-y border-r border-slate-50">
+                                <div class="flex items-center gap-3">
+                                    <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-10 h-10 rounded-2xl shadow-sm border-2 border-white object-cover">
+                                    <div><p class="font-black text-slate-900 leading-none">${u.name}</p><p class="text-[8px] font-black text-slate-400 mt-1 uppercase">${u.title || 'Team Member'}</p></div>
                                 </div>
                             </td>
-                            <td class="p-4 text-center">${renderStatusBadge(m.status, u.id)}</td>
-                            <td class="p-4 text-center flex gap-1 justify-center">
-                                <button onclick="openFinanceModal('${u.id}')" class="w-7 h-7 rounded bg-slate-900 text-white flex items-center justify-center hover:bg-emerald-600 transition"><i class="fas fa-edit text-[9px]"></i></button>
-                                <button onclick="generateSlipImage('${u.id}')" class="w-7 h-7 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition"><i class="fas fa-file-image text-[9px]"></i></button>
+                            <td class="p-4 font-bold text-slate-500 border-y border-slate-50">${(u.salary_base || 0).toLocaleString()}</td>
+                            <td class="p-4 text-green-600 font-bold border-y border-slate-50">+${(m.bonus || 0)}</td>
+                            <td class="p-4 text-blue-600 font-bold border-y border-slate-50">+${(m.incentive || 0)}</td>
+                            <td class="p-4 text-red-500 font-bold border-y border-slate-50">-${dSum}</td>
+                            <td class="p-4 font-black bg-slate-900/5 text-slate-900 text-center border-y border-slate-50">${net.toLocaleString()}</td>
+                            <td class="p-4 text-center border-y border-slate-50">
+                                <div class="flex -space-x-3 justify-center">
+                                    ${(m.receipts || []).slice(0,3).map(r => `<img src="${r}" class="w-7 h-7 rounded-full border-2 border-white cursor-pointer hover:scale-125 transition" onclick="window.open('${r}')">`).join('') || '--'}
+                                </div>
+                            </td>
+                            <td class="p-4 text-center border-y border-slate-50">${renderStatusBadge(m.status, u.id)}</td>
+                            <td class="p-4 text-center rounded-l-2xl border-y border-l border-slate-50">
+                                <div class="flex gap-2 justify-center">
+                                    <button onclick="openFinanceModal('${u.id}')" class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center btn-action shadow-lg" title="تعديل"><i class="fas fa-pen-nib text-[10px]"></i></button>
+                                    <button onclick="generateSlipImage('${u.id}')" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center btn-action shadow-sm border border-emerald-100" title="بيان الراتب"><i class="fas fa-file-invoice text-[10px]"></i></button>
+                                </div>
                             </td>
                         </tr>`;
                 }
@@ -414,25 +455,26 @@
             list.innerHTML = '';
             (monthData.expenses || []).forEach((e, i) => {
                 list.innerHTML += `
-                    <div onclick="editExpense(${i})" class="bg-white border border-slate-100 p-3 rounded-2xl group transition hover:border-emerald-200 cursor-pointer shadow-sm">
-                        <div class="flex justify-between font-black text-[11px] mb-1">
-                            <span>${e.title}</span><span class="text-red-600">${e.amount.toLocaleString()}</span>
+                    <div onclick="editExpense(${i})" class="bg-white border border-slate-100 p-4 rounded-3xl group transition hover:border-red-200 cursor-pointer shadow-sm relative">
+                        <div class="flex justify-between font-black text-xs mb-1">
+                            <span class="text-slate-800">${e.title}</span><span class="text-red-600">${e.amount.toLocaleString()}</span>
                         </div>
-                        <div class="flex justify-between items-center text-[8px] text-slate-400 uppercase font-bold">
-                            <span>${e.date}</span><button onclick="event.stopPropagation(); deleteExpense(${i})" class="text-red-300 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
+                        <div class="flex justify-between items-center text-[9px] text-slate-400 font-bold uppercase">
+                            <span><i class="far fa-calendar-alt ml-1"></i> ${e.date}</span>
+                            <button onclick="event.stopPropagation(); deleteExpense(${i})" class="text-red-200 hover:text-red-600 transition"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </div>`;
             });
         }
 
-        // --- Finance Actions ---
+        // --- Functions Logic ---
         function addDeductionRow(amount = 0, reason = "") {
             const div = document.createElement('div');
-            div.className = "flex gap-2 items-center bg-white p-2 rounded-xl shadow-sm border";
+            div.className = "flex gap-3 items-center bg-slate-50 p-4 rounded-2xl border border-slate-100 transition-all hover:bg-white";
             div.innerHTML = `
-                <input type="number" placeholder="المبلغ" value="${amount}" class="w-20 bg-slate-50 border-none rounded-lg px-2 py-1 text-xs font-black d-amt text-red-600">
-                <input type="text" placeholder="السبب" value="${reason}" class="flex-1 bg-slate-50 border-none rounded-lg px-2 py-1 text-xs font-bold d-rsn text-right">
-                <button type="button" onclick="this.parentElement.remove()" class="text-red-300 px-1"><i class="fas fa-times-circle"></i></button>
+                <input type="number" placeholder="المبلغ" value="${amount}" class="w-24 bg-white border border-red-100 rounded-xl px-4 py-2 text-xs font-black d-amt text-red-600 outline-none">
+                <input type="text" placeholder="سبب الخصم بالتفصيل" value="${reason}" class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold d-rsn text-right outline-none">
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-300 hover:text-red-600 transition p-2"><i class="fas fa-minus-circle"></i></button>
             `;
             document.getElementById('deductions-container').appendChild(div);
         }
@@ -452,6 +494,8 @@
             document.getElementById('modal-finance').classList.remove('hidden');
         }
 
+        function closeFinanceModal() { document.getElementById('modal-finance').classList.add('hidden'); }
+
         async function saveFinanceData(e) {
             e.preventDefault();
             const email = document.getElementById('fin-email').value;
@@ -461,7 +505,7 @@
 
             const dItems = Array.from(document.querySelectorAll('#deductions-container > div')).map(row => ({
                 amount: parseFloat(row.querySelector('.d-amt').value) || 0,
-                reason: row.querySelector('.d-rsn').value || "خصم عام"
+                reason: row.querySelector('.d-rsn').value || "خصم إداري"
             }));
 
             mFin[currentSelectedMonth].bonus = parseFloat(document.getElementById('fin-bonus').value) || 0;
@@ -477,7 +521,6 @@
             closeFinanceModal();
         }
 
-        // --- Image Generation ---
         async function generateMonthlyReportImage() {
             const loader = document.getElementById('payroll-loader');
             loader.classList.remove('hidden');
@@ -493,25 +536,25 @@
                 if(m.status === 'paid') paidS += (base + bonus + incen - dSum);
             });
 
-            document.getElementById('rep-base').innerText = bT.toLocaleString() + " ج.م";
-            document.getElementById('rep-bonus').innerText = boT.toLocaleString() + " ج.م";
-            document.getElementById('rep-incen').innerText = iT.toLocaleString() + " ج.م";
-            document.getElementById('rep-deduct').innerText = dT.toLocaleString() + " ج.م";
-            document.getElementById('rep-paid-sal').innerText = paidS.toLocaleString() + " ج.م";
+            document.getElementById('rep-base').innerText = bT.toLocaleString() + " EGP";
+            document.getElementById('rep-bonus').innerText = boT.toLocaleString() + " EGP";
+            document.getElementById('rep-incen').innerText = iT.toLocaleString() + " EGP";
+            document.getElementById('rep-deduct').innerText = dT.toLocaleString() + " EGP";
+            document.getElementById('rep-paid-sal').innerText = paidS.toLocaleString() + " EGP";
 
             const vCap = parseFloat(monthData.vault)||0;
             const expT = (monthData.expenses||[]).reduce((s, e)=>s+(parseFloat(e.amount)||0),0);
             const deps = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0),0);
 
-            document.getElementById('rep-v-open').innerText = vCap.toLocaleString() + " ج.م";
-            document.getElementById('rep-v-in').innerText = deps.toLocaleString() + " ج.م";
-            document.getElementById('rep-v-out').innerText = (paidS + expT).toLocaleString() + " ج.م";
-            document.getElementById('rep-v-final').innerText = (vCap + deps - (paidS + expT)).toLocaleString() + " ج.م";
+            document.getElementById('rep-v-open').innerText = vCap.toLocaleString() + " EGP";
+            document.getElementById('rep-v-in').innerText = deps.toLocaleString() + " EGP";
+            document.getElementById('rep-v-out').innerText = (paidS + expT).toLocaleString() + " EGP";
+            document.getElementById('rep-v-final').innerText = (vCap + deps - (paidS + expT)).toLocaleString() + " EGP";
 
-            html2canvas(document.getElementById('report-image-template'), { scale: 1.5 }).then(canvas => {
+            html2canvas(document.getElementById('report-image-template'), { scale: 1.5, useCORS: true }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `Report_Almaster_${currentSelectedMonth}.png`;
-                link.href = canvas.toDataURL("image/png");
+                link.download = `Almaster_Report_${currentSelectedMonth}.png`;
+                link.href = canvas.toDataURL("image/png", 1.0);
                 link.click();
                 loader.classList.add('hidden');
             });
@@ -524,39 +567,38 @@
             
             document.getElementById('s-month').innerText = picker.options[picker.selectedIndex].text;
             document.getElementById('s-name').innerText = u.name;
-            document.getElementById('s-title').innerText = u.title || "عضو";
+            document.getElementById('s-title').innerText = u.title || "عضو فريق";
             
             const base = parseFloat(u.salary_base)||0, bonus = parseFloat(m.bonus)||0, incen = parseFloat(m.incentive)||0;
-            document.getElementById('s-base').innerText = base.toLocaleString();
-            document.getElementById('s-bonus').innerText = bonus.toLocaleString();
-            document.getElementById('s-incen').innerText = incen.toLocaleString();
+            document.getElementById('s-base').innerText = base.toLocaleString() + " EGP";
+            document.getElementById('s-bonus').innerText = bonus.toLocaleString() + " EGP";
+            document.getElementById('s-incen').innerText = incen.toLocaleString() + " EGP";
 
             const dList = document.getElementById('s-deduct-list');
             dList.innerHTML = ''; let dSum = 0;
             (m.deductions || []).forEach(d => {
                 dSum += parseFloat(d.amount);
-                dList.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>${d.reason}</span><span style="color:#ef4444">-${d.amount}</span></div>`;
+                dList.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:12px;"><span>• ${d.reason}</span><span style="color:#ef4444; font-weight:900;">-${d.amount}</span></div>`;
             });
-            document.getElementById('s-net').innerText = (base + bonus + incen - dSum).toLocaleString() + " EGP";
+            document.getElementById('s-net').innerText = (base + bonus + incen - dSum).toLocaleString() + " ج.م";
 
-            html2canvas(document.getElementById('slip-image-template'), { scale: 2 }).then(canvas => {
+            html2canvas(document.getElementById('slip-image-template'), { scale: 1.5, useCORS: true }).then(canvas => {
                 const a = document.createElement('a');
-                a.download = `Slip_${u.name}.png`;
-                a.href = canvas.toDataURL("image/png");
+                a.download = `Almaster_Slip_${u.name}.png`;
+                a.href = canvas.toDataURL("image/png", 1.0);
                 a.click();
             });
         }
 
-        // --- Helper Funcs ---
         function renderStatusBadge(s, email) {
-            const c = { 'pending': 'bg-orange-100 text-orange-600', 'approved': 'bg-blue-100 text-blue-600', 'paid': 'bg-green-100 text-green-600' }[s || 'pending'];
-            const t = { 'pending': 'انتظار', 'approved': 'معتمد', 'paid': 'تم الدفع' }[s || 'pending'];
+            const c = { 'pending': 'bg-orange-100 text-orange-600', 'approved': 'bg-blue-100 text-blue-600', 'paid': 'bg-emerald-100 text-emerald-600' }[s || 'pending'];
+            const t = { 'pending': 'انتظار', 'approved': 'معتمد', 'paid': 'تم التحويل' }[s || 'pending'];
             return `<div class="group relative inline-block">
-                <button class="px-2 py-1 rounded text-[9px] font-black ${c} min-w-[70px]">${t}</button>
-                <div class="hidden group-hover:flex absolute right-0 top-[80%] bg-white shadow-xl rounded border p-1 z-50 flex-col w-24">
-                    <button onclick="updatePaymentStatus('${email}', 'pending')" class="p-1.5 hover:bg-slate-50 text-right">انتظار</button>
-                    <button onclick="updatePaymentStatus('${email}', 'approved')" class="p-1.5 hover:bg-slate-50 text-right">معتمد</button>
-                    <button onclick="updatePaymentStatus('${email}', 'paid')" class="p-1.5 hover:bg-green-50 text-green-600 font-black text-right">تم الدفع ✅</button>
+                <button class="px-4 py-1.5 rounded-xl text-[10px] font-black ${c} shadow-sm border border-black/5">${t}</button>
+                <div class="hidden group-hover:flex absolute right-0 top-[80%] bg-white shadow-2xl rounded-2xl border border-slate-100 p-1.5 z-50 flex-col w-32 animate-fade-in">
+                    <button onclick="updatePaymentStatus('${email}', 'pending')" class="p-2 hover:bg-slate-50 text-right text-[10px] font-bold text-slate-600 rounded-lg">وضع الانتظار</button>
+                    <button onclick="updatePaymentStatus('${email}', 'approved')" class="p-2 hover:bg-slate-50 text-right text-[10px] font-bold text-blue-600 rounded-lg">اعتماد الراتب</button>
+                    <button onclick="updatePaymentStatus('${email}', 'paid')" class="p-2 hover:bg-emerald-50 text-right text-[10px] font-black text-emerald-600 rounded-lg">تم التحويل ✅</button>
                 </div>
             </div>`;
         }
@@ -573,7 +615,7 @@
         function closeVaultModal() { document.getElementById('modal-vault').classList.add('hidden'); }
         async function saveVaultTransaction() {
             const amt = parseFloat(document.getElementById('vault-amount-input').value);
-            const note = document.getElementById('vault-note-input').value || "إيداع";
+            const note = document.getElementById('vault-note-input').value || "إيداع يدوي";
             if(isNaN(amt)) return;
             const newLogs = [...(monthData.vault_logs || []), { amount: amt, note, date: new Date().toLocaleString('ar-EG') }];
             await db.collection("financial_months").doc(currentSelectedMonth).set({ vault: (parseFloat(monthData.vault)||0) + amt, vault_logs: newLogs }, { merge: true });
@@ -583,7 +625,7 @@
         function openVaultLogs() {
             const list = document.getElementById('vault-logs-list'); list.innerHTML = '';
             (monthData.vault_logs || []).reverse().forEach(l => {
-                list.innerHTML += `<div class="bg-white p-3 rounded-xl border-r-4 border-emerald-500 shadow-sm"><div class="flex justify-between font-black text-xs text-emerald-600 mb-1"><span>+ ${l.amount}</span><span class="text-[8px] text-slate-400">${l.date}</span></div><p class="text-[10px] font-bold">${l.note}</p></div>`;
+                list.innerHTML += `<div class="bg-white p-4 rounded-3xl border-r-8 border-emerald-500 shadow-sm"><div class="flex justify-between font-black text-sm text-emerald-600 mb-1"><span>+ ${l.amount.toLocaleString()}</span><span class="text-[9px] text-slate-400">${l.date}</span></div><p class="text-xs font-bold text-slate-600">${l.note}</p></div>`;
             });
             document.getElementById('modal-vault-logs').classList.remove('hidden');
         }
@@ -597,7 +639,7 @@
                         const canvas = document.createElement("canvas");
                         const scale = 500/img.width; canvas.width = 500; canvas.height = img.height*scale;
                         canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-                        tempReceipts.push(canvas.toDataURL("image/jpeg", 0.6));
+                        tempReceipts.push(canvas.toDataURL("image/jpeg", 0.7));
                         renderReceiptsPreview();
                     };
                 };
@@ -608,21 +650,33 @@
         function renderReceiptsPreview() {
             const list = document.getElementById('receipts-preview-list'); list.innerHTML = '';
             tempReceipts.forEach((r, i) => {
-                list.innerHTML += `<div class="relative w-12 h-12 rounded border-2 border-white shadow-sm overflow-hidden"><img src="${r}" class="w-full h-full object-cover"><button type="button" onclick="tempReceipts.splice(${i},1); renderReceiptsPreview()" class="absolute top-0 right-0 bg-red-500 text-white w-4 h-4 text-[8px] flex items-center justify-center"><i class="fas fa-times"></i></button></div>`;
+                list.innerHTML += `<div class="relative w-14 h-14 rounded-2xl border-2 border-white shadow-md overflow-hidden"><img src="${r}" class="w-full h-full object-cover"><button type="button" onclick="tempReceipts.splice(${i},1); renderReceiptsPreview()" class="absolute top-0 right-0 bg-red-600 text-white w-5 h-5 text-[9px] flex items-center justify-center rounded-bl-xl"><i class="fas fa-times"></i></button></div>`;
             });
         }
 
-        function openExpenseModal() { document.getElementById('exp-title').value = ""; document.getElementById('exp-amount').value = ""; document.getElementById('modal-expense').classList.remove('hidden'); }
+        function openExpenseModal() { document.getElementById('exp-modal-title').innerText = "إضافة نثريات"; document.getElementById('edit-expense-idx').value = ""; document.getElementById('exp-title').value = ""; document.getElementById('exp-amount').value = ""; document.getElementById('exp-date').valueAsDate = new Date(); document.getElementById('modal-expense').classList.remove('hidden'); }
         function closeExpenseModal() { document.getElementById('modal-expense').classList.add('hidden'); }
+        
         async function saveExpense() {
-            const t = document.getElementById('exp-title').value, a = parseFloat(document.getElementById('exp-amount').value), d = document.getElementById('exp-date').value;
+            const t = document.getElementById('exp-title').value, a = parseFloat(document.getElementById('exp-amount').value), d = document.getElementById('exp-date').value, idx = document.getElementById('edit-expense-idx').value;
             if(!t || isNaN(a)) return;
-            const newExps = [...(monthData.expenses || []), { title: t, amount: a, date: d }];
+            let newExps = [...(monthData.expenses || [])];
+            if(idx === "") newExps.push({ title: t, amount: a, date: d }); else newExps[parseInt(idx)] = { title: t, amount: a, date: d };
             await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: newExps }, { merge: true });
             closeExpenseModal();
         }
-        async function deleteExpense(i) { let n = [...monthData.expenses]; n.splice(i, 1); await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: n }, { merge: true }); }
-        function closeFinanceModal() { document.getElementById('modal-finance').classList.add('hidden'); }
+        
+        async function deleteExpense(i) { if(confirm("حذف المصروف؟")){ let n = [...monthData.expenses]; n.splice(i, 1); await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: n }, { merge: true }); } }
+        
+        function editExpense(idx) {
+            const e = monthData.expenses[idx];
+            document.getElementById('exp-modal-title').innerText = "تعديل النثريات";
+            document.getElementById('edit-expense-idx').value = idx;
+            document.getElementById('exp-title').value = e.title;
+            document.getElementById('exp-amount').value = e.amount;
+            document.getElementById('exp-date').value = e.date;
+            document.getElementById('modal-expense').classList.remove('hidden');
+        }
     </script>
 </body>
 </html>
