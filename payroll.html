@@ -124,6 +124,19 @@
     </div>
 
     <script>
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
+                const profile = doc.data();
+                // إذا لم يكن أدمن، أعد توجيهه للرئيسية
+                if (profile.role !== 'admin') {
+                    alert("عذراً، هذه الصفحة مخصصة للإدارة فقط.");
+                    window.location.href = 'index.html';
+                }
+            } else {
+                window.location.href = 'index.html'; // لو مش مسجل دخول أصلاً
+            }
+        });
         // املأ بيانات Firebase الخاصة بك هنا
         const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
         firebase.initializeApp(firebaseConfig);
@@ -259,4 +272,5 @@
         }
     </script>
 </body>
+
 </html>
