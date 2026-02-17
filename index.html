@@ -976,12 +976,14 @@
                         const usersSnapshot = await db.collection('users').get();
                         usersSnapshot.forEach((doc) => {
                             const userRef = db.collection('users').doc(doc.id);
+                           // داخل دالة checkAndResetCounters وتحديداً في جزء الـ transaction.update
                             transaction.update(userRef, {
                                 'timeBank': {},
                                 'idleBank': 0,
-                                'lastChange': firebase.firestore.FieldValue.serverTimestamp()
+                                'lastChange': firebase.firestore.FieldValue.serverTimestamp(), // تأكد أن هذه موجودة
+                                'isIdle': false,
+                                'status': 'Offline' // يفضل إرجاع الجميع Offline عند التصفير لضمان بداية نظيفة
                             });
-                        });
             
                         transaction.set(resetRef, {
                             lastDate: today,
@@ -1064,7 +1066,11 @@
         
                 // 3. إعادة رسم الشبكة الرئيسية
                 renderGrid();
-                
+                if (currentUser && data.email === currentUser.email.toLowerCase()) {
+                userProfile = data; // تحديث البروفايل المحلي ببيانات السيرفر الحقيقية
+                // ... باقي الكود
+            }
+                            
                 // 4. (التصحيح هنا) تحديث القائمة الجانبية للمهام فوراً
                 const taskModal = document.getElementById('modal-task-center');
                 if (!taskModal.classList.contains('hidden')) {
@@ -1341,12 +1347,13 @@
             const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
             return `${h}:${m}:${s}`;
         }
-        function getMillis(val) {
-            if (!val) return Date.now();
-            if (typeof val === 'number') return val;
-            if (typeof val.toMillis === 'function') return val.toMillis();
-            return Date.now();
-        }
+       function getMillis(val) {
+                if (!val) return Date.now(); // إذا كانت القيمة null ارجع الوقت الحالي فوراً
+                if (typeof val === 'number') return val;
+                if (val.toMillis) return val.toMillis();
+                if (val instanceof Date) return val.getTime();
+                return Date.now();
+            }
 
         function resetIdleTimer() {
             lastActionTime = Date.now();
@@ -3280,6 +3287,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
