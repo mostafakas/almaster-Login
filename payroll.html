@@ -244,17 +244,17 @@
         }
 
         function changeMonth() {
-            currentSelectedMonth = document.getElementById('month-picker').value;
-            syncData();
-        }
-
-        // --- محرك الحسابات الآمن (Safely checking elements) ---
-        function updateCalculations() {
+                    currentSelectedMonth = document.getElementById('month-picker').value;
+                    syncData();
+                }
+        
+                // --- محرك الحسابات الآمن (Safely checking elements) ---
+      function updateCalculations() {
             let totalExpected = 0;
-            let totalActualPaidSalaries = 0;
+            let totalActualPaidSalaries = 0; // هذا العداد سيجمع الرواتب التي خرجت فعلياً
             let paidCount = 0;
             let pendingCount = 0;
-
+        
             allUsers.forEach(u => {
                 const mData = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
                 const base = parseFloat(u.salary_base) || 0;
@@ -264,33 +264,36 @@
                 const net = base + bonus + incen - deduct;
                 
                 totalExpected += net;
+        
+                // التعديل هنا: إذا كانت الحالة "تم الدفع"، أضف الصافي لعداد المنصرف الفعلي
                 if (mData.status === 'paid') {
                     paidCount++;
-                    totalActualPaidSalaries += net;
+                    totalActualPaidSalaries += net; 
                 } else {
                     pendingCount++;
                 }
             });
-
+        
+            // حساب إجمالي النثريات
             const totalExpenses = (monthFinancialData.expenses || []).reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
             const vaultCapital = parseFloat(monthFinancialData.vault) || 0;
             
-            // المعادلات
-            const combinedSpent = totalActualPaidSalaries + totalExpenses;
+            // المعادلة الصحيحة للمنصرف الفعلي
+            const combinedSpent = totalActualPaidSalaries + totalExpenses; 
             const remaining = vaultCapital - combinedSpent;
-
-            // تحديث الواجهة مع فحص وجود العناصر (IDs)
+        
+            // تحديث الأرقام في الواجهة
             const elements = {
                 'vault-balance': vaultCapital.toLocaleString(),
                 'total-net-salaries': totalExpected.toLocaleString() + ' EGP',
                 'total-expenses': totalExpenses.toLocaleString() + ' EGP',
-                'total-spent': combinedSpent.toLocaleString() + ' EGP',
+                'total-spent': combinedSpent.toLocaleString() + ' EGP', // سيظهر المجموع هنا
                 'remaining-vault': remaining.toLocaleString() + ' EGP',
                 'paid-count': paidCount,
                 'pending-count': pendingCount,
                 'expense-count': (monthFinancialData.expenses || []).length
             };
-
+        
             for (const [id, value] of Object.entries(elements)) {
                 const el = document.getElementById(id);
                 if (el) el.innerText = value;
@@ -375,12 +378,13 @@
                 </div>`;
         }
 
-        async function updatePaymentStatus(email, status) {
+       async function updatePaymentStatus(email, status) {
             const user = allUsers.find(u => u.id === email);
             const mFin = user.monthly_finance || {};
             if(!mFin[currentSelectedMonth]) mFin[currentSelectedMonth] = {};
             mFin[currentSelectedMonth].status = status;
             await db.collection("users").doc(email).update({ monthly_finance: mFin });
+            // لا حاجة لاستدعاء updateCalculations هنا لأن الـ Snapshot سيلقط التغيير فوراً
         }
 
         // Vault & Expense Logic
@@ -499,3 +503,4 @@
     </script>
 </body>
 </html>
+
