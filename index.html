@@ -958,7 +958,7 @@
         async function checkAndResetCounters(isAutoReset = false) {
                 if (!userProfile) return;
             
-                const today = moment().format('YYYY-MM-DD');
+                const today = moment().format('YYYY-MM-DD'); 
                 const resetRef = db.collection('system_settings').doc('daily_reset');
             
                 try {
@@ -966,23 +966,27 @@
                         const settingsDoc = await transaction.get(resetRef);
                         const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
             
+                        // القفل السحري: لو التاريخ في السيرفر هو تاريخ النهاردة، السيستم مش هيعمل حاجة ويخرج
                         if (lastResetDate === today) {
+                            console.log("السيستم تم تصفيره بالفعل لهذا اليوم بواسطة: " + settingsDoc.data().resetBy);
                             localStorage.setItem('last_daily_reset_date', today);
-                            return;
+                            return; // إنهاء العملية هنا فوراً
                         }
             
-                        console.log("يوم جديد اكتشفه: " + userProfile.name + ". جاري تصفير العدادات...");
+                        // لو وصلنا هنا، يبقى ده "أول يوزر" يدخل في اليوم الجديد
+                        console.log("يوم جديد! أول دخول بواسطة: " + userProfile.name + ". جاري تصفير قاعدة البيانات...");
             
                         const usersSnapshot = await db.collection('users').get();
                         usersSnapshot.forEach((doc) => {
                             const userRef = db.collection('users').doc(doc.id);
                             transaction.update(userRef, {
-                                'timeBank': {},
+                                'timeBank': {}, 
                                 'idleBank': 0,
                                 'lastChange': firebase.firestore.FieldValue.serverTimestamp()
                             });
                         });
             
+                        // تحديث السيرفر فوراً عشان اليوزر اللي يدخل بعد ثانية واحدة يلاقي اليوم "تم تصفيره"
                         transaction.set(resetRef, {
                             lastDate: today,
                             resetBy: userProfile.email,
@@ -992,28 +996,27 @@
             
                     localStorage.setItem('last_daily_reset_date', today);
                     
-                    // لو التصفير حصل واليوزر شغال (وقت نص الليل)، بنعمل لوج اوت زي ما طلبت
-                    if (isAutoReset) {
-                        console.log("تصفير تلقائي.. جاري تسجيل الخروج");
+                    // إذا حدث التصفير وأنت "موظف" والصفحة مفتوحة، يتم طردك لبدء يوم جديد
+                    // أما لو كنت "أدمن" أو "أول واحد يعمل لوجن" مش هيحصلك Logout
+                    if (isAutoReset && userProfile.role !== 'admin') {
                         forceLogoutForNewDay();
                     }
             
                 } catch (e) {
-                    console.error("Reset Warning:", e.message);
+                    console.error("فشل عملية الريسيت:", e.message);
                 }
             }
-
-       function startDailyAutoWatcher() {
+      function startDailyAutoWatcher() {
             setInterval(async () => {
                 const today = moment().format('YYYY-MM-DD');
                 const lastReset = localStorage.getItem('last_daily_reset_date');
         
+                // لو المتصفح لسه فاكر تاريخ قديم، نشيك على السيرفر
                 if (lastReset && lastReset !== today) {
-                    console.log("Midnight detected! Resetting and logging out...");
-                    // نمرر true هنا عشان السيستم يعرف إنه لازم يخرج اليوزر
+                    console.log("تغيير تاريخ محلي.. فحص السيرفر للتأكد من التصفير...");
                     await checkAndResetCounters(true); 
                 }
-            }, 60000);
+            }, 60000); // فحص كل دقيقة
         }
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
@@ -3280,6 +3283,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
