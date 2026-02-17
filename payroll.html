@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALMASTER | الإدارة المالية النهائية</title>
+    <title>ALMASTER | النظام المالي الشامل</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -21,13 +21,15 @@
         .loader-spin { border-top-color: #10b981; animation: spinner 1.5s linear infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .group:hover .group-hover\:flex { display: flex !important; }
+        .stat-card { transition: all 0.3s ease; border: 1px solid #e2e8f0; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
 <body class="text-slate-800">
 
     <div id="payroll-loader" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center text-white">
-        <div class="loader-spin w-12 h-12 border-4 border-slate-700 rounded-full mb-4"></div>
-        <p class="font-bold tracking-widest animate-pulse text-emerald-400">ALMASTER FINANCE SYSTEM</p>
+        <div class="loader-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full mb-4"></div>
+        <p class="font-bold tracking-widest animate-pulse text-emerald-400">ALMASTER FINANCIAL SYSTEM</p>
     </div>
 
     <header class="bg-white shadow-md h-20 px-6 flex items-center justify-between sticky top-0 z-50">
@@ -36,18 +38,18 @@
                 <i class="fas fa-vault text-xl"></i>
             </div>
             <div>
-                <h1 class="text-xl font-black text-slate-900 leading-tight">ALMASTER FINANCE</h1>
+                <h1 class="text-xl font-black text-slate-900">ALMASTER FINANCE</h1>
                 <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">المحاسبة والتقارير المالية</p>
             </div>
         </div>
         
         <div class="flex items-center gap-4">
             <div>
-                <p class="text-[9px] font-black text-slate-400 mr-2 uppercase text-left">تبديل الشهر</p>
+                <p class="text-[9px] font-black text-slate-400 mr-2 uppercase text-left">الشهر الضريبي</p>
                 <select id="month-picker" onchange="changeMonth()" class="bg-slate-100 border-none rounded-xl px-4 py-1.5 text-xs font-bold focus:ring-2 ring-emerald-500 cursor-pointer"></select>
             </div>
             <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-lg">
-                <i class="fas fa-file-excel"></i> <span>تصدير Excel</span>
+                <i class="fas fa-file-excel"></i> <span>تصدير</span>
             </button>
             <button onclick="window.location.href='index.html'" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-900 hover:text-white transition shadow-sm">
                 <i class="fas fa-home"></i>
@@ -55,51 +57,61 @@
         </div>
     </header>
 
-    <main class="p-4 md:p-6 max-w-[1600px] mx-auto">
+    <main class="p-4 md:p-6 max-w-[1800px] mx-auto">
         
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-            <div class="bg-slate-900 p-4 rounded-3xl shadow-xl text-white relative overflow-hidden">
-                <p class="text-[10px] font-bold text-emerald-400 uppercase mb-1">رأس مال الخزنة</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+            
+            <div class="bg-slate-900 p-4 rounded-3xl shadow-xl text-white stat-card relative overflow-hidden">
+                <p class="text-[10px] font-bold text-emerald-400 uppercase mb-1">إجمالي الخزنة</p>
                 <h3 id="vault-balance" class="text-xl font-black text-white">0</h3>
                 <button onclick="openVaultModal()" class="mt-2 text-[8px] font-bold bg-white/10 hover:bg-white/20 px-2 py-1 rounded-full transition">تعديل</button>
             </div>
 
-            <div class="bg-emerald-500 p-4 rounded-3xl shadow-lg text-white">
-                <p class="text-[10px] font-bold opacity-80 uppercase mb-1">إجمالي المنصرف 💸</p>
+            <div class="bg-white p-4 rounded-3xl shadow-sm stat-card border-blue-200">
+                <p class="text-[10px] font-bold text-blue-600 uppercase mb-1">السيولة المتاحة</p>
+                <h3 id="remaining-vault" class="text-xl font-black text-blue-700">0</h3>
+                <p class="text-[8px] text-slate-400">الرصيد الفعلي حالياً</p>
+            </div>
+
+            <div class="bg-emerald-500 p-4 rounded-3xl shadow-lg text-white stat-card">
+                <p class="text-[10px] font-bold opacity-90 uppercase mb-1">إجمالي المنصرف 💸</p>
                 <h3 id="total-spent" class="text-xl font-black">0</h3>
-                <p class="text-[8px] opacity-70">شامل رواتب مدفوعة + نثريات</p>
+                <p class="text-[8px] opacity-70">رواتب مدفوعة + نثريات</p>
             </div>
 
-            <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200">
-                <p class="text-[10px] font-bold text-green-600 uppercase mb-1">الرواتب المحولة ✅</p>
-                <h3 id="total-paid-salaries-sum" class="text-xl font-black text-slate-800">0</h3>
-                <p class="text-[8px] text-slate-400 font-bold tracking-tight">صافي ما تم إرساله فعلياً</p>
+            <div class="bg-white p-4 rounded-3xl shadow-sm stat-card border-emerald-100">
+                <p class="text-[10px] font-bold text-emerald-600 uppercase mb-1">الرواتب المحولة</p>
+                <h3 id="total-paid-salaries-sum" class="text-xl font-black text-emerald-700">0</h3>
+                <p class="text-[8px] text-slate-400">ما استلمه الموظفون</p>
             </div>
 
-            <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200">
-                <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">السيولة المتاحة</p>
-                <h3 id="remaining-vault" class="text-xl font-black text-blue-600">0</h3>
-                <p class="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">الرصيد المتبقي بالخزنة</p>
-            </div>
-
-            <div class="bg-orange-50 p-4 rounded-3xl shadow-sm border border-orange-200">
-                <p class="text-[10px] font-bold text-orange-600 uppercase mb-1">مطلوب فوراً (معتمد)</p>
+            <div class="bg-orange-50 p-4 rounded-3xl shadow-sm stat-card border-orange-200">
+                <p class="text-[10px] font-bold text-orange-600 uppercase mb-1">رواتب معتمدة</p>
                 <h3 id="pending-approved-total" class="text-xl font-black text-orange-700">0</h3>
-                <p class="text-[8px] text-orange-500 font-bold">رواتب جاهزة للتحويل</p>
+                <p class="text-[8px] text-orange-400 font-bold">بانتظار التحويل البنكي</p>
             </div>
 
-            <div class="bg-slate-50 p-4 rounded-3xl shadow-sm border border-slate-200">
-                <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">تحت الاعتماد</p>
+            <div class="bg-slate-50 p-4 rounded-3xl shadow-sm stat-card border-slate-200">
+                <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">انتظار الاعتماد</p>
                 <h3 id="pending-waiting-total" class="text-xl font-black text-slate-700">0</h3>
-                <p class="text-[8px] text-slate-400 font-bold">رواتب انتظار لم تراجع</p>
+                <p class="text-[8px] text-slate-400">لم يتم مراجعتها</p>
+            </div>
+
+            <div class="bg-red-50 p-4 rounded-3xl shadow-sm stat-card border-red-100 text-right">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-[10px] font-bold text-red-600 uppercase">النثريات</p>
+                    <button onclick="openExpenseModal()" class="w-5 h-5 bg-red-600 text-white rounded flex items-center justify-center hover:bg-red-700 transition"><i class="fas fa-plus text-[9px]"></i></button>
+                </div>
+                <h3 id="total-expenses" class="text-xl font-black text-red-700">0</h3>
+                <p class="text-[8px] text-red-400 italic">نفقات مكتبية</p>
             </div>
         </div>
 
         <div class="flex flex-col lg:flex-row gap-6">
             <div class="flex-[3] bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                 <div class="p-4 border-b bg-slate-50/50 flex justify-between items-center">
-                    <h4 class="font-black text-sm text-slate-700">كشف رواتب الموظفين</h4>
-                    <input type="text" id="search-input" oninput="renderPayroll()" placeholder="بحث بالاسم..." class="bg-white border-slate-200 rounded-xl px-4 py-1 text-xs w-48 focus:ring-1 ring-emerald-500">
+                    <h4 class="font-black text-sm text-slate-700 flex items-center gap-2"><i class="fas fa-list-check text-emerald-500"></i> جدول مستحقات الموظفين</h4>
+                    <input type="text" id="search-input" oninput="renderPayroll()" placeholder="بحث بالاسم..." class="bg-white border-slate-200 rounded-xl px-4 py-1.5 text-xs w-48 focus:ring-1 ring-emerald-500">
                 </div>
                 <div class="overflow-x-auto table-container">
                     <table class="w-full text-right border-collapse text-[11px]">
@@ -122,12 +134,9 @@
             </div>
 
             <div class="flex-1 bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col h-fit max-h-[calc(100vh-320px)] overflow-hidden">
-                <div class="p-4 border-b bg-red-50/30 flex justify-between items-center text-red-600">
-                    <h4 class="font-black text-sm"><i class="fas fa-receipt ml-1"></i> سجل النثريات</h4>
-                    <div class="flex gap-1 items-center">
-                        <span id="total-expenses" class="text-[10px] font-black ml-2">0 EGP</span>
-                        <span id="expense-count" class="bg-red-100 text-[10px] px-2 py-0.5 rounded-full font-black">0</span>
-                    </div>
+                <div class="p-4 border-b bg-red-50/30 flex justify-between items-center text-red-600 font-black">
+                    <h4 class="text-sm"><i class="fas fa-receipt ml-1"></i> حركة النثريات</h4>
+                    <span id="expense-count" class="bg-red-100 text-[10px] px-2 py-0.5 rounded-full">0</span>
                 </div>
                 <div id="expenses-list" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
             </div>
@@ -136,10 +145,10 @@
 
     <div id="modal-vault" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-right">
-            <h3 class="text-lg font-black mb-4">تعديل ميزانية الخزنة</h3>
+            <h3 class="text-lg font-black mb-4">تعديل رأس مال الخزنة</h3>
             <input type="number" id="vault-input" class="w-full bg-slate-100 border-none rounded-xl px-4 py-3 font-black text-center text-xl focus:ring-2 ring-emerald-500 mb-4">
             <div class="flex gap-2">
-                <button onclick="saveVaultAmount()" class="flex-1 bg-slate-900 text-white font-black py-3 rounded-xl hover:bg-emerald-600 transition shadow-lg">حفظ</button>
+                <button onclick="saveVaultAmount()" class="flex-1 bg-slate-900 text-white font-black py-3 rounded-xl">حفظ</button>
                 <button onclick="closeVaultModal()" class="px-4 bg-slate-100 text-slate-400 rounded-xl">إلغاء</button>
             </div>
         </div>
@@ -150,7 +159,7 @@
             <h3 id="exp-modal-title" class="text-lg font-black mb-4 text-red-600">إضافة نثريات</h3>
             <input type="hidden" id="edit-expense-idx">
             <div class="space-y-3">
-                <input type="text" id="exp-title" placeholder="عنوان المصروف" class="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold text-right">
+                <input type="text" id="exp-title" placeholder="بيان المصروف" class="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold text-right">
                 <input type="number" id="exp-amount" placeholder="المبلغ" class="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold text-right">
                 <input type="date" id="exp-date" class="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold text-right">
             </div>
@@ -162,38 +171,36 @@
     </div>
 
     <div id="modal-finance" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 text-right">
-        <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border">
+        <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden">
             <div class="p-6 border-b flex justify-between bg-slate-50">
                 <h3 class="text-lg font-black text-slate-800">تعديل المخصصات المالية</h3>
-                <button onclick="closeFinanceModal()" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times"></i></button>
+                <button onclick="closeFinanceModal()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
             </div>
             <form onsubmit="saveFinanceData(event)" class="p-6 space-y-4">
                 <input type="hidden" id="fin-email">
-                <div class="grid grid-cols-2 gap-4 text-right">
-                    <div><label class="block text-[10px] font-black text-slate-400 mb-1 uppercase">الراتب الأساسي</label><input type="number" id="fin-salary" step="0.01" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-emerald-500 font-bold text-right"></div>
-                    <div><label class="block text-[10px] font-black text-slate-400 mb-1 uppercase">رقم الموبايل</label><input type="text" id="fin-phone" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-emerald-500 font-bold text-right"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-[10px] font-black text-slate-400 mb-1">الراتب الأساسي</label><input type="number" id="fin-salary" step="0.01" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-emerald-500 font-bold"></div>
+                    <div><label class="block text-[10px] font-black text-slate-400 mb-1">رقم الموبايل</label><input type="text" id="fin-phone" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-emerald-500 font-bold"></div>
                 </div>
-                <div class="grid grid-cols-2 gap-4 text-right">
-                    <div><label class="block text-[10px] font-black text-slate-400 mb-1 uppercase">الحساب البنكي</label><input type="text" id="fin-bank" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-emerald-500 font-bold text-right"></div>
-                    <div><label class="block text-[10px] font-black text-pink-600 mb-1 uppercase">Instapay</label><input type="text" id="fin-instapay" class="w-full bg-pink-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-pink-500 font-bold text-left" dir="ltr"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-[10px] font-black text-slate-400 mb-1">رقم الحساب</label><input type="text" id="fin-bank" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-emerald-500 font-bold"></div>
+                    <div><label class="block text-[10px] font-black text-pink-600 mb-1">Instapay</label><input type="text" id="fin-instapay" class="w-full bg-pink-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-pink-500 font-bold" dir="ltr"></div>
                 </div>
-                <div class="grid grid-cols-3 gap-3 border-t pt-4 bg-slate-50 p-3 rounded-2xl text-center">
-                    <div><label class="block text-[9px] font-black text-green-600 mb-1 text-center">مكافآت</label><input type="number" id="fin-bonus" step="0.01" class="w-full border-none rounded-lg px-2 py-1 font-black text-center"></div>
-                    <div><label class="block text-[9px] font-black text-blue-600 mb-1 text-center">حوافز</label><input type="number" id="fin-incentive" step="0.01" class="w-full border-none rounded-lg px-2 py-1 font-black text-center"></div>
-                    <div><label class="block text-[9px] font-black text-red-600 mb-1 text-center">خصومات</label><input type="number" id="fin-deduction" step="0.01" class="w-full border-none rounded-lg px-2 py-1 font-black text-center"></div>
+                <div class="grid grid-cols-3 gap-3 border-t pt-4 bg-slate-50 p-3 rounded-2xl">
+                    <div><label class="block text-[9px] font-black text-green-600 text-center">مكافآت</label><input type="number" id="fin-bonus" step="0.01" class="w-full border-none rounded-lg px-2 py-1 font-black text-center"></div>
+                    <div><label class="block text-[9px] font-black text-blue-600 text-center">حوافز</label><input type="number" id="fin-incentive" step="0.01" class="w-full border-none rounded-lg px-2 py-1 font-black text-center"></div>
+                    <div><label class="block text-[9px] font-black text-red-600 text-center">خصومات</label><input type="number" id="fin-deduction" step="0.01" class="w-full border-none rounded-lg px-2 py-1 font-black text-center"></div>
                 </div>
-                <div class="border-t pt-4 mt-2">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">رفع صورة الوصل</label>
+                <div class="border-t pt-4">
+                    <label class="block text-[10px] font-black text-slate-400 mb-1">رفع صورة الوصل</label>
                     <div class="flex items-center gap-3">
                         <input type="file" id="fin-receipt" accept="image/*" class="hidden" onchange="handleReceiptUpload(this)">
-                        <button type="button" onclick="document.getElementById('fin-receipt').click()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl text-[10px] font-bold hover:bg-slate-200">تحميل الوصل</button>
-                        <div id="receipt-preview-container" class="hidden">
-                            <img id="receipt-preview-img" src="" class="w-12 h-12 rounded border cursor-pointer" onclick="window.open(this.src)">
-                        </div>
+                        <button type="button" onclick="document.getElementById('fin-receipt').click()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl text-[10px] font-bold hover:bg-slate-200 transition">تحميل الوصل</button>
+                        <div id="receipt-preview-container" class="hidden"><img id="receipt-preview-img" src="" class="w-12 h-12 rounded border cursor-pointer" onclick="window.open(this.src)"></div>
                     </div>
                     <input type="hidden" id="fin-receipt-base64">
                 </div>
-                <button type="submit" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-emerald-600 transition shadow-lg mt-2">حفظ التعديلات</button>
+                <button type="submit" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-emerald-600 transition shadow-lg">حفظ البيانات</button>
             </form>
         </div>
     </div>
@@ -261,8 +268,9 @@
             });
         }
 
+        // --- محرك الحسابات الموحد (Fixed & Ordered) ---
         function updateFinalStats() {
-            let totalExpectedAll = 0, totalPaidSalariesOnly = 0, pendingApproved = 0, pendingWaiting = 0;
+            let totalActuallyPaidSalariesOnly = 0, pendingApproved = 0, pendingWaiting = 0;
             let paidCount = 0, pendingCount = 0;
 
             allUsers.forEach(u => {
@@ -272,12 +280,10 @@
                 const incen = parseFloat(mData.incentive) || 0;
                 const deduct = parseFloat(mData.deduction) || 0;
                 const net = base + bonus + incen - deduct;
-                
-                totalExpectedAll += net;
 
                 if (mData.status === 'paid') {
                     paidCount++;
-                    totalPaidSalariesOnly += net;
+                    totalActuallyPaidSalariesOnly += net;
                 } else if (mData.status === 'approved') {
                     pendingApproved += net;
                     pendingCount++;
@@ -289,18 +295,20 @@
 
             const totalExpensesVal = (monthFinancialData.expenses || []).reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
             const vaultCap = parseFloat(monthFinancialData.vault) || 0;
-            const combinedActuallySpent = totalPaidSalariesOnly + totalExpensesVal;
+            
+            // المعادلات النهائية
+            const combinedActuallySpent = totalActuallyPaidSalariesOnly + totalExpensesVal;
+            const remainingLiquidity = vaultCap - combinedActuallySpent;
 
-            // تحديث الواجهة مع فحص العناصر
+            // تحديث الواجهة (بالترتيب من اليمين كما طلبت)
             const elements = {
                 'vault-balance': vaultCap.toLocaleString(),
-                'total-net-salaries': totalExpectedAll.toLocaleString() + ' EGP',
-                'total-expenses': totalExpensesVal.toLocaleString() + ' EGP',
+                'remaining-vault': remainingLiquidity.toLocaleString() + ' EGP',
                 'total-spent': combinedActuallySpent.toLocaleString() + ' EGP',
-                'total-paid-salaries-sum': totalPaidSalariesOnly.toLocaleString() + ' EGP',
-                'remaining-vault': (vaultCap - combinedActuallySpent).toLocaleString() + ' EGP',
+                'total-paid-salaries-sum': totalActuallyPaidSalariesOnly.toLocaleString() + ' EGP',
                 'pending-approved-total': pendingApproved.toLocaleString() + ' EGP',
                 'pending-waiting-total': pendingWaiting.toLocaleString() + ' EGP',
+                'total-expenses': totalExpensesVal.toLocaleString() + ' EGP',
                 'paid-count': paidCount,
                 'pending-count': pendingCount,
                 'expense-count': (monthFinancialData.expenses || []).length
@@ -330,8 +338,8 @@
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-50">
                             <td class="p-4">
-                                <div class="flex items-center gap-2 text-right">
-                                    <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-8 h-8 rounded-lg object-cover border bg-white">
+                                <div class="flex items-center gap-2">
+                                    <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-8 h-8 rounded-lg object-cover border bg-white shadow-sm">
                                     <p class="font-black text-slate-800 leading-none">${u.name}</p>
                                 </div>
                             </td>
@@ -339,11 +347,11 @@
                             <td class="p-4 text-green-600 font-bold">+${bonus.toLocaleString()}</td>
                             <td class="p-4 text-blue-600 font-bold">+${incen.toLocaleString()}</td>
                             <td class="p-4 text-red-500 font-bold">-${deduct.toLocaleString()}</td>
-                            <td class="p-4 font-black bg-slate-50/50 text-slate-900">${net.toLocaleString()}</td>
+                            <td class="p-4 font-black bg-slate-50/50 text-slate-900 text-center">${net.toLocaleString()}</td>
                             <td class="p-4 text-center">
-                                ${mData.receipt ? `<img src="${mData.receipt}" class="w-7 h-7 rounded border border-emerald-200 cursor-pointer hover:scale-125 transition mx-auto" onclick="window.open(this.src)">` : '<span class="text-slate-300">--</span>'}
+                                ${mData.receipt ? `<img src="${mData.receipt}" class="w-7 h-7 rounded border border-emerald-200 cursor-pointer hover:scale-125 transition mx-auto" onclick="window.open(this.src)">` : '<span class="text-slate-200">--</span>'}
                             </td>
-                            <td class="p-4">${renderStatusBadge(status, u.id)}</td>
+                            <td class="p-4 text-center">${renderStatusBadge(status, u.id)}</td>
                             <td class="p-4 text-center">
                                 <button onclick="openFinanceModal('${u.id}')" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-emerald-600 hover:text-white transition flex items-center justify-center mx-auto shadow-sm">
                                     <i class="fas fa-edit text-[10px]"></i>
@@ -411,9 +419,8 @@
                         const scale = 500 / img.width;
                         canvas.width = 500; canvas.height = img.height * scale;
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        const b64 = canvas.toDataURL("image/jpeg", 0.6);
-                        document.getElementById("fin-receipt-base64").value = b64;
-                        document.getElementById("receipt-preview-img").src = b64;
+                        document.getElementById("fin-receipt-base64").value = canvas.toDataURL("image/jpeg", 0.6);
+                        document.getElementById("receipt-preview-img").src = canvas.toDataURL("image/jpeg", 0.6);
                         document.getElementById("receipt-preview-container").classList.remove('hidden');
                     };
                 };
@@ -469,6 +476,7 @@
 
         function openFinanceModal(email) {
             const user = allUsers.find(u => u.id === email);
+            if (!user) return;
             const mData = (user.monthly_finance && user.monthly_finance[currentSelectedMonth]) || {};
             document.getElementById('fin-email').value = email;
             document.getElementById('fin-salary').value = user.salary_base || 0;
@@ -509,9 +517,10 @@
         function exportToExcel() {
             const data = [
                 ["تقرير مالي - ALMASTER", currentSelectedMonth],
-                ["رأس المال", document.getElementById('vault-balance').innerText],
-                ["المنصرف الفعلي", document.getElementById('total-spent').innerText],
-                ["المتبقي", document.getElementById('remaining-vault').innerText],
+                ["إجمالي الخزنة", document.getElementById('vault-balance').innerText],
+                ["السيولة المتاحة", document.getElementById('remaining-vault').innerText],
+                ["إجمالي المنصرف", document.getElementById('total-spent').innerText],
+                ["الرواتب المحولة", document.getElementById('total-paid-salaries-sum').innerText],
                 [], ["سجل الرواتب"], ["الاسم", "الأساسي", "المكافآت", "الحوافز", "الخصومات", "الصافي", "الحالة"]
             ];
             allUsers.forEach(u => {
@@ -519,7 +528,7 @@
                 const b = parseFloat(u.salary_base)||0, bo = parseFloat(mData.bonus)||0, i = parseFloat(mData.incentive)||0, d = parseFloat(mData.deduction)||0;
                 data.push([u.name, b, bo, i, d, (b+bo+i-d), mData.status||'pending']);
             });
-            data.push([], ["نثريات"], ["البيان", "المبلغ", "التاريخ"]);
+            data.push([], ["النثريات"], ["البيان", "المبلغ", "التاريخ"]);
             (monthFinancialData.expenses||[]).forEach(e => data.push([e.title, e.amount, e.date]));
             const ws = XLSX.utils.aoa_to_sheet(data);
             const wb = XLSX.utils.book_new();
