@@ -14,6 +14,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
+                /* يضمن وجود مساحة وهمية بين الزر والقائمة لسهولة حركة الماوس */
+        .group:hover .group-hover\:flex {
+            display: flex !important;
+        }
         body { font-family: 'Cairo', sans-serif; background-color: #f1f5f9; text-align: right; }
         .table-container { height: calc(100vh - 350px); overflow-y: auto; }
         ::-webkit-scrollbar { width: 4px; }
@@ -360,23 +364,24 @@
             });
         }
 
-        function renderStatusBadge(status, email) {
-            const config = {
-                'pending': { color: 'bg-orange-100 text-orange-600', text: 'انتظار' },
-                'approved': { color: 'bg-blue-100 text-blue-600', text: 'معتمد' },
-                'paid': { color: 'bg-green-100 text-green-600', text: 'تم الدفع' }
-            }[status] || { color: 'bg-slate-100', text: '---' };
-            
-            return `
-                <div class="group relative inline-block">
-                    <button class="px-3 py-1 rounded-lg text-[9px] font-black ${config.color} min-w-[85px] shadow-sm">${config.text}</button>
-                    <div class="hidden group-hover:flex absolute right-0 top-full bg-white shadow-2xl rounded-xl border p-1 z-50 flex-col w-28 animate-fade-in mt-1">
-                        <button onclick="updatePaymentStatus('${email}', 'pending')" class="text-[9px] p-2 hover:bg-slate-50 text-right font-bold">قيد الانتظار</button>
-                        <button onclick="updatePaymentStatus('${email}', 'approved')" class="text-[9px] p-2 hover:bg-slate-50 text-right font-bold">تم الاعتماد</button>
-                        <button onclick="updatePaymentStatus('${email}', 'paid')" class="text-[9px] p-2 hover:bg-green-50 text-right font-black text-green-600">تم التحويل ✅</button>
-                    </div>
-                </div>`;
-        }
+       function renderStatusBadge(status, email) {
+                const config = {
+                    'pending': { color: 'bg-orange-100 text-orange-600', text: 'انتظار' },
+                    'approved': { color: 'bg-blue-100 text-blue-600', text: 'معتمد' },
+                    'paid': { color: 'bg-green-100 text-green-600', text: 'تم الدفع' }
+                }[status] || { color: 'bg-slate-100', text: '---' };
+                
+                return `
+                    <div class="group relative inline-block py-2"> <button class="px-3 py-1.5 rounded-lg text-[9px] font-black ${config.color} min-w-[85px] shadow-sm cursor-default">
+                            ${config.text}
+                        </button>
+                        <div class="hidden group-hover:flex absolute right-0 top-[85%] bg-white shadow-2xl rounded-xl border border-slate-100 p-1 z-50 flex-col w-28 animate-fade-in">
+                            <button onclick="updatePaymentStatus('${email}', 'pending')" class="text-[9px] p-2 hover:bg-slate-50 text-right font-bold border-b border-slate-50 last:border-0">قيد الانتظار</button>
+                            <button onclick="updatePaymentStatus('${email}', 'approved')" class="text-[9px] p-2 hover:bg-slate-50 text-right font-bold border-b border-slate-50 last:border-0">تم الاعتماد</button>
+                            <button onclick="updatePaymentStatus('${email}', 'paid')" class="text-[9px] p-2 hover:bg-green-50 text-right font-black text-green-600">تم التحويل ✅</button>
+                        </div>
+                    </div>`;
+            }
 
        async function updatePaymentStatus(email, status) {
             const user = allUsers.find(u => u.id === email);
@@ -503,4 +508,5 @@
     </script>
 </body>
 </html>
+
 
