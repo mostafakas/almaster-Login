@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALMASTER | إدارة المرتبات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .status-btn { transition: all 0.3s ease; }
+        .status-btn:hover { transform: translateY(-2px); }
+        .table-container { height: calc(100vh - 250px); overflow-y: auto; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <header class="bg-white shadow-sm h-20 px-6 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <div class="bg-primary-600 w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 bg-sky-500">
+                <i class="fas fa-money-check-dollar text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-slate-800 uppercase tracking-tight">ALMASTER PAYROLL</h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">إدارة الشؤون المالية والرواتب</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <input type="text" id="search-input" oninput="renderPayroll()" placeholder="بحث عن موظف..." class="bg-slate-100 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 ring-sky-500 w-64">
+            <button onclick="window.location.href='index.html'" class="px-4 py-2 text-sm font-bold text-slate-500 hover:text-sky-500 transition">
+                العودة للرئيسية <i class="fas fa-arrow-left mr-2"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="p-6 max-w-7xl mx-auto">
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-2">إجمالي الرواتب</p>
+                <h3 id="total-payroll" class="text-2xl font-black text-slate-800">0 EGP</h3>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-2">تم الدفع</p>
+                <h3 id="paid-count" class="text-2xl font-black text-green-500">0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-2">قيد الانتظار</p>
+                <h3 id="pending-count" class="text-2xl font-black text-orange-500">0</h3>
+            </div>
+            <div class="bg-sky-500 p-6 rounded-3xl shadow-lg text-white">
+                <p class="text-xs font-bold opacity-80 uppercase mb-2">شهر التقرير</p>
+                <h3 id="current-month" class="text-2xl font-black italic">February 2026</h3>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="overflow-x-auto table-container">
+                <table class="w-full text-right">
+                    <thead class="bg-slate-50 sticky top-0">
+                        <tr class="text-slate-500 text-[11px] font-black uppercase">
+                            <th class="p-4">الموظف</th>
+                            <th class="p-4">الراتب الأساسي</th>
+                            <th class="p-4">مكافآت/خصم</th>
+                            <th class="p-4">الإجمالي</th>
+                            <th class="p-4">بيانات التحويل</th>
+                            <th class="p-4">الحالة</th>
+                            <th class="p-4 text-center">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payroll-body" class="divide-y divide-slate-50">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-finance" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-fade-in-up">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-lg font-black text-slate-800">تعديل البيانات المالية</h3>
+                <button onclick="closeFinanceModal()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form onsubmit="saveFinanceData(event)" class="p-6 space-y-4">
+                <input type="hidden" id="fin-email">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">الراتب الأساسي (EGP)</label>
+                        <input type="number" id="fin-salary" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-sky-500 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">رقم الموبايل</label>
+                        <input type="text" id="fin-phone" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-sky-500 font-bold" dir="ltr">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">رقم الحساب البنكي / المحفظة</label>
+                    <input type="text" id="fin-bank" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-sky-500 font-bold" dir="ltr">
+                </div>
+                <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 text-green-600">إضافات / مكافآت</label>
+                        <input type="number" id="fin-bonus" value="0" class="w-full bg-green-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-green-500 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 text-red-600">خصومات / سلف</label>
+                        <input type="number" id="fin-deduction" value="0" class="w-full bg-red-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-red-500 font-bold">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-slate-800 text-white font-black py-4 rounded-2xl hover:bg-slate-900 transition shadow-lg">حفظ البيانات المالية</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // املأ بيانات Firebase الخاصة بك هنا
+        const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let allUsers = [];
+
+        // تشغيل التحميل بمجرد الفتح
+        window.onload = () => {
+            document.getElementById('current-month').innerText = new Intl.DateTimeFormat('ar-EG', { month: 'long', year: 'numeric' }).format(new Date());
+            loadPayrollData();
+        };
+
+        function loadPayrollData() {
+            db.collection("users").onSnapshot(snapshot => {
+                allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderPayroll();
+            });
+        }
+
+        function renderPayroll() {
+            const tbody = document.getElementById('payroll-body');
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            tbody.innerHTML = '';
+            
+            let totalSalaries = 0;
+            let paidCount = 0;
+            let pendingCount = 0;
+
+            allUsers.forEach(u => {
+                if (u.name.toLowerCase().includes(searchTerm)) {
+                    const salary = parseFloat(u.salary_base) || 0;
+                    const bonus = parseFloat(u.salary_bonus) || 0;
+                    const deduction = parseFloat(u.salary_deduction) || 0;
+                    const net = salary + bonus - deduction;
+                    const status = u.payment_status || 'pending';
+
+                    totalSalaries += net;
+                    if(status === 'paid') paidCount++; else pendingCount++;
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="p-4">
+                                <div class="flex items-center gap-3">
+                                    <img src="${u.photo || 'https://ui-avatars.com/api/?name=' + u.name}" class="w-10 h-10 rounded-xl object-cover">
+                                    <div>
+                                        <p class="text-sm font-black text-slate-800">${u.name}</p>
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase">${u.title || 'Member'}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-4 font-bold text-sm">${salary} EGP</td>
+                            <td class="p-4 text-xs">
+                                <span class="text-green-600">+${bonus}</span> / 
+                                <span class="text-red-600">-${deduction}</span>
+                            </td>
+                            <td class="p-4 font-black text-sky-600 text-sm">${net} EGP</td>
+                            <td class="p-4">
+                                <p class="text-[10px] font-black text-slate-700"><i class="fas fa-phone-alt ml-1 opacity-50"></i> ${u.phone_number || '---'}</p>
+                                <p class="text-[10px] font-black text-slate-400"><i class="fas fa-university ml-1 opacity-50"></i> ${u.bank_account || '---'}</p>
+                            </td>
+                            <td class="p-4">
+                                ${renderStatusBadge(status, u.id)}
+                            </td>
+                            <td class="p-4 text-center">
+                                <button onclick="openFinanceModal('${u.id}')" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-800 hover:text-white transition">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            document.getElementById('total-payroll').innerText = `${totalSalaries.toLocaleString()} EGP`;
+            document.getElementById('paid-count').innerText = paidCount;
+            document.getElementById('pending-count').innerText = pendingCount;
+        }
+
+        function renderStatusBadge(status, email) {
+            const configs = {
+                'pending': { color: 'bg-orange-100 text-orange-600', text: 'قيد الانتظار', icon: 'fa-clock' },
+                'approved': { color: 'bg-blue-100 text-blue-600', text: 'تم الاعتماد', icon: 'fa-check' },
+                'paid': { color: 'bg-green-100 text-green-600', text: 'تم التحويل', icon: 'fa-hand-holding-dollar' }
+            };
+            const c = configs[status] || configs['pending'];
+            
+            return `
+                <div class="group relative inline-block">
+                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black ${c.color} uppercase tracking-wider">
+                        <i class="fas ${c.icon}"></i> ${c.text}
+                    </button>
+                    <div class="hidden group-hover:flex absolute right-0 top-full mt-2 bg-white shadow-2xl rounded-xl border p-1 z-10 flex-col gap-1 w-32">
+                        <button onclick="updatePaymentStatus('${email}', 'pending')" class="text-[9px] font-bold p-2 hover:bg-orange-50 text-orange-600 rounded-lg text-right">قيد الانتظار</button>
+                        <button onclick="updatePaymentStatus('${email}', 'approved')" class="text-[9px] font-bold p-2 hover:bg-blue-50 text-blue-600 rounded-lg text-right">تم الاعتماد</button>
+                        <button onclick="updatePaymentStatus('${email}', 'paid')" class="text-[9px] font-bold p-2 hover:bg-green-50 text-green-600 rounded-lg text-right">تم التحويل</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function updatePaymentStatus(email, status) {
+            await db.collection("users").doc(email).update({ payment_status: status });
+        }
+
+        function openFinanceModal(email) {
+            const user = allUsers.find(u => u.id === email);
+            if (!user) return;
+            document.getElementById('fin-email').value = email;
+            document.getElementById('fin-salary').value = user.salary_base || 0;
+            document.getElementById('fin-phone').value = user.phone_number || "";
+            document.getElementById('fin-bank').value = user.bank_account || "";
+            document.getElementById('fin-bonus').value = user.salary_bonus || 0;
+            document.getElementById('fin-deduction').value = user.salary_deduction || 0;
+            document.getElementById('modal-finance').classList.remove('hidden');
+        }
+
+        function closeFinanceModal() { document.getElementById('modal-finance').classList.add('hidden'); }
+
+        async function saveFinanceData(e) {
+            e.preventDefault();
+            const email = document.getElementById('fin-email').value;
+            const data = {
+                salary_base: document.getElementById('fin-salary').value,
+                phone_number: document.getElementById('fin-phone').value,
+                bank_account: document.getElementById('fin-bank').value,
+                salary_bonus: document.getElementById('fin-bonus').value,
+                salary_deduction: document.getElementById('fin-deduction').value
+            };
+            await db.collection("users").doc(email).update(data);
+            closeFinanceModal();
+            alert("تم تحديث البيانات المالية بنجاح");
+        }
+    </script>
+</body>
+</html>
