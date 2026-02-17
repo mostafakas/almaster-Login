@@ -7,27 +7,31 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .status-btn { transition: all 0.3s ease; }
-        .status-btn:hover { transform: translateY(-2px); }
         .table-container { height: calc(100vh - 250px); overflow-y: auto; }
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 10px; }
+        .loader { border-top-color: #0ea5e9; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="text-slate-800">
 
+    <div id="payroll-loader" class="fixed inset-0 z-[200] bg-white flex flex-col items-center justify-center">
+        <div class="loader w-12 h-12 border-4 border-slate-200 rounded-full mb-4"></div>
+        <p class="font-bold text-slate-500 animate-pulse">جاري المصادقة وجلب البيانات المالية...</p>
+    </div>
+
     <header class="bg-white shadow-sm h-20 px-6 flex items-center justify-between sticky top-0 z-50">
         <div class="flex items-center gap-4">
-            <div class="bg-primary-600 w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 bg-sky-500">
+            <div class="bg-sky-500 w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
                 <i class="fas fa-money-check-dollar text-xl"></i>
             </div>
             <div>
@@ -45,7 +49,6 @@
     </header>
 
     <main class="p-6 max-w-7xl mx-auto">
-        
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <p class="text-xs font-bold text-slate-400 uppercase mb-2">إجمالي الرواتب</p>
@@ -61,15 +64,15 @@
             </div>
             <div class="bg-sky-500 p-6 rounded-3xl shadow-lg text-white">
                 <p class="text-xs font-bold opacity-80 uppercase mb-2">شهر التقرير</p>
-                <h3 id="current-month" class="text-2xl font-black italic">February 2026</h3>
+                <h3 id="current-month" class="text-xl font-black italic">Loading...</h3>
             </div>
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="overflow-x-auto table-container">
-                <table class="w-full text-right">
-                    <thead class="bg-slate-50 sticky top-0">
-                        <tr class="text-slate-500 text-[11px] font-black uppercase">
+                <table class="w-full text-right border-collapse">
+                    <thead class="bg-slate-50 sticky top-0 z-10">
+                        <tr class="text-slate-500 text-[11px] font-black uppercase border-b border-slate-100">
                             <th class="p-4">الموظف</th>
                             <th class="p-4">الراتب الأساسي</th>
                             <th class="p-4">مكافآت/خصم</th>
@@ -87,7 +90,7 @@
     </main>
 
     <div id="modal-finance" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-fade-in-up">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
             <div class="p-6 border-b flex justify-between items-center">
                 <h3 class="text-lg font-black text-slate-800">تعديل البيانات المالية</h3>
                 <button onclick="closeFinanceModal()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
@@ -97,7 +100,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">الراتب الأساسي (EGP)</label>
-                        <input type="number" id="fin-salary" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-sky-500 font-bold">
+                        <input type="number" id="fin-salary" step="0.01" class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-sky-500 font-bold">
                     </div>
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">رقم الموبايل</label>
@@ -111,11 +114,11 @@
                 <div class="grid grid-cols-2 gap-4 border-t pt-4">
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 text-green-600">إضافات / مكافآت</label>
-                        <input type="number" id="fin-bonus" value="0" class="w-full bg-green-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-green-500 font-bold">
+                        <input type="number" id="fin-bonus" step="0.01" class="w-full bg-green-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-green-500 font-bold">
                     </div>
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 text-red-600">خصومات / سلف</label>
-                        <input type="number" id="fin-deduction" value="0" class="w-full bg-red-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-red-500 font-bold">
+                        <input type="number" id="fin-deduction" step="0.01" class="w-full bg-red-50 border-none rounded-xl px-4 py-3 focus:ring-2 ring-red-500 font-bold">
                     </div>
                 </div>
                 <button type="submit" class="w-full bg-slate-800 text-white font-black py-4 rounded-2xl hover:bg-slate-900 transition shadow-lg">حفظ البيانات المالية</button>
@@ -124,36 +127,60 @@
     </div>
 
     <script>
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
-                const profile = doc.data();
-                // إذا لم يكن أدمن، أعد توجيهه للرئيسية
-                if (profile.role !== 'admin') {
-                    alert("عذراً، هذه الصفحة مخصصة للإدارة فقط.");
-                    window.location.href = 'index.html';
-                }
-            } else {
-                window.location.href = 'index.html'; // لو مش مسجل دخول أصلاً
-            }
-        });
-        // املأ بيانات Firebase الخاصة بك هنا
-        const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
+        // 1. التكوين
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", 
+            authDomain: "almaster-b8c18.firebaseapp.com", 
+            projectId: "almaster-b8c18", 
+            storageBucket: "almaster-b8c18.firebasestorage.app", 
+            messagingSenderId: "884142036232", 
+            appId: "1:884142036232:web:eeb6677d988565653a08bd" 
+        };
+        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
+        const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
 
         let allUsers = [];
 
-        // تشغيل التحميل بمجرد الفتح
-        window.onload = () => {
-            document.getElementById('current-month').innerText = new Intl.DateTimeFormat('ar-EG', { month: 'long', year: 'numeric' }).format(new Date());
+        // 2. حماية الصفحة والمصادقة
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                try {
+                    const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
+                    if (doc.exists && doc.data().role === 'admin') {
+                        // المستخدم أدمن، ابدأ تشغيل الصفحة
+                        document.getElementById('payroll-loader').classList.add('hidden');
+                        initPayrollPage();
+                    } else {
+                        alert("عذراً محيي، هذه الصفحة مخصصة للمدير العام فقط.");
+                        window.location.href = 'index.html';
+                    }
+                } catch (err) {
+                    console.error("Auth Error:", err);
+                    window.location.href = 'index.html';
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function initPayrollPage() {
+            // تحديد الشهر الحالي بالعربي
+            const options = { month: 'long', year: 'numeric' };
+            document.getElementById('current-month').innerText = new Intl.DateTimeFormat('ar-EG', options).format(new Date());
             loadPayrollData();
-        };
+        }
 
         function loadPayrollData() {
+            // الاستماع الحي للبيانات
             db.collection("users").onSnapshot(snapshot => {
                 allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderPayroll();
+            }, error => {
+                console.error("Firestore Error:", error);
+                alert("حدث خطأ في قراءة البيانات، تأكد من إعدادات Firebase Rules.");
             });
         }
 
@@ -167,7 +194,8 @@
             let pendingCount = 0;
 
             allUsers.forEach(u => {
-                if (u.name.toLowerCase().includes(searchTerm)) {
+                const userName = u.name || "بدون اسم";
+                if (userName.toLowerCase().includes(searchTerm)) {
                     const salary = parseFloat(u.salary_base) || 0;
                     const bonus = parseFloat(u.salary_bonus) || 0;
                     const deduction = parseFloat(u.salary_deduction) || 0;
@@ -178,31 +206,31 @@
                     if(status === 'paid') paidCount++; else pendingCount++;
 
                     tbody.innerHTML += `
-                        <tr class="hover:bg-slate-50 transition">
+                        <tr class="hover:bg-slate-50 transition border-b border-slate-50">
                             <td class="p-4">
                                 <div class="flex items-center gap-3">
-                                    <img src="${u.photo || 'https://ui-avatars.com/api/?name=' + u.name}" class="w-10 h-10 rounded-xl object-cover">
+                                    <img src="${u.photo || DEFAULT_PHOTO + userName}" class="w-10 h-10 rounded-xl object-cover border border-slate-100 bg-slate-200">
                                     <div>
-                                        <p class="text-sm font-black text-slate-800">${u.name}</p>
+                                        <p class="text-sm font-black text-slate-800">${userName}</p>
                                         <p class="text-[10px] font-bold text-slate-400 uppercase">${u.title || 'Member'}</p>
                                     </div>
                                 </div>
                             </td>
-                            <td class="p-4 font-bold text-sm">${salary} EGP</td>
+                            <td class="p-4 font-bold text-sm">${salary.toLocaleString()} EGP</td>
                             <td class="p-4 text-xs">
-                                <span class="text-green-600">+${bonus}</span> / 
-                                <span class="text-red-600">-${deduction}</span>
+                                <span class="text-green-600 font-bold">+${bonus}</span> / 
+                                <span class="text-red-600 font-bold">-${deduction}</span>
                             </td>
-                            <td class="p-4 font-black text-sky-600 text-sm">${net} EGP</td>
+                            <td class="p-4 font-black text-sky-600 text-sm">${net.toLocaleString()} EGP</td>
                             <td class="p-4">
-                                <p class="text-[10px] font-black text-slate-700"><i class="fas fa-phone-alt ml-1 opacity-50"></i> ${u.phone_number || '---'}</p>
+                                <p class="text-[10px] font-black text-slate-700 mb-1"><i class="fas fa-phone-alt ml-1 opacity-50"></i> ${u.phone_number || '---'}</p>
                                 <p class="text-[10px] font-black text-slate-400"><i class="fas fa-university ml-1 opacity-50"></i> ${u.bank_account || '---'}</p>
                             </td>
                             <td class="p-4">
                                 ${renderStatusBadge(status, u.id)}
                             </td>
                             <td class="p-4 text-center">
-                                <button onclick="openFinanceModal('${u.id}')" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-800 hover:text-white transition">
+                                <button onclick="openFinanceModal('${u.id}')" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-800 hover:text-white transition flex items-center justify-center mx-auto shadow-sm">
                                     <i class="fas fa-edit"></i>
                                 </button>
                             </td>
@@ -226,10 +254,10 @@
             
             return `
                 <div class="group relative inline-block">
-                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black ${c.color} uppercase tracking-wider">
+                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black ${c.color} uppercase tracking-wider min-w-[110px] justify-center">
                         <i class="fas ${c.icon}"></i> ${c.text}
                     </button>
-                    <div class="hidden group-hover:flex absolute right-0 top-full mt-2 bg-white shadow-2xl rounded-xl border p-1 z-10 flex-col gap-1 w-32">
+                    <div class="hidden group-hover:flex absolute right-0 top-full mt-1 bg-white shadow-2xl rounded-xl border border-slate-100 p-1 z-50 flex-col gap-1 w-32 animate-fade-in">
                         <button onclick="updatePaymentStatus('${email}', 'pending')" class="text-[9px] font-bold p-2 hover:bg-orange-50 text-orange-600 rounded-lg text-right">قيد الانتظار</button>
                         <button onclick="updatePaymentStatus('${email}', 'approved')" class="text-[9px] font-bold p-2 hover:bg-blue-50 text-blue-600 rounded-lg text-right">تم الاعتماد</button>
                         <button onclick="updatePaymentStatus('${email}', 'paid')" class="text-[9px] font-bold p-2 hover:bg-green-50 text-green-600 rounded-lg text-right">تم التحويل</button>
@@ -239,7 +267,11 @@
         }
 
         async function updatePaymentStatus(email, status) {
-            await db.collection("users").doc(email).update({ payment_status: status });
+            try {
+                await db.collection("users").doc(email).update({ payment_status: status });
+            } catch (err) {
+                alert("حدث خطأ أثناء تحديث الحالة: " + err.message);
+            }
         }
 
         function openFinanceModal(email) {
@@ -260,17 +292,20 @@
             e.preventDefault();
             const email = document.getElementById('fin-email').value;
             const data = {
-                salary_base: document.getElementById('fin-salary').value,
+                salary_base: parseFloat(document.getElementById('fin-salary').value) || 0,
                 phone_number: document.getElementById('fin-phone').value,
                 bank_account: document.getElementById('fin-bank').value,
-                salary_bonus: document.getElementById('fin-bonus').value,
-                salary_deduction: document.getElementById('fin-deduction').value
+                salary_bonus: parseFloat(document.getElementById('fin-bonus').value) || 0,
+                salary_deduction: parseFloat(document.getElementById('fin-deduction').value) || 0
             };
-            await db.collection("users").doc(email).update(data);
-            closeFinanceModal();
-            alert("تم تحديث البيانات المالية بنجاح");
+            
+            try {
+                await db.collection("users").doc(email).update(data);
+                closeFinanceModal();
+            } catch (err) {
+                alert("خطأ في الحفظ: " + err.message);
+            }
         }
     </script>
 </body>
-
 </html>
