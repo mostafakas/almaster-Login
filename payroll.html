@@ -297,6 +297,82 @@
                         <h1 style="font-size: 40px; font-weight: 900; margin: 0;">بيان راتب شهري (Payslip)</h1>
                         <p style="font-size: 20px; font-weight: bold; margin-top: 10px;">شركة الماستر تك - Almaster Tech</p>
                     </div>
+                    <div id="report-image-template" style="width: 1240px; min-height: 1754px; padding: 80px; background: #fff; color: #000; direction: rtl; text-align: right;">
+            <div style="border: 1px solid #000; padding: 40px; height: 100%; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #000; padding-bottom: 20px;">
+                    <div style="text-align: right;">
+                        <h1 style="font-size: 32px; font-weight: 900; margin: 0;">Monthly Financial Report</h1>
+                        <p style="font-size: 18px; margin-top: 5px; font-weight: bold;">شركة الماستر تك - ALMASTER TECH</p>
+                    </div>
+                    <div style="text-align: left;">
+                        <p style="font-size: 16px;">تاريخ الاستخراج: <span id="rep-gen-date"></span></p>
+                        <p style="font-size: 16px; font-weight: 900;">تقرير شهر: <span id="rep-month-label"></span></p>
+                    </div>
+                </div>
+                <h3 style="margin-top: 40px; font-size: 20px; border-bottom: 1px solid #000; padding-bottom: 5px;">أولاً: ملخص حركة الخزينة</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <tr style="background: #f2f2f2;"><th style="border: 1px solid #000; padding: 12px;">البيان</th><th style="border: 1px solid #000; padding: 12px;">القيمة (ج.م)</th></tr>
+                    <tr><td style="border: 1px solid #000; padding: 10px;">الرصيد الافتتاحي</td><td id="rep-v-open" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي المقبوضات (الإيداعات)</td><td id="rep-v-in" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي المدفوعات (رواتب + نثريات)</td><td id="rep-v-out" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                    <tr style="font-weight: 900; background: #f2f2f2;"><td style="border: 1px solid #000; padding: 10px;">الرصيد الختامي (السيولة الحالية)</td><td id="rep-v-final" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                </table>
+                <h3 style="margin-top: 40px; font-size: 20px; border-bottom: 1px solid #000; padding-bottom: 5px;">ثانياً: رواتب وأجور الموظفين</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <tr style="background: #f2f2f2;"><th style="border: 1px solid #000; padding: 12px;">البند</th><th style="border: 1px solid #000; padding: 12px;">الإجمالي (ج.م)</th></tr>
+                    <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي الرواتب الأساسية</td><td id="rep-base" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي المكافآت</td><td id="rep-bonus" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي الحوافز</td><td id="rep-incen" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي الخصومات</td><td id="rep-deduct" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                    <tr style="font-weight: 900; background: #f2f2f2;"><td style="border: 1px solid #000; padding: 10px;">صافي الرواتب المدفوعة</td><td id="rep-paid-sal" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                </table>
+                <h3 style="margin-top: 40px; font-size: 20px; border-bottom: 1px solid #000; padding-bottom: 5px;">ثالثاً: كشف المصروفات النثرية</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead style="background: #f2f2f2;"><tr><th style="border: 1px solid #000; padding: 10px;">بيان المصروف</th><th style="border: 1px solid #000; padding: 10px;">التاريخ</th><th style="border: 1px solid #000; padding: 10px;">المبلغ</th></tr></thead>
+                    <tbody id="rep-exp-body"></tbody>
+                    <tr style="font-weight: 900;"><td colspan="2" style="border: 1px solid #000; padding: 10px;">إجمالي النثريات</td><td id="rep-total-exp" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                </table>
+                <div style="margin-top: auto; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; text-align: center; padding-top: 60px;">
+                    <div><p style="font-weight: 900; margin-bottom: 60px;">إعداد / المحاسب</p><p>...........................</p></div>
+                    <div><p style="font-weight: 900; margin-bottom: 60px;">المدير العام</p><p>...........................</p></div>
+                    <div><p style="font-weight: 900; margin-bottom: 60px;">الختم الرسمي</p><div style="width: 100px; height: 100px; border: 1px solid #000; margin: auto;"></div></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="slip-image-template" style="width: 1080px; min-height: 1350px; padding: 80px; background: #fff; color: #000; direction: rtl; text-align: right;">
+            <div style="border: 1px solid #000; padding: 60px; height: 100%; display: flex; flex-direction: column;">
+                <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 40px;">
+                    <h1 style="font-size: 40px; font-weight: 900; margin: 0;">بيان راتب شهري (Payslip)</h1>
+                    <p style="font-size: 20px; font-weight: bold; margin-top: 10px;">شركة الماستر تك - Almaster Tech</p>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 20px; margin-bottom: 40px; border: 1px solid #000; padding: 25px;">
+                    <div><span style="font-weight: 900;">الموظف:</span> <span id="s-name"></span></div>
+                    <div><span style="font-weight: 900;">الوظيفة:</span> <span id="s-title"></span></div>
+                    <div><span style="font-weight: 900;">القسم:</span> <span id="s-dept"></span></div>
+                    <div><span style="font-weight: 900;">رقم الموبايل:</span> <span id="s-phone"></span></div>
+                    <div><span style="font-weight: 900;">عن شهر:</span> <span id="s-month"></span></div>
+                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="background: #f2f2f2;"><th style="border: 1px solid #000; padding: 15px;">المستحقات (Earnings)</th><th style="border: 1px solid #000; padding: 15px;">القيمة</th><th style="border: 1px solid #000; padding: 15px;">الاستقطاعات (Deductions)</th><th style="border: 1px solid #000; padding: 15px;">القيمة</th></tr>
+                    <tr><td style="border: 1px solid #000; padding: 12px;">الراتب الأساسي</td><td id="s-base" style="border: 1px solid #000; padding: 12px; text-align: center;"></td><td id="s-ded-list" colspan="2" rowspan="3" style="border: 1px solid #000; vertical-align: top; font-size: 14px; padding: 10px;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 12px;">مكافآت</td><td id="s-bonus" style="border: 1px solid #000; padding: 12px; text-align: center;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 12px;">حوافز أداء</td><td id="s-incen" style="border: 1px solid #000; padding: 12px; text-align: center;"></td></tr>
+                    <tr style="font-weight: 900; background: #f2f2f2;">
+                        <td style="border: 1px solid #000; padding: 12px;">إجمالي المستحقات</td><td id="s-total-plus" style="border: 1px solid #000; padding: 12px; text-align: center;"></td>
+                        <td style="border: 1px solid #000; padding: 12px;">إجمالي الخصومات</td><td id="s-total-minus" style="border: 1px solid #000; padding: 12px; text-align: center;"></td>
+                    </tr>
+                </table>
+                <div style="margin-top: 50px; border: 4px solid #000; padding: 30px; text-align: center;">
+                    <p style="font-size: 24px; font-weight: 900;">صافي الراتب المستحق (Net Salary)</p>
+                    <h2 id="s-net" style="font-size: 60px; font-weight: 900; margin: 10px 0;"></h2>
+                </div>
+                <div style="margin-top: auto; display: flex; justify-content: space-between; text-align: center; padding-top: 40px;">
+                    <div style="flex: 1;"><p style="font-weight: 900; margin-bottom: 60px;">توقيع الموظف</p><p>...........................</p></div>
+                    <div style="flex: 1;"><p style="font-weight: 900; margin-bottom: 60px;">اعتماد الإدارة</p><div style="width: 90px; height: 90px; border: 1px solid #000; margin: auto;"></div></div>
+                </div>
+            </div>
+        </div>
             
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 20px; margin-bottom: 40px; border: 1px solid #000; padding: 25px;">
                         <div><span style="font-weight: 900;">الموظف:</span> <span id="s-name"></span></div>
@@ -708,3 +784,4 @@
     </script>
 </body>
 </html>
+
