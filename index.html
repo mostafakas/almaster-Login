@@ -1018,110 +1018,89 @@
             }, 60000);
         }
         function listenToAllUsers() {
-            db.collection('users').onSnapshot(snapshot => {
-                allUsersData = [];
+                    db.collection('users').onSnapshot(snapshot => {
+                        allUsersData = [];
+                        
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            allUsersData.push(data);
                 
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    allUsersData.push(data);
-        
-                    // 1. تحديث البروفايل الخاص بي
-                    if (currentUser && data.email === currentUser.email) { 
-                        const oldTasks = userProfile.tasks || [];
-                        const newTasks = data.tasks || [];
-                        
-                        // إشعار بمهمة جديدة
-                        if (newTasks.length > oldTasks.length) {
-                            playNotification();
-                            if (Notification.permission === "granted") {
-                                new Notification("📋 مهمة جديدة", { body: "تم إسناد مهمة جديدة إليك", icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png" });
+                            // 1. تحديث البروفايل الخاص بي
+                            if (currentUser && data.email === currentUser.email.toLowerCase()) { 
+                                const oldTasks = userProfile ? (userProfile.tasks || []) : [];
+                                const newTasks = data.tasks || [];
+                                
+                                // إشعار بمهمة جديدة
+                                if (newTasks.length > oldTasks.length) {
+                                    playNotification();
+                                    if (Notification.permission === "granted") {
+                                        new Notification("📋 مهمة جديدة", { body: "تم إسناد مهمة جديدة إليك", icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png" });
+                                    }
+                                }
+                                userProfile = data; // تحديث البروفايل بالبيانات الجديدة
+                                
+                                // تحديث بادج المهام
+                                const badge = document.getElementById('task-badge');
+                                if (newTasks.length > 0) {
+                                    badge.innerText = newTasks.length;
+                                    badge.classList.remove('hidden');
+                                } else {
+                                    badge.classList.add('hidden');
+                                }
                             }
-                        }
-                        userProfile = data; 
-                        
-                        // تحديث بادج المهام
-                        const badge = document.getElementById('task-badge');
-                        if (newTasks.length > 0) {
-                            badge.innerText = newTasks.length;
-                            badge.classList.remove('hidden');
-                        } else {
-                            badge.classList.add('hidden');
-                        }
-                    }
+                
+                            // 2. تحديث شات وتفاصيل التاسك المفتوح
+                            const currentOpenedTaskId = document.getElementById('current-task-id').value;
+                            const currentOpenedTaskOwner = document.getElementById('current-task-owner-email').value;
+                
+                            if (currentOpenedTaskId && currentOpenedTaskOwner === data.email) {
+                                const updatedTasks = data.tasks || [];
+                                const openedTask = updatedTasks.find(t => t.id == currentOpenedTaskId);
+                                
+                                if (openedTask) {
+                                    renderTaskComments(openedTask.comments || [], openedTask.ownerEmail);
+                                    updateTaskDetailHeader(openedTask);
+                                }
+                            }
+                        }); // قفلة الـ forEach الصحيحة
+                
+                        // 3. إعادة رسم الشبكة وتحديث التقارير
+                        renderGrid();
+                        updateReportDropdown();
+                        if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
         
-                    // 2. تحديث شات وعنوان التاسك المفتوح حالياً (التفاصيل)
-                    const currentOpenedTaskId = document.getElementById('current-task-id').value;
-                    const currentOpenedTaskOwner = document.getElementById('current-task-owner-email').value;
-        
-                    if (currentOpenedTaskId && currentOpenedTaskOwner === data.email) {
-                        const updatedTasks = data.tasks || [];
-                        const openedTask = updatedTasks.find(t => t.id == currentOpenedTaskId);
-                        
-                        if (openedTask) {
-                            renderTaskComments(openedTask.comments || [], openedTask.ownerEmail);
-                            updateTaskDetailHeader(openedTask);
+                        // 4. تحديث قائمة المهام لو المودال مفتوح
+                        const taskModal = document.getElementById('modal-task-center');
+                        if (taskModal && !taskModal.classList.contains('hidden')) {
+                            refreshTaskSidebar(); // دالة مساعدة لتقليل تكرار الكود
                         }
-                    }
-                });
+                    });
+                }
         
-                // 3. إعادة رسم الشبكة الرئيسية
-                renderGrid();
-                if (currentUser && data.email === currentUser.email.toLowerCase()) {
-                userProfile = data; // تحديث البروفايل المحلي ببيانات السيرفر الحقيقية
-                // ... باقي الكود
-            }
-                            
-                // 4. (التصحيح هنا) تحديث القائمة الجانبية للمهام فوراً
-                const taskModal = document.getElementById('modal-task-center');
-                if (!taskModal.classList.contains('hidden')) {
+                // دالة مساعدة ضيفها عشان الكود ميكبرش منك بزيادة
+                function refreshTaskSidebar() {
                     let tasksToShow = [];
                     const isAdmin = userProfile.role === 'admin';
-                    const isManager = hasPermission('can_manage_tasks'); // ليدر أو سوبر فايزر
+                    const isManager = hasPermission('can_manage_tasks');
         
                     if(isAdmin) {
-                        // المدير يرى كل شيء
                         allUsersData.forEach(u => {
-                            if(u.tasks) {
-                                u.tasks.forEach(t => {
-                                    const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
-                                    tasksToShow.push(taskWithInfo);
-                                });
-                            }
+                            if(u.tasks) u.tasks.forEach(t => tasksToShow.push({...t, ownerName: u.name, ownerEmail: u.email}));
                         });
                     } else {
-                        // أ. مهامي أنا (المسندة لي)
-                        if(userProfile.tasks) {
-                            userProfile.tasks.forEach(t => {
-                                const taskWithInfo = {...t, ownerName: "Me", ownerEmail: userProfile.email};
-                                tasksToShow.push(taskWithInfo);
-                            });
-                        }
-        
-                        // ب. (الجزء المضاف) المهام التي أنشأتها أنا للآخرين
+                        if(userProfile.tasks) userProfile.tasks.forEach(t => tasksToShow.push({...t, ownerName: "Me", ownerEmail: userProfile.email}));
                         if (isManager) {
                             allUsersData.forEach(u => {
-                                if (u.email === currentUser.email) return; // تخطي نفسي
-                                if (u.tasks) {
+                                if (u.email !== currentUser.email && u.tasks) {
                                     u.tasks.forEach(t => {
-                                        // الشرط: هل إيميل المنشئ هو إيميلي؟
-                                        if (t.createdByEmail === currentUser.email) {
-                                            const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
-                                            tasksToShow.push(taskWithInfo);
-                                        }
+                                        if (t.createdByEmail === currentUser.email) tasksToShow.push({...t, ownerName: u.name, ownerEmail: u.email});
                                     });
                                 }
                             });
                         }
                     }
-                    
-                    // إعادة الرسم
                     renderTaskList(tasksToShow);
                 }
-        
-                updateReportDropdown();
-                if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
-            });
-        }
         function setFilter(status) {
             currentFilter = status;
             document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -3287,6 +3266,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
