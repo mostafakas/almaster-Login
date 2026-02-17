@@ -5,6 +5,7 @@ const CACHE_NAME = 'almaster-cache-v1';
 const urlsToCache = [
   './',
   './index.html',
+  '/payroll.html', // أضف هذا السطر هنا
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
@@ -35,4 +36,5 @@ self.addEventListener('fetch', event => {
       return caches.match(event.request);
     })
   );
+
 });
