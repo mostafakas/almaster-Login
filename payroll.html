@@ -231,63 +231,113 @@
         </div>
     </div>
 
-    <div id="report-image-template" style="width: 1920px; height: 1080px; padding: 60px; background: #fff;">
-        <div style="border: 6px solid #1e293b; padding: 60px; height: 100%; border-radius: 60px; position: relative;">
-            <div style="text-align: center; border-bottom: 10px solid #1e293b; padding-bottom: 30px; margin-bottom: 50px;">
-                <h1 style="font-size: 84px; font-weight: 900; color: #1e293b; margin: 0;">Monthly Financial Report</h1>
-                <p style="font-size: 36px; color: #64748b; font-weight: 900; margin-top: 10px;">ALMASTER TECH - <span id="rep-date"></span></p>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px;">
-                <div style="background: #f8fafc; padding: 40px; border-radius: 40px; font-size: 32px; line-height: 2.2;">
-                    <h3 style="font-weight: 900; border-bottom: 3px solid #e2e8f0; margin-bottom: 30px; color: #1e293b;">📌 قسم الرواتب</h3>
-                    <p>إجمالي الأساسي: <span id="rep-base" style="float: left; font-weight: 900;"></span></p>
-                    <p>إجمالي المكافآت: <span id="rep-bonus" style="float: left; font-weight: 900; color: #10b981;"></span></p>
-                    <p>إجمالي الحوافز: <span id="rep-incen" style="float: left; font-weight: 900; color: #3b82f6;"></span></p>
-                    <p>إجمالي الخصومات: <span id="rep-deduct" style="float: left; font-weight: 900; color: #ef4444;"></span></p>
-                    <div style="font-size: 42px; border-top: 5px solid #1e293b; margin-top: 30px; padding-top: 20px;">الصافي المدفوع: <span id="rep-paid-sal" style="float: left; font-weight: 900; color: #10b981;"></span></div>
+            <div id="report-image-template" style="width: 1920px; height: 1080px; padding: 60px; background: #ffffff; color: #1e293b; direction: ltr;">
+                <div style="border: 2px solid #e2e8f0; height: 100%; padding: 50px; border-radius: 40px; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 8px solid #1e293b; padding-bottom: 30px; margin-bottom: 40px;">
+                        <div style="text-align: left;">
+                            <h1 style="font-size: 85px; font-weight: 900; color: #1e293b; margin: 0; line-height: 1;">Monthly Financial Report</h1>
+                            <p style="font-size: 35px; font-weight: 700; color: #64748b; margin-top: 15px;">ALMASTER TECH - <span id="rep-date" style="color: #3b82f6;"></span></p>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="background: #1e293b; color: white; padding: 15px 40px; border-radius: 15px; font-size: 30px; font-weight: 900;">OFFICIAL DOCUMENT</div>
+                        </div>
+                    </div>
+            
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; flex-grow: 1;">
+                        
+                        <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 30px; padding: 35px;">
+                            <h3 style="font-size: 38px; font-weight: 900; color: #1e293b; border-bottom: 3px solid #3b82f6; padding-bottom: 15px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px;"><i class="fas fa-users"></i> Salaries Dept.</h3>
+                            <div style="font-size: 28px; line-height: 2.2; font-weight: 600;">
+                                <div style="display: flex; justify-content: space-between;"><span>Base Salaries:</span><span id="rep-base"></span></div>
+                                <div style="display: flex; justify-content: space-between; color: #10b981;"><span>Total Bonuses:</span><span id="rep-bonus"></span></div>
+                                <div style="display: flex; justify-content: space-between; color: #3b82f6;"><span>Total Incentives:</span><span id="rep-incen"></span></div>
+                                <div style="display: flex; justify-content: space-between; color: #ef4444;"><span>Total Deductions:</span><span id="rep-deduct"></span></div>
+                                <div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #cbd5e1; font-size: 34px; font-weight: 900; color: #1e293b; display: flex; justify-content: space-between;">
+                                    <span>Net Paid:</span><span id="rep-paid-sal" style="color: #10b981;"></span>
+                                </div>
+                            </div>
+                        </div>
+            
+                        <div style="background: #ffffff; border: 2px solid #e2e8f0; border-radius: 30px; padding: 35px;">
+                            <h3 style="font-size: 38px; font-weight: 900; color: #1e293b; border-bottom: 3px solid #ef4444; padding-bottom: 15px; margin-bottom: 25px;">💸 Expenses</h3>
+                            <div id="rep-expenses-list" style="font-size: 24px; line-height: 1.8; color: #475569; max-height: 400px; overflow: hidden;"></div>
+                            <div style="margin-top: 25px; font-size: 34px; font-weight: 900; color: #ef4444; border-top: 2px solid #e2e8f0; padding-top: 15px; display: flex; justify-content: space-between;">
+                                <span>Total Expenses:</span><span id="rep-total-exp"></span>
+                            </div>
+                        </div>
+            
+                        <div style="background: #1e293b; color: white; border-radius: 30px; padding: 35px;">
+                            <h3 style="font-size: 38px; font-weight: 900; border-bottom: 3px solid #10b981; padding-bottom: 15px; margin-bottom: 25px;">🏦 Treasury</h3>
+                            <div style="font-size: 28px; line-height: 2.2;">
+                                <div style="display: flex; justify-content: space-between; opacity: 0.8;"><span>Opening Balance:</span><span id="rep-v-open"></span></div>
+                                <div style="display: flex; justify-content: space-between; color: #4ade80;"><span>Total Inbound:</span><span id="rep-v-in"></span></div>
+                                <div style="display: flex; justify-content: space-between; color: #fb7185;"><span>Total Outbound:</span><span id="rep-v-out"></span></div>
+                                <div style="margin-top: 100px; padding: 30px; background: rgba(255,255,255,0.05); border-radius: 20px; border-left: 8px solid #10b981;">
+                                    <p style="font-size: 26px; opacity: 0.7;">Closing Balance</p>
+                                    <h4 id="rep-v-final" style="font-size: 60px; font-weight: 900; color: #4ade80; margin: 0;"></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            
+                    <div style="margin-top: 40px; display: flex; gap: 40px; align-items: stretch;">
+                        <div style="flex: 2; background: #f1f5f9; padding: 30px; border-radius: 25px;">
+                            <h4 style="font-size: 30px; font-weight: 900; margin-bottom: 10px;">📊 Financial Summary & Analysis</h4>
+                            <p id="rep-analysis" style="font-size: 26px; color: #475569; line-height: 1.6; font-weight: 600;">The monthly cash flow analysis indicates stable operations. All employee liabilities and operational expenses were covered. Net cash flow remains within the projected safety margin for the period.</p>
+                        </div>
+                        <div style="flex: 1; border: 4px double #1e293b; border-radius: 25px; padding: 30px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                            <p style="font-size: 24px; font-weight: 900; color: #1e293b;">Verified & Approved By</p>
+                            <p style="font-size: 18px; color: #94a3b8; margin-top: 40px;">ALMASTER FINANCE UNIT</p>
+                        </div>
+                    </div>
                 </div>
-                <div style="background: #1e293b; color: #fff; padding: 40px; border-radius: 40px; font-size: 32px; line-height: 2.2;">
-                    <h3 style="font-weight: 900; border-bottom: 3px solid #334155; margin-bottom: 30px; color: #4ade80;">💰 قسم الخزينة</h3>
-                    <p>الرصيد الافتتاحي: <span id="rep-v-open" style="float: left;"></span></p>
-                    <p>إجمالي المقبوضات: <span id="rep-v-in" style="float: left; color: #4ade80;"></span></p>
-                    <p>إجمالي المدفوعات: <span id="rep-v-out" style="float: left; color: #f87171;"></span></p>
-                    <div style="font-size: 60px; border-top: 5px solid #4ade80; margin-top: 50px; padding-top: 30px; color: #4ade80; font-weight: 900;">الرصيد الختامي: <span id="rep-v-final" style="float: left;"></span></div>
+            </div>
+            
+            <div id="slip-image-template" style="width: 1080px; height: 1350px; padding: 70px; background: #ffffff; direction: rtl; text-align: right;">
+                <div style="border: 1px solid #1e293b; height: 100%; padding: 60px; border-radius: 50px; position: relative; background: #fff; display: flex; flex-direction: column;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1e293b; padding-bottom: 30px; margin-bottom: 50px;">
+                        <div>
+                            <h1 style="font-size: 65px; font-weight: 900; color: #1e293b;">بيان راتب شهري</h1>
+                            <p style="font-size: 32px; color: #10b981; font-weight: 900; margin-top: 10px;">شركة الماستر تك - <span id="s-month"></span></p>
+                        </div>
+                        <div style="width: 180px; height: 180px; background: #f8fafc; border-radius: 30px; display: flex; align-items: center; justify-content: center; border: 2px dashed #cbd5e1; font-weight: 900; font-size: 24px; color: #94a3b8;">شعار الشركة</div>
+                    </div>
+            
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 50px; background: #f8fafc; padding: 40px; border-radius: 35px; border: 1px solid #e2e8f0;">
+                        <div><p style="font-size: 22px; color: #64748b; font-weight: 700;">اسم الموظف</p><p id="s-name" style="font-size: 34px; font-weight: 900; color: #1e293b;"></p></div>
+                        <div><p style="font-size: 22px; color: #64748b; font-weight: 700;">المسمى الوظيفي</p><p id="s-title" style="font-size: 34px; font-weight: 900; color: #1e293b;"></p></div>
+                        <div><p style="font-size: 22px; color: #64748b; font-weight: 700;">القسم</p><p id="s-dept" style="font-size: 30px; font-weight: 700; color: #334155;"></p></div>
+                        <div><p style="font-size: 22px; color: #64748b; font-weight: 700;">رقم الموبايل</p><p id="s-phone" style="font-size: 30px; font-weight: 700; color: #334155;"></p></div>
+                    </div>
+            
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; flex-grow: 1;">
+                        <div style="border: 2px solid #e2e8f0; padding: 40px; border-radius: 40px; background: white;">
+                            <h3 style="font-size: 35px; font-weight: 900; color: #1e293b; border-bottom: 4px solid #10b981; padding-bottom: 15px; margin-bottom: 30px;">المستحقات (+)</h3>
+                            <div style="font-size: 30px; line-height: 2.2;">
+                                <div style="display: flex; justify-content: space-between;"><span>الراتب الأساسي</span><span id="s-base"></span></div>
+                                <div style="display: flex; justify-content: space-between; color: #3b82f6;"><span>حوافز الأداء</span><span id="s-incen"></span></div>
+                                <div style="display: flex; justify-content: space-between; color: #10b981;"><span>المكافآت</span><span id="s-bonus"></span></div>
+                            </div>
+                        </div>
+            
+                        <div style="border: 2px solid #fee2e2; padding: 40px; border-radius: 40px; background: white;">
+                            <h3 style="font-size: 35px; font-weight: 900; color: #ef4444; border-bottom: 4px solid #ef4444; padding-bottom: 15px; margin-bottom: 30px;">الخصومات (-)</h3>
+                            <div id="s-deduct-list" style="font-size: 24px; line-height: 1.8; min-height: 150px;"></div>
+                        </div>
+                    </div>
+            
+                    <div style="margin-top: 60px; background: #1e293b; padding: 50px; border-radius: 40px; text-align: center; color: #ffffff; box-shadow: 0 25px 50px -12px rgba(30, 41, 59, 0.5);">
+                        <p style="font-size: 32px; opacity: 0.8; margin-bottom: 10px; font-weight: 700;">صافي المبلغ المودع في حسابكم</p>
+                        <h2 id="s-net" style="font-size: 110px; font-weight: 900; margin: 0; color: #4ade80;"></h2>
+                    </div>
+            
+                    <div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 26px; color: #94a3b8; font-weight: 700;">
+                        <p>تاريخ التحويل: <span id="s-date" style="color: #1e293b;"></span></p>
+                        <p>وسيلة الدفع: <span style="color: #1e293b;">Instapay / Bank</span></p>
+                    </div>
                 </div>
             </div>
-            <p style="margin-top: 50px; font-size: 24px; color: #94a3b8; font-weight: bold; text-align: left;">ALMASTER FINANCE UNIT | OFFICIAL RECORD</p>
-        </div>
-    </div>
-
-    <div id="slip-image-template" style="width: 1080px; height: 1350px; padding: 80px; text-align: right;" dir="rtl">
-        <div style="border: 2px solid #1e293b; padding: 70px; height: 100%; border-radius: 60px; background: #fff; position: relative;">
-            <div style="text-align: center; margin-bottom: 60px;">
-                <h1 style="font-size: 72px; font-weight: 900; color: #1e293b; margin-bottom: 15px;">بيان راتب شهري</h1>
-                <p style="font-size: 34px; color: #10b981; font-weight: 900;">شركة الماستر تك - <span id="s-month"></span></p>
-            </div>
-            <div style="background: #f8fafc; padding: 50px; border-radius: 40px; margin-bottom: 50px; font-size: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border: 1px solid #e2e8f0;">
-                <div>الاسم: <span id="s-name" style="font-weight: 900;"></span></div>
-                <div>الوظيفة: <span id="s-title" style="font-weight: 900;"></span></div>
-                <div>القسم: <span id="s-dept" style="font-weight: 900;"></span></div>
-                <div>الموبايل: <span id="s-phone" style="font-weight: 900;"></span></div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; font-size: 32px;">
-                <div style="border-right: 4px solid #10b981; padding-right: 30px;">
-                    <h3 style="color: #10b981; font-weight: 900; margin-bottom: 20px;">المستحقات (+)</h3>
-                    <p style="display: flex; justify-content: space-between;">الأساسي: <span id="s-base"></span></p>
-                    <p style="display: flex; justify-content: space-between;">مكافآت: <span id="s-bonus"></span></p>
-                    <p style="display: flex; justify-content: space-between;">حوافز: <span id="s-incen"></span></p>
-                </div>
-                <div style="border-right: 4px solid #ef4444; padding-right: 30px;">
-                    <h3 style="color: #ef4444; font-weight: 900; margin-bottom: 20px;">الخصومات (-)</h3>
-                    <div id="s-deduct-list" style="font-size: 24px;"></div>
-                </div>
-            </div>
-            <div style="margin-top: 100px; text-align: center; background: #1e293b; color: #fff; padding: 60px; border-radius: 50px;">
-                <p style="font-size: 32px; opacity: 0.8; margin-bottom: 5px;">صافي المبلغ المستلم</p>
-                <h2 id="s-net" style="font-size: 110px; font-weight: 900;"></h2>
-            </div>
-        </div>
-    </div>
 
     <div id="modal-vault" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-[35px] shadow-2xl p-8 text-right modal-animate">
@@ -503,51 +553,89 @@
         }
 
         async function generateMonthlyReportImage() {
-            const loader = document.getElementById('payroll-loader'); loader.classList.remove('hidden');
-            const picker = document.getElementById('month-picker'); document.getElementById('rep-date').innerText = picker.options[picker.selectedIndex].text;
-            let bT=0, boT=0, iT=0, dT=0, paidS=0;
-            allUsers.forEach(u => {
-                const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
-                const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount)||0), 0);
-                bT += (parseFloat(u.salary_base)||0); boT += (parseFloat(m.bonus)||0); iT += (parseFloat(m.incentive)||0); dT += dSum;
-                if(m.status === 'paid') paidS += (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum;
-            });
-            document.getElementById('rep-base').innerText = bT.toLocaleString();
-            document.getElementById('rep-bonus').innerText = boT.toLocaleString();
-            document.getElementById('rep-incen').innerText = iT.toLocaleString();
-            document.getElementById('rep-deduct').innerText = dT.toLocaleString();
-            document.getElementById('rep-paid-sal').innerText = paidS.toLocaleString();
-            const vCap = parseFloat(monthData.vault)||0;
-            const expT = (monthData.expenses||[]).reduce((s, e)=>s+(parseFloat(e.amount)||0),0);
-            const deps = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0),0);
-            document.getElementById('rep-v-open').innerText = vCap.toLocaleString();
-            document.getElementById('rep-v-in').innerText = deps.toLocaleString();
-            document.getElementById('rep-v-out').innerText = (paidS + expT).toLocaleString();
-            document.getElementById('rep-v-final').innerText = (vCap + deps - (paidS + expT)).toLocaleString();
-
-            html2canvas(document.getElementById('report-image-template'), { scale: 1.5 }).then(canvas => {
-                const a = document.createElement('a'); a.download = `Almaster_Report_${currentSelectedMonth}.png`; a.href = canvas.toDataURL(); a.click();
-                loader.classList.add('hidden');
-            });
-        }
-
+                const loader = document.getElementById('payroll-loader');
+                loader.classList.remove('hidden');
+                
+                const picker = document.getElementById('month-picker');
+                const monthLabel = picker.options[picker.selectedIndex].text;
+                document.getElementById('rep-date').innerText = monthLabel;
+            
+                let bT=0, boT=0, iT=0, dT=0, paidSal=0;
+                allUsers.forEach(u => {
+                    const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
+                    const base = parseFloat(u.salary_base)||0;
+                    const bonus = parseFloat(m.bonus)||0;
+                    const incen = parseFloat(m.incentive)||0;
+                    const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount)||0), 0);
+                    const net = base + bonus + incen - dSum;
+            
+                    bT += base; boT += bonus; iT += incen; dT += dSum;
+                    if(m.status === 'paid') paidSal += net;
+                });
+            
+                // تعبئة البيانات
+                document.getElementById('rep-base').innerText = bT.toLocaleString() + " ج.م";
+                document.getElementById('rep-bonus').innerText = boT.toLocaleString() + " ج.م";
+                document.getElementById('rep-incen').innerText = iT.toLocaleString() + " ج.م";
+                document.getElementById('rep-deduct').innerText = dT.toLocaleString() + " ج.م";
+                document.getElementById('rep-paid-sal').innerText = paidSal.toLocaleString() + " ج.م";
+            
+                const vCap = parseFloat(monthData.vault)||0;
+                const expT = (monthData.expenses||[]).reduce((s, e)=>s+(parseFloat(e.amount)||0), 0);
+                const deps = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0), 0);
+            
+                document.getElementById('rep-v-open').innerText = vCap.toLocaleString() + " ج.م";
+                document.getElementById('rep-v-in').innerText = deps.toLocaleString() + " ج.م";
+                document.getElementById('rep-v-out').innerText = (paidSal + expT).toLocaleString() + " ج.م";
+                document.getElementById('rep-v-final').innerText = (vCap + deps - (paidSal + expT)).toLocaleString() + " ج.م";
+                document.getElementById('rep-total-exp').innerText = expT.toLocaleString() + " ج.م";
+            
+                const expList = document.getElementById('rep-expenses-list');
+                expList.innerHTML = '';
+                (monthData.expenses || []).slice(0, 8).forEach(e => {
+                    expList.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>${e.title}</span><span style="font-weight:900;">${e.amount} ج.م</span></div>`;
+                });
+            
+                html2canvas(document.getElementById('report-image-template'), { scale: 1.5, useCORS: true }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `Financial_Report_Almaster_${currentSelectedMonth}.png`;
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                    loader.classList.add('hidden');
+                });
+            }
         async function generateSlipImage(email) {
             const u = allUsers.find(x => x.id === email);
             const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
-            document.getElementById('s-month').innerText = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
+            const monthLabel = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
+            
+            document.getElementById('s-month').innerText = monthLabel;
             document.getElementById('s-name').innerText = u.name;
             document.getElementById('s-title').innerText = u.title || "---";
             document.getElementById('s-dept').innerText = u.department || "---";
             document.getElementById('s-phone').innerText = u.phone_number || "---";
+        
             const base = parseFloat(u.salary_base)||0, bonus = parseFloat(m.bonus)||0, incen = parseFloat(m.incentive)||0;
-            document.getElementById('s-base').innerText = base.toLocaleString();
-            document.getElementById('s-bonus').innerText = bonus.toLocaleString();
-            document.getElementById('s-incen').innerText = incen.toLocaleString();
-            const dList = document.getElementById('s-deduct-list'); dList.innerHTML = ''; let dSum = 0;
-            (m.deductions || []).forEach(d => { dSum += parseFloat(d.amount); dList.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>• ${d.reason}</span><span style="color:#ef4444">-${d.amount}</span></div>`; });
-            document.getElementById('s-net').innerText = (base + bonus + incen - dSum).toLocaleString() + " EGP";
-            html2canvas(document.getElementById('slip-image-template'), { scale: 2 }).then(canvas => {
-                const a = document.createElement('a'); a.download = `Slip_${u.name}.png`; a.href = canvas.toDataURL(); a.click();
+            document.getElementById('s-base').innerText = base.toLocaleString() + " ج.م";
+            document.getElementById('s-bonus').innerText = bonus.toLocaleString() + " ج.م";
+            document.getElementById('s-incen').innerText = incen.toLocaleString() + " ج.م";
+        
+            const dList = document.getElementById('s-deduct-list');
+            dList.innerHTML = ''; let dSum = 0;
+            (m.deductions || []).forEach(d => {
+                dSum += parseFloat(d.amount);
+                dList.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:12px;"><span>• ${d.reason}</span><span style="color:#ef4444; font-weight:900;">-${d.amount} ج.م</span></div>`;
+            });
+            
+            const net = base + bonus + incen - dSum;
+            document.getElementById('s-net').innerText = net.toLocaleString() + " ج.م";
+            document.getElementById('s-date').innerText = new Date().toLocaleDateString('ar-EG');
+        
+            html2canvas(document.getElementById('slip-image-template'), { scale: 2, useCORS: true }).then(canvas => {
+                const a = document.createElement('a');
+                a.download = `SalarySlip_${u.name}_${currentSelectedMonth}.png`;
+                a.href = canvas.toDataURL("image/png");
+                a.click();
             });
         }
 
@@ -628,3 +716,4 @@
     </script>
 </body>
 </html>
+
