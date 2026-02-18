@@ -373,7 +373,9 @@
             <div class="flex items-center gap-3 relative">
                 
                 <img src="MASTER_LOGO_WHPNG.png" class="h-8 w-auto object-contain opacity-80 hidden md:block" alt="Logo">
-                <button onclick="window.location.href='payroll.html'" class="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition-all border border-green-200 group">
+                <button onclick="window.location.href='payroll.html'" class="flex items-center gap-2 px-4 py-2 ...">
+                
+                <button id="admin-payroll-btn" onclick="window.location.href='payroll.html'" class="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition-all border border-green-200 group">
                     <i class="fas fa-money-bill-wave"></i>
                     <span class="text-xs font-bold hidden sm:block">إدارة المرتبات</span>
                 </button>
@@ -836,70 +838,73 @@
             auth.signOut().then(() => location.reload());
         }
 
-      function initSystem() {
-    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') { 
-        Notification.requestPermission(); 
-    }
-    
-    document.getElementById('loader').classList.add('hidden-section');
-    document.getElementById('view-login').classList.add('hidden-section');
-    document.getElementById('view-system').classList.remove('hidden-section');
-    document.getElementById('chat-fab').classList.remove('hidden-section');
-    
-    document.getElementById('header-user-name').innerText = userProfile.name;
-    let roleName = 'موظف';
-    if(userProfile.role === 'admin') roleName = 'مدير النظام';
-    else if(userProfile.role === 'supervisor') roleName = 'مشرف';
-    else if(userProfile.role === 'leader') roleName = 'تيم ليدر';
-    
-    document.getElementById('header-user-role').innerText = roleName;
-    document.getElementById('header-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
-    
-    document.getElementById('menu-user-name').innerText = userProfile.name;
-    document.getElementById('menu-user-role').innerText = roleName;
-    document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
-    
-    const adminOptionsDiv = document.getElementById('admin-options');
-    adminOptionsDiv.classList.add('hidden-section'); 
-    
-    if (userProfile.role === 'admin' || (userProfile.permissions && Object.values(userProfile.permissions).some(v => v === true))) {
-        adminOptionsDiv.classList.remove('hidden-section');
-        const btns = adminOptionsDiv.children; 
-        if (!hasPermission('can_archive_chat')) btns[1].classList.add('hidden-section');
-        if (!hasPermission('can_archive_chat')) btns[2].classList.add('hidden-section');
-        if (!hasPermission('can_manage_users')) btns[3].classList.add('hidden-section');
-        if (!hasPermission('can_view_reports')) btns[4].classList.add('hidden-section');
-    }
-    
-    // الترتيب الصحيح لمنع التعليق:
-    // 1. تحديث التاريخ المحلي أولاً "صمتاً"
-    const today = moment().format('YYYY-MM-DD');
-    localStorage.setItem('last_daily_reset_date', today);
-
-    // 2. الفحص الفوري (بدون تمرير true عشان ميعملش ريفريش أول ما يفتح)
-    checkAndResetCounters(false); 
-
-    // 3. تشغيل مراقب منتصف الليل
-    startDailyAutoWatcher(); 
-
-    listenToAllUsers();
-    initChat();
-    listenToPrivateMessages(); 
-    startIdleTracker();
-    setInterval(updateTimers, 1000);
-    
-    window.addEventListener('mousemove', resetIdleTimer);
-    window.addEventListener('keydown', resetIdleTimer);
-    if (userProfile.role !== 'admin') { listenForScreenshotRequests(); }
-
-    if(!quillEditor) {
-        quillEditor = new Quill('#editor-container', {
-            theme: 'snow',
-            placeholder: 'اكتب تفاصيل المهمة هنا...',
-            modules: { toolbar: [[{ 'header': [1, 2, false] }], ['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], [{ 'direction': 'rtl' }], ['link']] }
-        });
-    }
-}
+              function initSystem() {
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') { 
+                Notification.requestPermission(); 
+            }
+            
+            document.getElementById('loader').classList.add('hidden-section');
+            document.getElementById('view-login').classList.add('hidden-section');
+            document.getElementById('view-system').classList.remove('hidden-section');
+            document.getElementById('chat-fab').classList.remove('hidden-section');
+            
+            document.getElementById('header-user-name').innerText = userProfile.name;
+            let roleName = 'موظف';
+            if(userProfile.role === 'admin') roleName = 'مدير النظام';
+            else if(userProfile.role === 'supervisor') roleName = 'مشرف';
+            else if(userProfile.role === 'leader') roleName = 'تيم ليدر';
+            
+            document.getElementById('header-user-role').innerText = roleName;
+            document.getElementById('header-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
+            
+            document.getElementById('menu-user-name').innerText = userProfile.name;
+            document.getElementById('menu-user-role').innerText = roleName;
+            document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
+            
+            // إخفاء زر المرتبات عن غير الأدمن
+            const payrollBtn = document.getElementById('admin-payroll-btn');
+            if (payrollBtn) {
+                if (userProfile.role === 'admin') {
+                    payrollBtn.classList.remove('hidden-section');
+                } else {
+                    payrollBtn.classList.add('hidden-section');
+                }
+            }
+        
+            const adminOptionsDiv = document.getElementById('admin-options');
+            adminOptionsDiv.classList.add('hidden-section'); 
+            
+            if (userProfile.role === 'admin' || (userProfile.permissions && Object.values(userProfile.permissions).some(v => v === true))) {
+                adminOptionsDiv.classList.remove('hidden-section');
+                const btns = adminOptionsDiv.children; 
+                if (!hasPermission('can_archive_chat')) btns[1].classList.add('hidden-section');
+                if (!hasPermission('can_archive_chat')) btns[2].classList.add('hidden-section');
+                if (!hasPermission('can_manage_users')) btns[3].classList.add('hidden-section');
+                if (!hasPermission('can_view_reports')) btns[4].classList.add('hidden-section');
+            }
+            
+            const today = moment().format('YYYY-MM-DD');
+            localStorage.setItem('last_daily_reset_date', today);
+            checkAndResetCounters(false); 
+            startDailyAutoWatcher(); 
+            listenToAllUsers();
+            initChat();
+            listenToPrivateMessages(); 
+            startIdleTracker();
+            setInterval(updateTimers, 1000);
+            
+            window.addEventListener('mousemove', resetIdleTimer);
+            window.addEventListener('keydown', resetIdleTimer);
+            if (userProfile.role !== 'admin') { listenForScreenshotRequests(); }
+        
+            if(!quillEditor) {
+                quillEditor = new Quill('#editor-container', {
+                    theme: 'snow',
+                    placeholder: 'اكتب تفاصيل المهمة هنا...',
+                    modules: { toolbar: [[{ 'header': [1, 2, false] }], ['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], [{ 'direction': 'rtl' }], ['link']] }
+                });
+            }
+        }
         
         // دالة المراقب المعدلة (لعمل Logout)
         function startDailyAutoWatcher() {
@@ -3287,6 +3292,7 @@ function createStatusControls(task, taskStatus) {
     </script>
 </body>
 </html>
+
 
 
 
