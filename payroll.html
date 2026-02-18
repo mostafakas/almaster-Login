@@ -281,7 +281,7 @@
             <div id="slip-image-template" style="width: 1080px; min-height: 1350px; padding: 80px; background: #fff; color: #000; direction: rtl; text-align: right; position: absolute; left: -9999px;">
                 <div class="official-border" style="border: 2px solid #000; padding: 60px; min-height: 1230px; display: flex; flex-direction: column;">
                     <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 40px;">
-                        <h1 style="font-size: 40px; font-weight: 900; margin: 0;">بيان راتب شهري (Payslip)</h1>
+                        <h1 style="font-size: 30px; font-weight: 900; margin: 0;">بيان راتب شهري (Payslip)</h1>
                         <p style="font-size: 20px; font-weight: bold; margin-top: 10px;">شركة الماستر تكنولوجي - ALMASTER TECHNOLOGY</p>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 20px; margin-bottom: 40px; border: 1px solid #000; padding: 25px;">
@@ -687,8 +687,29 @@
         }
         async function deleteExpense(i) { if(confirm("حذف؟")){ let n = [...monthData.expenses]; n.splice(i, 1); await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: n }, { merge: true }); } }
         function editExpense(idx) { const e = monthData.expenses[idx]; document.getElementById('exp-modal-title').innerText = "تعديل"; document.getElementById('edit-expense-idx').value = idx; document.getElementById('exp-title').value = e.title; document.getElementById('exp-amount').value = e.amount; document.getElementById('exp-date').value = e.date; document.getElementById('modal-expense').classList.remove('hidden'); }
+   
+            // تفعيل زر ESC لإغلاق جميع النوافذ المفتوحة
+        window.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                // إغلاق مودال المالية
+                if (typeof closeFinanceModal === "function") closeFinanceModal();
+                
+                // إغلاق مودال الخزنة
+                if (typeof closeVaultModal === "function") closeVaultModal();
+                
+                // إغلاق مودال النثريات
+                if (typeof closeExpenseModal === "function") closeExpenseModal();
+                
+                // إغلاق سجل حركات الخزنة (بما أنه ليس له دالة إغلاق منفصلة في كودك)
+                const vaultLogs = document.getElementById('modal-vault-logs');
+                if (vaultLogs) vaultLogs.classList.add('hidden');
+                
+                console.log("تم إغلاق جميع النوافذ بواسطة زر ESC");
+            }
+        });
     </script>
 </body>
 </html>
+
 
 
