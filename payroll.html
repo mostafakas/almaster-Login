@@ -627,11 +627,65 @@
         }
 
         async function updatePaymentStatus(email, status) {
+                    const u = allUsers.find(x => x.id === email);
+                    const m = u.monthly_finance || {};
+                    if(!m[currentSelectedMonth]) m[currentSelectedMonth] = {};
+                    m[currentSelectedMonth].status = status;
+                    await db.collection("users").doc(email).update({ monthly_finance: m });
+                }
+                // 1. مفتاح البوت (الذي حصلت عليه من BotFather)
+        const TELEGRAM_BOT_TOKEN = 'اكتب_هنا_الـ_TOKEN_الخاص_بك';
+        
+        // 2. دالة إرسال الرسالة
+        async function sendTelegramNotification(userName, userChatId, monthName) {
+            if (!userChatId) {
+                console.log("هذا الموظف لم يربط حساب تليجرام بعد.");
+                return;
+            }
+        
+            const message = `
+        🔔 *إشعار مالي من ALMASTER*
+            
+        أهلاً ${userName}،
+        تم اعتماد وتحويل راتب شهر *${monthName}* بنجاح. ✅
+        يمكنك مراجعة حسابك الآن.
+            
+        شكراً لجهودك المستمرة! 🚀`;
+        
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+            
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: userChatId,
+                        text: message,
+                        parse_mode: 'Markdown'
+                    })
+                });
+                console.log("تم إرسال الإشعار بنجاح");
+            } catch (error) {
+                console.error("خطأ في إرسال إشعار تليجرام:", error);
+            }
+        }
+
+        // 3. تحديث دالة تغيير الحالة الموجودة في كودك الأصلي
+        async function updatePaymentStatus(email, status) {
             const u = allUsers.find(x => x.id === email);
             const m = u.monthly_finance || {};
             if(!m[currentSelectedMonth]) m[currentSelectedMonth] = {};
             m[currentSelectedMonth].status = status;
+            
             await db.collection("users").doc(email).update({ monthly_finance: m });
+        
+            // --- الجزء الجديد الخاص بالإشعار ---
+            if (status === 'paid') {
+                const monthLabel = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
+                // سنفترض أننا سنخزن Telegram Chat ID في حقل اسمه telegram_id في بيانات الموظف
+                sendTelegramNotification(u.name, u.telegram_id, monthLabel);
+            }
+            // ---------------------------------
         }
 
         function openVaultModal() { document.getElementById('modal-vault').classList.remove('hidden'); }
@@ -710,6 +764,7 @@
     </script>
 </body>
 </html>
+
 
 
 
