@@ -464,6 +464,7 @@
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
         const TELEGRAM_BOT_TOKEN = '8451059313:AAGczICuBh_LocUlCQLZVw9n9fhMQkLDY9A';
         const ADMIN_CHAT_ID = "1723581770";
+       // const ADMIN_CHAT_IDS = ["1723581770", "ضع_رقم_الـ_ID_للشريك_هنا"];
 
         let currentSelectedMonth = ""; 
         let allUsers = [];
@@ -487,6 +488,20 @@
             const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
             try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: text, parse_mode: 'Markdown' }) }); } catch(e){}
         }
+        /* async function notifyAdmin(text) {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    
+    // عمل حلقة تكرار (Loop) لإرسال نفس الرسالة لكل رقم في القائمة
+    ADMIN_CHAT_IDS.forEach(async (chatId) => {
+        try { 
+            await fetch(url, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' }) 
+            }); 
+        } catch(e) { console.error("Error sending to admin: " + chatId); }
+    });
+} */
 
         async function notifyUser(chatId, text, isMuted = false) {
             if(!chatId || isMuted) return; // منع الإرسال إذا كان الموظف Muted
@@ -1192,3 +1207,4 @@
     </script>
 </body>
 </html>
+
