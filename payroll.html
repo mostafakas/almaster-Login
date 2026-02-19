@@ -31,6 +31,11 @@
         #report-image-template, #slip-image-template, #fl-voucher-template { 
             display: none; position: absolute; top: 0; left: 0; z-index: -50; background: white; 
         }
+        /* Toggle Switch CSS */
+        .toggle-checkbox:checked { right: 0; border-color: #10b981; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
+        .toggle-checkbox { right: 0; z-index: 1; border-color: #e2e8f0; transition: all 0.3s; }
+        .toggle-label { background-color: #cbd5e1; transition: all 0.3s; }
     </style>
 </head>
 <body class="text-slate-800">
@@ -183,13 +188,25 @@
                     <div class="bg-slate-900 w-14 h-14 rounded-3xl flex items-center justify-center text-white shadow-xl"><i class="fas fa-user-gear text-xl"></i></div>
                     <div>
                         <h3 class="text-xl font-black text-slate-900">الملف المالي للموظف</h3>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">تحديث البيانات والرواتب (بدون خصومات)</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">تحديث البيانات والرواتب</p>
                     </div>
                 </div>
                 <button onclick="closeFinanceModal()" class="w-12 h-12 rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 transition text-2xl flex items-center justify-center"><i class="fas fa-times"></i></button>
             </div>
             <form onsubmit="saveFinanceData(event)" class="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar text-right">
                 <input type="hidden" id="fin-email">
+                
+                <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex justify-between items-center">
+                    <div>
+                        <h4 class="text-sm font-black text-indigo-700">تفعيل الإشعارات</h4>
+                        <p class="text-[10px] text-indigo-500 font-bold">السماح بإرسال إشعارات التليجرام لهذا الموظف</p>
+                    </div>
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" id="fin-notify-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
+                        <label for="fin-notify-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+
                 <div class="space-y-4">
                     <h4 class="text-[11px] font-black text-slate-400 uppercase tracking-widest border-b pb-2 px-2">البيانات الوظيفية والتحويل</h4>
                     <div class="grid grid-cols-2 gap-4">
@@ -454,6 +471,7 @@
         let monthData = { vault: 0, expenses: [], vault_logs: [] };
         let dataLoadedFlags = { users: false, finance: false, freelancers: false };
         let empTempReceipts = []; 
+        let systemLoadedOnce = false; // لمنع تكرار إرسال إشعار الدخول
 
         auth.onAuthStateChanged(async (user) => {
             if (user) {
@@ -464,7 +482,19 @@
             } else { window.location.href = 'index.html'; }
         });
 
-        // 1. الدالة الأساسية لتعريف الفريلانسرز (كانت مفقودة وسببت المشكلة)
+        // Notifications
+        async function notifyAdmin(text) {
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+            try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: text, parse_mode: 'Markdown' }) }); } catch(e){}
+        }
+
+        async function notifyUser(chatId, text, isMuted = false) {
+            if(!chatId || isMuted) return; // منع الإرسال إذا كان الموظف Muted
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+            try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' }) }); } catch(e){}
+        }
+
+        // Functions
         function renderFreelancers() {
             const tbody = document.getElementById('freelancer-body'); if(!tbody) return;
             tbody.innerHTML = '';
@@ -502,6 +532,13 @@
         function checkLoader() {
             if(dataLoadedFlags.users && dataLoadedFlags.finance && dataLoadedFlags.freelancers) {
                 document.getElementById('payroll-loader').classList.add('hidden');
+                
+                // إرسال إشعار للمدير بفتح السيستم لمرة واحدة فقط عند أول تحميل كامل
+                if(!systemLoadedOnce) {
+                    const time = new Date().toLocaleString('ar-EG');
+                    notifyAdmin(`🔐 *تسجيل دخول للنظام*\nتم فتح لوحة الإدارة المالية بنجاح.\n🕒 الوقت: ${time}`);
+                    systemLoadedOnce = true;
+                }
             }
         }
 
@@ -593,11 +630,13 @@
                     const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
                     const net = (parseFloat(u.salary_base) || 0) + (parseFloat(m.bonus) || 0) + (parseFloat(m.incentive) || 0) - dSum - advSum;
                     
+                    const muteIcon = u.mute_notifications ? `<i class="fas fa-bell-slash text-red-400 text-[10px] ml-1" title="الإشعارات متوقفة"></i>` : '';
+
                     tbody.innerHTML += `
                         <tr class="bg-white hover:bg-slate-50 transition-all shadow-sm">
                             <td class="p-4 rounded-r-2xl font-black text-slate-800 flex items-center gap-3">
                                 <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-10 h-10 rounded-2xl object-cover">
-                                <div><p class="leading-none">${u.name}</p><p class="text-[8px] text-slate-400 mt-1 uppercase">${u.title || '---'}</p></div>
+                                <div><p class="leading-none">${muteIcon}${u.name}</p><p class="text-[8px] text-slate-400 mt-1 uppercase">${u.title || '---'}</p></div>
                             </td>
                             <td class="p-4 font-bold text-slate-500">${(u.salary_base || 0).toLocaleString()}</td>
                             <td class="p-4 text-green-600 font-bold">+${(m.bonus || 0)}</td>
@@ -615,7 +654,7 @@
                                 <div class="flex gap-1 justify-center">
                                     <button onclick="openFinanceModal('${u.id}')" class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-lg" title="تعديل الراتب والبيانات"><i class="fas fa-pen-nib text-[10px]"></i></button>
                                     <button onclick="openEmpAdvanceModal('${u.id}')" class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center border border-orange-100 hover:bg-orange-500 hover:text-white transition" title="صرف سلفة"><i class="fas fa-hand-holding-usd text-[10px]"></i></button>
-                                    <button onclick="openEmpDeductModal('${u.id}')" class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 hover:bg-red-500 hover:text-white transition" title="خصم مالي"><i class="fas fa-minus-circle text-[10px]"></i></button>
+                                    <button onclick="openEmpDeductModal('${u.id}')" class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 hover:bg-red-500 hover:text-white transition" title="سجل الخصومات"><i class="fas fa-minus-circle text-[10px]"></i></button>
                                     <button onclick="generateSlipImage('${u.id}')" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 hover:bg-emerald-500 hover:text-white transition" title="بيان الراتب"><i class="fas fa-file-invoice text-[10px]"></i></button>
                                 </div>
                             </td>
@@ -646,18 +685,6 @@
                     </div>
                 </div>`;
             });
-        }
-
-        // --- Notifications Helpers ---
-        async function notifyAdmin(text) {
-            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-            try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: text, parse_mode: 'Markdown' }) }); } catch(e){}
-        }
-
-        async function notifyUser(chatId, text) {
-            if(!chatId) return;
-            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-            try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' }) }); } catch(e){}
         }
 
         // --- Employee Deductions (New Separated System) ---
@@ -699,16 +726,16 @@
             if(!mFin[currentSelectedMonth].deductions) mFin[currentSelectedMonth].deductions = [];
 
             mFin[currentSelectedMonth].deductions.push({ amount, reason });
-
             await db.collection("users").doc(email).update({ monthly_finance: mFin });
 
             const monthLabel = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
             const msg = `⚠️ *إشعار خصم مالي - ALMASTER*\n\nأهلاً *${u.name}*،\nتم تسجيل خصم بقيمة: *${amount} ج.م* من راتبك لشهر ${monthLabel}.\n\n📝 *السبب:* ${reason}\n\nنرجو الانتباه والحرص على عدم تكرار هذا الأمر مستقبلاً للحفاظ على تقييمك الممتاز. نحن ندعمك دائماً للتطور! 💪`;
-            notifyUser(u.telegram_id, msg);
+            
+            notifyUser(u.telegram_id, msg, u.mute_notifications);
             notifyAdmin(`⚠️ تم تسجيل خصم للموظف: *${u.name}*\nبقيمة: ${amount} ج.م\nالسبب: ${reason}`);
 
-            alert("تم إضافة الخصم وإرسال الإشعار بنجاح ✅");
-            openEmpDeductModal(email); // Refresh modal
+            alert("تم إضافة الخصم بنجاح ✅");
+            openEmpDeductModal(email); 
         }
 
         async function removeEmpDeduction(email, index) {
@@ -721,10 +748,11 @@
                 await db.collection("users").doc(email).update({ monthly_finance: mFin });
 
                 const msg = `🎉 *إشعار برفع خصم - ALMASTER*\n\nأهلاً *${u.name}*،\nبناءً على التزامك ومراجعة الإدارة، تم *رفع وإلغاء الخصم* المقدر بـ: *${removedDeduction.amount} ج.م* (الخاص بـ: ${removedDeduction.reason}).\n\nنتمنى أن يكون هذا حافزاً لك للاستمرار في الإبداع وعدم تكرار الأخطاء السابقة.. ثقتنا بك كبيرة! 🚀`;
-                notifyUser(u.telegram_id, msg);
+                
+                notifyUser(u.telegram_id, msg, u.mute_notifications);
                 notifyAdmin(`🎉 تم إزالة خصم للموظف: *${u.name}*\nبقيمة: ${removedDeduction.amount} ج.م`);
 
-                openEmpDeductModal(email); // Refresh modal
+                openEmpDeductModal(email); 
             }
         }
 
@@ -760,7 +788,7 @@
             const msgUser = `💸 *إشعار صرف سلفة - ALMASTER*\n\nأهلاً *${u.name}*،\nتم صرف سلفة بقيمة: *${amount.toLocaleString()} ج.م*.\n📝 البيان: ${reason}\n\nيرجى العلم بأنه سيتم تسوية هذا المبلغ تلقائياً مع راتب الشهر الحالي.`;
             const msgAdmin = `💸 *سلفة جديدة*\nتم صرف سلفة للموظف: *${u.name}*\nالقيمة: ${amount} ج.م\nالبيان: ${reason}`;
             
-            notifyUser(u.telegram_id, msgUser);
+            notifyUser(u.telegram_id, msgUser, u.mute_notifications);
             notifyAdmin(msgAdmin);
 
             document.getElementById('modal-emp-advance').classList.add('hidden');
@@ -797,6 +825,9 @@
             document.getElementById('fin-bonus').value=m.bonus||0; 
             document.getElementById('fin-incentive').value=m.incentive||0; 
             
+            // Toggle Notifications status
+            document.getElementById('fin-notify-toggle').checked = !u.mute_notifications;
+            
             (m.receipts||[]).forEach(r => {
                 document.getElementById('receipts-preview-list').innerHTML += `<img src="${r}" class="w-12 h-12 rounded-xl object-cover border-2 border-slate-200">`;
             });
@@ -821,6 +852,8 @@
                 mFin[currentSelectedMonth].receipts = [...(mFin[currentSelectedMonth].receipts || []), ...empTempReceipts];
             }
             
+            const isNotificationsEnabled = document.getElementById('fin-notify-toggle').checked;
+
             await db.collection("users").doc(email).update({
                 salary_base: parseFloat(document.getElementById('fin-salary').value) || 0, 
                 title: document.getElementById('fin-title').value, 
@@ -829,7 +862,8 @@
                 bank_account: document.getElementById('fin-bank').value, 
                 telegram_id: document.getElementById('fin-telegram-id').value, 
                 instapay: document.getElementById('fin-instapay').value, 
-                monthly_finance: mFin
+                monthly_finance: mFin,
+                mute_notifications: !isNotificationsEnabled // حفظ حالة الإشعارات
             }); 
             
             closeFinanceModal(); 
@@ -922,7 +956,7 @@
             const newRemaining = (fl.total_credit || 0) - newTotalPaid - (fl.total_deducted || 0);
             
             const msgUser = `🔔 *إشعار صرف مستحقات - ALMASTER*\n\nأهلاً *${fl.name}*،\nتم تحويل مبلغ: *${amount.toLocaleString()} ج.م* إلى حسابك بنجاح. ✅\n\nالمتبقي لك لدينا حالياً: *${newRemaining.toLocaleString()} ج.م*.\n\nتمنياتنا لك بالتوفيق! 🚀`;
-            notifyUser(fl.telegram_id, msgUser);
+            notifyUser(fl.telegram_id, msgUser); // الفريلانسر لا ينطبق عليه الميوت حاليا
             notifyAdmin(`💸 تم صرف دفعة للفريلانسر: *${fl.name}*\nبقيمة: ${amount} ج.م`);
             
             document.getElementById('modal-fl-pay').classList.add('hidden');
@@ -1006,7 +1040,7 @@
                  const net = base + bonus + incentive - deductionsSum - advSum;
 
                  const msgUser = `🔔 *إشعار مالي من ALMASTER*\n\nأهلاً *${u.name}*،\nتم تحويل راتب شهر *${monthLabel}* بالتفاصيل التالية:\n\n💰 *الأساسي:* ${base} ج.م\n🎁 *المكافآت:* ${bonus} ج.م\n🚀 *الحوافز:* ${incentive} ج.م\n🔻 *الخصومات:* ${deductionsSum} ج.م\n${advSum > 0 ? `💸 *سلف مخصومة:* ${advSum} ج.م\n` : ''}${reasonsList ? `📝 *أسباب الخصم:* \n${reasonsList}` : ''}\n✅ *صافي المبلغ المحول:* 👉 *[ ${net} ج.م ]*\n\n---\n✨ دعواتنا لك بالبركة 🤲`;
-                 notifyUser(u.telegram_id, msgUser);
+                 notifyUser(u.telegram_id, msgUser, u.mute_notifications);
                  notifyAdmin(`✅ تم إغلاق وتحويل راتب للموظف: *${u.name}* \nالصافي: ${net} ج.م`);
             }
         }
@@ -1158,4 +1192,3 @@
     </script>
 </body>
 </html>
-
