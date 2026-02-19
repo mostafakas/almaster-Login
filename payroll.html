@@ -724,17 +724,17 @@ const TELEGRAM_BOT_TOKEN = '8451059313:AAGczICuBh_LocUlCQLZVw9n9fhMQkLDY9A';
                 const adminId = "1723581770"; 
                 const targetId = userChatId || adminId; 
             
-                // صياغة تفاصيل الراتب داخل الرسالة
                 const message = `
-            🔔 *إشعار مالي من ALMASTER*
+            🔔 *إشعار مالي من ALMASTER*updatePaymentStatus
             
             أهلاً *${userName}*،
             تم تحويل راتب شهر *${monthName}* بالتفاصيل التالية:
             
-            💰 *الراتب الأساسي:* ${salaryDetails.base} ج.م
+            💰 *الأساسي:* ${salaryDetails.base} ج.م
             🎁 *المكافآت:* ${salaryDetails.bonus} ج.م
             🚀 *الحوافز:* ${salaryDetails.incentive} ج.م
             🔻 *الخصومات:* ${salaryDetails.deductions} ج.م
+            ${salaryDetails.reasons ? `📝 *أسباب الخصم:* \n${salaryDetails.reasons}` : ''}
             
             ✅ *صافي المبلغ المحول:* 👉 *[ ${salaryDetails.net} ج.م ]*
             
@@ -752,26 +752,55 @@ const TELEGRAM_BOT_TOKEN = '8451059313:AAGczICuBh_LocUlCQLZVw9n9fhMQkLDY9A';
                             parse_mode: 'Markdown'
                         })
                     });
-                    console.log(`✅ تم إرسال التفاصيل لـ ${userName}`);
+                    console.log(`✅ تم الإرسال بنجاح`);
                 } catch (error) {
                     console.error("خطأ في الإرسال:", error);
                 }
             }
 // 3. الدالة الأساسية (تأكد أنها الوحيدة في الكود بهذا الاسم)
-async function updatePaymentStatus(email, status) {
-    const u = allUsers.find(x => x.id === email);
-    const m = u.monthly_finance || {};
-    if(!m[currentSelectedMonth]) m[currentSelectedMonth] = {};
-    m[currentSelectedMonth].status = status;
-    
-    await db.collection("users").doc(email).update({ monthly_finance: m });
-
-    if (status === 'paid') {
-        const picker = document.getElementById('month-picker');
-        const monthLabel = picker.options[picker.selectedIndex].text;
-        sendTelegramNotification(u.name, u.telegram_id, monthLabel);
-    }
-}        
+            async function updatePaymentStatus(email, status) {
+                    const u = allUsers.find(x => x.id === email);
+                    const m = u.monthly_finance || {};
+                    if(!m[currentSelectedMonth]) m[currentSelectedMonth] = {};
+                    m[currentSelectedMonth].status = status;
+                    
+                    await db.collection("users").doc(email).update({ monthly_finance: m });
+                
+                    if (status === 'paid') {
+                        const picker = document.getElementById('month-picker');
+                        const monthLabel = picker.options[picker.selectedIndex].text;
+                
+                        const base = parseFloat(u.salary_base) || 0;
+                        const bonus = parseFloat(m.bonus) || 0;
+                        const incentive = parseFloat(m.incentive) || 0;
+                        
+                        // حساب الخصومات وتجميع الأسباب
+                        let deductionsSum = 0;
+                        let reasonsList = "";
+                        
+                        if (m.deductions && m.deductions.length > 0) {
+                            m.deductions.forEach(d => {
+                                deductionsSum += (parseFloat(d.amount) || 0);
+                                if (d.reason) {
+                                    reasonsList += `• ${d.reason} (${d.amount} ج.م)\n`;
+                                }
+                            });
+                        }
+                
+                        const net = base + bonus + incentive - deductionsSum;
+                
+                        const salaryDetails = {
+                            base: base.toLocaleString(),
+                            bonus: bonus.toLocaleString(),
+                            incentive: incentive.toLocaleString(),
+                            deductions: deductionsSum.toLocaleString(),
+                            reasons: reasonsList, // قائمة الأسباب
+                            net: net.toLocaleString()
+                        };
+                
+                        sendTelegramNotification(u.name, u.telegram_id, monthLabel, salaryDetails);
+                    }
+                }   
         async function deleteExpense(i) { if(confirm("حذف؟")){ let n = [...monthData.expenses]; n.splice(i, 1); await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: n }, { merge: true }); } }
         function editExpense(idx) { const e = monthData.expenses[idx]; document.getElementById('exp-modal-title').innerText = "تعديل"; document.getElementById('edit-expense-idx').value = idx; document.getElementById('exp-title').value = e.title; document.getElementById('exp-amount').value = e.amount; document.getElementById('exp-date').value = e.date; document.getElementById('modal-expense').classList.remove('hidden'); }
    
@@ -797,6 +826,7 @@ async function updatePaymentStatus(email, status) {
     </script>
 </body>
 </html>
+
 
 
 
