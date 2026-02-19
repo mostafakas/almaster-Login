@@ -167,6 +167,10 @@
                             <input type="text" id="fin-phone" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 focus:ring-4 ring-emerald-500/10 focus:border-emerald-500 font-bold outline-none">
                         </div>
                         <div>
+                            <label class="block text-[10px] font-black text-blue-500 mb-1 mr-2 uppercase">Telegram Chat ID (للإشعارات)</label>
+                            <input type="text" id="fin-telegram-id" placeholder="مثلاً: 1723581770" class="w-full bg-blue-50 border border-blue-100 rounded-2xl px-5 py-3 focus:ring-4 ring-blue-500/10 focus:border-blue-500 font-bold outline-none">
+                        </div>
+                        <div>
                             <label class="block text-[10px] font-black text-slate-500 mb-1 mr-2 uppercase">القسم</label>
                             <input type="text" id="fin-dept" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 focus:ring-4 ring-emerald-500/10 focus:border-emerald-500 font-bold outline-none">
                         </div>
@@ -482,6 +486,7 @@
             const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
             document.getElementById('fin-email').value = email;
             document.getElementById('fin-salary').value = u.salary_base || 0;
+            document.getElementById('fin-telegram-id').value = u.telegram_id || "";
             document.getElementById('fin-title').value = u.title || "";
             document.getElementById('fin-phone').value = u.phone_number || "";
             document.getElementById('fin-dept').value = u.department || "";
@@ -518,6 +523,7 @@
                 phone_number: document.getElementById('fin-phone').value,
                 department: document.getElementById('fin-dept').value,
                 bank_account: document.getElementById('fin-bank').value,
+                telegram_id: document.getElementById('fin-telegram-id').value,
                 instapay: document.getElementById('fin-instapay').value,
                 monthly_finance: mFin
             });
@@ -686,39 +692,47 @@
             closeExpenseModal();
         }
 
-// 1. مفتاح البوت
+// 1. مفتاح البوت الخاص بك
 const TELEGRAM_BOT_TOKEN = '8451059313:AAGczICuBh_LocUlCQLZVw9n9fhMQkLDY9A';
 
-// 2. دالة إرسال الرسالة (تم تبسيطها للتجربة)
-async function sendTelegramNotification(userName, userChatId, monthName) {
-    // تأكد أن هذا هو الـ ID الصحيح الذي حصلت عليه من @userinfobot
-    const targetId = userChatId || "1723581770"; 
-
-    // رسالة مبسطة جداً للتجربة
-    const message = `إشعار مالي من ALMASTER \n\n أهلاً ${userName} \n تم تحويل راتب شهر ${monthName} بنجاح ✅`;
-
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-    
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: targetId,
-                text: message
-            })
-        });
-        const data = await response.json();
-        if (data.ok) {
-            console.log("✅ الإشعار وصل تليجرام!");
-        } else {
-            console.error("❌ تليجرام رفض الإرسال:", data.description);
-            alert("تليجرام بيقول: " + data.description); // هيطلعلك رسالة بالسبب
-        }
-    } catch (error) {
-        console.error("خطأ في الاتصال:", error);
-    }
-}
+            // 2. دالة إرسال الرسالة المحدثة
+            async function sendTelegramNotification(userName, userChatId, monthName) {
+                // رقمك الشخصي كمدير (للطوارئ أو لو الموظف ملوش ID مسجل)
+                const adminId = "1723581770"; 
+                
+                // الأولوية لـ ID الموظف، لو فاضي يبعت للأدمن
+                const targetId = userChatId || adminId; 
+            
+                // تنسيق الرسالة بشكل احترافي
+                const message = `🔔 إشعار مالي من ALMASTER\n\nأهلاً ${userName}،\nتم اعتماد وتحويل راتب شهر ${monthName} بنجاح. ✅\n\nشكراً لجهودك المستمرة! 🚀`;
+            
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: targetId,
+                            text: message,
+                            parse_mode: 'Markdown' // عشان يظهر التنسيق بشكل شيك
+                        })
+                    });
+            
+                    const data = await response.json();
+                    if (data.ok) {
+                        console.log(`✅ تم الإرسال بنجاح إلى: ${targetId}`);
+                    } else {
+                        console.error("❌ فشل الإرسال من تليجرام:", data.description);
+                        // لو الـ ID غلط أو الموظف مبعتش Start هيظهر لك التنبيه ده
+                        if (data.description.includes("chat not found")) {
+                            console.warn("تنبيه: الموظف لم يقم بتفعيل البوت (Start) أو الـ ID غير صحيح.");
+                        }
+                    }
+                } catch (error) {
+                    console.error("خطأ في الاتصال بالسيرفر:", error);
+                }
+            }
 
 // 3. الدالة الأساسية (تأكد أنها الوحيدة في الكود بهذا الاسم)
 async function updatePaymentStatus(email, status) {
@@ -760,6 +774,7 @@ async function updatePaymentStatus(email, status) {
     </script>
 </body>
 </html>
+
 
 
 
