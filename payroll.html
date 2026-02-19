@@ -696,44 +696,43 @@
 const TELEGRAM_BOT_TOKEN = '8451059313:AAGczICuBh_LocUlCQLZVw9n9fhMQkLDY9A';
 
             // 2. دالة إرسال الرسالة المحدثة
-            async function sendTelegramNotification(userName, userChatId, monthName) {
-                // رقمك الشخصي كمدير (للطوارئ أو لو الموظف ملوش ID مسجل)
+            async function sendTelegramNotification(userName, userChatId, monthName, salaryDetails) {
                 const adminId = "1723581770"; 
-                
-                // الأولوية لـ ID الموظف، لو فاضي يبعت للأدمن
                 const targetId = userChatId || adminId; 
             
-                // تنسيق الرسالة بشكل احترافي
-                const message = `🔔 إشعار مالي من ALMASTER\n\nأهلاً ${userName}،\nتم اعتماد وتحويل راتب شهر ${monthName} بنجاح. ✅\n\nشكراً لجهودك المستمرة! 🚀`;
+                // صياغة تفاصيل الراتب داخل الرسالة
+                const message = `
+            🔔 *إشعار مالي من ALMASTER*
+            
+            أهلاً *${userName}*،
+            تم تحويل راتب شهر *${monthName}* بالتفاصيل التالية:
+            
+            💰 *الراتب الأساسي:* ${salaryDetails.base} ج.م
+            🎁 *المكافآت:* ${salaryDetails.bonus} ج.م
+            🚀 *الحوافز:* ${salaryDetails.incentive} ج.م
+            🔻 *الخصومات:* ${salaryDetails.deductions} ج.م
+            
+            ✅ *صافي المبلغ المحول:* 👉 *[ ${salaryDetails.net} ج.م ]*
+            
+            شكراً لجهودك الرائعة! 🚀`;
             
                 const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
                 
                 try {
-                    const response = await fetch(url, {
+                    await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             chat_id: targetId,
                             text: message,
-                            parse_mode: 'Markdown' // عشان يظهر التنسيق بشكل شيك
+                            parse_mode: 'Markdown'
                         })
                     });
-            
-                    const data = await response.json();
-                    if (data.ok) {
-                        console.log(`✅ تم الإرسال بنجاح إلى: ${targetId}`);
-                    } else {
-                        console.error("❌ فشل الإرسال من تليجرام:", data.description);
-                        // لو الـ ID غلط أو الموظف مبعتش Start هيظهر لك التنبيه ده
-                        if (data.description.includes("chat not found")) {
-                            console.warn("تنبيه: الموظف لم يقم بتفعيل البوت (Start) أو الـ ID غير صحيح.");
-                        }
-                    }
+                    console.log(`✅ تم إرسال التفاصيل لـ ${userName}`);
                 } catch (error) {
-                    console.error("خطأ في الاتصال بالسيرفر:", error);
+                    console.error("خطأ في الإرسال:", error);
                 }
             }
-
 // 3. الدالة الأساسية (تأكد أنها الوحيدة في الكود بهذا الاسم)
 async function updatePaymentStatus(email, status) {
     const u = allUsers.find(x => x.id === email);
@@ -774,6 +773,7 @@ async function updatePaymentStatus(email, status) {
     </script>
 </body>
 </html>
+
 
 
 
