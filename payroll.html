@@ -633,12 +633,36 @@
         }
 
         async function updatePaymentStatus(email, status) {
-            const u = allUsers.find(x => x.id === email);
-            const m = u.monthly_finance || {};
-            if(!m[currentSelectedMonth]) m[currentSelectedMonth] = {};
-            m[currentSelectedMonth].status = status;
-            await db.collection("users").doc(email).update({ monthly_finance: m });
-        }
+                const u = allUsers.find(x => x.id === email);
+                const m = u.monthly_finance || {};
+                if(!m[currentSelectedMonth]) m[currentSelectedMonth] = {};
+                m[currentSelectedMonth].status = status;
+                
+                await db.collection("users").doc(email).update({ monthly_finance: m });
+            
+                if (status === 'paid') {
+                    const picker = document.getElementById('month-picker');
+                    const monthLabel = picker.options[picker.selectedIndex].text;
+            
+                    // حساب التفاصيل المالية لإرسالها في الإشعار
+                    const base = parseFloat(u.salary_base) || 0;
+                    const bonus = parseFloat(m.bonus) || 0;
+                    const incentive = parseFloat(m.incentive) || 0;
+                    const deductionsSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+                    const net = base + bonus + incentive - deductionsSum;
+            
+                    const salaryDetails = {
+                        base: base.toLocaleString(),
+                        bonus: bonus.toLocaleString(),
+                        incentive: incentive.toLocaleString(),
+                        deductions: deductionsSum.toLocaleString(),
+                        net: net.toLocaleString()
+                    };
+            
+                    // إرسال الإشعار بالتفاصيل
+                    sendTelegramNotification(u.name, u.telegram_id, monthLabel, salaryDetails);
+                }
+            }
 
         function openVaultModal() { document.getElementById('modal-vault').classList.remove('hidden'); }
         function closeVaultModal() { document.getElementById('modal-vault').classList.add('hidden'); }
@@ -773,6 +797,7 @@ async function updatePaymentStatus(email, status) {
     </script>
 </body>
 </html>
+
 
 
 
