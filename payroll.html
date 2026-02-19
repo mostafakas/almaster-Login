@@ -36,13 +36,15 @@
         .fl-tab-btn.active { background-color: #10b981; color: white; border-color: #10b981; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2); }
 
         /* Report Templates - Hidden but Renderable */
-        #report-image-template, #slip-image-template, #fl-voucher-template { 
-            position: fixed; 
-            left: -10000px; 
-            top: 0; 
-            background: white; 
-            z-index: -10; 
-        }
+       /* ابحث عن هذا الجزء في الـ style واستبدله بهذا الكود */
+            #report-image-template, #slip-image-template, #fl-voucher-template { 
+                display: none; /* مخفي تماماً بشكل افتراضي */
+                position: absolute; 
+                top: 0; 
+                left: 0;
+                z-index: -50; /* خلف المحتوى */
+                background: white; 
+            }
     </style>
 </head>
 <body class="text-slate-800">
@@ -736,72 +738,89 @@
 
         // --- REPORT GENERATION (FIXED) ---
         async function generateMonthlyReportImage() {
-            const loader = document.getElementById('payroll-loader');
-            loader.classList.remove('hidden');
+                const loader = document.getElementById('payroll-loader');
+                loader.classList.remove('hidden');
+                
+                // 1. تحديد القوالب: إظهار تقرير الشهر وإخفاء تقرير الموظف
+                const reportTemplate = document.getElementById('report-image-template');
+                const slipTemplate = document.getElementById('slip-image-template');
+                
+                reportTemplate.style.display = 'block'; // إظهار
+                slipTemplate.style.display = 'none';    // إخفاء القالب الآخر للتأكيد
+                
+                // 2. تعبئة البيانات
+                const picker = document.getElementById('month-picker');
+                document.getElementById('rep-month-label').innerText = picker.options[picker.selectedIndex].text;
+                document.getElementById('rep-gen-date').innerText = new Date().toLocaleDateString('ar-EG');
+                
+                let bT=0, boT=0, iT=0, dT=0, paidS=0;
+                allUsers.forEach(u => {
+                    const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
+                    const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount)||0), 0);
+                    const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum;
+                    bT += (parseFloat(u.salary_base)||0); boT += (parseFloat(m.bonus)||0); iT += (parseFloat(m.incentive)||0); dT += dSum;
+                    if(m.status === 'paid') paidS += net;
+                });
+                
+                const allExps = monthData.expenses || [];
+                const expT = allExps.reduce((s, e)=>s+(parseFloat(e.amount)||0), 0);
+                const vCap = parseFloat(monthData.vault)||0;
+                const deps = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0), 0);
+                const totalOut = paidS + expT;
             
-            // 1. Gather Data
-            const picker = document.getElementById('month-picker');
-            document.getElementById('rep-month-label').innerText = picker.options[picker.selectedIndex].text;
-            document.getElementById('rep-gen-date').innerText = new Date().toLocaleDateString('ar-EG');
+                document.getElementById('rep-v-open').innerText = vCap.toLocaleString();
+                document.getElementById('rep-v-in').innerText = deps.toLocaleString();
+                document.getElementById('rep-v-out').innerText = totalOut.toLocaleString();
+                document.getElementById('rep-v-final').innerText = (vCap + deps - totalOut).toLocaleString();
             
-            let bT=0, boT=0, iT=0, dT=0, paidS=0;
-            allUsers.forEach(u => {
-                const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
-                const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount)||0), 0);
-                const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum;
-                bT += (parseFloat(u.salary_base)||0); boT += (parseFloat(m.bonus)||0); iT += (parseFloat(m.incentive)||0); dT += dSum;
-                if(m.status === 'paid') paidS += net;
-            });
+                document.getElementById('rep-base').innerText = bT.toLocaleString();
+                document.getElementById('rep-bonus').innerText = boT.toLocaleString();
+                document.getElementById('rep-incen').innerText = iT.toLocaleString();
+                document.getElementById('rep-deduct').innerText = dT.toLocaleString();
+                document.getElementById('rep-paid-sal').innerText = paidS.toLocaleString();
             
-            const allExps = monthData.expenses || [];
-            const expT = allExps.reduce((s, e)=>s+(parseFloat(e.amount)||0), 0);
-            const vCap = parseFloat(monthData.vault)||0;
-            const deps = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0), 0);
-            const totalOut = paidS + expT;
-
-            // 2. Fill Template (Strictly targeting 'rep-' IDs)
-            document.getElementById('rep-v-open').innerText = vCap.toLocaleString();
-            document.getElementById('rep-v-in').innerText = deps.toLocaleString();
-            document.getElementById('rep-v-out').innerText = totalOut.toLocaleString();
-            document.getElementById('rep-v-final').innerText = (vCap + deps - totalOut).toLocaleString();
-
-            document.getElementById('rep-base').innerText = bT.toLocaleString();
-            document.getElementById('rep-bonus').innerText = boT.toLocaleString();
-            document.getElementById('rep-incen').innerText = iT.toLocaleString();
-            document.getElementById('rep-deduct').innerText = dT.toLocaleString();
-            document.getElementById('rep-paid-sal').innerText = paidS.toLocaleString();
-
-            const tbody = document.getElementById('rep-exp-body'); tbody.innerHTML = '';
-            allExps.forEach(e => {
-                const label = e.type === 'freelancer' ? `<span style="font-weight:bold">${e.title}</span>` : e.title;
-                tbody.innerHTML += `<tr><td style="border:1px solid #000;padding:8px;">${label}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${e.date}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${e.amount.toLocaleString()}</td></tr>`;
-            });
-            document.getElementById('rep-total-exp').innerText = expT.toLocaleString();
-
-            // 3. Wait for DOM to update then Capture
-            await new Promise(r => setTimeout(r, 500));
-
-            html2canvas(document.getElementById('report-image-template'), { scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `Almaster_Report_${currentSelectedMonth}.png`;
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-                loader.classList.add('hidden');
-            }).catch(err => {
-                console.error(err);
-                loader.classList.add('hidden');
-                alert("حدث خطأ أثناء تحميل التقرير");
-            });
-        }
+                const tbody = document.getElementById('rep-exp-body'); tbody.innerHTML = '';
+                allExps.forEach(e => {
+                    const label = e.type === 'freelancer' ? `<span style="font-weight:bold">${e.title}</span>` : e.title;
+                    tbody.innerHTML += `<tr><td style="border:1px solid #000;padding:8px;">${label}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${e.date}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${e.amount.toLocaleString()}</td></tr>`;
+                });
+                document.getElementById('rep-total-exp').innerText = expT.toLocaleString();
+            
+                // 3. الانتظار قليلاً للتأكد من ظهور العنصر
+                await new Promise(r => setTimeout(r, 300));
+            
+                // 4. التقاط الصورة
+                try {
+                    const canvas = await html2canvas(reportTemplate, { scale: 2, useCORS: true });
+                    const link = document.createElement('a');
+                    link.download = `Almaster_Report_${currentSelectedMonth}.png`;
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                } catch (err) {
+                    console.error(err);
+                    alert("حدث خطأ أثناء تحميل التقرير");
+                } finally {
+                    // 5. إخفاء القالب مرة أخرى وإخفاء اللودر
+                    reportTemplate.style.display = 'none';
+                    loader.classList.add('hidden');
+                }
+            }
         
         async function generateSlipImage(email) {
             const loader = document.getElementById('payroll-loader');
             loader.classList.remove('hidden');
-
+        
+            // 1. تحديد القوالب: إظهار تقرير الموظف وإخفاء تقرير الشهر
+            const slipTemplate = document.getElementById('slip-image-template');
+            const reportTemplate = document.getElementById('report-image-template');
+            
+            slipTemplate.style.display = 'block'; // إظهار
+            reportTemplate.style.display = 'none'; // إخفاء القالب الآخر للتأكيد
+        
+            // 2. تعبئة البيانات
             const u = allUsers.find(x => x.id === email);
             const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
             
-            // 1. Fill Template (Strictly targeting 's-' IDs)
             document.getElementById('s-month').innerText = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
             document.getElementById('s-name').innerText = u.name;
             document.getElementById('s-title').innerText = u.title || "---";
@@ -823,22 +842,25 @@
             document.getElementById('s-total-minus').innerText = dSum.toLocaleString();
             document.getElementById('s-net').innerText = (base+bonus+incen-dSum).toLocaleString() + " ج.م";
             
-            // 2. Wait for DOM to update then Capture
-            await new Promise(r => setTimeout(r, 500));
-
-            html2canvas(document.getElementById('slip-image-template'), { scale: 2, useCORS: true }).then(canvas => {
+            // 3. الانتظار قليلاً
+            await new Promise(r => setTimeout(r, 300));
+        
+            // 4. التقاط الصورة
+            try {
+                const canvas = await html2canvas(slipTemplate, { scale: 2, useCORS: true });
                 const a = document.createElement('a'); 
                 a.download = `Slip_${u.name}.png`; 
                 a.href = canvas.toDataURL("image/png"); 
                 a.click();
-                loader.classList.add('hidden');
-            }).catch(err => {
+            } catch (err) {
                 console.error(err);
-                loader.classList.add('hidden');
                 alert("حدث خطأ أثناء تحميل بيان الراتب");
-            });
+            } finally {
+                // 5. إخفاء القالب مرة أخرى وإخفاء اللودر
+                slipTemplate.style.display = 'none';
+                loader.classList.add('hidden');
+            }
         }
-
         // Shared & Helpers
         function renderStatusBadge(s, email) {
             const c = { 'pending': 'bg-orange-100 text-orange-600', 'approved': 'bg-blue-100 text-blue-600', 'paid': 'bg-emerald-100 text-emerald-600' }[s || 'pending'];
@@ -892,3 +914,4 @@
     </script>
 </body>
 </html>
+
