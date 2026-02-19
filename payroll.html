@@ -721,37 +721,47 @@
             
             // 2. دالة إرسال الرسالة المحدثة (تم إصلاحها)
             async function sendTelegramNotification(userName, userChatId, monthName, salaryDetails) {
-                const adminId = "1723581770"; 
-                const targetId = userChatId || adminId; 
-            
-                const message = `🔔 *إشعار مالي من ALMASTER*\n\n` +
-                                `أهلاً *${userName}*،\n` +
-                                `تم تحويل راتب شهر *${monthName}* بالتفاصيل التالية:\n\n` +
-                                `💰 *الأساسي:* ${salaryDetails.base} ج.م\n` +
-                                `🎁 *المكافآت:* ${salaryDetails.bonus} ج.م\n` +
-                                `🚀 *الحوافز:* ${salaryDetails.incentive} ج.م\n` +
-                                `🔻 *الخصومات:* ${salaryDetails.deductions} ج.م\n` +
-                                `${salaryDetails.reasons ? `📝 *أسباب الخصم:* \n${salaryDetails.reasons}` : ''}\n` +
-                                `✅ *صافي المبلغ المحول:* 👉 *[ ${salaryDetails.net} ج.م ]*\n\n` +
-                                `شكراً لجهودك الرائعة! 🚀`;
-            
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                    const adminId = "1723581770"; 
+                    const targetId = userChatId || adminId; 
                 
-                try {
-                    await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chat_id: targetId,
-                            text: message,
-                            parse_mode: 'Markdown'
-                        })
-                    });
-                    console.log(`✅ تم الإرسال بنجاح إلى: ${targetId}`);
-                } catch (error) {
-                    console.error("خطأ في الإرسال:", error);
+                    const message = `
+                🔔 *إشعار مالي من ALMASTER*
+                
+                أهلاً *${userName}*،
+                تم تحويل راتب شهر *${monthName}* بالتفاصيل التالية:
+                
+                💰 *الأساسي:* ${salaryDetails.base} ج.م
+                🎁 *المكافآت:* ${salaryDetails.bonus} ج.m
+                🚀 *الحوافز:* ${salaryDetails.incentive} ج.م
+                🔻 *الخصومات:* ${salaryDetails.deductions} ج.م
+                ${salaryDetails.reasons ? `📝 *أسباب الخصم:* \n${salaryDetails.reasons}` : ''}
+                
+                ✅ *صافي المبلغ المحول:* 👉 *[ ${salaryDetails.net} ج.م ]*
+                
+                ---
+                ✨ *دعواتنا لك بالبركة:*
+                تمنياتنا لك بصرف مرتبك في الخير والهناء إن شاء الله. 🤲
+                نحن في ALMASTER نعتز بوجودك معنا، ونتمنى أن نراك دائماً في تطور مستمر وبأعلى إنتاجية.. ننتظر منك شهراً قادماً مليئاً بالإنجازات وخالياً من أي خصومات! 💪🚀
+                
+                *مع تحيات إدارة الماستر*`;
+                
+                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                    
+                    try {
+                        await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                chat_id: targetId,
+                                text: message,
+                                parse_mode: 'Markdown'
+                            })
+                        });
+                        console.log(`✅ تم إرسال الرسالة بنجاح`);
+                    } catch (error) {
+                        console.error("خطأ في الإرسال:", error);
+                    }
                 }
-            }
             
             // 3. الدالة الأساسية لتحديث الحالة (تم إصلاح تمرير البيانات)
             async function updatePaymentStatus(email, status) {
@@ -823,6 +833,7 @@
     </script>
 </body>
 </html>
+
 
 
 
