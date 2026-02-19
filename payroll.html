@@ -18,27 +18,18 @@
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; text-align: right; overflow-x: hidden; }
         .table-container { height: calc(100vh - 280px); overflow-y: auto; border-radius: 24px; }
-        
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        
         .stat-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; }
         .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.05); }
         .modal-animate { animation: modalIn 0.3s ease-out; }
         @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
         .fl-tab-btn { transition: all 0.3s; position: relative; }
         .fl-tab-btn.active { background-color: #10b981; color: white; border-color: #10b981; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2); }
-
         #report-image-template, #slip-image-template, #fl-voucher-template { 
-            display: none; 
-            position: absolute; 
-            top: 0; 
-            left: 0;
-            z-index: -50; 
-            background: white; 
+            display: none; position: absolute; top: 0; left: 0; z-index: -50; background: white; 
         }
     </style>
 </head>
@@ -59,7 +50,6 @@
                 <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">المحاسبة والأرشفة الاحترافية</p>
             </div>
         </div>
-        
         <div class="flex items-center gap-5">
             <div class="flex flex-col">
                 <span class="text-[9px] font-black text-slate-400 mr-1">الفترة المالية</span>
@@ -75,7 +65,6 @@
     </header>
 
     <main class="p-6 max-w-[1900px] mx-auto">
-        
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
             <div class="bg-slate-900 p-5 rounded-[32px] shadow-xl text-white stat-card relative">
                 <p class="text-[10px] font-bold text-emerald-400 uppercase mb-1">إجمالي الخزنة</p>
@@ -185,7 +174,6 @@
                 </div>
             </div>
         </section>
-
     </main>
 
     <div id="modal-finance" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
@@ -195,7 +183,7 @@
                     <div class="bg-slate-900 w-14 h-14 rounded-3xl flex items-center justify-center text-white shadow-xl"><i class="fas fa-user-gear text-xl"></i></div>
                     <div>
                         <h3 class="text-xl font-black text-slate-900">الملف المالي للموظف</h3>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">تحديث البيانات، الرواتب، الإشعارات</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">تحديث البيانات والرواتب (بدون خصومات)</p>
                     </div>
                 </div>
                 <button onclick="closeFinanceModal()" class="w-12 h-12 rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 transition text-2xl flex items-center justify-center"><i class="fas fa-times"></i></button>
@@ -221,13 +209,6 @@
                         <div><label class="block text-[10px] font-black text-blue-600 mb-1 px-1 text-center">حوافز إضافية (+)</label><input type="number" id="fin-incentive" step="0.01" class="w-full bg-blue-50 p-3 rounded-2xl text-center font-black text-blue-600 outline-none border border-blue-100"></div>
                     </div>
                 </div>
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center px-2">
-                        <h4 class="text-[11px] font-black text-red-600 uppercase tracking-widest">الخصومات (تؤثر على الصافي وترسل إشعارات)</h4>
-                        <button type="button" onclick="addDeductionRow()" class="bg-red-600 text-white text-[10px] px-4 py-2 rounded-xl">+ إضافة خصم</button>
-                    </div>
-                    <div id="deductions-container" class="space-y-2"></div>
-                </div>
                 <div class="border-t border-slate-100 pt-6 space-y-3">
                     <h4 class="text-[11px] font-black text-slate-400 uppercase tracking-widest px-2">وصولات التحويل والدفع</h4>
                     <div class="flex items-center gap-4">
@@ -236,8 +217,32 @@
                         <div id="receipts-preview-list" class="flex gap-2 flex-wrap"></div>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 transition text-white font-black py-5 rounded-[30px] shadow-2xl text-lg mt-4">حفظ البيانات وإرسال الإشعارات</button>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 transition text-white font-black py-5 rounded-[30px] shadow-2xl text-lg mt-4">حفظ البيانات الأساسية</button>
             </form>
+        </div>
+    </div>
+
+    <div id="modal-emp-deduct" class="fixed inset-0 z-[160] hidden bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[35px] shadow-2xl p-6 text-right modal-animate border border-red-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black text-red-600">سجل خصومات الموظف</h3>
+                <button onclick="document.getElementById('modal-emp-deduct').classList.add('hidden')" class="text-slate-400 hover:text-red-600"><i class="fas fa-times"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4" id="deduct-modal-emp-name">للموظف: ...</p>
+            <input type="hidden" id="deduct-modal-emp-email">
+
+            <div class="bg-slate-50 rounded-2xl p-4 mb-6 max-h-40 overflow-y-auto custom-scrollbar">
+                <h4 class="text-[10px] font-black text-slate-400 uppercase mb-2">الخصومات الحالية:</h4>
+                <div id="current-emp-deductions-list" class="space-y-2">
+                    </div>
+            </div>
+
+            <div class="border-t border-slate-100 pt-4">
+                <h4 class="text-[10px] font-black text-red-500 uppercase mb-2">إضافة خصم جديد وإرسال إشعار:</h4>
+                <input type="number" id="new-emp-deduct-amount" class="w-full bg-red-50 text-red-600 border-none rounded-2xl px-5 py-3 font-black text-lg mb-2 outline-none" placeholder="مبلغ الخصم...">
+                <input type="text" id="new-emp-deduct-reason" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3 font-bold text-sm mb-4 outline-none" placeholder="سبب الخصم للتوضيح للموظف...">
+                <button onclick="addNewEmpDeduction()" class="w-full bg-red-500 hover:bg-red-600 text-white font-black py-3 rounded-2xl shadow-lg transition">تأكيد الخصم</button>
+            </div>
         </div>
     </div>
 
@@ -246,13 +251,10 @@
             <h3 class="text-xl font-black mb-1 text-orange-600">صرف سلفة لموظف</h3>
             <p class="text-xs text-slate-400 mb-4" id="adv-emp-name">للموظف: ...</p>
             <input type="hidden" id="adv-emp-email">
-            
             <label class="block text-[10px] font-black text-slate-500 mb-1">مبلغ السلفة (يخصم من الخزينة فوراً)</label>
             <input type="number" id="adv-amount" class="w-full bg-orange-50 text-orange-600 border-none rounded-2xl px-5 py-3 font-black text-lg mb-3 outline-none" placeholder="0.00">
-            
             <label class="block text-[10px] font-black text-slate-500 mb-1">البيان / السبب</label>
             <input type="text" id="adv-reason" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3 font-bold text-sm mb-4 outline-none" placeholder="سلفة خلال الشهر..." value="سلفة نقدية">
-            
             <button onclick="confirmEmpAdvance()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-3 rounded-2xl shadow-lg mb-2">تأكيد صرف السلفة</button>
             <button onclick="document.getElementById('modal-emp-advance').classList.add('hidden')" class="w-full bg-slate-100 text-slate-500 font-bold py-3 rounded-2xl">إلغاء</button>
         </div>
@@ -284,13 +286,10 @@
                 <p class="text-[10px] font-bold text-blue-500">المتبقي له حالياً</p>
                 <h2 class="text-2xl font-black text-blue-700" id="pay-fl-remaining">0</h2>
             </div>
-            
             <label class="block text-[10px] font-black text-slate-500 mb-1">مبلغ الدفعة</label>
             <input type="number" id="pay-fl-amount" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3 font-black text-lg mb-4 text-emerald-600 outline-none" placeholder="0.00">
-            
             <label class="block text-[10px] font-black text-slate-500 mb-1">وصل التحويل (اختياري)</label>
             <input type="file" id="pay-fl-receipt" accept="image/*" class="w-full bg-slate-50 border-none rounded-2xl px-4 py-2 text-xs mb-5 outline-none">
-
             <button onclick="confirmFlPayment()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl shadow-lg mb-2">تأكيد الصرف وإرسال إشعار</button>
             <button onclick="document.getElementById('modal-fl-pay').classList.add('hidden')" class="w-full bg-slate-100 text-slate-500 font-bold py-3 rounded-2xl">إلغاء</button>
         </div>
@@ -301,13 +300,10 @@
             <h3 class="text-xl font-black mb-1 text-red-600">تسجيل خصم مالي</h3>
             <p class="text-xs text-slate-400 mb-4" id="deduct-fl-name">للفريلانسر: ...</p>
             <input type="hidden" id="deduct-fl-id">
-            
             <label class="block text-[10px] font-black text-slate-500 mb-1">مبلغ الخصم</label>
             <input type="number" id="deduct-fl-amount" class="w-full bg-red-50 text-red-600 border-none rounded-2xl px-5 py-3 font-black text-lg mb-3 outline-none" placeholder="0.00">
-            
             <label class="block text-[10px] font-black text-slate-500 mb-1">سبب الخصم (للتوثيق)</label>
             <input type="text" id="deduct-fl-reason" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3 font-bold text-sm mb-4 outline-none" placeholder="اكتب السبب هنا...">
-            
             <button onclick="confirmFlDeduction()" class="w-full bg-red-500 hover:bg-red-600 text-white font-black py-3 rounded-2xl shadow-lg mb-2">تأكيد الخصم والإشعار</button>
             <button onclick="document.getElementById('modal-fl-deduct').classList.add('hidden')" class="w-full bg-slate-100 text-slate-500 font-bold py-3 rounded-2xl">إلغاء</button>
         </div>
@@ -468,6 +464,41 @@
             } else { window.location.href = 'index.html'; }
         });
 
+        // 1. الدالة الأساسية لتعريف الفريلانسرز (كانت مفقودة وسببت المشكلة)
+        function renderFreelancers() {
+            const tbody = document.getElementById('freelancer-body'); if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            freelancers.forEach(f => {
+                const totalPaid = (f.total_paid || 0);
+                const totalDeducted = (f.total_deducted || 0);
+                const remaining = (f.total_credit || 0) - totalPaid - totalDeducted;
+                const statusBadge = remaining <= 0 ? '<span class="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black">خالص</span>' : '<span class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black">جاري العمل</span>';
+
+                tbody.innerHTML += `
+                    <tr class="bg-white hover:bg-slate-50 transition-all shadow-sm">
+                        <td class="p-4 rounded-r-2xl font-black text-slate-800 flex items-center gap-2">
+                             <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">${f.name.charAt(0)}</div>
+                             ${f.name}
+                        </td>
+                        <td class="p-4 font-bold text-slate-500">${f.job || '---'}</td>
+                        <td class="p-4 font-bold text-blue-600">${(f.total_credit || 0).toLocaleString()}</td>
+                        <td class="p-4 font-bold text-emerald-600">${totalPaid.toLocaleString()}</td>
+                        <td class="p-4 font-bold text-red-600">${totalDeducted.toLocaleString()}</td>
+                        <td class="p-4 font-black bg-slate-900/5 text-center">${remaining.toLocaleString()}</td>
+                        <td class="p-4 text-center">${statusBadge}</td>
+                        <td class="p-4 text-center rounded-l-2xl">
+                            <div class="flex gap-1 justify-center">
+                                <button onclick="openFreelancerModal('${f.id}')" class="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 hover:bg-slate-900 hover:text-white transition shadow-sm border border-slate-100" title="تعديل"><i class="fas fa-edit"></i></button>
+                                <button onclick="openPayModal('${f.id}')" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition shadow-sm border border-emerald-100" title="صرف دفعة"><i class="fas fa-hand-holding-usd"></i></button>
+                                <button onclick="openFlDeductModal('${f.id}')" class="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white transition shadow-sm border border-orange-100" title="خصم مالي"><i class="fas fa-minus-circle"></i></button>
+                                <button onclick="deleteFreelancer('${f.id}')" class="w-8 h-8 rounded-xl bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition shadow-sm border border-red-100 mr-1" title="حذف بالكامل"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>`;
+            });
+        }
+
         function checkLoader() {
             if(dataLoadedFlags.users && dataLoadedFlags.finance && dataLoadedFlags.freelancers) {
                 document.getElementById('payroll-loader').classList.add('hidden');
@@ -523,10 +554,7 @@
             allUsers.forEach(u => {
                 const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
                 const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
-                
-                // حساب سلف الموظف من قائمة النثريات 
                 const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
-                
                 const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum - advSum;
                 
                 if (m.status === 'paid') paidS += net;
@@ -534,7 +562,6 @@
                 else waitS += net;
             });
             
-            // خصومات الفريلانسر لا تعتبر فلوس خرجت من الخزنة
             const expensesTotal = allExps.filter(e => e.type !== 'fl_deduction').reduce((s, e) => s + (parseFloat(e.amount)||0), 0);
             const vaultCap = parseFloat(monthData.vault) || 0;
             const totalSpent = paidS + expensesTotal;
@@ -546,7 +573,6 @@
             document.getElementById('pending-approved-total').innerText = apprvS.toLocaleString();
             document.getElementById('pending-waiting-total').innerText = waitS.toLocaleString();
             
-            // النثريات العامة والسلف (بدون دفعات فريلانس وخصومات)
             const pureExpenses = allExps.filter(e => e.type !== 'freelancer' && e.type !== 'fl_deduction').reduce((s, e)=>s+(parseFloat(e.amount)||0),0);
             document.getElementById('total-expenses').innerText = pureExpenses.toLocaleString();
             
@@ -587,8 +613,9 @@
                             <td class="p-4 text-center">${renderStatusBadge(m.status, u.id)}</td>
                             <td class="p-4 text-center rounded-l-2xl">
                                 <div class="flex gap-1 justify-center">
-                                    <button onclick="openFinanceModal('${u.id}')" class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-lg" title="تعديل الراتب"><i class="fas fa-pen-nib text-[10px]"></i></button>
+                                    <button onclick="openFinanceModal('${u.id}')" class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-lg" title="تعديل الراتب والبيانات"><i class="fas fa-pen-nib text-[10px]"></i></button>
                                     <button onclick="openEmpAdvanceModal('${u.id}')" class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center border border-orange-100 hover:bg-orange-500 hover:text-white transition" title="صرف سلفة"><i class="fas fa-hand-holding-usd text-[10px]"></i></button>
+                                    <button onclick="openEmpDeductModal('${u.id}')" class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 hover:bg-red-500 hover:text-white transition" title="خصم مالي"><i class="fas fa-minus-circle text-[10px]"></i></button>
                                     <button onclick="generateSlipImage('${u.id}')" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 hover:bg-emerald-500 hover:text-white transition" title="بيان الراتب"><i class="fas fa-file-invoice text-[10px]"></i></button>
                                 </div>
                             </td>
@@ -607,7 +634,6 @@
                 else if (e.type === 'emp_advance') { color = "orange"; label = "سلفة موظف"; }
 
                 const editAction = (!e.type || e.type === 'general') ? `onclick="editExpense(${i})" class="cursor-pointer hover:border-red-200"` : `class=""`;
-
                 let receiptHTML = e.receipt ? `<a href="${e.receipt}" target="_blank" onclick="event.stopPropagation()" class="text-blue-500 underline text-[9px] mr-2">عرض الوصل</a>` : '';
 
                 list.innerHTML += `<div ${editAction} class="bg-white border border-slate-100 p-4 rounded-3xl group transition shadow-sm mb-3">
@@ -632,6 +658,74 @@
             if(!chatId) return;
             const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
             try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' }) }); } catch(e){}
+        }
+
+        // --- Employee Deductions (New Separated System) ---
+        function openEmpDeductModal(email) {
+            const u = allUsers.find(x => x.id === email);
+            if(!u) return;
+            document.getElementById('deduct-modal-emp-email').value = email;
+            document.getElementById('deduct-modal-emp-name').innerText = `للموظف: ${u.name}`;
+            document.getElementById('new-emp-deduct-amount').value = '';
+            document.getElementById('new-emp-deduct-reason').value = '';
+            
+            const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
+            const listDiv = document.getElementById('current-emp-deductions-list');
+            listDiv.innerHTML = '';
+            
+            if(!m.deductions || m.deductions.length === 0) {
+                listDiv.innerHTML = '<p class="text-xs text-slate-400 text-center">لا توجد خصومات مسجلة هذا الشهر.</p>';
+            } else {
+                m.deductions.forEach((d, idx) => {
+                    listDiv.innerHTML += `<div class="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                        <div><span class="font-black text-red-600 text-sm">${d.amount}</span> <span class="text-[10px] text-slate-500 font-bold ml-2">${d.reason}</span></div>
+                        <button onclick="removeEmpDeduction('${email}', ${idx})" class="text-slate-300 hover:text-red-500 transition"><i class="fas fa-trash-alt"></i> إزالة الخصم</button>
+                    </div>`;
+                });
+            }
+            document.getElementById('modal-emp-deduct').classList.remove('hidden');
+        }
+
+        async function addNewEmpDeduction() {
+            const email = document.getElementById('deduct-modal-emp-email').value;
+            const u = allUsers.find(x => x.id === email);
+            const amount = parseFloat(document.getElementById('new-emp-deduct-amount').value);
+            const reason = document.getElementById('new-emp-deduct-reason').value || "خصم إداري";
+
+            if(!amount || isNaN(amount)) return alert("يرجى إدخال مبلغ صحيح");
+
+            const mFin = u.monthly_finance || {};
+            if(!mFin[currentSelectedMonth]) mFin[currentSelectedMonth] = { status: 'pending', deductions: [] };
+            if(!mFin[currentSelectedMonth].deductions) mFin[currentSelectedMonth].deductions = [];
+
+            mFin[currentSelectedMonth].deductions.push({ amount, reason });
+
+            await db.collection("users").doc(email).update({ monthly_finance: mFin });
+
+            const monthLabel = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
+            const msg = `⚠️ *إشعار خصم مالي - ALMASTER*\n\nأهلاً *${u.name}*،\nتم تسجيل خصم بقيمة: *${amount} ج.م* من راتبك لشهر ${monthLabel}.\n\n📝 *السبب:* ${reason}\n\nنرجو الانتباه والحرص على عدم تكرار هذا الأمر مستقبلاً للحفاظ على تقييمك الممتاز. نحن ندعمك دائماً للتطور! 💪`;
+            notifyUser(u.telegram_id, msg);
+            notifyAdmin(`⚠️ تم تسجيل خصم للموظف: *${u.name}*\nبقيمة: ${amount} ج.م\nالسبب: ${reason}`);
+
+            alert("تم إضافة الخصم وإرسال الإشعار بنجاح ✅");
+            openEmpDeductModal(email); // Refresh modal
+        }
+
+        async function removeEmpDeduction(email, index) {
+            if(confirm("هل أنت متأكد من إلغاء هذا الخصم؟ سيتم إرسال إشعار للموظف بذلك.")) {
+                const u = allUsers.find(x => x.id === email);
+                const mFin = u.monthly_finance;
+                const removedDeduction = mFin[currentSelectedMonth].deductions[index];
+                
+                mFin[currentSelectedMonth].deductions.splice(index, 1);
+                await db.collection("users").doc(email).update({ monthly_finance: mFin });
+
+                const msg = `🎉 *إشعار برفع خصم - ALMASTER*\n\nأهلاً *${u.name}*،\nبناءً على التزامك ومراجعة الإدارة، تم *رفع وإلغاء الخصم* المقدر بـ: *${removedDeduction.amount} ج.م* (الخاص بـ: ${removedDeduction.reason}).\n\nنتمنى أن يكون هذا حافزاً لك للاستمرار في الإبداع وعدم تكرار الأخطاء السابقة.. ثقتنا بك كبيرة! 🚀`;
+                notifyUser(u.telegram_id, msg);
+                notifyAdmin(`🎉 تم إزالة خصم للموظف: *${u.name}*\nبقيمة: ${removedDeduction.amount} ج.م`);
+
+                openEmpDeductModal(email); // Refresh modal
+            }
         }
 
         // --- Employee Advances ---
@@ -663,7 +757,7 @@
             });
             await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
 
-            const msgUser = `💸 *إشعار صرف سلفة - ALMASTER*\n\nأهلاً *${u.name}*،\nتم صرف سلفة بقيمة: *${amount.toLocaleString()} ج.م*.\n📝 البيان: ${reason}\n\nيرجى العلم بأنه سيتم تسوية هذا المبلغ مع راتب الشهر الحالي.`;
+            const msgUser = `💸 *إشعار صرف سلفة - ALMASTER*\n\nأهلاً *${u.name}*،\nتم صرف سلفة بقيمة: *${amount.toLocaleString()} ج.م*.\n📝 البيان: ${reason}\n\nيرجى العلم بأنه سيتم تسوية هذا المبلغ تلقائياً مع راتب الشهر الحالي.`;
             const msgAdmin = `💸 *سلفة جديدة*\nتم صرف سلفة للموظف: *${u.name}*\nالقيمة: ${amount} ج.م\nالبيان: ${reason}`;
             
             notifyUser(u.telegram_id, msgUser);
@@ -673,23 +767,17 @@
             alert("تم صرف السلفة وخصمها من الخزينة بنجاح");
         }
 
-        // --- Employee Receipts & Finance ---
+        // --- Employee Receipts & Finance (No Deductions Notifs here) ---
         function addMultipleReceipts(input) { 
             const list = document.getElementById('receipts-preview-list');
             Array.from(input.files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     empTempReceipts.push(e.target.result);
-                    list.innerHTML += `<img src="${e.target.result}" class="w-10 h-10 rounded-lg object-cover border border-slate-200">`;
+                    list.innerHTML += `<img src="${e.target.result}" class="w-12 h-12 rounded-xl object-cover border-2 border-slate-200">`;
                 };
                 reader.readAsDataURL(file);
             });
-        }
-
-        function addDeductionRow(amount=0, reason="") { 
-            const d=document.createElement('div'); d.className="flex gap-3 items-center bg-slate-50 p-4 rounded-2xl border border-slate-100"; 
-            d.innerHTML=`<input type="number" placeholder="المبلغ" value="${amount}" class="w-24 bg-white border rounded-xl px-4 py-2 font-black text-red-600 outline-none"><input type="text" placeholder="سبب الخصم" value="${reason}" class="flex-1 bg-white border rounded-xl px-4 py-2 outline-none"><button type="button" onclick="this.parentElement.remove()" class="text-red-300 transition p-2"><i class="fas fa-minus-circle"></i></button>`; 
-            document.getElementById('deductions-container').appendChild(d); 
         }
 
         function openFinanceModal(email) { 
@@ -709,11 +797,8 @@
             document.getElementById('fin-bonus').value=m.bonus||0; 
             document.getElementById('fin-incentive').value=m.incentive||0; 
             
-            document.getElementById('deductions-container').innerHTML=''; 
-            (m.deductions||[]).forEach(d=>addDeductionRow(d.amount,d.reason)); 
-            
             (m.receipts||[]).forEach(r => {
-                document.getElementById('receipts-preview-list').innerHTML += `<img src="${r}" class="w-10 h-10 rounded-lg object-cover border border-slate-200">`;
+                document.getElementById('receipts-preview-list').innerHTML += `<img src="${r}" class="w-12 h-12 rounded-xl object-cover border-2 border-slate-200">`;
             });
 
             document.getElementById('modal-finance').classList.remove('hidden'); 
@@ -727,17 +812,10 @@
             const u = allUsers.find(x => x.id === email);
             const mFin = u.monthly_finance || {}; 
             
-            const oldDeductions = (mFin[currentSelectedMonth] && mFin[currentSelectedMonth].deductions) || [];
-            if(!mFin[currentSelectedMonth]) mFin[currentSelectedMonth] = { status: 'pending' }; 
-            
-            const dItems = Array.from(document.querySelectorAll('#deductions-container > div')).map(r => ({
-                amount: parseFloat(r.querySelector('input[type="number"]').value) || 0,
-                reason: r.querySelector('input[type="text"]').value || "خصم"
-            })); 
+            if(!mFin[currentSelectedMonth]) mFin[currentSelectedMonth] = { status: 'pending', deductions: [] }; 
             
             mFin[currentSelectedMonth].bonus = parseFloat(document.getElementById('fin-bonus').value) || 0; 
             mFin[currentSelectedMonth].incentive = parseFloat(document.getElementById('fin-incentive').value) || 0; 
-            mFin[currentSelectedMonth].deductions = dItems; 
             
             if(empTempReceipts.length > 0) {
                 mFin[currentSelectedMonth].receipts = [...(mFin[currentSelectedMonth].receipts || []), ...empTempReceipts];
@@ -754,23 +832,6 @@
                 monthly_finance: mFin
             }); 
             
-            // مقارنة الخصومات لإرسال الإشعارات
-            const newDeductions = dItems.filter(nd => !oldDeductions.some(od => od.amount === nd.amount && od.reason === nd.reason));
-            const removedDeductions = oldDeductions.filter(od => !dItems.some(nd => nd.amount === od.amount && nd.reason === od.reason));
-            const monthLabel = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
-
-            newDeductions.forEach(nd => {
-                const msg = `⚠️ *إشعار خصم مالي - ALMASTER*\n\nأهلاً *${u.name}*،\nتم تسجيل خصم بقيمة: *${nd.amount} ج.م* من راتبك لشهر ${monthLabel}.\n\n📝 *السبب:* ${nd.reason}\n\nنرجو الانتباه والحرص على عدم تكرار هذا الأمر مستقبلاً للحفاظ على تقييمك الممتاز. نحن ندعمك دائماً للتطور! 💪`;
-                notifyUser(u.telegram_id, msg);
-                notifyAdmin(`⚠️ تم تسجيل خصم للموظف: *${u.name}* \nبقيمة: ${nd.amount} ج.م \nالسبب: ${nd.reason}`);
-            });
-
-            removedDeductions.forEach(rd => {
-                const msg = `🎉 *إشعار برفع خصم - ALMASTER*\n\nأهلاً *${u.name}*،\nبناءً على التزامك ومراجعة الإدارة، تم *رفع وإلغاء الخصم* المقدر بـ: *${rd.amount} ج.م* (الخاص بـ: ${rd.reason}).\n\nنتمنى أن يكون هذا حافزاً لك للاستمرار في الإبداع وعدم تكرار الأخطاء السابقة.. ثقتنا بك كبيرة! 🚀`;
-                notifyUser(u.telegram_id, msg);
-                notifyAdmin(`🎉 تم إزالة خصم للموظف: *${u.name}* \nبقيمة: ${rd.amount} ج.م`);
-            });
-
             closeFinanceModal(); 
         }
 
@@ -962,7 +1023,6 @@
                 let n=[...monthData.expenses]; 
                 const removedItem = n[i];
                 n.splice(i,1); 
-                
                 await db.collection("financial_months").doc(currentSelectedMonth).set({expenses:n},{merge:true});
                 notifyAdmin(`🗑 تم حذف سجل مالي (استرداد لخزينة): \n${removedItem.title}`);
             }
@@ -1012,7 +1072,7 @@
             document.getElementById('rep-bonus').innerText = boT.toLocaleString();
             document.getElementById('rep-incen').innerText = iT.toLocaleString();
             document.getElementById('rep-deduct').innerText = dT.toLocaleString();
-            document.getElementById('rep-paid-sal').innerText = paidS.toLocaleString(); // بدون سلف لأن السلف في النثريات
+            document.getElementById('rep-paid-sal').innerText = paidS.toLocaleString(); 
 
             const tbody = document.getElementById('rep-exp-body'); tbody.innerHTML = '';
             allExps.forEach(e => {
@@ -1063,13 +1123,11 @@
             let dSum = 0; 
             const dList = document.getElementById('s-ded-list'); dList.innerHTML = '';
             
-            // خصومات
             (m.deductions || []).forEach(d => { 
                 dSum += parseFloat(d.amount); 
                 dList.innerHTML += `<div>• خصم: ${d.reason} (${d.amount})</div>`; 
             });
             
-            // سلف
             const empAdvances = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === email);
             let advSum = 0;
             empAdvances.forEach(a => {
@@ -1096,7 +1154,7 @@
             finally { slipTemplate.style.display = 'none'; loader.classList.add('hidden'); }
         }
 
-        window.addEventListener('keydown', function(event){if(event.key==='Escape'){closeFinanceModal();closeVaultModal();closeExpenseModal();closeFreelancerModal();document.getElementById('modal-vault-logs').classList.add('hidden'); document.getElementById('modal-fl-deduct').classList.add('hidden'); document.getElementById('modal-emp-advance').classList.add('hidden'); }});
+        window.addEventListener('keydown', function(event){if(event.key==='Escape'){closeFinanceModal();closeVaultModal();closeExpenseModal();closeFreelancerModal();document.getElementById('modal-vault-logs').classList.add('hidden'); document.getElementById('modal-fl-deduct').classList.add('hidden'); document.getElementById('modal-emp-advance').classList.add('hidden'); document.getElementById('modal-emp-deduct').classList.add('hidden'); }});
     </script>
 </body>
 </html>
