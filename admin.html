@@ -523,14 +523,14 @@
 
         function updateSidebarChatDropdown() {
             const select = document.getElementById('sidebar-user-chat');
-            const currentVal = select.value;
             select.innerHTML = '<option value="">اختر موظف للمحادثة...</option>';
             allUsersData.forEach(u => {
                 if(u.email !== currentUser.email) {
-                    select.innerHTML += `<option value="${u.email}">${u.name}</option>`;
+                    // إضافة الاسم والوظيفية في نص الخيار
+                    const optionText = `${u.name} (${u.title || u.role})`;
+                    select.innerHTML += `<option value="${u.email}">${optionText}</option>`;
                 }
             });
-            select.value = currentVal;
         }
 
         function startChatFromSidebar() {
@@ -605,9 +605,40 @@
                             <button onclick="requestScreenshot('${u.email}')" class="py-2 bg-yellow-500/10 text-yellow-500 rounded-lg text-[10px] font-black hover:bg-yellow-500 hover:text-white transition" title="طلب لقطة شاشة"><i class="fas fa-camera"></i></button>
                             <button onclick="viewHistory('${u.email}')" class="py-2 bg-cyan-500/10 text-cyan-500 rounded-lg text-[10px] font-black hover:bg-cyan-500 hover:text-white transition" title="سجل الموظف"><i class="fas fa-history"></i></button>
                             <button onclick="openUserModal('${u.email}')" class="py-2 bg-slate-500/10 text-slate-400 rounded-lg text-[10px] font-black hover:bg-slate-500 hover:text-white transition" title="إعدادات وصلاحيات"><i class="fas fa-cog"></i></button>
+                            <button onclick="forceUserLogout('${u.email}')" class="py-2 bg-red-600/10 text-red-500 rounded-lg text-[10px] font-black hover:bg-red-600 hover:text-white transition" title="تسجيل خروج إجباري"> <i class="fas fa-sign-out-alt"></i></button>
                         </div>
                     </div>`;
             });
+        }
+        async function forceUserLogout(targetEmail) {
+            if(!confirm("هل أنت متأكد من تسجيل خروج الموظف إجبارياً؟ سيتم تحويل حالته لـ Offline فوراً.")) return;
+            
+            try {
+                const userRef = db.collection('users').doc(targetEmail);
+                const uData = (await userRef.get()).data();
+                const now = Date.now();
+                const duration = now - (getMillis(uData.lastChange) || now);
+                let tb = uData.timeBank || {};
+                const oldStatus = uData.isIdle ? 'Idle' : (uData.status || 'Offline');
+        
+                if(oldStatus !== 'Offline') {
+                    tb[oldStatus] = (tb[oldStatus] || 0) + duration;
+                }
+        
+                const ts = firebase.firestore.FieldValue.serverTimestamp();
+                
+                await userRef.update({
+                    status: 'Offline',
+                    isIdle: false,
+                    lastChange: ts,
+                    timeBank: tb
+                });
+                
+                alert("تم تسجيل خروج الموظف بنجاح.");
+            } catch(e) {
+                console.error(e);
+                alert("فشل في تنفيذ العملية.");
+            }
         }
 
         async function adminForceStatus(targetEmail, newStatus) {
@@ -946,32 +977,58 @@
         }
 
         function openPrivateChat(email, name, photo, title = 'موظف') {
+            // توحيد المعرف الخاص بالشات بين الطرفين
             const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+            
+            // منع تكرار فتح نفس النافذة إذا كانت مفتوحة بالفعل
             if (document.getElementById(`chat-win-${chatId}`)) return;
-
+        
             const win = document.createElement('div');
             win.id = `chat-win-${chatId}`;
             win.className = "chat-window fixed bottom-8 left-8 w-[320px] h-[450px] bg-dark-900 border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col animate-fade-in z-[101] overflow-hidden pointer-events-auto";
+            
             win.innerHTML = `
                 <div class="p-4 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header shrink-0">
                     <div class="flex items-center gap-3">
-                        <img src="${photo || DEFAULT_PHOTO + name}" class="w-8 h-8 rounded-xl object-cover border border-white/10">
-                        <div class="leading-none">
-                            <p class="text-[11px] font-black text-white">${name}</p>
-                            <p class="text-[8px] font-bold text-slate-400 mt-1 uppercase">${title}</p>
+                        <div class="relative">
+                            <img src="${photo || DEFAULT_PHOTO + encodeURIComponent(name)}" class="w-10 h-10 rounded-xl object-cover border border-white/10 shadow-sm">
+                            <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-dark-950 rounded-full"></span>
+                        </div>
+                        <div class="leading-tight">
+                            <p class="text-[11px] font-black text-white truncate w-[140px]">${name}</p>
+                            <p class="text-[8px] font-bold text-primary-500 mt-1 uppercase tracking-tighter">${title}</p>
                         </div>
                     </div>
-                    <button onclick="this.parentElement.parentElement.remove()" class="text-slate-500 hover:text-white btn-glass w-8 h-8 rounded-lg flex justify-center items-center"><i class="fas fa-times"></i></button>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-slate-500 hover:text-white btn-glass w-8 h-8 rounded-lg flex justify-center items-center transition-all">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
                 </div>
-                <div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 custom-scrollbar bg-dark-950/20"></div>
+        
+                <div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 custom-scrollbar bg-dark-950/20">
+                    <div class="flex justify-center py-10 opacity-20">
+                        <i class="fas fa-lock text-[10px] ml-2"></i>
+                        <span class="text-[8px] font-bold uppercase tracking-widest">تشفير طرف لآخر</span>
+                    </div>
+                </div>
+        
                 <form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-3 bg-dark-900 border-t border-white/5 flex gap-2">
-                    <input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-[10px] text-white outline-none focus:border-primary-500" placeholder="رد على الموظف..." autocomplete="off">
-                    <button class="bg-primary-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg text-white hover:bg-primary-500"><i class="fas fa-paper-plane text-xs"></i></button>
+                    <input type="text" id="input-${chatId}" 
+                        class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-[10px] text-white outline-none focus:border-primary-500 placeholder:text-slate-600" 
+                        placeholder="اكتب ردك هنا..." 
+                        autocomplete="off">
+                    <button type="submit" class="bg-primary-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg text-white hover:bg-primary-500 transition-all">
+                        <i class="fas fa-paper-plane text-xs"></i>
+                    </button>
                 </form>`;
+        
             document.getElementById('private-chats-container').appendChild(win);
+            
+            // تشغيل الاستماع للرسائل الخاصة بهذا الشات
             listenToPrivateChat(email, chatId);
+            
+            // تركيز المؤشر على حقل الإدخال فور الفتح
+            setTimeout(() => document.getElementById(`input-${chatId}`).focus(), 100);
         }
-
         async function sendPrivateMsg(e, email, chatId) {
             e.preventDefault();
             const inp = document.getElementById(`input-${chatId}`);
@@ -1009,3 +1066,4 @@
     </script>
 </body>
 </html>
+
