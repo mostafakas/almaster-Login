@@ -67,11 +67,11 @@
         <nav class="flex-1 py-4 px-3 space-y-1 custom-scrollbar overflow-y-auto">
             <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 transition"><i class="fas fa-chart-pie w-5"></i> لوحة التحكم</button>
             <button onclick="switchView('clients')" id="nav-clients" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 transition"><i class="fas fa-users w-5"></i> إدارة العملاء</button>
-            <button onclick="switchView('projects')" id="nav-projects" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 transition"><i class="fas fa-project-diagram w-5"></i> إدارة المشاريع</button>
+            <button onclick="switchView('projects')" id="nav-projects" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 transition"><i class="fas fa-project-diagram w-5"></i> إدارة المشاريع والمهام</button>
             <button onclick="switchView('financials')" id="nav-financials" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 transition"><i class="fas fa-file-invoice-dollar w-5"></i> الفواتير والمصروفات</button>
             
             <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-                <button onclick="window.location.href='index.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white bg-slate-800 hover:bg-slate-900 transition shadow-md"><i class="fas fa-desktop w-5"></i> سيستم الحضور والمهام</button>
+                <button onclick="window.location.href='index.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white bg-slate-800 hover:bg-slate-900 transition shadow-md"><i class="fas fa-desktop w-5"></i> سيستم التشغيل والمهام</button>
             </div>
         </nav>
 
@@ -177,8 +177,7 @@
             <form id="form-project" onsubmit="saveProject(event)" class="space-y-4">
                 <input type="hidden" id="p-id">
                 <div><label class="text-[10px] font-bold text-slate-500">العميل المرتبط</label>
-                    <select id="p-client" class="form-input" required>
-                        </select>
+                    <select id="p-client" class="form-input" required></select>
                 </div>
                 <div><label class="text-[10px] font-bold text-slate-500">اسم المشروع / الخدمة</label><input type="text" id="p-title" class="form-input" required></div>
                 <div class="grid grid-cols-2 gap-4">
@@ -198,16 +197,23 @@
             <form id="form-assign-task" onsubmit="saveAssignedTask(event)" class="space-y-4">
                 <input type="hidden" id="task-proj-id">
                 <div><label class="text-[10px] font-bold text-slate-500">المشروع</label><input type="text" id="task-proj-title" class="form-input bg-slate-200 text-slate-500" readonly></div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-500">استدعاء موظف للتنفيذ</label>
-                    <select id="task-employee" class="form-input" required>
-                        </select>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500">استدعاء موظف للتنفيذ</label>
+                        <select id="task-employee" class="form-input" required></select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500">تكلفة المهمة (تُخصم من أرباح المشروع)</label>
+                        <input type="number" id="task-cost" class="form-input" placeholder="0" min="0">
+                    </div>
                 </div>
+
                 <div><label class="text-[10px] font-bold text-slate-500">عنوان المهمة</label><input type="text" id="task-title" class="form-input" required></div>
                 <div><label class="text-[10px] font-bold text-slate-500">التفاصيل المطلوبة</label><textarea id="task-desc" class="form-input h-20" required></textarea></div>
                 
                 <div class="flex gap-2 mt-4">
-                    <button type="submit" class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-lg shadow-lg hover:bg-indigo-700">إرسال للموظف</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-lg shadow-lg hover:bg-indigo-700">إرسال للموظف وحفظ التكلفة</button>
                     <button type="button" onclick="closeModal('modal-assign-task')" class="bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-lg">إلغاء</button>
                 </div>
             </form>
@@ -274,18 +280,17 @@
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-        // Helper to cleanly open NEW forms (clears hidden IDs)
         function openNewClient() {
             document.getElementById('form-client').reset();
-            document.getElementById('c-id').value = ''; // Clear hidden ID so it adds, not updates!
+            document.getElementById('c-id').value = ''; 
             document.getElementById('client-modal-title').innerText = "إضافة عميل جديد";
             openModal('modal-client');
         }
         
         function openNewProject() {
             document.getElementById('form-project').reset();
-            document.getElementById('p-id').value = ''; // Clear hidden ID
-            updateDropdowns(); // Refresh clients dropdown
+            document.getElementById('p-id').value = '';
+            updateDropdowns(); 
             document.getElementById('project-modal-title').innerText = "إضافة مشروع جديد";
             openModal('modal-project');
         }
@@ -299,7 +304,7 @@
         function initDataListeners() {
             db.collection('users').onSnapshot(snap => {
                 allUsers = snap.docs.map(d => ({ email: d.id, ...d.data() }));
-                renderProjects(); // Re-render projects to update Task Progress bar!
+                renderProjects(); 
             });
 
             db.collection('clients').onSnapshot(snap => {
@@ -390,7 +395,6 @@
         function updateDropdowns() {
             const cDrop = document.getElementById('p-client');
             cDrop.innerHTML = '<option value="" disabled selected>-- اختر الشركة / العميل --</option>';
-            // إظهار جميع العملاء وليس النشطين فقط
             allClients.forEach(c => cDrop.innerHTML += `<option value="${c.id}">${c.name} (${c.type})</option>`);
 
             const pDrops = [document.getElementById('ex-project'), document.getElementById('inv-project')];
@@ -430,12 +434,10 @@
             list.innerHTML = '';
             
             allProjects.forEach(p => {
-                // حساب المصروفات
                 const projExpenses = allExpenses.filter(e => e.projectId === p.id).reduce((sum, e) => sum + e.amount, 0);
                 const profit = p.budget - projExpenses;
                 const profitColor = profit >= 0 ? 'text-green-600' : 'text-red-600';
                 
-                // 🟢 حساب نسبة الإنجاز بناءً على المهام الموكلة للموظفين 🟢
                 let totalTasks = 0;
                 let doneTasks = 0;
                 allUsers.forEach(u => {
@@ -497,7 +499,7 @@
             openModal('modal-project');
         }
 
-        // --- نظام إسناد المهام للموظفين (Integration with Old System) ---
+        // --- نظام إسناد المهام المطور (بإضافة التكلفة) ---
         function openAssignTask(projectId, projectTitle) {
             document.getElementById('form-assign-task').reset();
             document.getElementById('task-proj-id').value = projectId;
@@ -518,22 +520,26 @@
             btn.innerText = 'جاري الإرسال...'; btn.disabled = true;
 
             const projId = document.getElementById('task-proj-id').value;
+            const projTitle = document.getElementById('task-proj-title').value;
             const targetEmail = document.getElementById('task-employee').value;
-            const title = document.getElementById('task-title').value;
-            const desc = document.getElementById('task-desc').value;
+            const taskTitle = document.getElementById('task-title').value;
+            const taskDesc = document.getElementById('task-desc').value;
+            const taskCost = Number(document.getElementById('task-cost').value) || 0; // سحب التكلفة
 
             try {
-                // هنجيب بيانات الموظف اللي اخترناه
+                // 1. إرسال المهمة للموظف عشان تظهرله في السيستم القديم
                 const userRef = db.collection('users').doc(targetEmail);
                 const doc = await userRef.get();
                 let employeeTasks = doc.data().tasks || [];
+                
+                // جلب اسم الموظف من إيميله
+                const empName = allUsers.find(u => u.email === targetEmail)?.name || 'الموظف';
 
-                // هنضيف المهمة في قايمة مهام الموظف عشان تظهرله في السيستم القديم
                 employeeTasks.push({
                     id: Date.now(),
-                    projectId: projId, // الربط السحري!
-                    title: title,
-                    desc: desc,
+                    projectId: projId, 
+                    title: taskTitle,
+                    desc: taskDesc,
                     status: 'started',
                     ownerEmail: targetEmail,
                     createdByEmail: currentUser.email,
@@ -542,12 +548,25 @@
                 });
 
                 await userRef.update({ tasks: employeeTasks });
-                alert("تم إرسال المهمة للموظف بنجاح! ستسمّع في نسبة الإنجاز تلقائياً عندما ينتهي منها.");
+
+                // 2. السحر المالي: لو حطيت تكلفة للتاسك، هتتسجل كمصروف أوتوماتيك على المشروع!
+                if(taskCost > 0) {
+                    await db.collection('expenses').add({
+                        projectId: projId,
+                        projectName: projTitle,
+                        amount: taskCost,
+                        desc: `تكلفة مهمة (${taskTitle}) للموظف: ${empName}`,
+                        addedBy: userProfile.name,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+
+                alert("تم إرسال المهمة بنجاح!" + (taskCost > 0 ? " وتم تسجيل تكلفتها على المشروع." : ""));
                 closeModal('modal-assign-task');
             } catch(err) {
                 alert("حدث خطأ أثناء إسناد المهمة: " + err.message);
             }
-            btn.innerText = 'إرسال للموظف'; btn.disabled = false;
+            btn.innerText = 'إرسال للموظف وحفظ التكلفة'; btn.disabled = false;
         }
 
         // 6. Expenses & Invoices
