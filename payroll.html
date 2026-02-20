@@ -417,6 +417,55 @@
     </div>
 
     <div id="slip-image-template" style="width: 1080px; min-height: 1350px; padding: 80px; background: #fff; color: #000; direction: rtl; text-align: right;">
+        <div id="fl-report-template" style="width: 1080px; min-height: 1350px; padding: 80px; background: #fff; color: #000; direction: rtl; text-align: right; display: none; position: absolute; top: 0; left: 0; z-index: -50;">
+        <div class="official-border" style="border: 4px double #000; padding: 60px; min-height: 1230px; display: flex; flex-direction: column;">
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 40px;">
+                <h1 style="font-size: 30px; font-weight: 900; margin: 0;">بيان مستحقات مستقل (Freelancer Statement)</h1>
+                <p style="font-size: 20px; font-weight: bold; margin-top: 10px;">شركة الماستر تكنولوجي - ALMASTER TECHNOLOGY</p>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; font-size: 20px; margin-bottom: 40px; border: 1px solid #000; padding: 25px;">
+                <div><span style="font-weight: 900;">الاسم:</span> <span id="fl-rep-name"></span></div>
+                <div><span style="font-weight: 900;">التخصص:</span> <span id="fl-rep-title"></span></div>
+                <div><span style="font-weight: 900;">تاريخ الإصدار:</span> <span id="fl-rep-date"></span></div>
+            </div>
+            
+            <h3 style="font-size: 22px; margin-bottom: 15px; font-weight: 900;">أولاً: ملخص الرصيد</h3>
+            <table class="table-official" style="width: 100%; border-collapse: collapse; font-size: 18px; margin-bottom: 40px;">
+                <tr style="background: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 15px;">إجمالي التعاقد</th>
+                    <th style="border: 1px solid #000; padding: 15px;">إجمالي المدفوع</th>
+                    <th style="border: 1px solid #000; padding: 15px;">إجمالي الخصومات</th>
+                    <th style="border: 1px solid #000; padding: 15px; background: #e2e8f0;">الرصيد المتبقي</th>
+                </tr>
+                <tr style="font-weight: bold; text-align: center;">
+                    <td id="fl-rep-credit" style="border: 1px solid #000; padding: 15px;"></td>
+                    <td id="fl-rep-paid" style="border: 1px solid #000; padding: 15px; color: green;"></td>
+                    <td id="fl-rep-deducted" style="border: 1px solid #000; padding: 15px; color: red;"></td>
+                    <td id="fl-rep-remaining" style="border: 1px solid #000; padding: 15px; background: #f8fafc; font-size: 24px;"></td>
+                </tr>
+            </table>
+            
+            <h3 style="font-size: 22px; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 20px; font-weight: 900;">ثانياً: تفاصيل الحركات المالية (هذا الشهر)</h3>
+            <table class="table-official" style="width: 100%; border-collapse: collapse; font-size: 16px;">
+                <tr style="background: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 12px; width: 20%;">التاريخ</th>
+                    <th style="border: 1px solid #000; padding: 12px; width: 60%;">البيان</th>
+                    <th style="border: 1px solid #000; padding: 12px; width: 20%;">القيمة (ج.م)</th>
+                </tr>
+                <tbody id="fl-rep-logs-body"></tbody>
+            </table>
+
+            <div style="margin-top: auto; display: flex; justify-content: space-between; text-align: center; padding-top: 40px;">
+                <div style="flex: 1;"><p style="font-weight: 900; margin-bottom: 60px;">توقيع المستقل</p><p>...........................</p></div>
+                <div style="flex: 1;">
+                    <p style="font-weight: 900; margin-bottom: 60px;">اعتماد الإدارة المالية</p>
+                    <div style="width: 100px; height: 100px; border: 2px solid #000; margin: auto; display:flex; align-items:center; justify-content:center; border-radius:50%; transform: rotate(-10deg);">
+                        <span style="font-size:14px; font-weight:bold;">ALMASTER<br>CONFIRMED</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
         <div class="official-border" style="border: 4px double #000; padding: 60px; min-height: 1230px; display: flex; flex-direction: column;">
             <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 40px;">
                 <h1 style="font-size: 30px; font-weight: 900; margin: 0;">بيان راتب شهري (Payslip)</h1>
@@ -677,6 +726,7 @@
                                 <button onclick="openFreelancerModal('${f.id}')" class="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 hover:bg-slate-900 hover:text-white transition shadow-sm border border-slate-100" title="تحديد قيمة التعاقد"><i class="fas fa-edit"></i></button>
                                 <button onclick="openPayModal('${f.id}')" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition shadow-sm border border-emerald-100" title="صرف دفعة"><i class="fas fa-hand-holding-usd"></i></button>
                                 <button onclick="openFlDeductModal('${f.id}')" class="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white transition shadow-sm border border-orange-100" title="خصم مالي"><i class="fas fa-minus-circle"></i></button>
+                                <button onclick="generateFreelancerReport('${f.id}')" class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white transition shadow-sm border border-purple-100" title="تقرير حساب المستقل"><i class="fas fa-file-invoice-dollar"></i></button>
                             </div>
                         </td>
                     </tr>`;
@@ -1189,8 +1239,77 @@
         }
 
         window.addEventListener('keydown', function(event){if(event.key==='Escape'){closeFinanceModal();closeVaultModal();closeExpenseModal();closeFreelancerModal();document.getElementById('modal-vault-logs').classList.add('hidden'); document.getElementById('modal-fl-deduct').classList.add('hidden'); document.getElementById('modal-emp-advance').classList.add('hidden'); document.getElementById('modal-emp-deduct').classList.add('hidden'); }});
+   
+        async function generateFreelancerReport(email) {
+            const loader = document.getElementById('payroll-loader');
+            loader.classList.remove('hidden');
+
+            const flTemplate = document.getElementById('fl-report-template');
+            flTemplate.style.display = 'block'; 
+            void flTemplate.offsetHeight; // إجبار المتصفح على رسم العنصر
+
+            const f = allUsers.find(x => x.id === email);
+            const allExps = monthData.expenses || [];
+            
+            // تعبئة البيانات الأساسية
+            document.getElementById('fl-rep-name').innerText = f.name;
+            document.getElementById('fl-rep-title').innerText = f.title || "---";
+            document.getElementById('fl-rep-date').innerText = new Date().toLocaleDateString('ar-EG');
+            
+            const credit = parseFloat(f.fl_total_credit) || 0;
+            const paid = parseFloat(f.fl_total_paid) || 0;
+            const deducted = parseFloat(f.fl_total_deducted) || 0;
+            const remaining = credit - paid - deducted;
+            
+            document.getElementById('fl-rep-credit').innerText = credit.toLocaleString();
+            document.getElementById('fl-rep-paid').innerText = paid.toLocaleString();
+            document.getElementById('fl-rep-deducted').innerText = deducted.toLocaleString();
+            document.getElementById('fl-rep-remaining').innerText = remaining.toLocaleString() + " ج.م";
+            
+            // جلب تفاصيل الحركات لهذا الفريلانسر خلال الشهر المحدد
+            const tbody = document.getElementById('fl-rep-logs-body');
+            tbody.innerHTML = '';
+            
+            const flLogs = allExps.filter(e => e.fl_id === email);
+            if(flLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="border: 1px solid #000; padding: 15px; text-align: center; font-weight: bold;">لا توجد حركات مالية مسجلة في هذا الشهر</td></tr>`;
+            } else {
+                flLogs.forEach(log => {
+                    let amountStr = '';
+                    let titleStr = log.title;
+                    if(log.type === 'freelancer') {
+                        amountStr = `<span style="color: green; font-weight: 900; direction: ltr; display: inline-block;">+ ${parseFloat(log.amount).toLocaleString()}</span>`;
+                    } else if (log.type === 'fl_deduction') {
+                        amountStr = `<span style="color: red; font-weight: 900; direction: ltr; display: inline-block;">- ${parseFloat(log.deduction_val).toLocaleString()}</span>`;
+                    }
+                    
+                    tbody.innerHTML += `<tr>
+                        <td style="border: 1px solid #000; padding: 12px; text-align: center; font-weight: bold;">${log.date}</td>
+                        <td style="border: 1px solid #000; padding: 12px;">${titleStr}</td>
+                        <td style="border: 1px solid #000; padding: 12px; text-align: center;">${amountStr}</td>
+                    </tr>`;
+                });
+            }
+            
+            // الانتظار قليلاً لضمان اكتمال الرندر
+            await new Promise(r => setTimeout(r, 300));
+
+            try {
+                const canvas = await html2canvas(flTemplate, { scale: 2, useCORS: true });
+                const a = document.createElement('a'); 
+                a.download = `Freelancer_Report_${f.name}.png`; 
+                a.href = canvas.toDataURL("image/png"); 
+                a.click();
+            } catch (err) { 
+                alert("حدث خطأ أثناء تحميل التقرير"); 
+            } finally { 
+                flTemplate.style.display = 'none'; 
+                loader.classList.add('hidden'); 
+            }
+        }
     </script>
 </body>
 </html>
+
 
 
