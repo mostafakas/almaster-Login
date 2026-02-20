@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مساحة العمل | ALMASTER</title>
+    <meta name="theme-color" content="#0f172a">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { primary: { 500: '#0ea5e9', 600: '#0284c7' }, dark: { 800: '#1e293b', 900: '#0f172a', 950: '#020617' } },
+                    fontFamily: { sans: ['Outfit', 'Cairo', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #020617; color: #f1f5f9; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .hidden-section { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 20px; }
+        
+        /* تأثير البطاقة النشطة */
+        .status-card-active { transform: scale(1.05); border-width: 3px; box-shadow: 0 0 20px rgba(14, 165, 233, 0.2); }
+        .active-Online { background-color: #064e3b !important; border-color: #10b981 !important; color: white !important; }
+        .active-Break { background-color: #78350f !important; border-color: #f59e0b !important; color: white !important; }
+        .active-Meeting { background-color: #1e3a8a !important; border-color: #3b82f6 !important; color: white !important; }
+
+        .task-card { background: #0f172a; border: 1px solid #1e293b; transition: all 0.2s; }
+        .task-card:hover { border-color: #0ea5e9; background: #1e293b; }
+        .task-card.active { border-right: 5px solid #0ea5e9; background: #1e293b; }
+
+        .ql-editor { direction: rtl; text-align: right; font-family: 'Cairo', sans-serif; color: white; }
+        .ql-toolbar { background: #f1f5f9 !important; border-radius: 8px 8px 0 0; }
+    </style>
+</head>
+
+<body class="dark text-slate-100">
+
+    <div id="loader" class="fixed inset-0 z-[200] bg-dark-950 flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
+        <h2 class="text-lg font-bold animate-pulse tracking-widest">جاري تهيئة مساحة العمل...</h2>
+    </div>
+
+    <header class="h-16 border-b border-white/5 bg-dark-900 px-6 flex items-center justify-between shrink-0 z-50">
+        <div class="flex items-center gap-4">
+            <img src="MASTER_LOGO_WHPNG.png" class="h-8 object-contain" onerror="this.src='https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=AL'">
+            <div class="h-6 w-[1px] bg-white/10 mx-2"></div>
+            <h2 class="text-sm font-black tracking-tight text-slate-400">EMPLOYEE <span class="text-white">WORKSPACE</span></h2>
+        </div>
+        <div class="flex flex-col items-center">
+            <div id="header-time" class="text-xl font-black font-mono tracking-widest text-primary-500">00:00:00</div>
+            <div id="header-date" class="text-[9px] font-bold text-slate-500 uppercase">Loading Date...</div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div id="connection-status" class="flex items-center gap-2 text-[10px] font-bold text-green-500 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span> متصل مباشر
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <div class="w-1/3 max-w-[380px] border-l border-white/5 p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar bg-dark-950/50">
+            
+            <div class="flex items-center gap-4 p-4 rounded-3xl bg-dark-900 border border-white/5 shrink-0">
+                <img id="user-img" src="" class="w-16 h-16 rounded-2xl object-cover border-2 border-primary-500 shadow-lg shadow-primary-500/10">
+                <div class="overflow-hidden">
+                    <h3 id="user-name" class="font-black text-lg truncate">User Name</h3>
+                    <p id="user-role" class="text-[10px] font-bold text-primary-500 uppercase tracking-widest">Position</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 shrink-0">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">تحكم في حالتك الحالية:</p>
+                
+                <div id="card-Online" onclick="handleStatusClick('Online')" class="group cursor-pointer transition-all p-4 rounded-2xl border border-white/5 bg-dark-900 flex items-center justify-between hover:border-green-500/50">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-green-500/10 text-green-500 flex items-center justify-center group-hover:scale-110 transition"><i class="fas fa-laptop-code"></i></div>
+                        <div><p class="text-[10px] font-bold opacity-60">وقت العمل</p><p id="timer-online" class="text-base font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                    </div>
+                    <i class="fas fa-play text-xs opacity-0 group-hover:opacity-100 transition"></i>
+                </div>
+
+                <div id="card-Break" onclick="handleStatusClick('Break')" class="group cursor-pointer transition-all p-4 rounded-2xl border border-white/5 bg-dark-900 flex items-center justify-between hover:border-orange-500/50">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-110 transition"><i class="fas fa-coffee"></i></div>
+                        <div><p class="text-[10px] font-bold opacity-60">استراحة</p><p id="timer-break" class="text-base font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                    </div>
+                    <i class="fas fa-pause text-xs opacity-0 group-hover:opacity-100 transition"></i>
+                </div>
+
+                <div id="card-Meeting" onclick="handleStatusClick('Meeting')" class="group cursor-pointer transition-all p-4 rounded-2xl border border-white/5 bg-dark-900 flex items-center justify-between hover:border-blue-500/50">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition"><i class="fas fa-users"></i></div>
+                        <div><p class="text-[10px] font-bold opacity-60">اجتماع</p><p id="timer-meeting" class="text-base font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                    </div>
+                    <i class="fas fa-handshake text-xs opacity-0 group-hover:opacity-100 transition"></i>
+                </div>
+            </div>
+
+            <div class="space-y-4 mt-2 shrink-0">
+                <div class="bg-red-500/5 border border-red-500/10 p-4 rounded-2xl flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center animate-pulse"><i class="fas fa-keyboard"></i></div>
+                    <div><p class="text-[10px] font-bold text-red-400 opacity-60 uppercase">الخمول اليومي</p><p id="timer-idle" class="text-lg font-black text-red-500 stat-idle" data-val="0" data-isidle="false" data-start="0">00:00:00</p></div>
+                </div>
+
+                <div class="relative">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2 mb-2">تواصل سريع مع الزملاء:</p>
+                    <select id="chat-select" onchange="startChat(this)" class="form-input bg-dark-900 border-white/10 text-white font-bold cursor-pointer hover:border-primary-500">
+                        <option value="" disabled selected>💬 اختر زميل لبدء محادثة...</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="logout()" class="mt-auto w-full py-4 rounded-2xl bg-red-500/10 text-red-500 font-black hover:bg-red-500 hover:text-white transition flex items-center justify-center gap-3 shadow-lg">
+                <i class="fas fa-sign-out-alt"></i> تسجيل الخروج النهائي
+            </button>
+        </div>
+
+        <div class="flex-1 flex overflow-hidden">
+            
+            <div class="w-80 border-l border-white/5 bg-dark-900/50 flex flex-col shrink-0">
+                <div class="p-6 border-b border-white/5 flex flex-col gap-4">
+                    <h3 class="font-black text-lg flex items-center gap-3"><i class="fas fa-clipboard-list text-primary-500"></i> قائمة المهام</h3>
+                    <div class="flex p-1 bg-dark-950 rounded-xl border border-white/5">
+                        <button onclick="changeTaskTab(false, this)" class="task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg bg-dark-800 text-white">المهام الحالية</button>
+                        <button onclick="changeTaskTab(true, this)" class="task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg text-slate-500">الأرشيف</button>
+                    </div>
+                </div>
+                <div id="task-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                    </div>
+            </div>
+
+            <div id="task-detail-pane" class="flex-1 bg-dark-950 flex flex-col overflow-hidden relative">
+                
+                <div id="task-empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-600">
+                    <i class="fas fa-folder-open text-7xl mb-4 opacity-20"></i>
+                    <p class="font-bold">اختر مهمة من القائمة لعرض التفاصيل والملفات</p>
+                </div>
+
+                <div id="task-content" class="hidden h-full flex flex-col">
+                    <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                        <div class="max-w-3xl mx-auto">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <div id="task-project-tag"></div>
+                                    <h1 id="task-title" class="text-3xl font-black mb-2 text-white">Task Title</h1>
+                                    <p class="text-xs text-slate-500 italic"><span id="task-date"></span> | الإسناد: <span id="task-assigner" class="text-primary-500 font-bold">Admin</span></p>
+                                </div>
+                                <div id="task-status-badge"></div>
+                            </div>
+                            
+                            <div id="task-desc" class="text-lg leading-relaxed text-slate-300 mb-8 border-b border-white/5 pb-8"></div>
+                            
+                            <div id="task-files" class="grid grid-cols-1 gap-3 mb-8"></div>
+
+                            <div class="space-y-6">
+                                <h4 class="font-black text-sm border-r-4 border-primary-500 pr-3">المناقشات والردود</h4>
+                                <div id="task-comments" class="space-y-4 pb-10"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-dark-900 border-t border-white/10 flex flex-col gap-3">
+                        <div id="task-action-controls" class="flex gap-2">
+                            </div>
+                        <form onsubmit="sendComment(event)" class="flex gap-3 items-center bg-dark-950 p-2 rounded-2xl border border-white/10">
+                            <input type="file" id="comment-file" class="hidden" onchange="handleFileSelect(this)">
+                            <button type="button" onclick="document.getElementById('comment-file').click()" class="w-10 h-10 rounded-xl hover:bg-white/5 text-slate-500 transition"><i class="fas fa-paperclip"></i></button>
+                            <input type="text" id="comment-input" class="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2" placeholder="اكتب ردك أو استفسارك هنا..." autocomplete="off">
+                            <button type="submit" class="w-12 h-10 bg-primary-600 rounded-xl hover:bg-primary-500 transition shadow-lg shadow-primary-500/20"><i class="fas fa-paper-plane"></i></button>
+                        </form>
+                        <div id="file-preview" class="hidden px-4 text-[10px] text-primary-500 font-bold"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="private-chats-container"></div>
+
+    <div id="modal-qa" class="fixed inset-0 z-[250] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-dark-900 w-full max-w-sm rounded-3xl p-6 border border-primary-500/30">
+            <h3 class="text-xl font-black text-primary-500 mb-4 text-center">إرسال للمراجعة 👁️‍🗨️</h3>
+            <p class="text-xs text-slate-400 mb-6 leading-relaxed text-center">لقد قمت بإنهاء العمل على هذه المهمة. يرجى اختيار المدير المسؤول ليتم مراجعة المخرجات واعتماد المهمة نهائياً.</p>
+            <select id="qa-manager-select" class="form-input font-bold mb-6"></select>
+            <div class="flex gap-2">
+                <button onclick="confirmQA()" class="flex-1 bg-primary-600 py-3 rounded-xl font-black shadow-lg">تأكيد الإرسال</button>
+                <button onclick="closeModal('modal-qa')" class="px-6 py-3 bg-dark-800 rounded-xl font-bold">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="img-preview-modal" class="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 hidden" onclick="this.classList.add('hidden')">
+        <img id="preview-target" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
+    </div>
+
+    <script>
+        // --- 1. Firebase Config ---
+        const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+
+        let currentUser = null, userProfile = null, allUsers = [];
+        let currentTasks = [], historyMode = false, selectedTaskId = null, attachedFile = null;
+
+        // --- 2. Auth Watcher ---
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
+                if(doc.exists) {
+                    userProfile = doc.data();
+                    // تأكيد الرتبة: لو أدمن أو سوبر يروح صفحته (Security)
+                    if (userProfile.role === 'admin') { window.location.replace('admin.html'); return; }
+                    
+                    document.getElementById('user-name').innerText = userProfile.name;
+                    document.getElementById('user-role').innerText = userProfile.role === 'leader' ? 'Team Leader' : 'Team Member';
+                    document.getElementById('user-img').src = userProfile.photo || `https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=${userProfile.name}`;
+                    
+                    document.getElementById('loader').classList.add('hidden');
+                    initWorkspace();
+                } else { auth.signOut(); }
+            } else { window.location.replace('index.html'); }
+        });
+
+        // --- 3. Workspace Initialization ---
+        function initWorkspace() {
+            startClock();
+            startIdleTracker();
+            listenToProfile();
+            listenToAllUsers();
+            setInterval(updateTimersUI, 1000);
+        }
+
+        function startClock() {
+            setInterval(() => {
+                const now = moment();
+                document.getElementById('header-time').innerText = now.format('HH:mm:ss');
+                document.getElementById('header-date').innerText = now.format('dddd, DD MMMM YYYY');
+            }, 1000);
+        }
+
+        // --- 4. Real-time Listeners ---
+        function listenToProfile() {
+            db.collection('users').doc(currentUser.email.toLowerCase()).onSnapshot(doc => {
+                userProfile = doc.data();
+                updateEmployeeUI(userProfile);
+                currentTasks = userProfile.tasks || [];
+                renderTasks();
+                if(selectedTaskId) {
+                    const task = currentTasks.find(t => t.id == selectedTaskId);
+                    if(task) updateTaskDetail(task);
+                }
+            });
+        }
+
+        function listenToAllUsers() {
+            db.collection('users').onSnapshot(snap => {
+                allUsers = snap.docs.map(d => ({ email: d.id, ...d.data() }));
+                updateChatSelect();
+            });
+        }
+
+        // --- 5. UI Renderers ---
+        function updateEmployeeUI(data) {
+            const status = data.status || 'Offline';
+            const tb = data.timeBank || {};
+            const safeStart = getMillis(data.lastChange);
+
+            // Update Timers Data
+            const timers = [
+                { id: 'timer-online', val: tb['Online'] || 0, active: status === 'Online' },
+                { id: 'timer-break', val: tb['Break'] || 0, active: status === 'Break' },
+                { id: 'timer-meeting', val: tb['Meeting'] || 0, active: status === 'Meeting' }
+            ];
+            timers.forEach(t => {
+                let el = document.getElementById(t.id);
+                el.dataset.val = t.val; el.dataset.active = t.active; el.dataset.start = safeStart;
+            });
+            
+            // Idle Data
+            const idleEl = document.getElementById('timer-idle');
+            idleEl.dataset.val = data.idleBank || 0;
+            idleEl.dataset.isidle = data.isIdle;
+            idleEl.dataset.start = getMillis(data.idleSince);
+
+            // 🟢 Update Card Styling 🟢
+            ['Online', 'Break', 'Meeting'].forEach(s => {
+                const card = document.getElementById('card-' + s);
+                card.classList.remove('status-card-active', 'active-Online', 'active-Break', 'active-Meeting');
+                if(s === status) {
+                    card.classList.add('status-card-active', 'active-' + s);
+                }
+            });
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('task-list');
+            container.innerHTML = '';
+            const filtered = currentTasks.filter(t => historyMode ? t.archived : !t.archived);
+            filtered.sort((a,b) => b.id - a.id);
+
+            filtered.forEach(t => {
+                const isActive = selectedTaskId == t.id;
+                const card = document.createElement('div');
+                card.className = `task-card p-4 rounded-2xl cursor-pointer ${isActive ? 'active' : ''}`;
+                card.onclick = () => selectTask(t);
+                
+                let statusIcon = '<i class="fas fa-circle text-[8px] text-slate-600"></i>';
+                if(t.status === 'working') statusIcon = '<i class="fas fa-spinner fa-spin text-[8px] text-blue-500"></i>';
+                if(t.status === 'review') statusIcon = '<i class="fas fa-eye text-[8px] text-purple-500"></i>';
+                if(t.status === 'done') statusIcon = '<i class="fas fa-check-circle text-[8px] text-green-500"></i>';
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <h4 class="font-bold text-xs truncate w-48 text-slate-200">${t.title}</h4>
+                        ${statusIcon}
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[9px] text-slate-500">${moment(t.id).fromNow()}</span>
+                        ${t.projectId ? `<span class="bg-indigo-500/10 text-indigo-400 text-[8px] px-2 py-0.5 rounded border border-indigo-500/20">PROJ</span>` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectTask(task) {
+            selectedTaskId = task.id;
+            renderTasks();
+            document.getElementById('task-empty-state').classList.add('hidden');
+            document.getElementById('task-content').classList.remove('hidden');
+            updateTaskDetail(task);
+        }
+
+        function updateTaskDetail(task) {
+            document.getElementById('task-title').innerText = task.title;
+            document.getElementById('task-desc').innerHTML = task.desc;
+            document.getElementById('task-date').innerText = moment(task.id).format('LLLL');
+            document.getElementById('task-assigner').innerText = task.createdBy || "Admin";
+
+            // Project Tag
+            const tagBox = document.getElementById('task-project-tag');
+            tagBox.innerHTML = task.projectId ? `<span class="bg-primary-600/10 text-primary-500 text-[10px] font-black px-3 py-1 rounded-full border border-primary-500/20 mb-2 inline-block">مشروع: ${task.projectName || 'مرتبط'}</span>` : '';
+
+            // Status Badge
+            const badgeBox = document.getElementById('task-status-badge');
+            const map = { 'started':['جديد','bg-slate-800 text-slate-400'], 'working':['جاري العمل','bg-blue-500/20 text-blue-400'], 'review':['قيد المراجعة','bg-purple-500/20 text-purple-400'], 'done':['مكتملة','bg-green-500/20 text-green-400'] };
+            const m = map[task.status] || map['started'];
+            badgeBox.innerHTML = `<span class="${m[1]} px-4 py-1.5 rounded-full text-[10px] font-black border border-white/5">${m[0]}</span>`;
+
+            // Files
+            const fileBox = document.getElementById('task-files');
+            fileBox.innerHTML = task.file ? `<div class="p-4 bg-dark-900 border border-white/5 rounded-2xl flex justify-between items-center"><div class="flex items-center gap-3"><i class="fas fa-file-pdf text-red-500 text-xl"></i><div><p class="text-xs font-bold text-slate-200">مرفق المهمة الرئيسي</p></div></div><a href="${task.file}" target="_blank" class="w-9 h-9 rounded-full bg-dark-800 flex items-center justify-center hover:bg-primary-500 transition"><i class="fas fa-download text-xs"></i></a></div>` : '';
+
+            // Action Buttons
+            const actionBox = document.getElementById('task-action-controls');
+            actionBox.innerHTML = '';
+            if(!task.archived && task.status !== 'done') {
+                if(task.status === 'started') actionBox.innerHTML += `<button onclick="updateStatus('${task.id}', 'working')" class="flex-1 py-3 bg-blue-600 rounded-xl font-black text-xs transition active:scale-95"><i class="fas fa-play mr-2"></i> بدء التنفيذ الآن</button>`;
+                if(task.status === 'working') actionBox.innerHTML += `<button onclick="openQAModal('${task.id}')" class="flex-1 py-3 bg-purple-600 rounded-xl font-black text-xs transition active:scale-95"><i class="fas fa-eye mr-2"></i> إرسال للمراجعة والاعتماد</button>`;
+                if(task.status === 'review') actionBox.innerHTML += `<div class="flex-1 py-3 bg-dark-800 text-slate-500 text-center rounded-xl font-black text-xs border border-white/5 animate-pulse">قيد مراجعة المدير حالياً...</div>`;
+            } else if(task.status === 'done') {
+                actionBox.innerHTML = `<div class="flex-1 py-3 bg-green-500/10 text-green-500 text-center rounded-xl font-black text-xs border border-green-500/20">المهمة مكتملة ومعتمدة ✅</div>`;
+            }
+
+            renderComments(task.comments || []);
+        }
+
+        function renderComments(comments) {
+            const box = document.getElementById('task-comments');
+            box.innerHTML = comments.length ? '' : '<p class="text-center text-[10px] text-slate-600 py-4">لا توجد ردود بعد...</p>';
+            comments.forEach(c => {
+                const isMe = c.user === currentUser.email;
+                if(c.user === 'system') {
+                    box.innerHTML += `<div class="flex justify-center"><span class="bg-dark-900 text-[9px] px-3 py-1 rounded-full text-slate-500 border border-white/5">${c.text}</span></div>`;
+                } else {
+                    box.innerHTML += `
+                        <div class="flex gap-3 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in">
+                            <img src="${DEFAULT_PHOTO + encodeURIComponent(c.name)}" class="w-8 h-8 rounded-lg shrink-0">
+                            <div class="max-w-[85%]">
+                                <div class="bg-dark-900 border border-white/5 p-3 rounded-2xl ${isMe?'rounded-tl-none':'rounded-tr-none'}">
+                                    <p class="text-xs text-slate-200">${c.text}</p>
+                                    ${c.file ? `<div class="mt-2 pt-2 border-t border-white/5"><a href="${c.file}" target="_blank" class="text-[9px] text-primary-500 underline">عرض المرفق</a></div>` : ''}
+                                </div>
+                                <p class="text-[8px] text-slate-600 mt-1 ${isMe?'text-left':'text-right'}">${moment(c.time).fromNow()}</p>
+                            </div>
+                        </div>`;
+                }
+            });
+            box.parentElement.scrollTop = box.parentElement.scrollHeight;
+        }
+
+        // --- 6. Core Actions ---
+        async function handleStatusClick(newStatus) {
+            if(userProfile.status === newStatus) return;
+            toggleLoader(true, 'جاري التحديث...');
+            await setStatus(currentUser.email.toLowerCase(), newStatus, false);
+            toggleLoader(false);
+        }
+
+        async function setStatus(targetEmail, newStatus, isAuto = false) {
+            const userRef = db.collection('users').doc(targetEmail);
+            const snapshot = await userRef.get();
+            const uData = snapshot.data();
+            
+            const now = Date.now();
+            let currentIdleBank = uData.idleBank || 0;
+            
+            if (uData.isIdle && uData.idleSince) {
+                const dur = now - getMillis(uData.idleSince);
+                currentIdleBank += dur;
+                await db.collection('logs').add({ user: targetEmail, name: uData.name, from_status: 'Idle (Auto)', to_status: newStatus, start_time: uData.idleSince, end_time: firebase.firestore.FieldValue.serverTimestamp(), duration_ms: dur, auto: true });
+            }
+
+            const lastTime = getMillis(uData.lastChange);
+            const duration = now - lastTime;
+            let timeBank = uData.timeBank || {};
+            const oldStatus = uData.status || 'Offline';
+            
+            if(!timeBank[oldStatus]) timeBank[oldStatus] = 0;
+            timeBank[oldStatus] += duration;
+            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+            await db.collection('logs').add({ user: targetEmail, name: uData.name, from_status: oldStatus, to_status: newStatus, start_time: uData.lastChange || timestamp, end_time: timestamp, duration_ms: duration, auto: isAuto });
+            await userRef.update({ status: newStatus, lastChange: timestamp, timeBank: timeBank, isIdle: false, idleSince: null, idleBank: currentIdleBank });
+        }
+
+        async function updateStatus(taskId, status) {
+            const userRef = db.collection('users').doc(currentUser.email);
+            let tasks = [...userProfile.tasks];
+            const idx = tasks.findIndex(t => t.id == taskId);
+            if(idx > -1) {
+                tasks[idx].status = status;
+                tasks[idx].comments = tasks[idx].comments || [];
+                tasks[idx].comments.push({ user: 'system', text: `تغيرت الحالة إلى: ${status}`, time: Date.now() });
+                await userRef.update({ tasks });
+            }
+        }
+
+        function openQAModal(taskId) {
+            document.getElementById('review-task-id').value = taskId;
+            const sel = document.getElementById('qa-manager-select');
+            sel.innerHTML = '';
+            allUsers.filter(u => ['admin', 'supervisor', 'leader'].includes(u.role)).forEach(m => {
+                sel.innerHTML += `<option value="${m.email}">${m.name} (${m.role})</option>`;
+            });
+            openModal('modal-qa');
+        }
+
+        async function confirmQA() {
+            const taskId = document.getElementById('review-task-id').value;
+            const reviewer = document.getElementById('qa-manager-select').value;
+            const userRef = db.collection('users').doc(currentUser.email);
+            let tasks = [...userProfile.tasks];
+            const idx = tasks.findIndex(t => t.id == taskId);
+            if(idx > -1) {
+                tasks[idx].status = 'review';
+                tasks[idx].reviewer = reviewer;
+                tasks[idx].comments.push({ user: 'system', text: `أرسل المهمة للمراجعة عند: ${reviewer}`, time: Date.now() });
+                await userRef.update({ tasks });
+                closeModal('modal-qa');
+                alert("تم الإرسال للمراجعة بنجاح.");
+            }
+        }
+
+        async function sendComment(e) {
+            e.preventDefault();
+            const input = document.getElementById('comment-input');
+            const txt = input.value.trim();
+            if(!txt && !attachedFile) return;
+
+            let fileUrl = null;
+            if(attachedFile) {
+                fileUrl = await uploadFileToStorage(attachedFile, 'tasks/comments');
+            }
+
+            const userRef = db.collection('users').doc(currentUser.email);
+            let tasks = [...userProfile.tasks];
+            const idx = tasks.findIndex(t => t.id == selectedTaskId);
+            if(idx > -1) {
+                tasks[idx].comments = tasks[idx].comments || [];
+                tasks[idx].comments.push({ user: currentUser.email, name: userProfile.name, text: txt, file: fileUrl, time: Date.now() });
+                await userRef.update({ tasks });
+                input.value = '';
+                attachedFile = null;
+                document.getElementById('file-preview').classList.add('hidden');
+            }
+        }
+
+        // --- 7. Additional Helpers ---
+        function updateTimersUI() {
+            const now = Date.now();
+            document.querySelectorAll('.stat-timer').forEach(t => { 
+                const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; 
+                t.innerText = formatDurationLong((t.dataset.active==='true')?b+(now-s):b); 
+            });
+            document.querySelectorAll('.stat-idle').forEach(t => { 
+                const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; 
+                t.innerText = formatDurationLong((t.dataset.isidle==='true')?b+(now-s):b); 
+            });
+        }
+
+        function formatDurationLong(ms) {
+            const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
+            const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0');
+            const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function getMillis(v) { return v ? (v.toMillis ? v.toMillis() : v) : Date.now(); }
+
+        function startIdleTracker() {
+            ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+                document.addEventListener(evt, () => {
+                    lastActionTime = Date.now();
+                    if(userProfile?.isIdle) {
+                        db.collection('users').doc(currentUser.email).update({ isIdle: false, idleSince: null });
+                    }
+                }, true);
+            });
+            setInterval(() => {
+                if(!userProfile || userProfile.status !== 'Online' || userProfile.isIdle) return;
+                if(Date.now() - lastActionTime > (userProfile.idleLimit || 5) * 60000) {
+                    db.collection('users').doc(currentUser.email).update({ isIdle: true, idleSince: firebase.firestore.FieldValue.serverTimestamp() });
+                }
+            }, 10000);
+        }
+
+        function changeTaskTab(mode, btn) {
+            historyMode = mode;
+            renderTasks();
+            document.querySelectorAll('.task-tab-btn').forEach(b => b.className = "task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg text-slate-500");
+            btn.className = "task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg bg-dark-800 text-white shadow-sm";
+        }
+
+        function updateChatSelect() {
+            const sel = document.getElementById('chat-select');
+            const currentVal = sel.value;
+            sel.innerHTML = '<option value="" disabled selected>💬 اختر زميل لمحادثة خاصة...</option>';
+            allUsers.forEach(u => {
+                if(u.email !== currentUser.email) sel.innerHTML += `<option value="${u.email}|${u.name}">${u.name} - ${u.title || 'موظف'}</option>`;
+            });
+            sel.value = currentVal;
+        }
+
+        function startChat(sel) {
+            const [email, name] = sel.value.split('|');
+            openPrivateChat(email, name);
+            sel.value = "";
+        }
+
+        function handleFileSelect(input) {
+            if(input.files && input.files[0]) {
+                attachedFile = input.files[0];
+                document.getElementById('file-preview').innerText = "📎 جاهز للرفع: " + attachedFile.name;
+                document.getElementById('file-preview').classList.remove('hidden');
+            }
+        }
+
+        function toggleLoader(show, text = "") {
+            document.getElementById('loader').classList.toggle('hidden', !show);
+            if(text) document.querySelector('#loader h2').innerText = text;
+        }
+
+        async function logout() {
+            if(!confirm("هل أنت متأكد من تسجيل الخروج؟")) return;
+            toggleLoader(true, "جاري تسجيل الخروج...");
+            await setStatus(currentUser.email, 'Offline', true);
+            await notifyTelegramOnLogout(userProfile.name);
+            auth.signOut().then(() => window.location.replace('index.html'));
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openImagePreview(src) { document.getElementById('preview-target').src = src; document.getElementById('img-preview-modal').classList.remove('hidden'); }
+
+        // --- 8. Private Chat Window Manager ---
+        function openPrivateChat(email, name) {
+            const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+            if(document.getElementById(`chat-win-${chatId}`)) return;
+
+            const win = document.createElement('div');
+            win.id = `chat-win-${chatId}`;
+            win.className = "chat-window fixed bottom-4 left-4 w-72 h-96 bg-dark-900 border border-white/10 rounded-2xl shadow-2xl flex flex-col z-[100] animate-fade-in";
+            win.innerHTML = `
+                <div class="p-3 border-b border-white/5 bg-dark-950 flex justify-between items-center chat-header cursor-move rounded-t-2xl">
+                    <span class="text-[10px] font-black uppercase text-primary-500 tracking-widest">${name}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-slate-500 hover:text-white"><i class="fas fa-times text-xs"></i></button>
+                </div>
+                <div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar text-[11px]"></div>
+                <form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-2 border-t border-white/5 flex gap-2">
+                    <input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border-none rounded-lg px-3 py-1.5 text-xs text-white" placeholder="اكتب..." autocomplete="off">
+                    <button class="bg-primary-600 px-3 rounded-lg"><i class="fas fa-paper-plane text-[10px]"></i></button>
+                </form>
+            `;
+            document.getElementById('private-chats-container').appendChild(win);
+            makeDraggable(win);
+            listenToPrivateChat(email, chatId);
+        }
+
+        async function sendPrivateMsg(e, email, chatId) {
+            e.preventDefault();
+            const input = document.getElementById(`input-${chatId}`);
+            if(!input.value.trim()) return;
+            await db.collection('private_messages').add({
+                sender: currentUser.email.toLowerCase(), receiver: email.toLowerCase(),
+                text: input.value.trim(), time: firebase.firestore.FieldValue.serverTimestamp(),
+                name: userProfile.name
+            });
+            input.value = '';
+        }
+
+        function listenToPrivateChat(email, chatId) {
+            const container = document.getElementById(`msgs-${chatId}`);
+            db.collection('private_messages').orderBy('time', 'asc').onSnapshot(snap => {
+                container.innerHTML = '';
+                snap.docs.forEach(doc => {
+                    const m = doc.data();
+                    const isMe = m.sender === currentUser.email.toLowerCase();
+                    const isThem = m.sender === email.toLowerCase();
+                    const isRecMe = m.receiver === currentUser.email.toLowerCase();
+                    const isRecThem = m.receiver === email.toLowerCase();
+
+                    if((isMe && isRecThem) || (isThem && isRecMe)) {
+                        container.innerHTML += `<div class="flex ${isMe?'justify-end':'justify-start'}"><span class="px-3 py-1.5 rounded-xl ${isMe?'bg-primary-600 text-white rounded-br-none':'bg-dark-800 text-slate-300 rounded-bl-none'}">${m.text}</span></div>`;
+                    }
+                });
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+        
+        function makeDraggable(el) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            el.querySelector('.chat-header').onmousedown = dragMouseDown;
+            function dragMouseDown(e) { e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY; document.onmouseup = closeDragElement; document.onmousemove = elementDrag; }
+            function elementDrag(e) { e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY; el.style.top = (el.offsetTop - pos2) + "px"; el.style.left = (el.offsetLeft - pos1) + "px"; }
+            function closeDragElement() { document.onmouseup = null; document.onmousemove = null; }
+        }
+        
+    </script>
+</body>
+</html>
