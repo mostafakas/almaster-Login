@@ -28,9 +28,9 @@
     </script>
 
     <style>
-        body { background-color: #0b1120; color: #f1f5f9; height: 100vh; overflow: hidden; display: flex; flex-direction: column; margin: 0; }
+        body { background-color: #0b1120; color: #f1f5f9; height: 100vh; overflow: hidden; display: flex; flex-direction: column; margin: 0; font-family: 'Cairo', sans-serif; }
         .hidden-section { display: none !important; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 20px; }
         
         .status-card { transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.03); background: rgba(30, 41, 59, 0.4); }
@@ -48,7 +48,7 @@
         .task-kanban-card { background: #0f172a; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.2s; }
         .task-kanban-card:hover { transform: scale(1.02); border-color: rgba(255,255,255,0.1); }
 
-        /* Custom Toggle Switch for Permissions */
+        /* Custom Toggle Switch */
         .toggle-checkbox:checked { right: 0; border-color: #10b981; }
         .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
         .toggle-checkbox:checked + .toggle-label:before { transform: translateX(-100%); }
@@ -62,14 +62,14 @@
     <div id="loader" class="fixed inset-0 z-[300] bg-dark-950 flex flex-col items-center justify-center text-center p-6">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-primary-500 mb-6"></div>
         <h2 class="text-xs font-black tracking-[0.4em] text-primary-500 uppercase animate-pulse">ALMASTER MASTER CONSOLE</h2>
-        <p class="text-[9px] text-slate-500 mt-2 tracking-widest">Authenticating Admin Privileges...</p>
+        <p class="text-[9px] text-slate-500 mt-2 tracking-widest">جاري التحقق من الصلاحيات...</p>
     </div>
 
     <header class="h-16 border-b border-white/5 bg-dark-950/90 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-50 shadow-md">
         <div class="flex items-center gap-6">
-            <img src="MASTER_LOGO_WHPNG.png" class="h-12 w-auto object-contain" alt="Logo">
+            <img src="MASTER_LOGO_WHPNG.png" class="h-12 w-auto object-contain" alt="Logo" onerror="this.src='https://via.placeholder.com/150x50?text=ALMASTER'">
             <div class="h-6 w-[1px] bg-white/10 mx-2"></div>
-            <span class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-primary-500">System Administration</span>
+            <span class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-primary-500">إدارة النظام المركزية</span>
         </div>
         
         <div class="flex items-center gap-2 bg-dark-900 p-1.5 rounded-2xl border border-white/5 shadow-inner hidden md:flex">
@@ -94,73 +94,89 @@
 
     <main class="flex-1 w-full h-full relative flex overflow-hidden">
         
-        <aside class="w-[320px] border-l border-white/5 bg-dark-950 flex flex-col shrink-0 h-full shadow-2xl z-20">
-            <div class="p-6 shrink-0 border-b border-white/5 bg-dark-900/30">
-                <div class="flex items-center gap-4">
+        <aside class="w-[300px] border-l border-white/5 bg-dark-950 flex flex-col shrink-0 h-full shadow-2xl z-20">
+            <div class="p-4 shrink-0 border-b border-white/5 bg-dark-900/30">
+                <div class="flex items-center gap-3">
                     <div class="relative">
-                        <img id="admin-img" src="" class="w-14 h-14 rounded-2xl object-cover border-2 border-primary-500 shadow-lg shadow-primary-500/20 bg-dark-800">
-                        <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-dark-950 bg-green-500"></span>
+                        <img id="admin-img" src="" class="w-12 h-12 rounded-xl object-cover border-2 border-primary-500 shadow-lg shadow-primary-500/20 bg-dark-800">
+                        <span class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-dark-950 bg-green-500"></span>
                     </div>
                     <div class="overflow-hidden">
-                        <h2 id="admin-name" class="font-black text-sm text-white truncate">مدير النظام</h2>
-                        <p class="text-[9px] text-primary-500 font-bold uppercase tracking-widest">Master Admin</p>
+                        <h2 id="admin-name" class="font-black text-xs text-white truncate">مدير النظام</h2>
+                        <p class="text-[8px] text-primary-500 font-bold uppercase tracking-widest">المدير التنفيذي</p>
                     </div>
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto custom-scrollbar px-6 space-y-6 py-6">
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 space-y-4">
+                
                 <div>
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">حالة الشركة الآن</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-dark-900/80 p-4 rounded-2xl border border-white/5 text-center shadow-sm">
-                            <i class="fas fa-users text-primary-500 mb-2 text-lg"></i>
-                            <p id="stat-total-users" class="text-2xl font-black text-white leading-none mb-1">0</p>
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">حالة الشركة الآن (إضغط للفلترة)</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div onclick="renderMonitorGrid('all')" class="cursor-pointer bg-dark-900/80 p-2.5 rounded-xl border border-white/5 text-center shadow-sm hover:bg-slate-800 transition">
+                            <i class="fas fa-users text-primary-500 mb-1 text-sm"></i>
+                            <p id="stat-total-users" class="text-xl font-black text-white leading-none mb-1">0</p>
                             <p class="text-[8px] font-bold text-slate-500 uppercase">إجمالي الموظفين</p>
                         </div>
-                        <div class="bg-dark-900/80 p-4 rounded-2xl border border-white/5 text-center shadow-sm">
-                            <i class="fas fa-bolt text-green-500 mb-2 text-lg"></i>
-                            <p id="stat-active-users" class="text-2xl font-black text-green-500 leading-none mb-1">0</p>
+                        <div onclick="renderMonitorGrid('Online')" class="cursor-pointer bg-dark-900/80 p-2.5 rounded-xl border border-white/5 text-center shadow-sm hover:bg-green-500/10 transition">
+                            <i class="fas fa-bolt text-green-500 mb-1 text-sm"></i>
+                            <p id="stat-active-users" class="text-xl font-black text-green-500 leading-none mb-1">0</p>
                             <p class="text-[8px] font-bold text-slate-500 uppercase">يعملون الآن</p>
                         </div>
-                        <div class="bg-dark-900/80 p-4 rounded-2xl border border-white/5 text-center shadow-sm">
-                            <i class="fas fa-keyboard text-red-500 mb-2 text-lg"></i>
-                            <p id="stat-idle-users" class="text-2xl font-black text-red-500 leading-none mb-1">0</p>
+                        <div onclick="renderMonitorGrid('Idle')" class="cursor-pointer bg-dark-900/80 p-2.5 rounded-xl border border-white/5 text-center shadow-sm hover:bg-red-500/10 transition">
+                            <i class="fas fa-keyboard text-red-500 mb-1 text-sm"></i>
+                            <p id="stat-idle-users" class="text-xl font-black text-red-500 leading-none mb-1">0</p>
                             <p class="text-[8px] font-bold text-slate-500 uppercase">في وضع الخمول</p>
                         </div>
-                        <div class="bg-dark-900/80 p-4 rounded-2xl border border-white/5 text-center shadow-sm">
-                            <i class="fas fa-tasks text-purple-500 mb-2 text-lg"></i>
-                            <p id="stat-pending-tasks" class="text-2xl font-black text-purple-500 leading-none mb-1">0</p>
-                            <p class="text-[8px] font-bold text-slate-500 uppercase">مهام جارية</p>
+                        <div onclick="renderMonitorGrid('Break')" class="cursor-pointer bg-dark-900/80 p-2.5 rounded-xl border border-white/5 text-center shadow-sm hover:bg-orange-500/10 transition">
+                            <i class="fas fa-coffee text-orange-500 mb-1 text-sm"></i>
+                            <p id="stat-break-users" class="text-xl font-black text-orange-500 leading-none mb-1">0</p>
+                            <p class="text-[8px] font-bold text-slate-500 uppercase">في استراحة</p>
+                        </div>
+                        <div onclick="renderMonitorGrid('Meeting')" class="cursor-pointer col-span-2 bg-dark-900/80 p-2.5 rounded-xl border border-white/5 text-center shadow-sm hover:bg-indigo-500/10 transition">
+                            <i class="fas fa-handshake text-indigo-500 mb-1 text-sm"></i>
+                            <p id="stat-meeting-users" class="text-xl font-black text-indigo-500 leading-none mb-1">0</p>
+                            <p class="text-[8px] font-bold text-slate-500 uppercase">في اجتماع ميتنج</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-3 pt-4 border-t border-white/5">
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">أدوات الإدارة السريعة</p>
+                <div class="pt-3 border-t border-white/5">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">محادثة فردية سريعة</p>
+                    <div class="flex gap-2">
+                        <select id="sidebar-user-chat" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-2 text-[10px] text-slate-300 focus:border-primary-500 outline-none h-9">
+                            <option value="">اختر موظف للمحادثة...</option>
+                        </select>
+                        <button onclick="startChatFromSidebar()" class="w-9 h-9 bg-primary-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-primary-500 transition"><i class="fas fa-comment-dots"></i></button>
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-3 border-t border-white/5">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">أدوات سريعة</p>
                     
-                    <button onclick="openUserModal('new')" class="w-full py-4 bg-primary-600/10 text-primary-500 rounded-2xl font-black text-[11px] hover:bg-primary-600 hover:text-white transition-all flex items-center justify-center gap-3 border border-primary-500/20 shadow-lg active:scale-95">
-                        <i class="fas fa-user-plus"></i> تسجيل موظف جديد
+                    <button onclick="openUserModal('new')" class="w-full py-2.5 bg-primary-600/10 text-primary-500 rounded-xl font-black text-[10px] hover:bg-primary-600 hover:text-white transition-all flex items-center justify-center gap-2 border border-primary-500/20 active:scale-95">
+                        <i class="fas fa-user-plus"></i> موظف جديد
                     </button>
                     
                     <div class="grid grid-cols-2 gap-2">
-                        <a href="payroll.html" class="py-3 btn-glass text-green-500 rounded-xl font-black text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 text-center">
-                            <i class="fas fa-money-bill-wave"></i> نظام المرتبات
+                        <a href="payroll.html" class="py-2.5 btn-glass text-green-500 rounded-xl font-black text-[9px] flex items-center justify-center gap-1 transition-all active:scale-95">
+                            <i class="fas fa-money-bill-wave"></i> المرتبات
                         </a>
-                        <a href="crm.html" class="py-3 btn-glass text-indigo-400 rounded-xl font-black text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 text-center">
-                            <i class="fas fa-chart-line"></i> إدارة المشاريع
+                        <a href="crm.html" class="py-2.5 btn-glass text-indigo-400 rounded-xl font-black text-[9px] flex items-center justify-center gap-1 transition-all active:scale-95">
+                            <i class="fas fa-chart-line"></i> المشاريع
                         </a>
                     </div>
 
-                    <button onclick="toggleChat()" class="w-full py-3.5 btn-glass text-slate-300 rounded-xl font-black text-[10px] flex items-center justify-between px-5 transition-all active:scale-95">
-                        <span><i class="fas fa-bullhorn text-primary-500 ml-2"></i> التعميم والشات العام</span>
+                    <button onclick="toggleChat()" class="w-full py-2.5 btn-glass text-slate-300 rounded-xl font-black text-[10px] flex items-center justify-between px-4 transition-all active:scale-95">
+                        <span><i class="fas fa-bullhorn text-primary-500 ml-1"></i> الشات العام</span>
                         <span id="chat-badge" class="bg-red-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center hidden">!</span>
                     </button>
                 </div>
             </div>
 
-            <div class="p-4 shrink-0 border-t border-white/5 bg-dark-950">
+            <div class="p-3 shrink-0 border-t border-white/5 bg-dark-950">
                 <button onclick="logout()" class="w-full py-2 rounded-xl bg-red-500/5 text-red-500/60 font-black hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 text-[9px] uppercase tracking-[0.2em] active:scale-95 shadow-sm border border-red-500/10">
-                    <i class="fas fa-power-off text-[8px]"></i> إغلاق النظام
+                    <i class="fas fa-power-off text-[8px]"></i> تسجيل الخروج
                 </button>
             </div>
         </aside>
@@ -171,22 +187,21 @@
                 <div class="p-8 pb-4 shrink-0 flex justify-between items-end border-b border-white/5 bg-dark-950/80">
                     <div>
                         <h1 class="text-3xl font-black text-white mb-2">شاشة المراقبة المركزية</h1>
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Real-time Operations Monitor</p>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">تتبع أداء وحالة الموظفين لحظياً</p>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="renderMonitorGrid('all')" class="px-6 py-2.5 rounded-xl bg-primary-600 text-white font-black text-[10px] shadow-lg shadow-primary-500/20">عرض الكل</button>
-                        <button onclick="renderMonitorGrid('Online')" class="px-6 py-2.5 rounded-xl btn-glass text-green-500 font-black text-[10px]">النشطين فقط</button>
                     </div>
-                </div>
                 <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
-                    <div id="monitor-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20"></div>
+                    <div id="monitor-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20"></div>
                 </div>
             </div>
 
             <div id="view-tasks" class="absolute inset-0 hidden flex flex-col w-full h-full bg-dark-950 transition-opacity duration-300 overflow-hidden">
-                <div class="p-8 pb-4 shrink-0 border-b border-white/5 bg-dark-950/80">
-                    <h1 class="text-3xl font-black text-white mb-2">لوحة المهام الشاملة</h1>
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Global Kanban Pipeline</p>
+                <div class="p-8 pb-4 shrink-0 border-b border-white/5 bg-dark-950/80 flex justify-between items-end">
+                    <div>
+                        <h1 class="text-3xl font-black text-white mb-2">لوحة المهام الشاملة</h1>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">متابعة سير عمل كافة المهام بالمؤسسة</p>
+                    </div>
+                    <button onclick="openTaskModal()" class="px-6 py-2.5 rounded-xl bg-primary-600 text-white font-black text-[10px] shadow-lg shadow-primary-500/20 flex items-center gap-2"><i class="fas fa-plus"></i> إضافة مهمة لموظف</button>
                 </div>
                 <div class="flex-1 flex gap-6 p-8 overflow-x-auto custom-scrollbar pb-20">
                     <div class="flex-1 min-w-[300px] flex flex-col bg-dark-900/40 rounded-[2rem] border border-white/5 overflow-hidden">
@@ -217,7 +232,7 @@
                 <div class="p-8 pb-4 shrink-0 flex justify-between items-end border-b border-white/5 bg-dark-950/80">
                     <div>
                         <h1 class="text-3xl font-black text-white mb-2">إدارة الموظفين والصلاحيات</h1>
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">User & Access Control</p>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">إضافة وتعديل بيانات وحسابات الفريق</p>
                     </div>
                     <button onclick="openUserModal('new')" class="px-6 py-3 rounded-xl bg-primary-600 text-white font-black text-[11px] shadow-lg shadow-primary-500/20 flex items-center gap-2"><i class="fas fa-plus"></i> إضافة موظف</button>
                 </div>
@@ -228,13 +243,14 @@
                                 <tr>
                                     <th class="p-5 font-black">الموظف</th>
                                     <th class="p-5 font-black">البريد الإلكتروني</th>
-                                    <th class="p-5 font-black text-center">الرتبة (Role)</th>
+                                    <th class="p-5 font-black text-center">الرتبة</th>
+                                    <th class="p-5 font-black text-center">نوع العقد</th>
                                     <th class="p-5 font-black text-center">الحالة</th>
                                     <th class="p-5 font-black text-left">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody id="users-table-body" class="divide-y divide-white/5">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -250,75 +266,82 @@
                 <button onclick="closeModal('modal-user-form')" class="w-10 h-10 rounded-full btn-glass flex items-center justify-center text-slate-400 hover:text-white transition-all"><i class="fas fa-times"></i></button>
             </div>
             
-            <form id="user-setup-form" onsubmit="saveUserData(event)" class="flex-1 overflow-y-auto custom-scrollbar pr-4 space-y-6">
+            <form id="user-setup-form" onsubmit="saveUserData(event)" class="flex-1 overflow-y-auto custom-scrollbar pr-4 space-y-5">
                 <input type="hidden" id="edit-mode-email">
                 
                 <div class="flex items-center gap-6 p-6 bg-dark-950 rounded-3xl border border-white/5">
-                    <div class="relative cursor-pointer group" onclick="document.getElementById('user-photo-upload').click()">
+                    <div class="relative cursor-pointer group shrink-0" onclick="document.getElementById('user-photo-upload').click()">
                         <img id="user-photo-preview" src="https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=New" class="w-20 h-20 rounded-2xl object-cover border-2 border-dashed border-slate-600 group-hover:border-primary-500 transition-all">
                         <div class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"><i class="fas fa-camera text-white"></i></div>
                         <input type="file" id="user-photo-upload" class="hidden" accept="image/*" onchange="previewUserPhoto(this)">
                         <input type="hidden" id="user-photo-b64">
                     </div>
                     <div class="flex-1 grid grid-cols-2 gap-4">
-                        <div><label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">الاسم بالكامل</label><input type="text" id="u-name" class="w-full bg-dark-900 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none" required></div>
-                        <div><label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">المسمى الوظيفي (Title)</label><input type="text" id="u-title" class="w-full bg-dark-900 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none" placeholder="مثال: مطور ويب" required></div>
+                        <div><label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">الاسم بالكامل</label><input type="text" id="u-name" class="w-full bg-dark-900 border border-white/5 h-11 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none" required></div>
+                        <div><label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">المسمى الوظيفي</label><input type="text" id="u-title" class="w-full bg-dark-900 border border-white/5 h-11 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none" placeholder="مثال: مطور ويب" required></div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-6">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">البريد الإلكتروني (Login ID)</label>
-                        <input type="email" id="u-email" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none text-left" dir="ltr" required>
+                        <label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">البريد الإلكتروني للدخول</label>
+                        <input type="email" id="u-email" class="w-full bg-dark-950 border border-white/5 h-11 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none text-left" dir="ltr" required>
                     </div>
                     <div id="password-container">
                         <label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">كلمة المرور الابتدائية</label>
-                        <input type="text" id="u-password" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none text-left font-mono" dir="ltr" placeholder="12345678" minlength="6">
+                        <input type="text" id="u-password" class="w-full bg-dark-950 border border-white/5 h-11 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none text-left font-mono" dir="ltr" placeholder="12345678" minlength="6">
                         <p class="text-[8px] text-slate-500 mt-1">* مطلوب عند إضافة موظف جديد فقط</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-6 border-t border-white/5 pt-6">
+                <div class="grid grid-cols-3 gap-4 border-t border-white/5 pt-5">
                     <div>
                         <label class="text-[9px] font-black text-slate-500 mb-2 block uppercase">رتبة النظام (Role)</label>
-                        <select id="u-role" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-sm font-black text-primary-500 outline-none focus:border-primary-500">
+                        <select id="u-role" class="w-full bg-dark-950 border border-white/5 h-11 rounded-xl px-3 text-xs font-black text-primary-500 outline-none focus:border-primary-500">
                             <option value="employee">موظف (Employee)</option>
                             <option value="leader">قائد فريق (Leader)</option>
                             <option value="supervisor">مشرف (Supervisor)</option>
                             <option value="admin">مدير نظام (Admin)</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">دقائق الخمول</label><input type="number" id="u-idle" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white text-center" value="5" min="1"></div>
-                        <div><label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">تجاوز الخلفية</label><input type="number" id="u-bg" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white text-center" value="60" min="1"></div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 mb-2 block uppercase">نوع العقد</label>
+                        <select id="u-contract" class="w-full bg-dark-950 border border-white/5 h-11 rounded-xl px-3 text-xs font-black text-white outline-none focus:border-primary-500">
+                            <option value="employee">موظف ثابت</option>
+                            <option value="freelancer">مستقل (Freelancer)</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-[8px] font-black text-slate-500 mb-1 block uppercase">دقائق الخمول</label><input type="number" id="u-idle" class="w-full bg-dark-950 border border-white/5 h-11 rounded-xl px-2 text-xs font-bold text-white text-center" value="5" min="1"></div>
+                        <div><label class="text-[8px] font-black text-slate-500 mb-1 block uppercase">تجاوز الخلفية</label><input type="number" id="u-bg" class="w-full bg-dark-950 border border-white/5 h-11 rounded-xl px-2 text-xs font-bold text-white text-center" value="60" min="1"></div>
                     </div>
                 </div>
 
-                <div class="border-t border-white/5 pt-6">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4"><i class="fas fa-sliders-h text-primary-500 mr-2"></i> مصفوفة الصلاحيات الخاصة</p>
-                    <div class="grid grid-cols-2 gap-4" id="permissions-grid">
+                <div class="border-t border-white/5 pt-5">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3"><i class="fas fa-sliders-h text-primary-500 mr-2"></i> مصفوفة الصلاحيات الخاصة</p>
+                    <div class="grid grid-cols-2 gap-3" id="permissions-grid">
                         <div class="flex items-center justify-between p-3 bg-dark-950 rounded-xl border border-white/5">
-                            <span class="text-[10px] font-bold text-slate-300">الدخول لنظام المشاريع (CRM)</span>
-                            <div class="relative inline-block w-11 align-middle select-none"><input type="checkbox" id="perm-crm" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-crm" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-600 cursor-pointer"></label></div>
+                            <span class="text-[10px] font-bold text-slate-300">نظام المشاريع (CRM)</span>
+                            <div class="relative inline-block w-10 align-middle select-none"><input type="checkbox" id="perm-crm" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-crm" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-600 cursor-pointer"></label></div>
                         </div>
                         <div class="flex items-center justify-between p-3 bg-dark-950 rounded-xl border border-white/5">
-                            <span class="text-[10px] font-bold text-slate-300">الدخول لنظام المرتبات (Payroll)</span>
-                            <div class="relative inline-block w-11 align-middle select-none"><input type="checkbox" id="perm-payroll" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-payroll" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-600 cursor-pointer"></label></div>
+                            <span class="text-[10px] font-bold text-slate-300">نظام المرتبات (Payroll)</span>
+                            <div class="relative inline-block w-10 align-middle select-none"><input type="checkbox" id="perm-payroll" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-payroll" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-600 cursor-pointer"></label></div>
                         </div>
                         <div class="flex items-center justify-between p-3 bg-dark-950 rounded-xl border border-white/5">
                             <span class="text-[10px] font-bold text-slate-300">حذف المهام نهائياً</span>
-                            <div class="relative inline-block w-11 align-middle select-none"><input type="checkbox" id="perm-delete-task" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-delete-task" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-600 cursor-pointer"></label></div>
+                            <div class="relative inline-block w-10 align-middle select-none"><input type="checkbox" id="perm-delete-task" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-delete-task" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-600 cursor-pointer"></label></div>
                         </div>
                         <div class="flex items-center justify-between p-3 bg-dark-950 rounded-xl border border-white/5">
-                            <span class="text-[10px] font-bold text-slate-300">طلب لقطة شاشة للموظفين</span>
-                            <div class="relative inline-block w-11 align-middle select-none"><input type="checkbox" id="perm-screenshot" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-screenshot" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-600 cursor-pointer"></label></div>
+                            <span class="text-[10px] font-bold text-slate-300">طلب لقطة شاشة</span>
+                            <div class="relative inline-block w-10 align-middle select-none"><input type="checkbox" id="perm-screenshot" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-screenshot" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-600 cursor-pointer"></label></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="pt-6 mt-4 border-t border-white/5 flex gap-4 shrink-0">
-                    <button type="submit" id="save-user-btn" class="flex-1 py-4 bg-primary-600 text-white rounded-2xl font-black shadow-xl shadow-primary-600/20 active:scale-95 transition-all text-sm">حفظ بيانات الموظف</button>
-                    <button type="button" id="delete-user-btn" onclick="deleteUser()" class="px-8 py-4 bg-red-500/10 text-red-500 rounded-2xl font-black border border-red-500/20 hover:bg-red-500 hover:text-white transition-all hidden"><i class="fas fa-trash"></i></button>
+                <div class="pt-5 mt-2 border-t border-white/5 flex gap-4 shrink-0">
+                    <button type="submit" id="save-user-btn" class="flex-1 py-3 bg-primary-600 text-white rounded-xl font-black shadow-xl shadow-primary-600/20 active:scale-95 transition-all text-sm">حفظ بيانات الموظف</button>
+                    <button type="button" id="delete-user-btn" onclick="deleteUser()" class="px-6 py-3 bg-red-500/10 text-red-500 rounded-xl font-black border border-red-500/20 hover:bg-red-500 hover:text-white transition-all hidden"><i class="fas fa-trash"></i> إيقاف وحذف</button>
                 </div>
             </form>
         </div>
@@ -364,8 +387,6 @@
         // --- 1. FIREBASE CONFIG & INITIALIZATION ---
         const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        
-        // 🟢 Secondary App for User Creation without logging Admin out 🟢
         const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
         
         const db = firebase.firestore();
@@ -406,6 +427,14 @@
             document.getElementById(`tab-${viewName}`).classList.add('active', 'bg-dark-950', 'shadow-md');
         }
 
+        function openTaskModal() {
+            // دالة افتراضية لإضافة مهمة - يمكن ربطها لاحقاً بمودال إضافة المهام
+            alert("سيتم إضافة شاشة إنشاء المهام هنا لاحقاً.");
+        }
+
+        function requestScreenshot(email) { alert("تم طلب لقطة شاشة من الموظف: " + email); }
+        function viewHistory(email) { alert("فتح سجل نشاط الموظف: " + email); }
+
         // --- 3. AUTH & BOOT ---
         auth.onAuthStateChanged(async (user) => {
             if (user) {
@@ -435,23 +464,44 @@
             db.collection('users').onSnapshot(snap => {
                 allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
                 updateAdminStats();
+                updateSidebarChatDropdown();
                 renderMonitorGrid();
                 renderGlobalTasks();
                 renderUsersTable();
             });
         }
 
+        function updateSidebarChatDropdown() {
+            const select = document.getElementById('sidebar-user-chat');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">اختر موظف للمحادثة...</option>';
+            allUsersData.forEach(u => {
+                if(u.email !== currentUser.email) {
+                    select.innerHTML += `<option value="${u.email}">${u.name}</option>`;
+                }
+            });
+            select.value = currentVal;
+        }
+
+        function startChatFromSidebar() {
+            const email = document.getElementById('sidebar-user-chat').value;
+            if(!email) return;
+            const u = allUsersData.find(x => x.email === email);
+            if(u) openPrivateChat(u.email, u.name, u.photo);
+        }
+
         function updateAdminStats() {
             const total = allUsersData.length;
             const online = allUsersData.filter(u => u.status === 'Online' && !u.isIdle).length;
             const idle = allUsersData.filter(u => u.isIdle).length;
-            let tasksCount = 0;
-            allUsersData.forEach(u => { tasksCount += (u.tasks || []).filter(t => t.status !== 'done' && !t.archived).length; });
+            const breakUsers = allUsersData.filter(u => u.status === 'Break').length;
+            const meetingUsers = allUsersData.filter(u => u.status === 'Meeting').length;
 
             document.getElementById('stat-total-users').innerText = total;
             document.getElementById('stat-active-users').innerText = online;
             document.getElementById('stat-idle-users').innerText = idle;
-            document.getElementById('stat-pending-tasks').innerText = tasksCount;
+            document.getElementById('stat-break-users').innerText = breakUsers;
+            document.getElementById('stat-meeting-users').innerText = meetingUsers;
         }
 
         // --- 5. VIEW 1: MONITOR ---
@@ -461,23 +511,33 @@
             
             allUsersData.forEach(u => {
                 if(filter === 'Online' && (u.status !== 'Online' || u.isIdle)) return;
+                if(filter === 'Idle' && !u.isIdle) return;
+                if(filter === 'Break' && u.status !== 'Break') return;
+                if(filter === 'Meeting' && u.status !== 'Meeting') return;
+
                 const s = u.isIdle ? 'Idle' : (u.status || 'Offline');
                 const tb = u.timeBank || {}; const safeStart = getMillis(u.lastChange);
-                const color = s === 'Online' ? 'bg-green-500' : s === 'Idle' ? 'bg-red-500' : s === 'Break' ? 'bg-orange-500' : 'bg-slate-600';
+                const color = s === 'Online' ? 'bg-green-500' : s === 'Idle' ? 'bg-red-500' : s === 'Break' ? 'bg-orange-500' : s === 'Meeting' ? 'bg-indigo-500' : 'bg-slate-600';
 
                 container.innerHTML += `
-                    <div class="admin-grid-card p-6 rounded-[2rem] flex flex-col gap-5 relative group">
+                    <div class="admin-grid-card p-5 rounded-2xl flex flex-col gap-4 relative group">
                         <div class="flex items-center gap-4">
                             <div class="relative"><img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-12 h-12 rounded-xl object-cover border border-white/10"><span class="absolute -bottom-1 -right-1 pulse-dot ${color} border-2 border-dark-900"></span></div>
-                            <div class="overflow-hidden"><h4 class="font-black text-sm text-white truncate">${u.name}</h4><p class="text-[9px] font-bold text-primary-500 uppercase">${u.role}</p></div>
+                            <div class="overflow-hidden"><h4 class="font-black text-xs text-white truncate">${u.name}</h4><p class="text-[9px] font-bold text-primary-500 uppercase">${u.title || u.role}</p></div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="bg-dark-950 p-2.5 rounded-xl border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 uppercase mb-0.5">Active</p><p class="text-[11px] font-black text-green-500 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online' && !u.isIdle}" data-start="${safeStart}">00:00</p></div>
-                            <div class="bg-dark-950 p-2.5 rounded-xl border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 uppercase mb-0.5">Idle</p><p class="text-[11px] font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p></div>
+                        
+                        <div class="grid grid-cols-4 gap-1.5 mt-2">
+                            <div class="bg-dark-950 p-2 rounded-lg border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 mb-0.5">عمل</p><p class="text-[10px] font-black text-green-500 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online' && !u.isIdle}" data-start="${safeStart}">00:00</p></div>
+                            <div class="bg-dark-950 p-2 rounded-lg border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 mb-0.5">خمول</p><p class="text-[10px] font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p></div>
+                            <div class="bg-dark-950 p-2 rounded-lg border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 mb-0.5">استراحة</p><p class="text-[10px] font-black text-orange-500 stat-timer-break" data-val="${tb['Break'] || 0}" data-active="${s === 'Break'}" data-start="${safeStart}">00:00</p></div>
+                            <div class="bg-dark-950 p-2 rounded-lg border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 mb-0.5">اجتماع</p><p class="text-[10px] font-black text-indigo-500 stat-timer-meeting" data-val="${tb['Meeting'] || 0}" data-active="${s === 'Meeting'}" data-start="${safeStart}">00:00</p></div>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}')" class="flex-1 py-2 bg-primary-600/10 text-primary-500 rounded-lg text-[9px] font-black hover:bg-primary-600 hover:text-white transition-all">Message</button>
-                            <button onclick="openUserModal('${u.email}')" class="w-8 h-8 flex items-center justify-center rounded-lg btn-glass text-slate-400 hover:text-white transition-all"><i class="fas fa-cog text-[10px]"></i></button>
+
+                        <div class="grid grid-cols-4 gap-2 mt-auto pt-3 border-t border-white/5">
+                            <button onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}')" class="py-2 bg-primary-600/10 text-primary-500 rounded-lg text-[10px] font-black hover:bg-primary-600 hover:text-white transition" title="إرسال رسالة"><i class="fas fa-comment-dots"></i></button>
+                            <button onclick="requestScreenshot('${u.email}')" class="py-2 bg-yellow-500/10 text-yellow-500 rounded-lg text-[10px] font-black hover:bg-yellow-500 hover:text-white transition" title="طلب لقطة شاشة"><i class="fas fa-camera"></i></button>
+                            <button onclick="viewHistory('${u.email}')" class="py-2 bg-cyan-500/10 text-cyan-500 rounded-lg text-[10px] font-black hover:bg-cyan-500 hover:text-white transition" title="سجل الموظف"><i class="fas fa-history"></i></button>
+                            <button onclick="openUserModal('${u.email}')" class="py-2 bg-slate-500/10 text-slate-400 rounded-lg text-[10px] font-black hover:bg-slate-500 hover:text-white transition" title="إعدادات وصلاحيات"><i class="fas fa-cog"></i></button>
                         </div>
                     </div>`;
             });
@@ -485,7 +545,7 @@
 
         function updateTimersUI() {
             const now = Date.now();
-            document.querySelectorAll('.stat-timer, .stat-idle').forEach(t => { 
+            document.querySelectorAll('.stat-timer, .stat-idle, .stat-timer-break, .stat-timer-meeting').forEach(t => { 
                 const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; 
                 const active = t.dataset.active==='true' || t.dataset.isidle==='true';
                 t.innerText = formatDuration(active ? b+(now-s) : b); 
@@ -513,7 +573,7 @@
                             <div class="flex items-center gap-2 mt-auto pt-3 border-t border-white/5">
                                 <img src="${task.ownerPhoto || DEFAULT_PHOTO+task.ownerName}" class="w-5 h-5 rounded-md object-cover">
                                 <span class="text-[9px] font-bold text-slate-400 truncate">${task.ownerName}</span>
-                                <span class="mr-auto text-[7px] bg-primary-500/10 text-primary-500 px-1.5 py-0.5 rounded font-black">${task.projectName || 'General'}</span>
+                                <span class="mr-auto text-[7px] bg-primary-500/10 text-primary-500 px-1.5 py-0.5 rounded font-black">${task.projectName || 'عام'}</span>
                             </div>
                         </div>`;
                 }
@@ -535,7 +595,7 @@
             document.getElementById('m-task-desc').innerHTML = task.desc;
             document.getElementById('m-task-date').innerText = moment(task.id).format('D MMM YYYY');
             document.getElementById('m-task-owner').innerText = user.name;
-            document.getElementById('m-task-project').innerText = task.projectName || 'General Task';
+            document.getElementById('m-task-project').innerText = task.projectName || 'مهمة عامة';
 
             const box = document.getElementById('m-task-comments'); box.innerHTML = '';
             (task.comments||[]).forEach(c => {
@@ -543,7 +603,7 @@
                 if(isSys) box.innerHTML += `<div class="flex justify-center"><span class="bg-dark-900 text-[9px] px-4 py-1 rounded-full text-slate-500 border border-white/5 font-bold">${c.text}</span></div>`;
                 else {
                     const u = allUsersData.find(x => x.email === c.user); const photo = u?.photo || DEFAULT_PHOTO+c.name;
-                    box.innerHTML += `<div class="flex gap-4"><img src="${photo}" class="w-8 h-8 rounded-lg object-cover"><div class="bg-dark-950 p-4 rounded-2xl border border-white/5 rounded-tr-none flex-1"><p class="text-[10px] font-black text-primary-500 mb-1">${c.name} <span class="text-[8px] text-slate-600 font-normal ml-2">${moment(c.time).format('h:mm A')}</span></p><p class="text-xs text-slate-300 leading-relaxed">${c.text}</p>${c.file ? `<a href="${c.file}" target="_blank" class="text-[9px] text-blue-400 mt-2 inline-block"><i class="fas fa-paperclip"></i> View File</a>` : ''}</div></div>`;
+                    box.innerHTML += `<div class="flex gap-4"><img src="${photo}" class="w-8 h-8 rounded-lg object-cover"><div class="bg-dark-950 p-4 rounded-2xl border border-white/5 rounded-tr-none flex-1"><p class="text-[10px] font-black text-primary-500 mb-1">${c.name} <span class="text-[8px] text-slate-600 font-normal ml-2">${moment(c.time).format('h:mm A')}</span></p><p class="text-xs text-slate-300 leading-relaxed">${c.text}</p>${c.file ? `<a href="${c.file}" target="_blank" class="text-[9px] text-blue-400 mt-2 inline-block"><i class="fas fa-paperclip"></i> عرض الملف</a>` : ''}</div></div>`;
                 }
             });
             openModal('modal-task-detail');
@@ -563,6 +623,7 @@
             const tbody = document.getElementById('users-table-body'); tbody.innerHTML = '';
             allUsersData.forEach(u => {
                 const statusColor = u.status === 'Online' ? 'text-green-500' : 'text-slate-500';
+                const contractType = u.contract === 'freelancer' ? 'مستقل' : 'موظف';
                 tbody.innerHTML += `
                     <tr class="hover:bg-dark-900/50 transition-colors group">
                         <td class="p-4 flex items-center gap-3">
@@ -571,7 +632,8 @@
                         </td>
                         <td class="p-4 text-[11px] text-slate-400 font-mono">${u.email}</td>
                         <td class="p-4 text-center"><span class="bg-primary-500/10 text-primary-400 text-[9px] px-3 py-1 rounded-full font-black uppercase border border-primary-500/20">${u.role}</span></td>
-                        <td class="p-4 text-center font-black text-[10px] ${statusColor} uppercase">${u.status || 'Offline'}</td>
+                        <td class="p-4 text-center text-[10px] font-bold text-slate-400">${contractType}</td>
+                        <td class="p-4 text-center font-black text-[10px] ${statusColor} uppercase">${u.status || 'متصل غير نشط'}</td>
                         <td class="p-4 text-left">
                             <button onclick="openUserModal('${u.email}')" class="px-4 py-2 bg-dark-800 text-white rounded-lg text-[9px] font-black hover:bg-primary-600 transition-all border border-white/5">تعديل الملف</button>
                         </td>
@@ -613,6 +675,7 @@
                     document.getElementById('u-title').value = u.title || '';
                     document.getElementById('u-email').value = u.email;
                     document.getElementById('u-role').value = u.role || 'employee';
+                    document.getElementById('u-contract').value = u.contract || 'employee';
                     document.getElementById('u-idle').value = u.idleLimit || 5;
                     document.getElementById('u-bg').value = u.backgroundLimit || 60;
                     if(u.photo) { document.getElementById('user-photo-preview').src = u.photo; document.getElementById('user-photo-b64').value = u.photo; }
@@ -627,14 +690,20 @@
 
         async function saveUserData(e) {
             e.preventDefault();
-            const btn = document.getElementById('save-user-btn'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+            const btn = document.getElementById('save-user-btn'); 
+            
+            // UI Feedback السريع
+            btn.disabled = true; 
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
             
             const mode = document.getElementById('edit-mode-email').value;
             const email = document.getElementById('u-email').value.toLowerCase().trim();
             const pass = document.getElementById('u-password').value;
             let photoUrl = document.getElementById('user-photo-b64').value;
 
-            // Upload Photo if new Base64
+            // تنفيذ الحفظ السريع بصرياً
+            closeModal('modal-user-form');
+
             if(photoUrl && photoUrl.startsWith('data:image')) {
                 const ref = storage.ref().child(`profiles/${Date.now()}_${email}.jpg`);
                 await ref.putString(photoUrl, 'data_url'); photoUrl = await ref.getDownloadURL();
@@ -644,6 +713,7 @@
                 name: document.getElementById('u-name').value,
                 title: document.getElementById('u-title').value,
                 role: document.getElementById('u-role').value,
+                contract: document.getElementById('u-contract').value,
                 idleLimit: parseInt(document.getElementById('u-idle').value),
                 backgroundLimit: parseInt(document.getElementById('u-bg').value),
                 photo: photoUrl || '',
@@ -657,19 +727,18 @@
 
             try {
                 if(mode === 'new') {
-                    // 🟢 THE MAGIC TRICK: Create Auth via Secondary App 🟢
                     await secondaryAuth.createUserWithEmailAndPassword(email, pass);
-                    await secondaryAuth.signOut(); // Clean up secondary
+                    await secondaryAuth.signOut();
                     
                     userData.email = email; userData.status = 'Offline'; userData.tasks = []; userData.timeBank = {};
                     await db.collection('users').doc(email).set(userData);
-                    alert("تم إنشاء حساب الموظف بنجاح!");
                 } else {
                     await db.collection('users').doc(email).update(userData);
-                    alert("تم تحديث البيانات بنجاح!");
                 }
-                closeModal('modal-user-form');
-            } catch(err) { console.error(err); alert("حدث خطأ: " + err.message); }
+            } catch(err) { 
+                console.error(err); 
+                alert("حدث خطأ: " + err.message); 
+            }
             btn.disabled = false; btn.innerHTML = 'حفظ بيانات الموظف';
         }
 
@@ -678,7 +747,6 @@
             if(email === currentUser.email) { alert("لا يمكنك حذف حسابك الإداري!"); return; }
             if(confirm(`⚠️ هل أنت متأكد نهائياً من حذف الموظف ${email} وكل بياناته؟`)) {
                 await db.collection('users').doc(email).delete();
-                // Note: Auth deletion requires Firebase Admin SDK (Server). We just delete the doc here so they can't login via UI.
                 closeModal('modal-user-form'); alert("تم إزالة بيانات الموظف من النظام.");
             }
         }
@@ -695,7 +763,6 @@
                     if (!snapshot.metadata.hasPendingWrites) {
                         snapshot.docChanges().forEach(change => {
                             if (change.type === "added") {
-                                // إظهار نقطة تنبيه على زر الشات أو القائمة
                                 const badge = document.getElementById("chat-badge");
                                 if (badge) badge.classList.remove("hidden");
                             }
@@ -703,62 +770,66 @@
                     }
                 });
         }
+
         function openPrivateChat(email, name, photo) {
-    const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
-    if (document.getElementById(`chat-win-${chatId}`)) return;
+            const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+            if (document.getElementById(`chat-win-${chatId}`)) return;
 
-    const win = document.createElement('div');
-    win.id = `chat-win-${chatId}`;
-    win.className = "chat-window fixed bottom-8 left-8 w-[320px] h-[450px] bg-dark-900 border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col animate-fade-in z-[101]";
-    win.innerHTML = `
-        <div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header cursor-move shrink-0 rounded-t-[2.5rem]">
-            <div class="flex items-center gap-3">
-                <img src="${photo || DEFAULT_PHOTO + name}" class="w-8 h-8 rounded-xl object-cover">
-                <p class="text-[11px] font-black text-white">${name}</p>
-            </div>
-            <button onclick="this.parentElement.parentElement.remove()" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button>
-        </div>
-        <div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar bg-dark-950/20"></div>
-        <form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-3 bg-dark-900 border-t border-white/5 flex gap-2 rounded-b-[2.5rem]">
-            <input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-[10px] text-white outline-none focus:border-primary-500" placeholder="رد على الموظف..." autocomplete="off">
-            <button class="bg-primary-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane text-xs"></i></button>
-        </form>`;
-    document.getElementById('private-chats-container').appendChild(win);
-    listenToPrivateChat(email, chatId);
-}
+            const win = document.createElement('div');
+            win.id = `chat-win-${chatId}`;
+            win.className = "chat-window fixed bottom-8 left-8 w-[320px] h-[450px] bg-dark-900 border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col animate-fade-in z-[101] overflow-hidden pointer-events-auto";
+            win.innerHTML = `
+                <div class="p-4 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header shrink-0">
+                    <div class="flex items-center gap-3">
+                        <img src="${photo || DEFAULT_PHOTO + name}" class="w-8 h-8 rounded-xl object-cover">
+                        <p class="text-[11px] font-black text-white">${name}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-slate-500 hover:text-white btn-glass w-8 h-8 rounded-lg flex justify-center items-center"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 custom-scrollbar bg-dark-950/20"></div>
+                <form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-3 bg-dark-900 border-t border-white/5 flex gap-2">
+                    <input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-[10px] text-white outline-none focus:border-primary-500" placeholder="رد على الموظف..." autocomplete="off">
+                    <button class="bg-primary-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg text-white hover:bg-primary-500"><i class="fas fa-paper-plane text-xs"></i></button>
+                </form>`;
+            document.getElementById('private-chats-container').appendChild(win);
+            listenToPrivateChat(email, chatId);
+        }
 
-async function sendPrivateMsg(e, email, chatId) {
-    e.preventDefault();
-    const inp = document.getElementById(`input-${chatId}`);
-    if (!inp.value.trim()) return;
-    await db.collection('private_messages').add({
-        sender: currentUser.email.toLowerCase(),
-        receiver: email.toLowerCase(),
-        text: inp.value.trim(),
-        name: userProfile.name,
-        time: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    inp.value = '';
-}
+        async function sendPrivateMsg(e, email, chatId) {
+            e.preventDefault();
+            const inp = document.getElementById(`input-${chatId}`);
+            if (!inp.value.trim()) return;
+            await db.collection('private_messages').add({
+                sender: currentUser.email.toLowerCase(),
+                receiver: email.toLowerCase(),
+                text: inp.value.trim(),
+                name: userProfile.name,
+                time: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            inp.value = '';
+        }
 
-    function listenToPrivateChat(email, chatId) {
-                const box = document.getElementById(`msgs-${chatId}`);
-                db.collection('private_messages').orderBy('time', 'asc').onSnapshot(snap => {
-                    box.innerHTML = '';
-                    snap.docs.forEach(doc => {
-                        const m = doc.data();
-                        if ((m.sender === currentUser.email.toLowerCase() && m.receiver === email.toLowerCase()) || 
-                            (m.sender === email.toLowerCase() && m.receiver === currentUser.email.toLowerCase())) {
-                            const isMe = m.sender === currentUser.email.toLowerCase();
-                            box.innerHTML += `<div class="chat-bubble ${isMe ? 'bubble-me mr-auto' : 'bubble-them ml-auto'}">${m.text}</div>`;
-                        }
-                    });
-                    box.scrollTop = box.scrollHeight;
+        function listenToPrivateChat(email, chatId) {
+            const box = document.getElementById(`msgs-${chatId}`);
+            db.collection('private_messages').orderBy('time', 'asc').onSnapshot(snap => {
+                box.innerHTML = '';
+                snap.docs.forEach(doc => {
+                    const m = doc.data();
+                    if ((m.sender === currentUser.email.toLowerCase() && m.receiver === email.toLowerCase()) || 
+                        (m.sender === email.toLowerCase() && m.receiver === currentUser.email.toLowerCase())) {
+                        const isMe = m.sender === currentUser.email.toLowerCase();
+                        box.innerHTML += `
+                            <div class="max-w-[85%] p-3 rounded-2xl text-[10px] font-bold ${isMe ? 'bg-primary-600 text-white rounded-br-none mr-auto' : 'bg-dark-800 text-slate-200 border border-white/5 rounded-bl-none ml-auto'}">
+                                ${m.text}
+                            </div>`;
+                    }
                 });
-            }
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
         // --- 9. LOGOUT ---
-        async function logout() { if(confirm("إغلاق لوحة تحكم الإدارة؟")) { await auth.signOut(); window.location.replace('index.html'); } }
+        async function logout() { if(confirm("هل أنت متأكد من تسجيل الخروج وإغلاق لوحة التحكم؟")) { await auth.signOut(); window.location.replace('index.html'); } }
     </script>
 </body>
-
 </html>
