@@ -10,6 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -33,7 +36,6 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 20px; }
         
-        .status-card { transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.03); background: rgba(30, 41, 59, 0.4); }
         .pulse-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; }
         .pulse-dot::after { content: ''; position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: inherit; border-radius: 50%; animation: p-ring 1.5s infinite; }
         @keyframes p-ring { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
@@ -159,10 +161,10 @@
                     </button>
                     
                     <div class="grid grid-cols-2 gap-2">
-                        <a href="payroll.html" class="py-2.5 btn-glass text-green-500 rounded-xl font-black text-[9px] flex items-center justify-center gap-1 transition-all active:scale-95">
+                        <a href="payroll.html" target="_blank" class="py-2.5 btn-glass text-green-500 rounded-xl font-black text-[9px] flex items-center justify-center gap-1 transition-all active:scale-95">
                             <i class="fas fa-money-bill-wave"></i> المرتبات
                         </a>
-                        <a href="crm.html" class="py-2.5 btn-glass text-indigo-400 rounded-xl font-black text-[9px] flex items-center justify-center gap-1 transition-all active:scale-95">
+                        <a href="crm.html" target="_blank" class="py-2.5 btn-glass text-indigo-400 rounded-xl font-black text-[9px] flex items-center justify-center gap-1 transition-all active:scale-95">
                             <i class="fas fa-chart-line"></i> المشاريع
                         </a>
                     </div>
@@ -187,9 +189,9 @@
                 <div class="p-8 pb-4 shrink-0 flex justify-between items-end border-b border-white/5 bg-dark-950/80">
                     <div>
                         <h1 class="text-3xl font-black text-white mb-2">شاشة المراقبة المركزية</h1>
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">تتبع أداء وحالة الموظفين لحظياً</p>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">تتبع أداء وحالة الموظفين لحظياً (اضغط لتغيير الحالة)</p>
                     </div>
-                    </div>
+                </div>
                 <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
                     <div id="monitor-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20"></div>
                 </div>
@@ -201,7 +203,7 @@
                         <h1 class="text-3xl font-black text-white mb-2">لوحة المهام الشاملة</h1>
                         <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">متابعة سير عمل كافة المهام بالمؤسسة</p>
                     </div>
-                    <button onclick="openTaskModal()" class="px-6 py-2.5 rounded-xl bg-primary-600 text-white font-black text-[10px] shadow-lg shadow-primary-500/20 flex items-center gap-2"><i class="fas fa-plus"></i> إضافة مهمة لموظف</button>
+                    <button onclick="openAddTaskModal()" class="px-6 py-2.5 rounded-xl bg-primary-600 text-white font-black text-[10px] shadow-lg shadow-primary-500/20 flex items-center gap-2"><i class="fas fa-plus"></i> إضافة مهمة لموظف</button>
                 </div>
                 <div class="flex-1 flex gap-6 p-8 overflow-x-auto custom-scrollbar pb-20">
                     <div class="flex-1 min-w-[300px] flex flex-col bg-dark-900/40 rounded-[2rem] border border-white/5 overflow-hidden">
@@ -213,7 +215,7 @@
                     </div>
                     <div class="flex-1 min-w-[300px] flex flex-col bg-dark-900/40 rounded-[2rem] border border-white/5 overflow-hidden">
                         <div class="p-4 bg-dark-900 border-b border-white/5 flex items-center justify-between shrink-0">
-                            <div class="flex items-center gap-3"><div class="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div><h3 class="font-black text-white text-sm">قيد التنفيذ والمراجعة</h3></div>
+                            <div class="flex items-center gap-3"><div class="w-3 h-3 rounded-full bg-primary-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div><h3 class="font-black text-white text-sm">قيد التنفيذ والمراجعة</h3></div>
                             <span id="k-prog-count" class="bg-dark-800 text-slate-400 text-[10px] font-black px-3 py-1 rounded-lg">0</span>
                         </div>
                         <div id="kanban-inprogress" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4"></div>
@@ -245,7 +247,7 @@
                                     <th class="p-5 font-black">البريد الإلكتروني</th>
                                     <th class="p-5 font-black text-center">الرتبة</th>
                                     <th class="p-5 font-black text-center">نوع العقد</th>
-                                    <th class="p-5 font-black text-center">الحالة</th>
+                                    <th class="p-5 font-black text-center">حالة الحساب</th>
                                     <th class="p-5 font-black text-left">الإجراءات</th>
                                 </tr>
                             </thead>
@@ -338,25 +340,63 @@
                         </div>
                     </div>
                 </div>
+                
+                <div id="suspend-container" class="flex items-center justify-between p-4 bg-red-500/10 rounded-xl border border-red-500/20 mt-4">
+                    <div>
+                        <span class="text-[11px] font-black text-red-500 block">إيقاف الحساب (تعليق الدخول)</span>
+                        <span class="text-[9px] text-slate-400">سيمنع الموظف من تسجيل الدخول للنظام نهائياً حتى يتم التفعيل مجدداً.</span>
+                    </div>
+                    <div class="relative inline-block w-12 align-middle select-none">
+                        <input type="checkbox" id="u-suspended" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                        <label for="u-suspended" class="toggle-label block overflow-hidden h-6 rounded-full bg-red-900 cursor-pointer"></label>
+                    </div>
+                </div>
 
                 <div class="pt-5 mt-2 border-t border-white/5 flex gap-4 shrink-0">
                     <button type="submit" id="save-user-btn" class="flex-1 py-3 bg-primary-600 text-white rounded-xl font-black shadow-xl shadow-primary-600/20 active:scale-95 transition-all text-sm">حفظ بيانات الموظف</button>
-                    <button type="button" id="delete-user-btn" onclick="deleteUser()" class="px-6 py-3 bg-red-500/10 text-red-500 rounded-xl font-black border border-red-500/20 hover:bg-red-500 hover:text-white transition-all hidden"><i class="fas fa-trash"></i> إيقاف وحذف</button>
+                    <button type="button" id="delete-user-btn" onclick="deleteUser()" class="px-6 py-3 bg-red-500/10 text-red-500 rounded-xl font-black border border-red-500/20 hover:bg-red-500 hover:text-white transition-all hidden"><i class="fas fa-trash"></i> حذف البيانات</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="chat-window" class="fixed bottom-20 right-8 w-[380px] h-[550px] bg-dark-900 border border-white/10 rounded-[2.5rem] overflow-hidden hidden flex flex-col shadow-2xl z-[100] animate-fade-in">
-        <div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center shrink-0">
-            <h3 class="font-black text-xs text-primary-500 uppercase tracking-widest"><i class="fas fa-bullhorn mr-2"></i> تعميم ودردشة الإدارة</h3>
-            <button onclick="toggleChat()" class="text-slate-600 hover:text-white transition-all"><i class="fas fa-times text-lg"></i></button>
+    <div id="modal-create-task" class="fixed inset-0 z-[450] hidden bg-black/95 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-dark-900 w-full max-w-2xl rounded-[2rem] p-8 border border-white/5 flex flex-col max-h-[90vh] overflow-hidden shadow-2xl">
+            <h3 class="text-xl font-black text-white mb-6 flex items-center gap-3"><i class="fas fa-plus-circle text-primary-500"></i> إسناد مهمة جديدة</h3>
+            <form onsubmit="submitNewTask(event)" class="space-y-4 flex flex-col overflow-y-auto custom-scrollbar pr-2">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="relative">
+                        <label class="text-[10px] font-black uppercase text-slate-500 mb-1.5 block">الموظف المسؤول</label>
+                        <div onclick="toggleCustomUserSelect()" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl flex items-center justify-between px-4 cursor-pointer">
+                            <span id="selected-user-text" class="text-xs font-bold text-slate-400">اختر موظفاً...</span>
+                            <i class="fas fa-chevron-down text-[10px] text-slate-600"></i>
+                        </div>
+                        <div id="custom-user-options" class="absolute top-full left-0 right-0 mt-1 bg-dark-900 border border-white/10 rounded-xl max-h-48 overflow-y-auto z-[300] hidden shadow-2xl custom-scrollbar"></div>
+                        <input type="hidden" id="new-task-user-email" required>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-500 mb-1.5 block">المشروع المرجعي</label>
+                        <select id="new-task-project" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-xs font-bold text-white outline-none focus:border-primary-500"></select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-500 mb-1.5 block">عنوان المهمة</label>
+                    <input type="text" id="new-task-title" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-xs font-bold text-white outline-none focus:border-primary-500" required>
+                </div>
+                <div class="flex-1 min-h-[150px]">
+                    <label class="text-[10px] font-black uppercase text-slate-500 mb-1.5 block">التفاصيل</label>
+                    <div id="editor-container" class="bg-dark-950 rounded-xl overflow-hidden h-32"></div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-500 mb-1.5 block">مرفقات (اختياري)</label>
+                    <input type="file" id="new-task-file" class="block w-full text-[10px] text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-500/10 file:text-primary-400 file:font-black">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="submit" id="save-task-btn" class="flex-1 bg-primary-600 py-3 rounded-xl font-black shadow-lg text-white text-sm">إرسال المهمة</button>
+                    <button type="button" onclick="closeModal('modal-create-task')" class="px-8 bg-dark-800 rounded-xl font-black text-slate-400 hover:text-white text-sm">إلغاء</button>
+                </div>
+            </form>
         </div>
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-5 flex flex-col gap-4 custom-scrollbar bg-dark-950/20"></div>
-        <form onsubmit="handleGlobalMessage(event)" class="p-4 bg-dark-900 border-t border-white/5 flex gap-3">
-            <input type="text" id="chat-input" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-primary-500" placeholder="إرسال تعميم للجميع..." autocomplete="off">
-            <button type="submit" class="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-paper-plane"></i></button>
-        </form>
     </div>
 
     <div id="modal-task-detail" class="fixed inset-0 z-[400] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4" onclick="closeModal('modal-task-detail')">
@@ -381,22 +421,33 @@
         </div>
     </div>
 
+    <div id="chat-window" class="fixed bottom-20 right-8 w-[380px] h-[550px] bg-dark-900 border border-white/10 rounded-[2.5rem] overflow-hidden hidden flex flex-col shadow-2xl z-[100] animate-fade-in">
+        <div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center shrink-0">
+            <h3 class="font-black text-xs text-primary-500 uppercase tracking-widest"><i class="fas fa-bullhorn mr-2"></i> تعميم ودردشة الإدارة</h3>
+            <button onclick="toggleChat()" class="text-slate-600 hover:text-white transition-all"><i class="fas fa-times text-lg"></i></button>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-5 flex flex-col gap-4 custom-scrollbar bg-dark-950/20"></div>
+        <form onsubmit="handleGlobalMessage(event)" class="p-4 bg-dark-900 border-t border-white/5 flex gap-3">
+            <input type="text" id="chat-input" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-primary-500" placeholder="إرسال تعميم للجميع..." autocomplete="off">
+            <button type="submit" class="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-paper-plane"></i></button>
+        </form>
+    </div>
+
     <div id="private-chats-container" class="fixed bottom-0 right-0 z-[101] flex gap-3 p-3 pointer-events-none"></div>
 
     <script>
-        // --- 1. FIREBASE CONFIG & INITIALIZATION ---
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
         
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const secondaryAuth = secondaryApp.auth();
+        const db = firebase.firestore(), auth = firebase.auth(), storage = firebase.storage(), secondaryAuth = secondaryApp.auth();
 
-        let currentUser = null, userProfile = null, allUsersData = [], currentMonitorFilter = 'all';
+        let currentUser = null, userProfile = null, allUsersData = [], allProjects = [], currentMonitorFilter = 'all';
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
+        var quill = null;
 
-        // --- 2. GLOBAL HELPERS ---
+        // --- GLOBAL HELPERS ---
         function startClock() {
             const update = () => {
                 const now = moment();
@@ -410,10 +461,11 @@
         function formatDuration(ms) { if(ms < 0) ms = 0; const s = Math.floor((ms/1000)%60).toString().padStart(2,'0'); const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0'); const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0'); return `${h}:${m}:${s}`; }
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        async function uploadFile(file, path) { if (!file) return null; const ref = storage.ref().child(`${path}/${Date.now()}_${file.name}`); await ref.put(file); return await ref.getDownloadURL(); }
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                ['chat-window', 'modal-user-form', 'modal-task-detail'].forEach(id => closeModal(id));
+                ['chat-window', 'modal-user-form', 'modal-task-detail', 'modal-create-task', 'custom-user-options'].forEach(id => closeModal(id));
                 document.getElementById('private-chats-container').innerHTML = '';
             }
         });
@@ -427,15 +479,7 @@
             document.getElementById(`tab-${viewName}`).classList.add('active', 'bg-dark-950', 'shadow-md');
         }
 
-        function openTaskModal() {
-            // دالة افتراضية لإضافة مهمة - يمكن ربطها لاحقاً بمودال إضافة المهام
-            alert("سيتم إضافة شاشة إنشاء المهام هنا لاحقاً.");
-        }
-
-        function requestScreenshot(email) { alert("تم طلب لقطة شاشة من الموظف: " + email); }
-        function viewHistory(email) { alert("فتح سجل نشاط الموظف: " + email); }
-
-        // --- 3. AUTH & BOOT ---
+        // --- AUTH & BOOT ---
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
@@ -452,14 +496,17 @@
             startClock();
             document.getElementById('admin-name').innerText = userProfile.name;
             document.getElementById('admin-img').src = userProfile.photo || DEFAULT_PHOTO + 'Admin';
+            
+            quill = new Quill('#editor-container', { theme: 'snow', modules: { toolbar: [['bold', 'italic'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link']] } });
+            
             listenToAllUsers();
+            listenToProjects();
             listenToGlobalMessages();
             listenToPrivateMessages();
             setInterval(updateTimersUI, 1000);
             document.getElementById('loader').classList.add('hidden');
         }
 
-        // --- 4. DATA FETCHING ---
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snap => {
                 allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
@@ -469,6 +516,9 @@
                 renderGlobalTasks();
                 renderUsersTable();
             });
+        }
+        function listenToProjects() {
+            db.collection('projects').onSnapshot(snap => { allProjects = snap.docs.map(d => ({ id: d.id, ...d.data() })); });
         }
 
         function updateSidebarChatDropdown() {
@@ -487,7 +537,7 @@
             const email = document.getElementById('sidebar-user-chat').value;
             if(!email) return;
             const u = allUsersData.find(x => x.email === email);
-            if(u) openPrivateChat(u.email, u.name, u.photo);
+            if(u) openPrivateChat(u.email, u.name, u.photo, u.title || u.role);
         }
 
         function updateAdminStats() {
@@ -504,7 +554,7 @@
             document.getElementById('stat-meeting-users').innerText = meetingUsers;
         }
 
-        // --- 5. VIEW 1: MONITOR ---
+        // --- VIEW 1: MONITOR (With Clickable Statuses) ---
         function renderMonitorGrid(filter = currentMonitorFilter) {
             currentMonitorFilter = filter;
             const container = document.getElementById('monitor-grid'); container.innerHTML = '';
@@ -515,9 +565,14 @@
                 if(filter === 'Break' && u.status !== 'Break') return;
                 if(filter === 'Meeting' && u.status !== 'Meeting') return;
 
-                const s = u.isIdle ? 'Idle' : (u.status || 'Offline');
+                const s = u.status || 'Offline';
+                const isOnline = s === 'Online' && !u.isIdle;
+                const isIdle = u.isIdle;
+                const isBreak = s === 'Break';
+                const isMeeting = s === 'Meeting';
+
                 const tb = u.timeBank || {}; const safeStart = getMillis(u.lastChange);
-                const color = s === 'Online' ? 'bg-green-500' : s === 'Idle' ? 'bg-red-500' : s === 'Break' ? 'bg-orange-500' : s === 'Meeting' ? 'bg-indigo-500' : 'bg-slate-600';
+                const color = isOnline ? 'bg-green-500' : isIdle ? 'bg-red-500' : isBreak ? 'bg-orange-500' : isMeeting ? 'bg-indigo-500' : 'bg-slate-600';
 
                 container.innerHTML += `
                     <div class="admin-grid-card p-5 rounded-2xl flex flex-col gap-4 relative group">
@@ -527,20 +582,61 @@
                         </div>
                         
                         <div class="grid grid-cols-4 gap-1.5 mt-2">
-                            <div class="bg-dark-950 p-2 rounded-lg border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 mb-0.5">عمل</p><p class="text-[10px] font-black text-green-500 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online' && !u.isIdle}" data-start="${safeStart}">00:00</p></div>
-                            <div class="bg-dark-950 p-2 rounded-lg border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 mb-0.5">خمول</p><p class="text-[10px] font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p></div>
-                            <div class="bg-dark-950 p-2 rounded-lg border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 mb-0.5">استراحة</p><p class="text-[10px] font-black text-orange-500 stat-timer-break" data-val="${tb['Break'] || 0}" data-active="${s === 'Break'}" data-start="${safeStart}">00:00</p></div>
-                            <div class="bg-dark-950 p-2 rounded-lg border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 mb-0.5">اجتماع</p><p class="text-[10px] font-black text-indigo-500 stat-timer-meeting" data-val="${tb['Meeting'] || 0}" data-active="${s === 'Meeting'}" data-start="${safeStart}">00:00</p></div>
+                            <div onclick="adminForceStatus('${u.email}', 'Online')" class="cursor-pointer p-2 rounded-lg text-center transition ${isOnline ? 'bg-green-500/10 border border-green-500' : 'bg-dark-950 border border-white/5 hover:border-green-500/50'}">
+                                <p class="text-[8px] font-black text-slate-500 mb-0.5">عمل</p>
+                                <p class="text-[10px] font-black ${isOnline ? 'text-green-500' : 'text-slate-400'} stat-timer" data-val="${tb['Online'] || 0}" data-active="${isOnline}" data-start="${safeStart}">00:00</p>
+                            </div>
+                            <div class="p-2 rounded-lg border border-white/5 text-center bg-dark-950">
+                                <p class="text-[8px] font-black text-slate-500 mb-0.5">خمول</p>
+                                <p class="text-[10px] font-black ${isIdle ? 'text-red-500' : 'text-slate-400'} stat-idle" data-val="${u.idleBank || 0}" data-isidle="${isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p>
+                            </div>
+                            <div onclick="adminForceStatus('${u.email}', 'Break')" class="cursor-pointer p-2 rounded-lg text-center transition ${isBreak ? 'bg-orange-500/10 border border-orange-500' : 'bg-dark-950 border border-white/5 hover:border-orange-500/50'}">
+                                <p class="text-[8px] font-black text-slate-500 mb-0.5">استراحة</p>
+                                <p class="text-[10px] font-black ${isBreak ? 'text-orange-500' : 'text-slate-400'} stat-timer-break" data-val="${tb['Break'] || 0}" data-active="${isBreak}" data-start="${safeStart}">00:00</p>
+                            </div>
+                            <div onclick="adminForceStatus('${u.email}', 'Meeting')" class="cursor-pointer p-2 rounded-lg text-center transition ${isMeeting ? 'bg-indigo-500/10 border border-indigo-500' : 'bg-dark-950 border border-white/5 hover:border-indigo-500/50'}">
+                                <p class="text-[8px] font-black text-slate-500 mb-0.5">اجتماع</p>
+                                <p class="text-[10px] font-black ${isMeeting ? 'text-indigo-500' : 'text-slate-400'} stat-timer-meeting" data-val="${tb['Meeting'] || 0}" data-active="${isMeeting}" data-start="${safeStart}">00:00</p>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-4 gap-2 mt-auto pt-3 border-t border-white/5">
-                            <button onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}')" class="py-2 bg-primary-600/10 text-primary-500 rounded-lg text-[10px] font-black hover:bg-primary-600 hover:text-white transition" title="إرسال رسالة"><i class="fas fa-comment-dots"></i></button>
+                            <button onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}', '${u.title || u.role}')" class="py-2 bg-primary-600/10 text-primary-500 rounded-lg text-[10px] font-black hover:bg-primary-600 hover:text-white transition" title="إرسال رسالة"><i class="fas fa-comment-dots"></i></button>
                             <button onclick="requestScreenshot('${u.email}')" class="py-2 bg-yellow-500/10 text-yellow-500 rounded-lg text-[10px] font-black hover:bg-yellow-500 hover:text-white transition" title="طلب لقطة شاشة"><i class="fas fa-camera"></i></button>
                             <button onclick="viewHistory('${u.email}')" class="py-2 bg-cyan-500/10 text-cyan-500 rounded-lg text-[10px] font-black hover:bg-cyan-500 hover:text-white transition" title="سجل الموظف"><i class="fas fa-history"></i></button>
                             <button onclick="openUserModal('${u.email}')" class="py-2 bg-slate-500/10 text-slate-400 rounded-lg text-[10px] font-black hover:bg-slate-500 hover:text-white transition" title="إعدادات وصلاحيات"><i class="fas fa-cog"></i></button>
                         </div>
                     </div>`;
             });
+        }
+
+        async function adminForceStatus(targetEmail, newStatus) {
+            const statusNames = { 'Online': 'عمل', 'Break': 'استراحة', 'Meeting': 'اجتماع' };
+            if(!confirm(`هل تريد فعلاً تحويل حالة الموظف إلى: ${statusNames[newStatus]}؟`)) return;
+            
+            try {
+                const userRef = db.collection('users').doc(targetEmail);
+                const uData = (await userRef.get()).data();
+                if(uData.status === newStatus && !uData.isIdle) return; // بالفعل في نفس الحالة
+
+                const now = Date.now();
+                const safeStart = getMillis(uData.lastChange) || now;
+                const duration = now - safeStart;
+                let tb = uData.timeBank || {};
+                const oldStatus = uData.isIdle ? 'Idle' : (uData.status || 'Offline');
+                
+                if(oldStatus !== 'Offline') { tb[oldStatus] = (tb[oldStatus] || 0) + duration; }
+
+                const ts = firebase.firestore.FieldValue.serverTimestamp();
+                
+                // تسجيل الإجراء
+                await db.collection('logs').add({
+                    user: targetEmail, name: uData.name, from_status: oldStatus, to_status: newStatus,
+                    start_time: uData.lastChange || ts, end_time: ts, duration_ms: duration, auto: false, adminForced: true
+                });
+
+                await userRef.update({ status: newStatus, isIdle: false, lastChange: ts, timeBank: tb });
+            } catch(e) { console.error(e); alert("حدث خطأ أثناء تغيير الحالة"); }
         }
 
         function updateTimersUI() {
@@ -552,7 +648,10 @@
             });
         }
 
-        // --- 6. VIEW 2: GLOBAL TASKS KANBAN ---
+        function requestScreenshot(email) { alert("تم إرسال أمر سحب لقطة شاشة للموظف: " + email); }
+        function viewHistory(email) { alert("سيتم برمجة السجل في التحديث القادم الخاص بالتقارير للموظف: " + email); }
+
+        // --- VIEW 2: TASKS ---
         function renderGlobalTasks() {
             const cols = { todo: document.getElementById('kanban-todo'), inprogress: document.getElementById('kanban-inprogress'), done: document.getElementById('kanban-done') };
             for(let k in cols) if(cols[k]) cols[k].innerHTML = '';
@@ -582,6 +681,72 @@
             document.getElementById('k-todo-count').innerText = counts.todo;
             document.getElementById('k-prog-count').innerText = counts.inprogress;
             document.getElementById('k-done-count').innerText = counts.done;
+        }
+
+        // إسناد المهام من السوبرفايزر
+        function openAddTaskModal() {
+            document.getElementById('new-task-title').value = '';
+            document.getElementById('new-task-user-email').value = '';
+            document.getElementById('selected-user-text').innerText = 'اختر موظفاً...';
+            if(quill) quill.setContents([]);
+            
+            const pSel = document.getElementById('new-task-project');
+            pSel.innerHTML = '<option value="">-- مهام عامة (بدون مشروع) --</option>';
+            allProjects.forEach(p => { pSel.innerHTML += `<option value="${p.id}|${p.title}">${p.title}</option>`; });
+            
+            openModal('modal-create-task');
+        }
+
+        function toggleCustomUserSelect() {
+            const list = document.getElementById('custom-user-options');
+            if(!list.classList.contains('hidden')) { list.classList.add('hidden'); return; }
+            list.innerHTML = '';
+            allUsersData.forEach(u => {
+                list.innerHTML += `<div onclick="selectTaskUser('${u.email}', '${u.name}', '${u.photo || DEFAULT_PHOTO+u.name}')" class="flex items-center gap-3 p-3 hover:bg-dark-800 cursor-pointer border-b border-white/5">
+                    <img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-8 h-8 rounded-lg object-cover">
+                    <div class="text-right"><p class="text-xs font-black text-white">${u.name}</p></div>
+                </div>`;
+            });
+            list.classList.remove('hidden');
+        }
+
+        function selectTaskUser(email, name, photo) {
+            document.getElementById('new-task-user-email').value = email;
+            document.getElementById('selected-user-text').innerHTML = `<div class="flex items-center gap-2"><img src="${photo}" class="w-5 h-5 rounded-md"> <span class="text-white">${name}</span></div>`;
+            document.getElementById('custom-user-options').classList.add('hidden');
+        }
+
+        async function submitNewTask(e) {
+            e.preventDefault();
+            const btn = document.getElementById('save-task-btn');
+            const email = document.getElementById('new-task-user-email').value;
+            if(!email) { alert("يرجى تحديد الموظف المسؤول أولاً"); return; }
+            
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+            
+            try {
+                const title = document.getElementById('new-task-title').value;
+                const desc = quill.root.innerHTML;
+                const projParts = document.getElementById('new-task-project').value.split('|');
+                const fileUrl = await uploadFile(document.getElementById('new-task-file').files[0], 'tasks');
+
+                const userRef = db.collection('users').doc(email);
+                const snap = await userRef.get();
+                let tasks = snap.data().tasks || [];
+                
+                tasks.push({
+                    id: Date.now(), title, desc, file: fileUrl, 
+                    projectId: projParts[0]||'', projectName: projParts[1]||'',
+                    status: 'started', comments: [], 
+                    createdBy: userProfile.name, createdByEmail: currentUser.email.toLowerCase(), 
+                    ownerEmail: email, reviewerEmail: currentUser.email.toLowerCase()
+                });
+
+                await userRef.update({ tasks });
+                closeModal('modal-create-task');
+                alert("تم إسناد المهمة بنجاح");
+            } catch(err) { console.error(err); alert("حدث خطأ أثناء إرسال المهمة"); } 
+            finally { btn.disabled = false; btn.innerHTML = 'إرسال المهمة'; }
         }
 
         function openAdminTaskDetail(taskId, ownerEmail) {
@@ -618,14 +783,16 @@
             await userRef.update({ tasks }); closeModal('modal-task-detail'); alert("تم حذف المهمة نهائياً.");
         }
 
-        // --- 7. VIEW 3: USER MANAGEMENT & CREATION ---
+        // --- VIEW 3: USER MANAGEMENT ---
         function renderUsersTable() {
             const tbody = document.getElementById('users-table-body'); tbody.innerHTML = '';
             allUsersData.forEach(u => {
-                const statusColor = u.status === 'Online' ? 'text-green-500' : 'text-slate-500';
+                const isSuspended = u.isSuspended === true;
+                const statusColor = isSuspended ? 'text-red-500' : (u.status === 'Online' ? 'text-green-500' : 'text-slate-500');
                 const contractType = u.contract === 'freelancer' ? 'مستقل' : 'موظف';
+                
                 tbody.innerHTML += `
-                    <tr class="hover:bg-dark-900/50 transition-colors group">
+                    <tr class="hover:bg-dark-900/50 transition-colors group ${isSuspended ? 'opacity-50' : ''}">
                         <td class="p-4 flex items-center gap-3">
                             <img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-9 h-9 rounded-xl object-cover border border-white/5">
                             <div><p class="font-black text-white text-xs">${u.name}</p><p class="text-[9px] text-slate-500 uppercase">${u.title || 'N/A'}</p></div>
@@ -633,7 +800,7 @@
                         <td class="p-4 text-[11px] text-slate-400 font-mono">${u.email}</td>
                         <td class="p-4 text-center"><span class="bg-primary-500/10 text-primary-400 text-[9px] px-3 py-1 rounded-full font-black uppercase border border-primary-500/20">${u.role}</span></td>
                         <td class="p-4 text-center text-[10px] font-bold text-slate-400">${contractType}</td>
-                        <td class="p-4 text-center font-black text-[10px] ${statusColor} uppercase">${u.status || 'متصل غير نشط'}</td>
+                        <td class="p-4 text-center font-black text-[10px] ${statusColor} uppercase">${isSuspended ? 'حساب موقوف' : 'فعال'}</td>
                         <td class="p-4 text-left">
                             <button onclick="openUserModal('${u.email}')" class="px-4 py-2 bg-dark-800 text-white rounded-lg text-[9px] font-black hover:bg-primary-600 transition-all border border-white/5">تعديل الملف</button>
                         </td>
@@ -661,6 +828,8 @@
                 document.getElementById('password-container').classList.remove('hidden');
                 document.getElementById('u-password').required = true;
                 document.getElementById('delete-user-btn').classList.add('hidden');
+                document.getElementById('suspend-container').classList.add('hidden');
+                document.getElementById('u-suspended').checked = false;
             } else {
                 document.getElementById('modal-user-title').innerHTML = '<i class="fas fa-user-edit text-primary-500"></i> تعديل بيانات الموظف';
                 document.getElementById('edit-mode-email').value = email;
@@ -668,6 +837,7 @@
                 document.getElementById('password-container').classList.add('hidden');
                 document.getElementById('u-password').required = false;
                 document.getElementById('delete-user-btn').classList.remove('hidden');
+                document.getElementById('suspend-container').classList.remove('hidden');
 
                 const u = allUsersData.find(x => x.email === email);
                 if(u) {
@@ -678,6 +848,7 @@
                     document.getElementById('u-contract').value = u.contract || 'employee';
                     document.getElementById('u-idle').value = u.idleLimit || 5;
                     document.getElementById('u-bg').value = u.backgroundLimit || 60;
+                    document.getElementById('u-suspended').checked = u.isSuspended === true;
                     if(u.photo) { document.getElementById('user-photo-preview').src = u.photo; document.getElementById('user-photo-b64').value = u.photo; }
                     
                     ['crm', 'payroll', 'delete-task', 'screenshot'].forEach(p => {
@@ -692,66 +863,69 @@
             e.preventDefault();
             const btn = document.getElementById('save-user-btn'); 
             
-            // UI Feedback السريع
+            // تمكين زر التحميل حتى لا يقوم بالضغط مرتين
             btn.disabled = true; 
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
             
-            const mode = document.getElementById('edit-mode-email').value;
-            const email = document.getElementById('u-email').value.toLowerCase().trim();
-            const pass = document.getElementById('u-password').value;
-            let photoUrl = document.getElementById('user-photo-b64').value;
-
-            // تنفيذ الحفظ السريع بصرياً
-            closeModal('modal-user-form');
-
-            if(photoUrl && photoUrl.startsWith('data:image')) {
-                const ref = storage.ref().child(`profiles/${Date.now()}_${email}.jpg`);
-                await ref.putString(photoUrl, 'data_url'); photoUrl = await ref.getDownloadURL();
-            }
-
-            const userData = {
-                name: document.getElementById('u-name').value,
-                title: document.getElementById('u-title').value,
-                role: document.getElementById('u-role').value,
-                contract: document.getElementById('u-contract').value,
-                idleLimit: parseInt(document.getElementById('u-idle').value),
-                backgroundLimit: parseInt(document.getElementById('u-bg').value),
-                photo: photoUrl || '',
-                permissions: {
-                    crm: document.getElementById('perm-crm').checked,
-                    payroll: document.getElementById('perm-payroll').checked,
-                    deleteTask: document.getElementById('perm-delete-task').checked,
-                    screenshot: document.getElementById('perm-screenshot').checked
-                }
-            };
-
             try {
+                const mode = document.getElementById('edit-mode-email').value;
+                const email = document.getElementById('u-email').value.toLowerCase().trim();
+                const pass = document.getElementById('u-password').value;
+                let photoUrl = document.getElementById('user-photo-b64').value;
+
+                if(photoUrl && photoUrl.startsWith('data:image')) {
+                    const ref = storage.ref().child(`profiles/${Date.now()}_${email}.jpg`);
+                    await ref.putString(photoUrl, 'data_url'); photoUrl = await ref.getDownloadURL();
+                }
+
+                const userData = {
+                    name: document.getElementById('u-name').value,
+                    title: document.getElementById('u-title').value,
+                    role: document.getElementById('u-role').value,
+                    contract: document.getElementById('u-contract').value,
+                    idleLimit: parseInt(document.getElementById('u-idle').value),
+                    backgroundLimit: parseInt(document.getElementById('u-bg').value),
+                    isSuspended: document.getElementById('u-suspended').checked,
+                    permissions: {
+                        crm: document.getElementById('perm-crm').checked,
+                        payroll: document.getElementById('perm-payroll').checked,
+                        deleteTask: document.getElementById('perm-delete-task').checked,
+                        screenshot: document.getElementById('perm-screenshot').checked
+                    }
+                };
+                
+                if (photoUrl) userData.photo = photoUrl;
+
                 if(mode === 'new') {
                     await secondaryAuth.createUserWithEmailAndPassword(email, pass);
                     await secondaryAuth.signOut();
                     
                     userData.email = email; userData.status = 'Offline'; userData.tasks = []; userData.timeBank = {};
                     await db.collection('users').doc(email).set(userData);
+                    alert("تم إنشاء حساب الموظف بنجاح");
                 } else {
                     await db.collection('users').doc(email).update(userData);
+                    alert("تم التعديل والحفظ بنجاح");
                 }
+                closeModal('modal-user-form'); // تم الإغلاق بعد ضمان نجاح العمليات
             } catch(err) { 
                 console.error(err); 
                 alert("حدث خطأ: " + err.message); 
+            } finally {
+                btn.disabled = false; btn.innerHTML = 'حفظ بيانات الموظف';
             }
-            btn.disabled = false; btn.innerHTML = 'حفظ بيانات الموظف';
         }
 
         async function deleteUser() {
             const email = document.getElementById('edit-mode-email').value;
             if(email === currentUser.email) { alert("لا يمكنك حذف حسابك الإداري!"); return; }
-            if(confirm(`⚠️ هل أنت متأكد نهائياً من حذف الموظف ${email} وكل بياناته؟`)) {
+            if(confirm(`⚠️ تحذير: يفضل "إيقاف الحساب" بدلاً من الحذف للحفاظ على تقاريره.\nهل أنت متأكد نهائياً من مسح ${email}؟`)) {
                 await db.collection('users').doc(email).delete();
-                closeModal('modal-user-form'); alert("تم إزالة بيانات الموظف من النظام.");
+                closeModal('modal-user-form'); alert("تم إزالة بيانات الموظف نهائياً من النظام.");
             }
         }
 
-        // --- 8. CHAT SYSTEM ---
+        // --- CHAT SYSTEM ---
         function toggleChat() { document.getElementById('chat-window').classList.toggle('hidden'); document.getElementById('chat-badge').classList.add('hidden'); }
         async function handleGlobalMessage(e) { e.preventDefault(); const i = document.getElementById("chat-input"); if(!i.value.trim()) return; await db.collection("messages").add({ text: i.value.trim(), user: currentUser.email, name: userProfile.name, time: firebase.firestore.FieldValue.serverTimestamp() }); i.value = ""; }
         function listenToGlobalMessages() { db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s => { const t = document.getElementById("chat-messages"); t.innerHTML = ""; s.forEach(d => { const m = d.data(); const isMe = m.user === currentUser.email; const u = allUsersData.find(x => x.email === m.user); const photo = u?.photo || DEFAULT_PHOTO+m.name; t.innerHTML += `<div class="flex gap-3 ${isMe?'flex-row-reverse':''}"><img src="${photo}" class="w-8 h-8 rounded-lg object-cover"><div class="${isMe?'bg-primary-600 text-white rounded-tl-none':'bg-dark-800 text-slate-200 rounded-tr-none border border-white/5'} p-3 rounded-2xl text-[11px] font-bold max-w-[85%]"><p class="text-[8px] opacity-50 mb-1">${m.name}</p>${m.text}</div></div>`; }); t.scrollTop = t.scrollHeight; if(document.getElementById("chat-window").classList.contains("hidden")) document.getElementById("chat-badge").classList.remove("hidden"); }); }
@@ -771,7 +945,7 @@
                 });
         }
 
-        function openPrivateChat(email, name, photo) {
+        function openPrivateChat(email, name, photo, title = 'موظف') {
             const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
             if (document.getElementById(`chat-win-${chatId}`)) return;
 
@@ -781,8 +955,11 @@
             win.innerHTML = `
                 <div class="p-4 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header shrink-0">
                     <div class="flex items-center gap-3">
-                        <img src="${photo || DEFAULT_PHOTO + name}" class="w-8 h-8 rounded-xl object-cover">
-                        <p class="text-[11px] font-black text-white">${name}</p>
+                        <img src="${photo || DEFAULT_PHOTO + name}" class="w-8 h-8 rounded-xl object-cover border border-white/10">
+                        <div class="leading-none">
+                            <p class="text-[11px] font-black text-white">${name}</p>
+                            <p class="text-[8px] font-bold text-slate-400 mt-1 uppercase">${title}</p>
+                        </div>
                     </div>
                     <button onclick="this.parentElement.parentElement.remove()" class="text-slate-500 hover:text-white btn-glass w-8 h-8 rounded-lg flex justify-center items-center"><i class="fas fa-times"></i></button>
                 </div>
@@ -828,7 +1005,6 @@
             });
         }
 
-        // --- 9. LOGOUT ---
         async function logout() { if(confirm("هل أنت متأكد من تسجيل الخروج وإغلاق لوحة التحكم؟")) { await auth.signOut(); window.location.replace('index.html'); } }
     </script>
 </body>
