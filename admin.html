@@ -688,8 +688,77 @@
         async function handleGlobalMessage(e) { e.preventDefault(); const i = document.getElementById("chat-input"); if(!i.value.trim()) return; await db.collection("messages").add({ text: i.value.trim(), user: currentUser.email, name: userProfile.name, time: firebase.firestore.FieldValue.serverTimestamp() }); i.value = ""; }
         function listenToGlobalMessages() { db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s => { const t = document.getElementById("chat-messages"); t.innerHTML = ""; s.forEach(d => { const m = d.data(); const isMe = m.user === currentUser.email; const u = allUsersData.find(x => x.email === m.user); const photo = u?.photo || DEFAULT_PHOTO+m.name; t.innerHTML += `<div class="flex gap-3 ${isMe?'flex-row-reverse':''}"><img src="${photo}" class="w-8 h-8 rounded-lg object-cover"><div class="${isMe?'bg-primary-600 text-white rounded-tl-none':'bg-dark-800 text-slate-200 rounded-tr-none border border-white/5'} p-3 rounded-2xl text-[11px] font-bold max-w-[85%]"><p class="text-[8px] opacity-50 mb-1">${m.name}</p>${m.text}</div></div>`; }); t.scrollTop = t.scrollHeight; if(document.getElementById("chat-window").classList.contains("hidden")) document.getElementById("chat-badge").classList.remove("hidden"); }); }
 
+        function listenToPrivateMessages() {
+            db.collection("private_messages")
+                .where("receiver", "==", currentUser.email.toLowerCase())
+                .onSnapshot(snapshot => {
+                    if (!snapshot.metadata.hasPendingWrites) {
+                        snapshot.docChanges().forEach(change => {
+                            if (change.type === "added") {
+                                // إظهار نقطة تنبيه على زر الشات أو القائمة
+                                const badge = document.getElementById("chat-badge");
+                                if (badge) badge.classList.remove("hidden");
+                            }
+                        });
+                    }
+                });
+        }
+        function openPrivateChat(email, name, photo) {
+    const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+    if (document.getElementById(`chat-win-${chatId}`)) return;
+
+    const win = document.createElement('div');
+    win.id = `chat-win-${chatId}`;
+    win.className = "chat-window fixed bottom-8 left-8 w-[320px] h-[450px] bg-dark-900 border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col animate-fade-in z-[101]";
+    win.innerHTML = `
+        <div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header cursor-move shrink-0 rounded-t-[2.5rem]">
+            <div class="flex items-center gap-3">
+                <img src="${photo || DEFAULT_PHOTO + name}" class="w-8 h-8 rounded-xl object-cover">
+                <p class="text-[11px] font-black text-white">${name}</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar bg-dark-950/20"></div>
+        <form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-3 bg-dark-900 border-t border-white/5 flex gap-2 rounded-b-[2.5rem]">
+            <input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-[10px] text-white outline-none focus:border-primary-500" placeholder="رد على الموظف..." autocomplete="off">
+            <button class="bg-primary-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane text-xs"></i></button>
+        </form>`;
+    document.getElementById('private-chats-container').appendChild(win);
+    listenToPrivateChat(email, chatId);
+}
+
+async function sendPrivateMsg(e, email, chatId) {
+    e.preventDefault();
+    const inp = document.getElementById(`input-${chatId}`);
+    if (!inp.value.trim()) return;
+    await db.collection('private_messages').add({
+        sender: currentUser.email.toLowerCase(),
+        receiver: email.toLowerCase(),
+        text: inp.value.trim(),
+        name: userProfile.name,
+        time: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    inp.value = '';
+}
+
+    function listenToPrivateChat(email, chatId) {
+                const box = document.getElementById(`msgs-${chatId}`);
+                db.collection('private_messages').orderBy('time', 'asc').onSnapshot(snap => {
+                    box.innerHTML = '';
+                    snap.docs.forEach(doc => {
+                        const m = doc.data();
+                        if ((m.sender === currentUser.email.toLowerCase() && m.receiver === email.toLowerCase()) || 
+                            (m.sender === email.toLowerCase() && m.receiver === currentUser.email.toLowerCase())) {
+                            const isMe = m.sender === currentUser.email.toLowerCase();
+                            box.innerHTML += `<div class="chat-bubble ${isMe ? 'bubble-me mr-auto' : 'bubble-them ml-auto'}">${m.text}</div>`;
+                        }
+                    });
+                    box.scrollTop = box.scrollHeight;
+                });
+            }
         // --- 9. LOGOUT ---
         async function logout() { if(confirm("إغلاق لوحة تحكم الإدارة؟")) { await auth.signOut(); window.location.replace('index.html'); } }
     </script>
 </body>
+
 </html>
