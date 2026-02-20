@@ -145,42 +145,52 @@
             </div>
         </div>
 
-        <section class="mb-8">
-            <div class="bg-white rounded-[40px] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col">
-                <div class="p-6 border-b border-slate-50 bg-slate-900 flex justify-between items-center text-white">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg"><i class="fas fa-users-cog"></i></div>
-                        <div>
-                            <h4 class="font-black text-lg">إدارة المستحقات الخارجية (Freelancers)</h4>
-                            <p class="text-[10px] text-slate-400 font-bold opacity-80">نظام إدارة المهام والدفعات والخصومات</p>
+            <section class="mb-8">
+                <div class="bg-white rounded-[40px] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col">
+                    <div class="p-6 border-b border-slate-50 bg-slate-900 flex justify-between items-center text-white">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg"><i class="fas fa-users-cog"></i></div>
+                            <div>
+                                <h4 class="font-black text-lg">إدارة المستحقات الخارجية (Freelancers)</h4>
+                                <p class="text-[10px] text-slate-400 font-bold opacity-80">يتم إضافتهم تلقائياً من لوحة الإدارة الرئيسية</p>
+                            </div>
                         </div>
                     </div>
-                    <button onclick="openFreelancerModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl text-xs font-black transition shadow-lg flex items-center gap-2">
-                        <i class="fas fa-plus"></i> تسجيل فريلانسر جديد
-                    </button>
+    
+                    <div class="overflow-x-auto overflow-y-auto max-h-[500px] p-6 custom-scrollbar relative">
+                        <table class="w-full text-right border-separate border-spacing-y-2">
+                            <thead>
+                                <tr class="text-slate-400 text-[10px] font-black uppercase">
+                                    <th class="p-4 sticky top-0 bg-slate-100 z-20 shadow-sm rounded-r-2xl">الفريلانسر</th>
+                                    <th class="p-4 sticky top-0 bg-slate-100 z-20 shadow-sm">التخصص</th>
+                                    <th class="p-4 text-blue-600 sticky top-0 bg-slate-100 z-20 shadow-sm">إجمالي التعاقد</th>
+                                    <th class="p-4 text-emerald-600 sticky top-0 bg-slate-100 z-20 shadow-sm">منصرف</th>
+                                    <th class="p-4 text-red-600 sticky top-0 bg-slate-100 z-20 shadow-sm">خصومات</th>
+                                    <th class="p-4 bg-slate-200 text-slate-900 sticky top-0 z-20 shadow-sm text-center">المتبقي له</th>
+                                    <th class="p-4 text-center sticky top-0 bg-slate-100 z-20 shadow-sm">حالة الحساب</th>
+                                    <th class="p-4 text-center sticky top-0 bg-slate-100 z-20 shadow-sm rounded-l-2xl">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="freelancer-body"></tbody>
+                        </table>
+                    </div>
                 </div>
-
-                <div class="overflow-x-auto overflow-y-auto max-h-[500px] p-6 custom-scrollbar relative">
-                    <table class="w-full text-right border-separate border-spacing-y-2">
-                        <thead>
-                            <tr class="text-slate-400 text-[10px] font-black uppercase">
-                                <th class="p-4 sticky top-0 bg-slate-100 z-20 shadow-sm rounded-r-2xl">الفريلانسر</th>
-                                <th class="p-4 sticky top-0 bg-slate-100 z-20 shadow-sm">التخصص</th>
-                                <th class="p-4 text-blue-600 sticky top-0 bg-slate-100 z-20 shadow-sm">التعاقد</th>
-                                <th class="p-4 text-emerald-600 sticky top-0 bg-slate-100 z-20 shadow-sm">منصرف</th>
-                                <th class="p-4 text-red-600 sticky top-0 bg-slate-100 z-20 shadow-sm">خصومات</th>
-                                <th class="p-4 bg-slate-200 text-slate-900 sticky top-0 z-20 shadow-sm text-center">المتبقي له</th>
-                                <th class="p-4 text-center sticky top-0 bg-slate-100 z-20 shadow-sm">حالة الحساب</th>
-                                <th class="p-4 text-center sticky top-0 bg-slate-100 z-20 shadow-sm rounded-l-2xl">الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="freelancer-body"></tbody>
-                    </table>
+            </section>
+    
+        <div id="modal-freelancer" class="fixed inset-0 z-[150] hidden bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-sm rounded-[45px] shadow-2xl overflow-hidden border border-white modal-animate">
+                <div class="p-6 border-b bg-slate-50 flex justify-between items-center text-right">
+                    <h3 class="text-xl font-black text-slate-900">تحديد مبلغ التعاقد</h3>
+                    <button onclick="closeFreelancerModal()" class="text-slate-300 hover:text-red-500 transition text-2xl"><i class="fas fa-times"></i></button>
                 </div>
+                <form onsubmit="saveFreelancerData(event)" class="p-6 space-y-4 text-right">
+                    <input type="hidden" id="fl-id">
+                    <div><label class="block text-[10px] font-black text-slate-500 mb-1">اسم الفريلانسر</label><input type="text" id="fl-name" class="w-full bg-slate-100 border-none rounded-2xl px-4 py-3 font-bold text-slate-500 cursor-not-allowed" readonly></div>
+                    <div><label class="block text-[10px] font-black text-blue-600 mb-1">قيمة التعاقد الكلية (ج.م)</label><input type="number" id="fl-total" class="w-full bg-blue-50 text-blue-700 border-2 border-blue-200 outline-none rounded-2xl px-4 py-3 font-black text-lg" value="0"></div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-[25px] shadow-lg transition">تحديث الرصيد</button>
+                </form>
             </div>
-        </section>
-    </main>
-
+        </div>
     <div id="modal-finance" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-2xl rounded-[45px] shadow-2xl overflow-hidden border border-white modal-animate">
             <div class="p-8 border-b bg-slate-50 flex justify-between items-center">
@@ -457,22 +467,20 @@
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
+    const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
         const TELEGRAM_BOT_TOKEN = '8451059313:AAGczICuBh_LocUlCQLZVw9n9fhMQkLDY9A';
         const ADMIN_CHAT_ID = "1723581770";
-       // const ADMIN_CHAT_IDS = ["1723581770", "ضع_رقم_الـ_ID_للشريك_هنا"];
 
         let currentSelectedMonth = ""; 
         let allUsers = [];
-        let freelancers = [];
         let monthData = { vault: 0, expenses: [], vault_logs: [] };
-        let dataLoadedFlags = { users: false, finance: false, freelancers: false };
+        let dataLoadedFlags = { users: false, finance: false };
         let empTempReceipts = []; 
-        let systemLoadedOnce = false; // لمنع تكرار إرسال إشعار الدخول
+        let systemLoadedOnce = false;
 
         auth.onAuthStateChanged(async (user) => {
             if (user) {
@@ -483,72 +491,20 @@
             } else { window.location.href = 'index.html'; }
         });
 
-        // Notifications
         async function notifyAdmin(text) {
             const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
             try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: text, parse_mode: 'Markdown' }) }); } catch(e){}
         }
-        /* async function notifyAdmin(text) {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-    
-    // عمل حلقة تكرار (Loop) لإرسال نفس الرسالة لكل رقم في القائمة
-    ADMIN_CHAT_IDS.forEach(async (chatId) => {
-        try { 
-            await fetch(url, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' }) 
-            }); 
-        } catch(e) { console.error("Error sending to admin: " + chatId); }
-    });
-} */
 
         async function notifyUser(chatId, text, isMuted = false) {
-            if(!chatId || isMuted) return; // منع الإرسال إذا كان الموظف Muted
+            if(!chatId || isMuted) return;
             const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
             try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' }) }); } catch(e){}
         }
 
-        // Functions
-        function renderFreelancers() {
-            const tbody = document.getElementById('freelancer-body'); if(!tbody) return;
-            tbody.innerHTML = '';
-            
-            freelancers.forEach(f => {
-                const totalPaid = (f.total_paid || 0);
-                const totalDeducted = (f.total_deducted || 0);
-                const remaining = (f.total_credit || 0) - totalPaid - totalDeducted;
-                const statusBadge = remaining <= 0 ? '<span class="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black">خالص</span>' : '<span class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black">جاري العمل</span>';
-
-                tbody.innerHTML += `
-                    <tr class="bg-white hover:bg-slate-50 transition-all shadow-sm">
-                        <td class="p-4 rounded-r-2xl font-black text-slate-800 flex items-center gap-2">
-                             <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">${f.name.charAt(0)}</div>
-                             ${f.name}
-                        </td>
-                        <td class="p-4 font-bold text-slate-500">${f.job || '---'}</td>
-                        <td class="p-4 font-bold text-blue-600">${(f.total_credit || 0).toLocaleString()}</td>
-                        <td class="p-4 font-bold text-emerald-600">${totalPaid.toLocaleString()}</td>
-                        <td class="p-4 font-bold text-red-600">${totalDeducted.toLocaleString()}</td>
-                        <td class="p-4 font-black bg-slate-900/5 text-center">${remaining.toLocaleString()}</td>
-                        <td class="p-4 text-center">${statusBadge}</td>
-                        <td class="p-4 text-center rounded-l-2xl">
-                            <div class="flex gap-1 justify-center">
-                                <button onclick="openFreelancerModal('${f.id}')" class="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 hover:bg-slate-900 hover:text-white transition shadow-sm border border-slate-100" title="تعديل"><i class="fas fa-edit"></i></button>
-                                <button onclick="openPayModal('${f.id}')" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition shadow-sm border border-emerald-100" title="صرف دفعة"><i class="fas fa-hand-holding-usd"></i></button>
-                                <button onclick="openFlDeductModal('${f.id}')" class="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white transition shadow-sm border border-orange-100" title="خصم مالي"><i class="fas fa-minus-circle"></i></button>
-                                <button onclick="deleteFreelancer('${f.id}')" class="w-8 h-8 rounded-xl bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition shadow-sm border border-red-100 mr-1" title="حذف بالكامل"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>`;
-            });
-        }
-
         function checkLoader() {
-            if(dataLoadedFlags.users && dataLoadedFlags.finance && dataLoadedFlags.freelancers) {
+            if(dataLoadedFlags.users && dataLoadedFlags.finance) {
                 document.getElementById('payroll-loader').classList.add('hidden');
-                
-                // إرسال إشعار للمدير بفتح السيستم لمرة واحدة فقط عند أول تحميل كامل
                 if(!systemLoadedOnce) {
                     const time = new Date().toLocaleString('ar-EG');
                     notifyAdmin(`🔐 *تسجيل دخول للنظام*\nتم فتح لوحة الإدارة المالية بنجاح.\n🕒 الوقت: ${time}`);
@@ -581,21 +537,21 @@
         }
 
         function startListeners() {
+            // الاستماع لمجموعة المستخدمين فقط لفرز الأساسي والفريلانس
             db.collection("users").onSnapshot(snapshot => {
                 allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 dataLoadedFlags.users = true;
-                updateStats(); checkLoader();
+                updateStats(); 
+                renderFreelancers();
+                checkLoader();
             });
+
             db.collection("financial_months").doc(currentSelectedMonth).onSnapshot(doc => {
                 monthData = doc.exists ? doc.data() : { vault: 0, expenses: [], vault_logs: [] };
                 if(!doc.exists) db.collection("financial_months").doc(currentSelectedMonth).set(monthData);
                 dataLoadedFlags.finance = true;
-                updateStats(); checkLoader();
-            });
-            db.collection("freelancers").onSnapshot(snapshot => {
-                freelancers = snapshot.docs.map(doc => doc.data());
-                dataLoadedFlags.freelancers = true;
-                renderFreelancers(); checkLoader();
+                updateStats(); 
+                checkLoader();
             });
         }
 
@@ -604,6 +560,9 @@
             const allExps = monthData.expenses || [];
             
             allUsers.forEach(u => {
+                // تخطي الفريلانسر من حسابات الرواتب الأساسية
+                if (u.contract === 'freelancer') return;
+
                 const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
                 const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
                 const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
@@ -632,6 +591,9 @@
             renderExpenses();
         }
 
+        // =====================================
+        // --- 🟢 قسم الموظفين الأساسيين 🟢 ---
+        // =====================================
         function renderPayroll() {
             const tbody = document.getElementById('payroll-body'); if(!tbody) return;
             const search = (document.getElementById('search-input').value || "").toLowerCase();
@@ -639,6 +601,9 @@
             tbody.innerHTML = '';
             
             allUsers.forEach(u => {
+                // فلترة: لا يظهر هنا سوى الموظف الأساسي
+                if (u.contract === 'freelancer') return;
+
                 if (u.name.toLowerCase().includes(search)) {
                     const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
                     const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
@@ -677,6 +642,170 @@
                 }
             });
         }
+
+        // =====================================
+        // --- 🔵 قسم الفريلانسر (المستقلين) 🔵 ---
+        // =====================================
+        function renderFreelancers() {
+            const tbody = document.getElementById('freelancer-body'); if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            // فلترة: لا يظهر هنا سوى الفريلانسرز
+            const flUsers = allUsers.filter(u => u.contract === 'freelancer');
+
+            flUsers.forEach(f => {
+                const totalPaid = (f.fl_total_paid || 0);
+                const totalDeducted = (f.fl_total_deducted || 0);
+                const totalCredit = (f.fl_total_credit || 0);
+                const remaining = totalCredit - totalPaid - totalDeducted;
+                const statusBadge = (remaining <= 0 && totalCredit > 0) ? '<span class="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black">خالص</span>' : '<span class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black">جاري العمل</span>';
+
+                tbody.innerHTML += `
+                    <tr class="bg-white hover:bg-slate-50 transition-all shadow-sm">
+                        <td class="p-4 rounded-r-2xl font-black text-slate-800 flex items-center gap-3">
+                             <img src="${f.photo || DEFAULT_PHOTO + f.name}" class="w-10 h-10 rounded-2xl object-cover">
+                             ${f.name}
+                        </td>
+                        <td class="p-4 font-bold text-slate-500">${f.title || '---'}</td>
+                        <td class="p-4 font-bold text-blue-600">${totalCredit.toLocaleString()}</td>
+                        <td class="p-4 font-bold text-emerald-600">${totalPaid.toLocaleString()}</td>
+                        <td class="p-4 font-bold text-red-600">${totalDeducted.toLocaleString()}</td>
+                        <td class="p-4 font-black bg-slate-900/5 text-center">${remaining.toLocaleString()}</td>
+                        <td class="p-4 text-center">${statusBadge}</td>
+                        <td class="p-4 text-center rounded-l-2xl">
+                            <div class="flex gap-1 justify-center">
+                                <button onclick="openFreelancerModal('${f.id}')" class="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 hover:bg-slate-900 hover:text-white transition shadow-sm border border-slate-100" title="تحديد قيمة التعاقد"><i class="fas fa-edit"></i></button>
+                                <button onclick="openPayModal('${f.id}')" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition shadow-sm border border-emerald-100" title="صرف دفعة"><i class="fas fa-hand-holding-usd"></i></button>
+                                <button onclick="openFlDeductModal('${f.id}')" class="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white transition shadow-sm border border-orange-100" title="خصم مالي"><i class="fas fa-minus-circle"></i></button>
+                            </div>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        // نافذة تحديد التعاقد للفريلانسر
+        function openFreelancerModal(id) {
+            const f = allUsers.find(x => x.id === id);
+            if(!f) return;
+            document.getElementById('fl-id').value = id;
+            document.getElementById('fl-name').value = f.name;
+            document.getElementById('fl-total').value = f.fl_total_credit || 0;
+            document.getElementById('modal-freelancer').classList.remove('hidden');
+        }
+        function closeFreelancerModal() { document.getElementById('modal-freelancer').classList.add('hidden'); }
+
+        async function saveFreelancerData(e) {
+            e.preventDefault();
+            const id = document.getElementById('fl-id').value;
+            const totalCredit = parseFloat(document.getElementById('fl-total').value) || 0;
+            await db.collection("users").doc(id).update({
+                fl_total_credit: totalCredit
+            });
+            closeFreelancerModal();
+        }
+
+        function openPayModal(id) {
+            const f = allUsers.find(x => x.id === id);
+            if(!f) return;
+            document.getElementById('pay-fl-id').value = id;
+            document.getElementById('pay-fl-name').innerText = `للفريلانسر: ${f.name}`;
+            document.getElementById('pay-fl-remaining').innerText = ((f.fl_total_credit||0) - (f.fl_total_paid||0) - (f.fl_total_deducted||0)).toLocaleString();
+            document.getElementById('pay-fl-amount').value = '';
+            document.getElementById('pay-fl-receipt').value = '';
+            document.getElementById('modal-fl-pay').classList.remove('hidden');
+        }
+
+        async function confirmFlPayment() {
+            const id = document.getElementById('pay-fl-id').value;
+            const amount = parseFloat(document.getElementById('pay-fl-amount').value);
+            const receiptInput = document.getElementById('pay-fl-receipt');
+            if(!amount || isNaN(amount)) return alert("يرجى إدخال مبلغ صحيح");
+
+            const fl = allUsers.find(f => f.id === id);
+            
+            let receiptBase64 = null;
+            if(receiptInput.files.length > 0) {
+                const file = receiptInput.files[0];
+                receiptBase64 = await new Promise(r => {
+                    const reader = new FileReader();
+                    reader.onload = e => r(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+            }
+            
+            let currentExps = [...(monthData.expenses || [])];
+            currentExps.push({
+                title: `دفعة فريلانسر: ${fl.name}`,
+                amount: amount,
+                date: new Date().toISOString().split('T')[0],
+                type: 'freelancer',
+                fl_id: id,
+                receipt: receiptBase64
+            });
+            await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
+
+            const newTotalPaid = (fl.fl_total_paid || 0) + amount;
+            await db.collection("users").doc(id).update({
+                fl_total_paid: newTotalPaid,
+                fl_last_payment_date: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            const newRemaining = (fl.fl_total_credit || 0) - newTotalPaid - (fl.fl_total_deducted || 0);
+            
+            const msgUser = `🔔 *إشعار صرف مستحقات - ALMASTER*\n\nأهلاً *${fl.name}*،\nتم تحويل مبلغ: *${amount.toLocaleString()} ج.م* إلى حسابك بنجاح. ✅\n\nالمتبقي لك لدينا حالياً: *${newRemaining.toLocaleString()} ج.م*.\n\nتمنياتنا لك بالتوفيق! 🚀`;
+            notifyUser(fl.telegram_id, msgUser); 
+            notifyAdmin(`💸 تم صرف دفعة للفريلانسر: *${fl.name}*\nبقيمة: ${amount} ج.م`);
+            
+            document.getElementById('modal-fl-pay').classList.add('hidden');
+            alert("تم صرف الدفعة وتسجيلها بنجاح ✅");
+        }
+
+        function openFlDeductModal(id) {
+            const f = allUsers.find(x => x.id === id);
+            if(!f) return;
+            document.getElementById('deduct-fl-id').value = id;
+            document.getElementById('deduct-fl-name').innerText = `للفريلانسر: ${f.name}`;
+            document.getElementById('deduct-fl-amount').value = '';
+            document.getElementById('deduct-fl-reason').value = '';
+            document.getElementById('modal-fl-deduct').classList.remove('hidden');
+        }
+
+        async function confirmFlDeduction() {
+            const id = document.getElementById('deduct-fl-id').value;
+            const amount = parseFloat(document.getElementById('deduct-fl-amount').value);
+            const reason = document.getElementById('deduct-fl-reason').value || "بدون سبب موضح";
+            if(!amount || isNaN(amount)) return alert("يرجى إدخال مبلغ صحيح");
+
+            const fl = allUsers.find(f => f.id === id);
+            
+            let currentExps = [...(monthData.expenses || [])];
+            currentExps.push({
+                title: `خصم من فريلانسر: ${fl.name} (${reason})`,
+                amount: 0, 
+                deduction_val: amount, 
+                date: new Date().toISOString().split('T')[0],
+                type: 'fl_deduction',
+                fl_id: id 
+            });
+            await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
+
+            const newTotalDeducted = (fl.fl_total_deducted || 0) + amount;
+            const newRemaining = (fl.fl_total_credit || 0) - (fl.fl_total_paid || 0) - newTotalDeducted;
+            await db.collection("users").doc(id).update({
+                fl_total_deducted: newTotalDeducted
+            });
+
+            const msgUser = `⚠️ *إشعار خصم مالي - ALMASTER*\n\nأهلاً *${fl.name}*،\nتم تسجيل خصم بقيمة: *${amount.toLocaleString()} ج.م* من مستحقاتك.\n\n📝 *السبب:* ${reason}\n\nنرجو الانتباه والحرص على عدم تكرار هذا الخطأ مستقبلاً للحفاظ على سجل التقييم.\n\n💰 *المتبقي لك حالياً:* *${newRemaining.toLocaleString()} ج.م*.`;
+            notifyUser(fl.telegram_id, msgUser);
+            notifyAdmin(`⚠️ تم خصم من الفريلانسر: *${fl.name}*\nبقيمة: ${amount} ج.م\nالسبب: ${reason}`);
+
+            document.getElementById('modal-fl-deduct').classList.add('hidden');
+            alert("تم تسجيل الخصم وإرسال الإشعار بنجاح ✅");
+        }
+
+        // =====================================
+        // --- 🟢 باقي دوال المالية الأساسية 🟢 ---
+        // =====================================
         
         function renderExpenses() {
             const list = document.getElementById('expenses-list'); if(!list) return;
@@ -702,7 +831,6 @@
             });
         }
 
-        // --- Employee Deductions (New Separated System) ---
         function openEmpDeductModal(email) {
             const u = allUsers.find(x => x.id === email);
             if(!u) return;
@@ -771,7 +899,6 @@
             }
         }
 
-        // --- Employee Advances ---
         function openEmpAdvanceModal(email) {
             const u = allUsers.find(x => x.id === email);
             if(!u) return;
@@ -810,7 +937,6 @@
             alert("تم صرف السلفة وخصمها من الخزينة بنجاح");
         }
 
-        // --- Employee Receipts & Finance (No Deductions Notifs here) ---
         function addMultipleReceipts(input) { 
             const list = document.getElementById('receipts-preview-list');
             Array.from(input.files).forEach(file => {
@@ -840,7 +966,6 @@
             document.getElementById('fin-bonus').value=m.bonus||0; 
             document.getElementById('fin-incentive').value=m.incentive||0; 
             
-            // Toggle Notifications status
             document.getElementById('fin-notify-toggle').checked = !u.mute_notifications;
             
             (m.receipts||[]).forEach(r => {
@@ -878,156 +1003,12 @@
                 telegram_id: document.getElementById('fin-telegram-id').value, 
                 instapay: document.getElementById('fin-instapay').value, 
                 monthly_finance: mFin,
-                mute_notifications: !isNotificationsEnabled // حفظ حالة الإشعارات
+                mute_notifications: !isNotificationsEnabled 
             }); 
             
             closeFinanceModal(); 
         }
 
-        // --- Freelancers ---
-        function openFreelancerModal(id = null) {
-            document.getElementById('fl-modal-title').innerText = id ? "تعديل بيانات فريلانسر" : "إضافة فريلانسر جديد";
-            document.getElementById('fl-id').value = id || "";
-            document.getElementById('fl-name').value = "";
-            document.getElementById('fl-job').value = "";
-            document.getElementById('fl-chat-id').value = "";
-            document.getElementById('fl-total').value = 0;
-            
-            if (id) {
-                const fl = freelancers.find(f => f.id === id);
-                if (fl) {
-                    document.getElementById('fl-name').value = fl.name || "";
-                    document.getElementById('fl-job').value = fl.job || "";
-                    document.getElementById('fl-chat-id').value = fl.telegram_id || "";
-                    document.getElementById('fl-total').value = fl.total_credit || 0;
-                }
-            }
-            document.getElementById('modal-freelancer').classList.remove('hidden');
-        }
-
-        function closeFreelancerModal() { document.getElementById('modal-freelancer').classList.add('hidden'); }
-
-        async function saveFreelancerData(e) {
-            e.preventDefault();
-            const id = document.getElementById('fl-id').value || "FL_" + Date.now();
-            const flData = {
-                id: id,
-                name: document.getElementById('fl-name').value,
-                job: document.getElementById('fl-job').value,
-                telegram_id: document.getElementById('fl-chat-id').value,
-                total_credit: parseFloat(document.getElementById('fl-total').value) || 0,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            await db.collection("freelancers").doc(id).set(flData, { merge: true });
-            closeFreelancerModal();
-        }
-
-        function openPayModal(id) {
-            const f = freelancers.find(x => x.id === id);
-            if(!f) return;
-            document.getElementById('pay-fl-id').value = id;
-            document.getElementById('pay-fl-name').innerText = `للفريلانسر: ${f.name}`;
-            document.getElementById('pay-fl-remaining').innerText = ((f.total_credit||0) - (f.total_paid||0) - (f.total_deducted||0)).toLocaleString();
-            document.getElementById('pay-fl-amount').value = '';
-            document.getElementById('pay-fl-receipt').value = '';
-            document.getElementById('modal-fl-pay').classList.remove('hidden');
-        }
-
-        async function confirmFlPayment() {
-            const id = document.getElementById('pay-fl-id').value;
-            const amount = parseFloat(document.getElementById('pay-fl-amount').value);
-            const receiptInput = document.getElementById('pay-fl-receipt');
-            if(!amount || isNaN(amount)) return alert("يرجى إدخال مبلغ صحيح");
-
-            const fl = freelancers.find(f => f.id === id);
-            
-            let receiptBase64 = null;
-            if(receiptInput.files.length > 0) {
-                const file = receiptInput.files[0];
-                receiptBase64 = await new Promise(r => {
-                    const reader = new FileReader();
-                    reader.onload = e => r(e.target.result);
-                    reader.readAsDataURL(file);
-                });
-            }
-            
-            let currentExps = [...(monthData.expenses || [])];
-            currentExps.push({
-                title: `دفعة فريلانسر: ${fl.name}`,
-                amount: amount,
-                date: new Date().toISOString().split('T')[0],
-                type: 'freelancer',
-                fl_id: id,
-                receipt: receiptBase64
-            });
-            await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
-
-            const newTotalPaid = (fl.total_paid || 0) + amount;
-            await db.collection("freelancers").doc(id).update({
-                total_paid: newTotalPaid,
-                last_payment_date: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            const newRemaining = (fl.total_credit || 0) - newTotalPaid - (fl.total_deducted || 0);
-            
-            const msgUser = `🔔 *إشعار صرف مستحقات - ALMASTER*\n\nأهلاً *${fl.name}*،\nتم تحويل مبلغ: *${amount.toLocaleString()} ج.م* إلى حسابك بنجاح. ✅\n\nالمتبقي لك لدينا حالياً: *${newRemaining.toLocaleString()} ج.م*.\n\nتمنياتنا لك بالتوفيق! 🚀`;
-            notifyUser(fl.telegram_id, msgUser); // الفريلانسر لا ينطبق عليه الميوت حاليا
-            notifyAdmin(`💸 تم صرف دفعة للفريلانسر: *${fl.name}*\nبقيمة: ${amount} ج.م`);
-            
-            document.getElementById('modal-fl-pay').classList.add('hidden');
-            alert("تم صرف الدفعة وتسجيلها بنجاح ✅");
-        }
-
-        function openFlDeductModal(id) {
-            const f = freelancers.find(x => x.id === id);
-            if(!f) return;
-            document.getElementById('deduct-fl-id').value = id;
-            document.getElementById('deduct-fl-name').innerText = `للفريلانسر: ${f.name}`;
-            document.getElementById('deduct-fl-amount').value = '';
-            document.getElementById('deduct-fl-reason').value = '';
-            document.getElementById('modal-fl-deduct').classList.remove('hidden');
-        }
-
-        async function confirmFlDeduction() {
-            const id = document.getElementById('deduct-fl-id').value;
-            const amount = parseFloat(document.getElementById('deduct-fl-amount').value);
-            const reason = document.getElementById('deduct-fl-reason').value || "بدون سبب موضح";
-            if(!amount || isNaN(amount)) return alert("يرجى إدخال مبلغ صحيح");
-
-            const fl = freelancers.find(f => f.id === id);
-            
-            let currentExps = [...(monthData.expenses || [])];
-            currentExps.push({
-                title: `خصم من فريلانسر: ${fl.name} (${reason})`,
-                amount: 0, 
-                deduction_val: amount, 
-                date: new Date().toISOString().split('T')[0],
-                type: 'fl_deduction',
-                fl_id: id 
-            });
-            await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
-
-            const newTotalDeducted = (fl.total_deducted || 0) + amount;
-            const newRemaining = (fl.total_credit || 0) - (fl.total_paid || 0) - newTotalDeducted;
-            await db.collection("freelancers").doc(id).update({
-                total_deducted: newTotalDeducted
-            });
-
-            const msgUser = `⚠️ *إشعار خصم مالي - ALMASTER*\n\nأهلاً *${fl.name}*،\nتم تسجيل خصم بقيمة: *${amount.toLocaleString()} ج.م* من مستحقاتك.\n\n📝 *السبب:* ${reason}\n\nنرجو الانتباه والحرص على عدم تكرار هذا الخطأ مستقبلاً للحفاظ على سجل التقييم.\n\n💰 *المتبقي لك حالياً:* *${newRemaining.toLocaleString()} ج.م*.`;
-            notifyUser(fl.telegram_id, msgUser);
-            notifyAdmin(`⚠️ تم خصم من الفريلانسر: *${fl.name}*\nبقيمة: ${amount} ج.م\nالسبب: ${reason}`);
-
-            document.getElementById('modal-fl-deduct').classList.add('hidden');
-            alert("تم تسجيل الخصم وإرسال الإشعار بنجاح ✅");
-        }
-
-        async function deleteFreelancer(id) {
-            if(confirm("هل أنت متأكد من حذف الفريلانسر؟\n(ملاحظة: السجلات والحركات المالية القديمة ستبقى كما هي في التقرير الشهري)")) {
-                await db.collection("freelancers").doc(id).delete();
-            }
-        }
-
-        // --- Shared & Logs ---
         function renderStatusBadge(s, email) {
             const c = { 'pending': 'bg-orange-100 text-orange-600', 'approved': 'bg-blue-100 text-blue-600', 'paid': 'bg-emerald-100 text-emerald-600' }[s || 'pending'];
             const t = { 'pending': 'انتظار', 'approved': 'معتمد', 'paid': 'تم التحويل' }[s || 'pending'];
@@ -1078,7 +1059,9 @@
         }
         function editExpense(idx){const e=monthData.expenses[idx]; document.getElementById('exp-modal-title').innerText="تعديل"; document.getElementById('edit-expense-idx').value=idx; document.getElementById('exp-title').value=e.title; document.getElementById('exp-amount').value=e.amount; document.getElementById('exp-date').value=e.date; document.getElementById('modal-expense').classList.remove('hidden');}
 
-        // --- Reporting ---
+        // =====================================
+        // --- 📊 قسم التقارير (Reports) 📊 ---
+        // =====================================
         async function generateMonthlyReportImage() {
             const loader = document.getElementById('payroll-loader');
             loader.classList.remove('hidden');
@@ -1098,6 +1081,8 @@
             const allExps = monthData.expenses || [];
 
             allUsers.forEach(u => {
+                if(u.contract === 'freelancer') return;
+
                 const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
                 const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount)||0), 0);
                 const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
@@ -1207,4 +1192,5 @@
     </script>
 </body>
 </html>
+
 
