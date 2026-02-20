@@ -926,56 +926,72 @@
             e.preventDefault();
             const btn = document.getElementById('save-user-btn'); 
             
-            // تمكين زر التحميل حتى لا يقوم بالضغط مرتين
+            // منع الضغط المتكرر وتغيير حالة الزر
             btn.disabled = true; 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري الحفظ...';
             
             try {
                 const mode = document.getElementById('edit-mode-email').value;
                 const email = document.getElementById('u-email').value.toLowerCase().trim();
-                const pass = document.getElementById('u-password').value;
+                const pass = document.getElementById('u-password') ? document.getElementById('u-password').value : '';
                 let photoUrl = document.getElementById('user-photo-b64').value;
-
-                if(photoUrl && photoUrl.startsWith('data:image')) {
-                    const ref = storage.ref().child(`profiles/${Date.now()}_${email}.jpg`);
-                    await ref.putString(photoUrl, 'data_url'); photoUrl = await ref.getDownloadURL();
+        
+                // 1. منطق رفع الصورة: نرفع فقط لو كانت الصورة Base64 جديدة
+                if (photoUrl && photoUrl.startsWith('data:image')) {
+                    const storageRef = firebase.storage().ref().child(`profiles/${Date.now()}_${email}.jpg`);
+                    await storageRef.putString(photoUrl, 'data_url');
+                    photoUrl = await storageRef.getDownloadURL();
                 }
-
+        
+                // 2. تجميع البيانات بأمان تام (باستخدام فحص العناصر لتجنب أي Crash)
                 const userData = {
                     name: document.getElementById('u-name').value,
-                    title: document.getElementById('u-title').value,
-                    role: document.getElementById('u-role').value,
-                    contract: document.getElementById('u-contract').value,
-                    idleLimit: parseInt(document.getElementById('u-idle').value),
-                    backgroundLimit: parseInt(document.getElementById('u-bg').value),
-                    isSuspended: document.getElementById('u-suspended').checked,
+                    title: document.getElementById('u-title') ? document.getElementById('u-title').value : '',
+                    role: document.getElementById('u-role') ? document.getElementById('u-role').value : 'employee',
+                    contract: document.getElementById('u-contract') ? document.getElementById('u-contract').value : 'employee',
+                    idleLimit: parseInt(document.getElementById('u-idle') ? document.getElementById('u-idle').value : 5),
+                    backgroundLimit: parseInt(document.getElementById('u-bg') ? document.getElementById('u-bg').value : 60),
+                    isSuspended: document.getElementById('u-suspended') ? document.getElementById('u-suspended').checked : false,
                     permissions: {
-                        crm: document.getElementById('perm-crm').checked,
-                        payroll: document.getElementById('perm-payroll').checked,
-                        deleteTask: document.getElementById('perm-delete-task').checked,
-                        screenshot: document.getElementById('perm-screenshot').checked
+                        crm: document.getElementById('perm-crm') ? document.getElementById('perm-crm').checked : false,
+                        payroll: document.getElementById('perm-payroll') ? document.getElementById('perm-payroll').checked : false,
+                        deleteTask: document.getElementById('perm-delete-task') ? document.getElementById('perm-delete-task').checked : false,
+                        screenshot: document.getElementById('perm-screenshot') ? document.getElementById('perm-screenshot').checked : false
                     }
                 };
-                
-                if (photoUrl) userData.photo = photoUrl;
-
-                if(mode === 'new') {
+        
+                // تحديث الصورة فقط لو كانت موجودة (عشان نمسحش الصورة القديمة لو الموظف معدلهاش)
+                if (photoUrl && photoUrl.startsWith('http')) {
+                    userData.photo = photoUrl;
+                }
+        
+                // 3. الحفظ في قاعدة البيانات
+                if (mode === 'new') {
                     await secondaryAuth.createUserWithEmailAndPassword(email, pass);
                     await secondaryAuth.signOut();
                     
-                    userData.email = email; userData.status = 'Offline'; userData.tasks = []; userData.timeBank = {};
+                    userData.email = email; 
+                    userData.status = 'Offline'; 
+                    userData.tasks = []; 
+                    userData.timeBank = {};
+                    
                     await db.collection('users').doc(email).set(userData);
                     alert("تم إنشاء حساب الموظف بنجاح");
                 } else {
                     await db.collection('users').doc(email).update(userData);
                     alert("تم التعديل والحفظ بنجاح");
                 }
-                closeModal('modal-user-form'); // تم الإغلاق بعد ضمان نجاح العمليات
+                
+                // قفل النافذة بعد التأكد من الحفظ
+                closeModal('modal-user-form'); 
+        
             } catch(err) { 
-                console.error(err); 
-                alert("حدث خطأ: " + err.message); 
+                console.error("Error saving user:", err); 
+                alert("حدث خطأ أثناء الحفظ: " + err.message); 
             } finally {
-                btn.disabled = false; btn.innerHTML = 'حفظ بيانات الموظف';
+                // إرجاع الزر لحالته الطبيعية سواء نجح أو فشل
+                btn.disabled = false; 
+                btn.innerHTML = 'حفظ بيانات الموظف';
             }
         }
 
@@ -1098,5 +1114,6 @@
     </script>
 </body>
 </html>
+
 
 
