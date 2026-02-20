@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الإدارة العليا | ALMASTER Master Console</title>
+    <meta name="theme-color" content="#0b1120">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { primary: { 500: '#0ea5e9', 600: '#0284c7' }, dark: { 800: '#1e293b', 900: '#0f172a', 950: '#0b1120' } },
+                    fontFamily: { sans: ['Cairo', 'Outfit', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #0b1120; color: #f1f5f9; height: 100vh; overflow: hidden; display: flex; flex-direction: column; margin: 0; }
+        .hidden-section { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 20px; }
+        
+        .status-card { transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.03); background: rgba(30, 41, 59, 0.4); }
+        .pulse-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; }
+        .pulse-dot::after { content: ''; position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: inherit; border-radius: 50%; animation: p-ring 1.5s infinite; }
+        @keyframes p-ring { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+
+        .admin-grid-card { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s; }
+        .admin-grid-card:hover { transform: translateY(-3px); border-color: #0ea5e9; background: rgba(30, 41, 59, 0.8); box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.1); }
+        
+        .btn-glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px); }
+        .btn-glass:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+        
+        .admin-tab.active { background-color: #0ea5e9; color: white; border-color: #0284c7; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3); }
+        .task-kanban-card { background: #0f172a; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.2s; }
+        .task-kanban-card:hover { transform: scale(1.02); border-color: rgba(255,255,255,0.1); }
+
+        /* Custom Toggle Switch for Permissions */
+        .toggle-checkbox:checked { right: 0; border-color: #10b981; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
+        .toggle-checkbox:checked + .toggle-label:before { transform: translateX(-100%); }
+        .toggle-label { width: 44px; height: 24px; background-color: #334155; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.2s; }
+        .toggle-label:before { content: ''; position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; background-color: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    </style>
+</head>
+
+<body class="dark selection:bg-primary-500/30">
+
+    <div id="loader" class="fixed inset-0 z-[300] bg-dark-950 flex flex-col items-center justify-center text-center p-6">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-primary-500 mb-6"></div>
+        <h2 class="text-xs font-black tracking-[0.4em] text-primary-500 uppercase animate-pulse">ALMASTER MASTER CONSOLE</h2>
+        <p class="text-[9px] text-slate-500 mt-2 tracking-widest">Authenticating Admin Privileges...</p>
+    </div>
+
+    <header class="h-16 border-b border-white/5 bg-dark-950/90 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-50 shadow-md">
+        <div class="flex items-center gap-6">
+            <img src="MASTER_LOGO_WHPNG.png" class="h-12 w-auto object-contain" alt="Logo">
+            <div class="h-6 w-[1px] bg-white/10 mx-2"></div>
+            <span class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-primary-500">System Administration</span>
+        </div>
+        
+        <div class="flex items-center gap-2 bg-dark-900 p-1.5 rounded-2xl border border-white/5 shadow-inner hidden md:flex">
+            <button onclick="switchAdminView('monitor')" id="tab-monitor" class="admin-tab active px-6 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 text-slate-400">
+                <i class="fas fa-desktop"></i> الرقابة المباشرة
+            </button>
+            <button onclick="switchAdminView('tasks')" id="tab-tasks" class="admin-tab px-6 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 text-slate-400">
+                <i class="fas fa-project-diagram"></i> المهام الشاملة
+            </button>
+            <button onclick="switchAdminView('users')" id="tab-users" class="admin-tab px-6 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 text-slate-400">
+                <i class="fas fa-users-cog"></i> شؤون الموظفين
+            </button>
+        </div>
+
+        <div class="flex items-center gap-6">
+            <div class="flex flex-col items-center leading-none">
+                <div id="header-time" class="text-xl font-black font-mono text-white tracking-widest">00:00:00</div>
+                <div id="header-date" class="text-[9px] font-bold text-slate-500">...</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 w-full h-full relative flex overflow-hidden">
+        
+        <aside class="w-[320px] border-l border-white/5 bg-dark-950 flex flex-col shrink-0 h-full shadow-2xl z-20">
+            <div class="p-6 shrink-0 border-b border-white/5 bg-dark-900/30">
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <img id="admin-img" src="" class="w-14 h-14 rounded-2xl object-cover border-2 border-primary-500 shadow-lg shadow-primary-500/20 bg-dark-800">
+                        <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-dark-950 bg-green-500"></span>
+                    </div>
+                    <div class="overflow-hidden">
+                        <h2 id="admin-name" class="font-black text-sm text-white truncate">مدير النظام</h2>
+                        <p class="text-[9px] text-primary-500 font-bold uppercase tracking-widest">Master Admin</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-6 space-y-6 py-6">
+                <div>
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">حالة الشركة الآن</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-dark-900/80 p-4 rounded-2xl border border-white/5 text-center shadow-sm">
+                            <i class="fas fa-users text-primary-500 mb-2 text-lg"></i>
+                            <p id="stat-total-users" class="text-2xl font-black text-white leading-none mb-1">0</p>
+                            <p class="text-[8px] font-bold text-slate-500 uppercase">إجمالي الموظفين</p>
+                        </div>
+                        <div class="bg-dark-900/80 p-4 rounded-2xl border border-white/5 text-center shadow-sm">
+                            <i class="fas fa-bolt text-green-500 mb-2 text-lg"></i>
+                            <p id="stat-active-users" class="text-2xl font-black text-green-500 leading-none mb-1">0</p>
+                            <p class="text-[8px] font-bold text-slate-500 uppercase">يعملون الآن</p>
+                        </div>
+                        <div class="bg-dark-900/80 p-4 rounded-2xl border border-white/5 text-center shadow-sm">
+                            <i class="fas fa-keyboard text-red-500 mb-2 text-lg"></i>
+                            <p id="stat-idle-users" class="text-2xl font-black text-red-500 leading-none mb-1">0</p>
+                            <p class="text-[8px] font-bold text-slate-500 uppercase">في وضع الخمول</p>
+                        </div>
+                        <div class="bg-dark-900/80 p-4 rounded-2xl border border-white/5 text-center shadow-sm">
+                            <i class="fas fa-tasks text-purple-500 mb-2 text-lg"></i>
+                            <p id="stat-pending-tasks" class="text-2xl font-black text-purple-500 leading-none mb-1">0</p>
+                            <p class="text-[8px] font-bold text-slate-500 uppercase">مهام جارية</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-4 border-t border-white/5">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">أدوات الإدارة السريعة</p>
+                    
+                    <button onclick="openUserModal('new')" class="w-full py-4 bg-primary-600/10 text-primary-500 rounded-2xl font-black text-[11px] hover:bg-primary-600 hover:text-white transition-all flex items-center justify-center gap-3 border border-primary-500/20 shadow-lg active:scale-95">
+                        <i class="fas fa-user-plus"></i> تسجيل موظف جديد
+                    </button>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <a href="payroll.html" class="py-3 btn-glass text-green-500 rounded-xl font-black text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 text-center">
+                            <i class="fas fa-money-bill-wave"></i> نظام المرتبات
+                        </a>
+                        <a href="crm.html" class="py-3 btn-glass text-indigo-400 rounded-xl font-black text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 text-center">
+                            <i class="fas fa-chart-line"></i> إدارة المشاريع
+                        </a>
+                    </div>
+
+                    <button onclick="toggleChat()" class="w-full py-3.5 btn-glass text-slate-300 rounded-xl font-black text-[10px] flex items-center justify-between px-5 transition-all active:scale-95">
+                        <span><i class="fas fa-bullhorn text-primary-500 ml-2"></i> التعميم والشات العام</span>
+                        <span id="chat-badge" class="bg-red-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center hidden">!</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4 shrink-0 border-t border-white/5 bg-dark-950">
+                <button onclick="logout()" class="w-full py-2 rounded-xl bg-red-500/5 text-red-500/60 font-black hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 text-[9px] uppercase tracking-[0.2em] active:scale-95 shadow-sm border border-red-500/10">
+                    <i class="fas fa-power-off text-[8px]"></i> إغلاق النظام
+                </button>
+            </div>
+        </aside>
+
+        <div class="flex-1 relative overflow-hidden bg-dark-950">
+            
+            <div id="view-monitor" class="absolute inset-0 flex flex-col w-full h-full transition-opacity duration-300 overflow-hidden">
+                <div class="p-8 pb-4 shrink-0 flex justify-between items-end border-b border-white/5 bg-dark-950/80">
+                    <div>
+                        <h1 class="text-3xl font-black text-white mb-2">شاشة المراقبة المركزية</h1>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Real-time Operations Monitor</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="renderMonitorGrid('all')" class="px-6 py-2.5 rounded-xl bg-primary-600 text-white font-black text-[10px] shadow-lg shadow-primary-500/20">عرض الكل</button>
+                        <button onclick="renderMonitorGrid('Online')" class="px-6 py-2.5 rounded-xl btn-glass text-green-500 font-black text-[10px]">النشطين فقط</button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+                    <div id="monitor-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20"></div>
+                </div>
+            </div>
+
+            <div id="view-tasks" class="absolute inset-0 hidden flex flex-col w-full h-full bg-dark-950 transition-opacity duration-300 overflow-hidden">
+                <div class="p-8 pb-4 shrink-0 border-b border-white/5 bg-dark-950/80">
+                    <h1 class="text-3xl font-black text-white mb-2">لوحة المهام الشاملة</h1>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Global Kanban Pipeline</p>
+                </div>
+                <div class="flex-1 flex gap-6 p-8 overflow-x-auto custom-scrollbar pb-20">
+                    <div class="flex-1 min-w-[300px] flex flex-col bg-dark-900/40 rounded-[2rem] border border-white/5 overflow-hidden">
+                        <div class="p-4 bg-dark-900 border-b border-white/5 flex items-center justify-between shrink-0">
+                            <div class="flex items-center gap-3"><div class="w-3 h-3 rounded-full bg-slate-600"></div><h3 class="font-black text-white text-sm">مهام جديدة (To Do)</h3></div>
+                            <span id="k-todo-count" class="bg-dark-800 text-slate-400 text-[10px] font-black px-3 py-1 rounded-lg">0</span>
+                        </div>
+                        <div id="kanban-todo" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4"></div>
+                    </div>
+                    <div class="flex-1 min-w-[300px] flex flex-col bg-dark-900/40 rounded-[2rem] border border-white/5 overflow-hidden">
+                        <div class="p-4 bg-dark-900 border-b border-white/5 flex items-center justify-between shrink-0">
+                            <div class="flex items-center gap-3"><div class="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div><h3 class="font-black text-white text-sm">قيد التنفيذ والمراجعة</h3></div>
+                            <span id="k-prog-count" class="bg-dark-800 text-slate-400 text-[10px] font-black px-3 py-1 rounded-lg">0</span>
+                        </div>
+                        <div id="kanban-inprogress" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4"></div>
+                    </div>
+                    <div class="flex-1 min-w-[300px] flex flex-col bg-dark-900/40 rounded-[2rem] border border-white/5 overflow-hidden">
+                        <div class="p-4 bg-dark-900 border-b border-white/5 flex items-center justify-between shrink-0">
+                            <div class="flex items-center gap-3"><div class="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div><h3 class="font-black text-white text-sm">مكتملة (Done)</h3></div>
+                            <span id="k-done-count" class="bg-dark-800 text-slate-400 text-[10px] font-black px-3 py-1 rounded-lg">0</span>
+                        </div>
+                        <div id="kanban-done" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-users" class="absolute inset-0 hidden flex flex-col w-full h-full bg-dark-950 transition-opacity duration-300 overflow-hidden">
+                <div class="p-8 pb-4 shrink-0 flex justify-between items-end border-b border-white/5 bg-dark-950/80">
+                    <div>
+                        <h1 class="text-3xl font-black text-white mb-2">إدارة الموظفين والصلاحيات</h1>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">User & Access Control</p>
+                    </div>
+                    <button onclick="openUserModal('new')" class="px-6 py-3 rounded-xl bg-primary-600 text-white font-black text-[11px] shadow-lg shadow-primary-500/20 flex items-center gap-2"><i class="fas fa-plus"></i> إضافة موظف</button>
+                </div>
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+                    <div class="bg-dark-900/50 rounded-[2rem] border border-white/5 overflow-hidden shadow-2xl">
+                        <table class="w-full text-right text-sm">
+                            <thead class="bg-dark-900 text-slate-500 text-[10px] uppercase tracking-widest font-black border-b border-white/5">
+                                <tr>
+                                    <th class="p-5 font-black">الموظف</th>
+                                    <th class="p-5 font-black">البريد الإلكتروني</th>
+                                    <th class="p-5 font-black text-center">الرتبة (Role)</th>
+                                    <th class="p-5 font-black text-center">الحالة</th>
+                                    <th class="p-5 font-black text-left">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body" class="divide-y divide-white/5">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="modal-user-form" class="fixed inset-0 z-[400] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4" onclick="closeModal('modal-user-form')">
+        <div class="bg-dark-900 w-full max-w-3xl rounded-[3rem] p-10 border border-white/5 flex flex-col max-h-[90vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-8 shrink-0">
+                <h3 id="modal-user-title" class="text-2xl font-black text-white flex items-center gap-3"><i class="fas fa-user-shield text-primary-500"></i> بيانات الموظف</h3>
+                <button onclick="closeModal('modal-user-form')" class="w-10 h-10 rounded-full btn-glass flex items-center justify-center text-slate-400 hover:text-white transition-all"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <form id="user-setup-form" onsubmit="saveUserData(event)" class="flex-1 overflow-y-auto custom-scrollbar pr-4 space-y-6">
+                <input type="hidden" id="edit-mode-email">
+                
+                <div class="flex items-center gap-6 p-6 bg-dark-950 rounded-3xl border border-white/5">
+                    <div class="relative cursor-pointer group" onclick="document.getElementById('user-photo-upload').click()">
+                        <img id="user-photo-preview" src="https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=New" class="w-20 h-20 rounded-2xl object-cover border-2 border-dashed border-slate-600 group-hover:border-primary-500 transition-all">
+                        <div class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"><i class="fas fa-camera text-white"></i></div>
+                        <input type="file" id="user-photo-upload" class="hidden" accept="image/*" onchange="previewUserPhoto(this)">
+                        <input type="hidden" id="user-photo-b64">
+                    </div>
+                    <div class="flex-1 grid grid-cols-2 gap-4">
+                        <div><label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">الاسم بالكامل</label><input type="text" id="u-name" class="w-full bg-dark-900 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none" required></div>
+                        <div><label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">المسمى الوظيفي (Title)</label><input type="text" id="u-title" class="w-full bg-dark-900 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none" placeholder="مثال: مطور ويب" required></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">البريد الإلكتروني (Login ID)</label>
+                        <input type="email" id="u-email" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none text-left" dir="ltr" required>
+                    </div>
+                    <div id="password-container">
+                        <label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">كلمة المرور الابتدائية</label>
+                        <input type="text" id="u-password" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white focus:border-primary-500 outline-none text-left font-mono" dir="ltr" placeholder="12345678" minlength="6">
+                        <p class="text-[8px] text-slate-500 mt-1">* مطلوب عند إضافة موظف جديد فقط</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6 border-t border-white/5 pt-6">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 mb-2 block uppercase">رتبة النظام (Role)</label>
+                        <select id="u-role" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-sm font-black text-primary-500 outline-none focus:border-primary-500">
+                            <option value="employee">موظف (Employee)</option>
+                            <option value="leader">قائد فريق (Leader)</option>
+                            <option value="supervisor">مشرف (Supervisor)</option>
+                            <option value="admin">مدير نظام (Admin)</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">دقائق الخمول</label><input type="number" id="u-idle" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white text-center" value="5" min="1"></div>
+                        <div><label class="text-[9px] font-black text-slate-500 mb-1 block uppercase">تجاوز الخلفية</label><input type="number" id="u-bg" class="w-full bg-dark-950 border border-white/5 h-12 rounded-xl px-4 text-sm font-bold text-white text-center" value="60" min="1"></div>
+                    </div>
+                </div>
+
+                <div class="border-t border-white/5 pt-6">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4"><i class="fas fa-sliders-h text-primary-500 mr-2"></i> مصفوفة الصلاحيات الخاصة</p>
+                    <div class="grid grid-cols-2 gap-4" id="permissions-grid">
+                        <div class="flex items-center justify-between p-3 bg-dark-950 rounded-xl border border-white/5">
+                            <span class="text-[10px] font-bold text-slate-300">الدخول لنظام المشاريع (CRM)</span>
+                            <div class="relative inline-block w-11 align-middle select-none"><input type="checkbox" id="perm-crm" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-crm" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-600 cursor-pointer"></label></div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-dark-950 rounded-xl border border-white/5">
+                            <span class="text-[10px] font-bold text-slate-300">الدخول لنظام المرتبات (Payroll)</span>
+                            <div class="relative inline-block w-11 align-middle select-none"><input type="checkbox" id="perm-payroll" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-payroll" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-600 cursor-pointer"></label></div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-dark-950 rounded-xl border border-white/5">
+                            <span class="text-[10px] font-bold text-slate-300">حذف المهام نهائياً</span>
+                            <div class="relative inline-block w-11 align-middle select-none"><input type="checkbox" id="perm-delete-task" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-delete-task" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-600 cursor-pointer"></label></div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-dark-950 rounded-xl border border-white/5">
+                            <span class="text-[10px] font-bold text-slate-300">طلب لقطة شاشة للموظفين</span>
+                            <div class="relative inline-block w-11 align-middle select-none"><input type="checkbox" id="perm-screenshot" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="perm-screenshot" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-600 cursor-pointer"></label></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 mt-4 border-t border-white/5 flex gap-4 shrink-0">
+                    <button type="submit" id="save-user-btn" class="flex-1 py-4 bg-primary-600 text-white rounded-2xl font-black shadow-xl shadow-primary-600/20 active:scale-95 transition-all text-sm">حفظ بيانات الموظف</button>
+                    <button type="button" id="delete-user-btn" onclick="deleteUser()" class="px-8 py-4 bg-red-500/10 text-red-500 rounded-2xl font-black border border-red-500/20 hover:bg-red-500 hover:text-white transition-all hidden"><i class="fas fa-trash"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="chat-window" class="fixed bottom-20 right-8 w-[380px] h-[550px] bg-dark-900 border border-white/10 rounded-[2.5rem] overflow-hidden hidden flex flex-col shadow-2xl z-[100] animate-fade-in">
+        <div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center shrink-0">
+            <h3 class="font-black text-xs text-primary-500 uppercase tracking-widest"><i class="fas fa-bullhorn mr-2"></i> تعميم ودردشة الإدارة</h3>
+            <button onclick="toggleChat()" class="text-slate-600 hover:text-white transition-all"><i class="fas fa-times text-lg"></i></button>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-5 flex flex-col gap-4 custom-scrollbar bg-dark-950/20"></div>
+        <form onsubmit="handleGlobalMessage(event)" class="p-4 bg-dark-900 border-t border-white/5 flex gap-3">
+            <input type="text" id="chat-input" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-primary-500" placeholder="إرسال تعميم للجميع..." autocomplete="off">
+            <button type="submit" class="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-paper-plane"></i></button>
+        </form>
+    </div>
+
+    <div id="modal-task-detail" class="fixed inset-0 z-[400] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4" onclick="closeModal('modal-task-detail')">
+        <div class="bg-dark-900 w-full max-w-4xl rounded-[3rem] p-10 border border-white/5 flex flex-col max-h-[90vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-start mb-6 border-b border-white/5 pb-6 shrink-0">
+                <div>
+                    <span id="m-task-project" class="bg-primary-500/10 text-primary-500 text-[10px] font-black px-4 py-1 rounded-full border border-primary-500/20 mb-3 inline-block">Project</span>
+                    <h2 id="m-task-title" class="text-3xl font-black text-white mb-2">Task Title</h2>
+                    <p class="text-[10px] font-bold text-slate-500">مسندة إلى: <span id="m-task-owner" class="text-primary-400">User</span> | <span id="m-task-date">Date</span></p>
+                </div>
+                <button onclick="closeModal('modal-task-detail')" class="w-10 h-10 rounded-full btn-glass flex items-center justify-center text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scrollbar pr-4">
+                <div id="m-task-desc" class="text-sm leading-relaxed text-slate-300 bg-dark-950 p-6 rounded-2xl border border-white/5 mb-8 font-cairo"></div>
+                <h4 class="font-black text-xs text-primary-500 mb-4 border-r-2 border-primary-500 pr-3">سجل المناقشات</h4>
+                <div id="m-task-comments" class="flex flex-col gap-4 pb-10"></div>
+            </div>
+            <div class="pt-6 border-t border-white/5 mt-4 shrink-0 flex gap-3">
+                <button onclick="adminDeleteTask()" class="px-8 py-3 bg-red-500/10 text-red-500 font-black rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all text-xs"><i class="fas fa-trash-alt ml-2"></i> حذف المهمة نهائياً</button>
+            </div>
+            <input type="hidden" id="m-hidden-owner"><input type="hidden" id="m-hidden-id">
+        </div>
+    </div>
+
+    <div id="private-chats-container" class="fixed bottom-0 right-0 z-[101] flex gap-3 p-3 pointer-events-none"></div>
+
+    <script>
+        // --- 1. FIREBASE CONFIG & INITIALIZATION ---
+        const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        
+        // 🟢 Secondary App for User Creation without logging Admin out 🟢
+        const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
+        
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const secondaryAuth = secondaryApp.auth();
+
+        let currentUser = null, userProfile = null, allUsersData = [], currentMonitorFilter = 'all';
+        const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
+
+        // --- 2. GLOBAL HELPERS ---
+        function startClock() {
+            const update = () => {
+                const now = moment();
+                if(document.getElementById('header-time')) document.getElementById('header-time').innerText = now.format('HH:mm:ss');
+                if(document.getElementById('header-date')) document.getElementById('header-date').innerText = now.locale('ar').format('dddd, DD MMMM YYYY');
+            };
+            update(); setInterval(update, 1000);
+        }
+
+        const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : v) : Date.now();
+        function formatDuration(ms) { if(ms < 0) ms = 0; const s = Math.floor((ms/1000)%60).toString().padStart(2,'0'); const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0'); const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0'); return `${h}:${m}:${s}`; }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                ['chat-window', 'modal-user-form', 'modal-task-detail'].forEach(id => closeModal(id));
+                document.getElementById('private-chats-container').innerHTML = '';
+            }
+        });
+
+        function switchAdminView(viewName) {
+            ['monitor', 'tasks', 'users'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+                document.getElementById(`tab-${v}`).classList.remove('active', 'bg-dark-950', 'shadow-md');
+            });
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            document.getElementById(`tab-${viewName}`).classList.add('active', 'bg-dark-950', 'shadow-md');
+        }
+
+        // --- 3. AUTH & BOOT ---
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
+                if(doc.exists) {
+                    userProfile = doc.data();
+                    if(userProfile.role !== 'admin') { window.location.replace('employee.html'); return; }
+                    initAdminConsole();
+                } else { auth.signOut(); }
+            } else { window.location.replace('index.html'); }
+        });
+
+        function initAdminConsole() {
+            startClock();
+            document.getElementById('admin-name').innerText = userProfile.name;
+            document.getElementById('admin-img').src = userProfile.photo || DEFAULT_PHOTO + 'Admin';
+            listenToAllUsers();
+            listenToGlobalMessages();
+            listenToPrivateMessages();
+            setInterval(updateTimersUI, 1000);
+            document.getElementById('loader').classList.add('hidden');
+        }
+
+        // --- 4. DATA FETCHING ---
+        function listenToAllUsers() {
+            db.collection('users').onSnapshot(snap => {
+                allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
+                updateAdminStats();
+                renderMonitorGrid();
+                renderGlobalTasks();
+                renderUsersTable();
+            });
+        }
+
+        function updateAdminStats() {
+            const total = allUsersData.length;
+            const online = allUsersData.filter(u => u.status === 'Online' && !u.isIdle).length;
+            const idle = allUsersData.filter(u => u.isIdle).length;
+            let tasksCount = 0;
+            allUsersData.forEach(u => { tasksCount += (u.tasks || []).filter(t => t.status !== 'done' && !t.archived).length; });
+
+            document.getElementById('stat-total-users').innerText = total;
+            document.getElementById('stat-active-users').innerText = online;
+            document.getElementById('stat-idle-users').innerText = idle;
+            document.getElementById('stat-pending-tasks').innerText = tasksCount;
+        }
+
+        // --- 5. VIEW 1: MONITOR ---
+        function renderMonitorGrid(filter = currentMonitorFilter) {
+            currentMonitorFilter = filter;
+            const container = document.getElementById('monitor-grid'); container.innerHTML = '';
+            
+            allUsersData.forEach(u => {
+                if(filter === 'Online' && (u.status !== 'Online' || u.isIdle)) return;
+                const s = u.isIdle ? 'Idle' : (u.status || 'Offline');
+                const tb = u.timeBank || {}; const safeStart = getMillis(u.lastChange);
+                const color = s === 'Online' ? 'bg-green-500' : s === 'Idle' ? 'bg-red-500' : s === 'Break' ? 'bg-orange-500' : 'bg-slate-600';
+
+                container.innerHTML += `
+                    <div class="admin-grid-card p-6 rounded-[2rem] flex flex-col gap-5 relative group">
+                        <div class="flex items-center gap-4">
+                            <div class="relative"><img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-12 h-12 rounded-xl object-cover border border-white/10"><span class="absolute -bottom-1 -right-1 pulse-dot ${color} border-2 border-dark-900"></span></div>
+                            <div class="overflow-hidden"><h4 class="font-black text-sm text-white truncate">${u.name}</h4><p class="text-[9px] font-bold text-primary-500 uppercase">${u.role}</p></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-dark-950 p-2.5 rounded-xl border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 uppercase mb-0.5">Active</p><p class="text-[11px] font-black text-green-500 stat-timer" data-val="${tb['Online'] || 0}" data-active="${u.status === 'Online' && !u.isIdle}" data-start="${safeStart}">00:00</p></div>
+                            <div class="bg-dark-950 p-2.5 rounded-xl border border-white/5 text-center"><p class="text-[8px] font-black text-slate-500 uppercase mb-0.5">Idle</p><p class="text-[11px] font-black text-red-500 stat-idle" data-val="${u.idleBank || 0}" data-isidle="${u.isIdle}" data-start="${getMillis(u.idleSince)}">00:00</p></div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}')" class="flex-1 py-2 bg-primary-600/10 text-primary-500 rounded-lg text-[9px] font-black hover:bg-primary-600 hover:text-white transition-all">Message</button>
+                            <button onclick="openUserModal('${u.email}')" class="w-8 h-8 flex items-center justify-center rounded-lg btn-glass text-slate-400 hover:text-white transition-all"><i class="fas fa-cog text-[10px]"></i></button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function updateTimersUI() {
+            const now = Date.now();
+            document.querySelectorAll('.stat-timer, .stat-idle').forEach(t => { 
+                const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; 
+                const active = t.dataset.active==='true' || t.dataset.isidle==='true';
+                t.innerText = formatDuration(active ? b+(now-s) : b); 
+            });
+        }
+
+        // --- 6. VIEW 2: GLOBAL TASKS KANBAN ---
+        function renderGlobalTasks() {
+            const cols = { todo: document.getElementById('kanban-todo'), inprogress: document.getElementById('kanban-inprogress'), done: document.getElementById('kanban-done') };
+            for(let k in cols) if(cols[k]) cols[k].innerHTML = '';
+            
+            let allTasks = [];
+            allUsersData.forEach(u => { if(u.tasks) { u.tasks.forEach(t => { if(!t.archived) allTasks.push({...t, ownerName: u.name, ownerEmail: u.email, ownerPhoto: u.photo}); }); } });
+            allTasks.sort((a,b) => b.id - a.id);
+
+            let counts = { todo: 0, inprogress: 0, done: 0 };
+
+            allTasks.forEach(task => {
+                let colKey = task.status === 'started' ? 'todo' : (task.status === 'done' ? 'done' : 'inprogress');
+                counts[colKey]++;
+                if(cols[colKey]) {
+                    cols[colKey].innerHTML += `
+                        <div onclick="openAdminTaskDetail('${task.id}', '${task.ownerEmail}')" class="task-kanban-card p-4 rounded-2xl cursor-pointer shadow-lg">
+                            <div class="flex justify-between items-start mb-3"><h4 class="font-black text-[11px] text-white leading-tight pr-2">${task.title}</h4>${task.status==='review'?'<i class="fas fa-eye text-purple-500 animate-pulse text-[10px]"></i>':''}</div>
+                            <div class="flex items-center gap-2 mt-auto pt-3 border-t border-white/5">
+                                <img src="${task.ownerPhoto || DEFAULT_PHOTO+task.ownerName}" class="w-5 h-5 rounded-md object-cover">
+                                <span class="text-[9px] font-bold text-slate-400 truncate">${task.ownerName}</span>
+                                <span class="mr-auto text-[7px] bg-primary-500/10 text-primary-500 px-1.5 py-0.5 rounded font-black">${task.projectName || 'General'}</span>
+                            </div>
+                        </div>`;
+                }
+            });
+
+            document.getElementById('k-todo-count').innerText = counts.todo;
+            document.getElementById('k-prog-count').innerText = counts.inprogress;
+            document.getElementById('k-done-count').innerText = counts.done;
+        }
+
+        function openAdminTaskDetail(taskId, ownerEmail) {
+            const user = allUsersData.find(u => u.email === ownerEmail);
+            if(!user || !user.tasks) return;
+            const task = user.tasks.find(t => t.id == taskId);
+            if(!task) return;
+
+            document.getElementById('m-hidden-id').value = task.id; document.getElementById('m-hidden-owner').value = ownerEmail;
+            document.getElementById('m-task-title').innerText = task.title;
+            document.getElementById('m-task-desc').innerHTML = task.desc;
+            document.getElementById('m-task-date').innerText = moment(task.id).format('D MMM YYYY');
+            document.getElementById('m-task-owner').innerText = user.name;
+            document.getElementById('m-task-project').innerText = task.projectName || 'General Task';
+
+            const box = document.getElementById('m-task-comments'); box.innerHTML = '';
+            (task.comments||[]).forEach(c => {
+                const isSys = c.user === 'system';
+                if(isSys) box.innerHTML += `<div class="flex justify-center"><span class="bg-dark-900 text-[9px] px-4 py-1 rounded-full text-slate-500 border border-white/5 font-bold">${c.text}</span></div>`;
+                else {
+                    const u = allUsersData.find(x => x.email === c.user); const photo = u?.photo || DEFAULT_PHOTO+c.name;
+                    box.innerHTML += `<div class="flex gap-4"><img src="${photo}" class="w-8 h-8 rounded-lg object-cover"><div class="bg-dark-950 p-4 rounded-2xl border border-white/5 rounded-tr-none flex-1"><p class="text-[10px] font-black text-primary-500 mb-1">${c.name} <span class="text-[8px] text-slate-600 font-normal ml-2">${moment(c.time).format('h:mm A')}</span></p><p class="text-xs text-slate-300 leading-relaxed">${c.text}</p>${c.file ? `<a href="${c.file}" target="_blank" class="text-[9px] text-blue-400 mt-2 inline-block"><i class="fas fa-paperclip"></i> View File</a>` : ''}</div></div>`;
+                }
+            });
+            openModal('modal-task-detail');
+        }
+
+        async function adminDeleteTask() {
+            if(!confirm("⚠️ تحذير: هل أنت متأكد من حذف هذه المهمة من النظام نهائياً؟")) return;
+            const id = document.getElementById('m-hidden-id').value; const email = document.getElementById('m-hidden-owner').value;
+            const userRef = db.collection('users').doc(email);
+            const doc = await userRef.get(); let tasks = doc.data().tasks || [];
+            tasks = tasks.filter(t => t.id != id);
+            await userRef.update({ tasks }); closeModal('modal-task-detail'); alert("تم حذف المهمة نهائياً.");
+        }
+
+        // --- 7. VIEW 3: USER MANAGEMENT & CREATION ---
+        function renderUsersTable() {
+            const tbody = document.getElementById('users-table-body'); tbody.innerHTML = '';
+            allUsersData.forEach(u => {
+                const statusColor = u.status === 'Online' ? 'text-green-500' : 'text-slate-500';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-dark-900/50 transition-colors group">
+                        <td class="p-4 flex items-center gap-3">
+                            <img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-9 h-9 rounded-xl object-cover border border-white/5">
+                            <div><p class="font-black text-white text-xs">${u.name}</p><p class="text-[9px] text-slate-500 uppercase">${u.title || 'N/A'}</p></div>
+                        </td>
+                        <td class="p-4 text-[11px] text-slate-400 font-mono">${u.email}</td>
+                        <td class="p-4 text-center"><span class="bg-primary-500/10 text-primary-400 text-[9px] px-3 py-1 rounded-full font-black uppercase border border-primary-500/20">${u.role}</span></td>
+                        <td class="p-4 text-center font-black text-[10px] ${statusColor} uppercase">${u.status || 'Offline'}</td>
+                        <td class="p-4 text-left">
+                            <button onclick="openUserModal('${u.email}')" class="px-4 py-2 bg-dark-800 text-white rounded-lg text-[9px] font-black hover:bg-primary-600 transition-all border border-white/5">تعديل الملف</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function previewUserPhoto(input) {
+            if(input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => { document.getElementById('user-photo-preview').src = e.target.result; document.getElementById('user-photo-b64').value = e.target.result; };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        async function openUserModal(email) {
+            const form = document.getElementById('user-setup-form'); form.reset();
+            document.getElementById('user-photo-preview').src = DEFAULT_PHOTO + 'New';
+            document.getElementById('user-photo-b64').value = '';
+            
+            if(email === 'new') {
+                document.getElementById('modal-user-title').innerHTML = '<i class="fas fa-user-plus text-primary-500"></i> إضافة موظف جديد';
+                document.getElementById('edit-mode-email').value = 'new';
+                document.getElementById('u-email').readOnly = false;
+                document.getElementById('password-container').classList.remove('hidden');
+                document.getElementById('u-password').required = true;
+                document.getElementById('delete-user-btn').classList.add('hidden');
+            } else {
+                document.getElementById('modal-user-title').innerHTML = '<i class="fas fa-user-edit text-primary-500"></i> تعديل بيانات الموظف';
+                document.getElementById('edit-mode-email').value = email;
+                document.getElementById('u-email').readOnly = true;
+                document.getElementById('password-container').classList.add('hidden');
+                document.getElementById('u-password').required = false;
+                document.getElementById('delete-user-btn').classList.remove('hidden');
+
+                const u = allUsersData.find(x => x.email === email);
+                if(u) {
+                    document.getElementById('u-name').value = u.name;
+                    document.getElementById('u-title').value = u.title || '';
+                    document.getElementById('u-email').value = u.email;
+                    document.getElementById('u-role').value = u.role || 'employee';
+                    document.getElementById('u-idle').value = u.idleLimit || 5;
+                    document.getElementById('u-bg').value = u.backgroundLimit || 60;
+                    if(u.photo) { document.getElementById('user-photo-preview').src = u.photo; document.getElementById('user-photo-b64').value = u.photo; }
+                    
+                    ['crm', 'payroll', 'delete-task', 'screenshot'].forEach(p => {
+                        document.getElementById(`perm-${p}`).checked = u.permissions && u.permissions[p] === true;
+                    });
+                }
+            }
+            openModal('modal-user-form');
+        }
+
+        async function saveUserData(e) {
+            e.preventDefault();
+            const btn = document.getElementById('save-user-btn'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+            
+            const mode = document.getElementById('edit-mode-email').value;
+            const email = document.getElementById('u-email').value.toLowerCase().trim();
+            const pass = document.getElementById('u-password').value;
+            let photoUrl = document.getElementById('user-photo-b64').value;
+
+            // Upload Photo if new Base64
+            if(photoUrl && photoUrl.startsWith('data:image')) {
+                const ref = storage.ref().child(`profiles/${Date.now()}_${email}.jpg`);
+                await ref.putString(photoUrl, 'data_url'); photoUrl = await ref.getDownloadURL();
+            }
+
+            const userData = {
+                name: document.getElementById('u-name').value,
+                title: document.getElementById('u-title').value,
+                role: document.getElementById('u-role').value,
+                idleLimit: parseInt(document.getElementById('u-idle').value),
+                backgroundLimit: parseInt(document.getElementById('u-bg').value),
+                photo: photoUrl || '',
+                permissions: {
+                    crm: document.getElementById('perm-crm').checked,
+                    payroll: document.getElementById('perm-payroll').checked,
+                    deleteTask: document.getElementById('perm-delete-task').checked,
+                    screenshot: document.getElementById('perm-screenshot').checked
+                }
+            };
+
+            try {
+                if(mode === 'new') {
+                    // 🟢 THE MAGIC TRICK: Create Auth via Secondary App 🟢
+                    await secondaryAuth.createUserWithEmailAndPassword(email, pass);
+                    await secondaryAuth.signOut(); // Clean up secondary
+                    
+                    userData.email = email; userData.status = 'Offline'; userData.tasks = []; userData.timeBank = {};
+                    await db.collection('users').doc(email).set(userData);
+                    alert("تم إنشاء حساب الموظف بنجاح!");
+                } else {
+                    await db.collection('users').doc(email).update(userData);
+                    alert("تم تحديث البيانات بنجاح!");
+                }
+                closeModal('modal-user-form');
+            } catch(err) { console.error(err); alert("حدث خطأ: " + err.message); }
+            btn.disabled = false; btn.innerHTML = 'حفظ بيانات الموظف';
+        }
+
+        async function deleteUser() {
+            const email = document.getElementById('edit-mode-email').value;
+            if(email === currentUser.email) { alert("لا يمكنك حذف حسابك الإداري!"); return; }
+            if(confirm(`⚠️ هل أنت متأكد نهائياً من حذف الموظف ${email} وكل بياناته؟`)) {
+                await db.collection('users').doc(email).delete();
+                // Note: Auth deletion requires Firebase Admin SDK (Server). We just delete the doc here so they can't login via UI.
+                closeModal('modal-user-form'); alert("تم إزالة بيانات الموظف من النظام.");
+            }
+        }
+
+        // --- 8. CHAT SYSTEM ---
+        function toggleChat() { document.getElementById('chat-window').classList.toggle('hidden'); document.getElementById('chat-badge').classList.add('hidden'); }
+        async function handleGlobalMessage(e) { e.preventDefault(); const i = document.getElementById("chat-input"); if(!i.value.trim()) return; await db.collection("messages").add({ text: i.value.trim(), user: currentUser.email, name: userProfile.name, time: firebase.firestore.FieldValue.serverTimestamp() }); i.value = ""; }
+        function listenToGlobalMessages() { db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s => { const t = document.getElementById("chat-messages"); t.innerHTML = ""; s.forEach(d => { const m = d.data(); const isMe = m.user === currentUser.email; const u = allUsersData.find(x => x.email === m.user); const photo = u?.photo || DEFAULT_PHOTO+m.name; t.innerHTML += `<div class="flex gap-3 ${isMe?'flex-row-reverse':''}"><img src="${photo}" class="w-8 h-8 rounded-lg object-cover"><div class="${isMe?'bg-primary-600 text-white rounded-tl-none':'bg-dark-800 text-slate-200 rounded-tr-none border border-white/5'} p-3 rounded-2xl text-[11px] font-bold max-w-[85%]"><p class="text-[8px] opacity-50 mb-1">${m.name}</p>${m.text}</div></div>`; }); t.scrollTop = t.scrollHeight; if(document.getElementById("chat-window").classList.contains("hidden")) document.getElementById("chat-badge").classList.remove("hidden"); }); }
+
+        // --- 9. LOGOUT ---
+        async function logout() { if(confirm("إغلاق لوحة تحكم الإدارة؟")) { await auth.signOut(); window.location.replace('index.html'); } }
+    </script>
+</body>
+</html>
