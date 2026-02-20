@@ -933,41 +933,43 @@
                 const mode = document.getElementById('edit-mode-email').value;
                 const email = document.getElementById('u-email').value.toLowerCase().trim();
                 const pass = document.getElementById('u-password') ? document.getElementById('u-password').value : '';
-                let photoUrl = document.getElementById('user-photo-b64').value;
+                
+                // جلب الرابط القديم (لو موجود)
+                let finalPhotoUrl = document.getElementById('user-photo-b64').value;
+                const photoInput = document.getElementById('user-photo-upload');
         
-                // 1. منطق رفع الصورة: نرفع فقط لو كانت الصورة Base64 جديدة
-                if (photoUrl && photoUrl.startsWith('data:image')) {
-                    // التصحيح هنا: استخدام المتغير storage المعرف مسبقاً
+                // 1. رفع الصورة كـ (ملف حقيقي) وليس كنص Base64 لتجنب خطأ الـ CORS
+                if (photoInput && photoInput.files && photoInput.files[0]) {
+                    const file = photoInput.files[0];
                     const storageRef = storage.ref().child(`profiles/${Date.now()}_${email.replace(/[@.]/g, '_')}.jpg`);
-                    await storageRef.putString(photoUrl, 'data_url');
-                    photoUrl = await storageRef.getDownloadURL();
+                    await storageRef.put(file); // استخدام put بدلاً من putString
+                    finalPhotoUrl = await storageRef.getDownloadURL();
                 }
         
                 // 2. تجميع البيانات
                 const userData = {
                     name: document.getElementById('u-name').value,
-                    title: document.getElementById('u-title').value || '',
-                    role: document.getElementById('u-role').value || 'employee',
-                    contract: document.getElementById('u-contract').value || 'employee',
-                    idleLimit: parseInt(document.getElementById('u-idle').value) || 5,
-                    backgroundLimit: parseInt(document.getElementById('u-bg').value) || 60,
-                    isSuspended: document.getElementById('u-suspended').checked,
+                    title: document.getElementById('u-title') ? document.getElementById('u-title').value : '',
+                    role: document.getElementById('u-role') ? document.getElementById('u-role').value : 'employee',
+                    contract: document.getElementById('u-contract') ? document.getElementById('u-contract').value : 'employee',
+                    idleLimit: parseInt(document.getElementById('u-idle') ? document.getElementById('u-idle').value : 5),
+                    backgroundLimit: parseInt(document.getElementById('u-bg') ? document.getElementById('u-bg').value : 60),
+                    isSuspended: document.getElementById('u-suspended') ? document.getElementById('u-suspended').checked : false,
                     permissions: {
-                        crm: document.getElementById('perm-crm').checked,
-                        payroll: document.getElementById('perm-payroll').checked,
-                        deleteTask: document.getElementById('perm-delete-task').checked,
-                        screenshot: document.getElementById('perm-screenshot').checked
+                        crm: document.getElementById('perm-crm') ? document.getElementById('perm-crm').checked : false,
+                        payroll: document.getElementById('perm-payroll') ? document.getElementById('perm-payroll').checked : false,
+                        deleteTask: document.getElementById('perm-delete-task') ? document.getElementById('perm-delete-task').checked : false,
+                        screenshot: document.getElementById('perm-screenshot') ? document.getElementById('perm-screenshot').checked : false
                     }
                 };
         
-                // تحديث الصورة لو كانت رابط صحيح (جديد أو قديم)
-                if (photoUrl && photoUrl.startsWith('http')) {
-                    userData.photo = photoUrl;
+                // التأكد من حفظ الرابط السليم فقط (لا يحفظ Base64 أبداً في الداتا بيز)
+                if (finalPhotoUrl && finalPhotoUrl.startsWith('http')) {
+                    userData.photo = finalPhotoUrl;
                 }
         
                 // 3. الحفظ في قاعدة البيانات
                 if (mode === 'new') {
-                    // إنشاء المستخدم في الـ Auth الخفي لتجنب طرد المدير
                     await secondaryAuth.createUserWithEmailAndPassword(email, pass);
                     await secondaryAuth.signOut();
                     
@@ -980,14 +982,11 @@
                     alert("تم إنشاء حساب الموظف بنجاح");
                 } else {
                     await db.collection('users').doc(email).update(userData);
-                    // إظهار تنبيه صغير وجميل بدلاً من المزعج
-                    const btnOriginalText = btn.innerHTML;
+                    
+                    // تأثير بصري للنجاح
                     btn.innerHTML = '<i class="fas fa-check ml-2"></i> تم الحفظ';
                     btn.classList.add('bg-green-600');
-                    setTimeout(() => {
-                        btn.innerHTML = 'حفظ بيانات الموظف';
-                        btn.classList.remove('bg-green-600');
-                    }, 1500);
+                    setTimeout(() => btn.classList.remove('bg-green-600'), 1500);
                 }
                 
                 closeModal('modal-user-form'); 
@@ -1119,6 +1118,7 @@
     </script>
 </body>
 </html>
+
 
 
 
