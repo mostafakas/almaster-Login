@@ -14,9 +14,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <script>
         tailwind.config = {
@@ -34,18 +36,15 @@
     </script>
 
     <style>
-        /* --- الأساسيات --- */
         body { background-color: #f8fafc; font-family: 'Outfit', 'Cairo', sans-serif; overflow-x: hidden; }
         .dark-mode body { background-color: #0f172a; color: white; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .hidden-section { display: none !important; }
         
-        /* --- النماذج والإدخال --- */
         .form-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; font-size: 14px; transition: all 0.3s; }
         .form-input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); outline: none; }
         .dark-mode .form-input { background: #334155; border-color: #475569; color: white; }
         
-        /* --- القوائم والأنيميشن --- */
         .dropdown-menu { transform-origin: top left; transition: all 0.2s ease-out; transform: scale(0.95); opacity: 0; pointer-events: none; }
         .dropdown-menu.active { transform: scale(1); opacity: 1; pointer-events: auto; }
 
@@ -56,7 +55,6 @@
         @keyframes pulse-r { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
         #admin-alerts-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        
         .chat-window { position: fixed; z-index: 100; transition: transform 0.2s; display: flex; flex-direction: column; }
         .chat-header { cursor: move; user-select: none; }
         
@@ -64,138 +62,30 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
 
-        /* --- بطاقات الموظفين --- */
-        .pro-card-design {
-            background: white;
-            border-radius: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            flex-direction: column;
-        }
+        .pro-card-design { background: white; border-radius: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
         .dark-mode .pro-card-design { background: #1e293b; border-color: #334155; }
         .pro-card-design:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
 
-        /* ============================================================ */
-        /* تعديلات مركز المهام الجديدة (لحل مشكلة الشاشة والمحرر) */
-        /* ============================================================ */
+        #modal-task-center > div { height: 90vh !important; max-height: 90vh !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; width: 95% !important; margin: auto; }
+        @media (min-width: 768px) { #modal-task-center > div { flex-direction: row !important; width: 100% !important; max-width: 80rem !important; } }
 
-        /* 1. ضبط الصندوق الرئيسي للمودال ليناسب جميع الشاشات */
-        #modal-task-center > div {
-            height: 90vh !important;       /* ارتفاع ثابت 90% من الشاشة */
-            max-height: 90vh !important;
-            display: flex !important;
-            flex-direction: column !important; /* في الموبايل العناصر فوق بعض */
-            overflow: hidden !important;   /* ممنوع أي حاجة تخرج بره الصندوق */
-            width: 95% !important;         /* عرض مناسب للموبايل */
-            margin: auto;
-        }
+        #task-detail-view { flex: 1 !important; height: 100% !important; overflow-y: auto !important; padding-bottom: 150px !important; display: block !important; position: relative; padding: 20px !important; }
+        #task-list-container { overflow-y: auto !important; padding-bottom: 20px; }
+        @media (max-width: 768px) { #modal-task-center > div > div:first-child { height: 180px !important; flex: none !important; overflow-y: auto !important; border-left: none !important; border-bottom: 1px solid #e2e8f0; } }
 
-        @media (min-width: 768px) {
-            #modal-task-center > div {
-                flex-direction: row !important; /* في الكمبيوتر العناصر جنب بعض */
-                width: 100% !important;
-                max-width: 80rem !important;
-            }
-        }
+        .ql-toolbar { border-radius: 8px 8px 0 0; background: #f8fafc; direction: ltr; text-align: left; border-color: #cbd5e1 !important; }
+        .ql-container { border-radius: 0 0 8px 8px; font-family: 'Cairo', sans-serif; font-size: 16px; height: 200px !important; background: white; margin-bottom: 20px; border-color: #cbd5e1 !important; }
+        .ql-editor { direction: rtl; text-align: right; }
 
-        /* 2. ضبط منطقة التفاصيل والشات (الجزء الأيسر/الأساسي) */
-        #task-detail-view {
-            flex: 1 !important;
-            height: 100% !important;
-            overflow-y: auto !important;   /* تفعيل السكرول الداخلي */
-            padding-bottom: 150px !important; /* مساحة فارغة تحت عشان الشات ميكنش مغطي الكلام */
-            display: block !important;
-            position: relative;
-            padding: 20px !important;
-        }
+        .a4-paper { width: 100% !important; max-width: 100% !important; min-height: auto !important; padding: 0 !important; margin: 0 auto !important; box-shadow: none !important; border: none !important; background: transparent !important; font-family: 'Outfit', 'Cairo', sans-serif !important; }
 
-        /* 3. ضبط منطقة القائمة الجانبية (Sidebar) */
-        #task-list-container {
-            overflow-y: auto !important;
-            padding-bottom: 20px;
-        }
-        
-        /* في الموبايل، القائمة الجانبية تكون صغيرة */
-        @media (max-width: 768px) {
-            #modal-task-center > div > div:first-child {
-                height: 180px !important; /* ارتفاع صغير للقائمة في الموبايل */
-                flex: none !important;
-                overflow-y: auto !important;
-                border-left: none !important;
-                border-bottom: 1px solid #e2e8f0;
-            }
-        }
-
-        /* 4. تنسيق محرر النصوص (Quill Editor) */
-        .ql-toolbar { 
-            border-radius: 8px 8px 0 0; 
-            background: #f8fafc; 
-            direction: ltr; 
-            text-align: left; 
-            border-color: #cbd5e1 !important;
-        }
-        .ql-container { 
-            border-radius: 0 0 8px 8px; 
-            font-family: 'Cairo', sans-serif; 
-            font-size: 16px; 
-            height: 200px !important; /* ارتفاع ثابت للمحرر */
-            background: white; 
-            margin-bottom: 20px;
-            border-color: #cbd5e1 !important;
-        }
-        .ql-editor { 
-            direction: rtl; 
-            text-align: right; 
-        }
-
-        /* 5. ورقة العمل داخل عرض التفاصيل */
-        .a4-paper {
-            width: 100% !important;
-            max-width: 100% !important;
-            min-height: auto !important;
-            padding: 0 !important; /* إزالة الحواف الزائدة */
-            margin: 0 auto !important;
-            box-shadow: none !important;
-            border: none !important;
-            background: transparent !important;
-            font-family: 'Outfit', 'Cairo', sans-serif !important;
-        }
-
-        /* --- تنسيقات بطاقات المهام الجديدة (Modern Task Cards) --- */
-        .task-card-modern {
-            background: white;
-            border: 1px solid #f1f5f9;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
+        .task-card-modern { background: white; border: 1px solid #f1f5f9; border-radius: 12px; padding: 12px; margin-bottom: 8px; transition: all 0.2s; position: relative; overflow: hidden; }
         .dark-mode .task-card-modern { background: #1e293b; border-color: #334155; }
         .task-card-modern:hover { border-color: #0ea5e9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
         .task-card-modern.active { border-right: 4px solid #0ea5e9; background: #f0f9ff; }
         .dark-mode .task-card-modern.active { background: #0c4a6e; }
 
-        /* --- أزرار الحالات (Status Pills) --- */
-        .status-pill {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 800;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: all 0.2s;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            opacity: 0.7;
-        }
+        .status-pill { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; opacity: 0.7; }
         .status-pill:hover { opacity: 1; transform: scale(1.02); }
         .status-pill.active { opacity: 1; transform: scale(1.05); font-weight: 900; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
@@ -203,120 +93,38 @@
         .status-working.active { background-color: #e0f2fe; color: #0284c7; border-color: #7dd3fc; }
         .status-done.active { background-color: #dcfce7; color: #16a34a; border-color: #86efac; }
 
-        /* --- أزرار التحكم للمدير --- */
-        .admin-action-btn {
-            width: 28px; height: 28px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; transition: all 0.2s;
-        }
+        .admin-action-btn { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; }
         .btn-edit { background: #eff6ff; color: #2563eb; }
         .btn-edit:hover { background: #2563eb; color: white; }
         .btn-delete { background: #fef2f2; color: #dc2626; }
         .btn-delete:hover { background: #dc2626; color: white; }
 
-        /* --- تحسينات الشات (الرسائل) --- */
         .animate-fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-                    /* --- ألوان حالات التاسك المخصصة (طلب خاص) --- */
-            /* 1. بدأ (Started) -> أخضر */
-            .status-custom-started { 
-                background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; 
-            }
-            .status-custom-started.active { 
-                background-color: #16a34a; color: white; border-color: #15803d; box-shadow: 0 0 10px rgba(22, 163, 74, 0.4);
-            }
-            
-            /* 2. جاري العمل (Working) -> أزرق */
-            .status-custom-working { 
-                background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; 
-            }
-            .status-custom-working.active { 
-                background-color: #2563eb; color: white; border-color: #1d4ed8; box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
-            }
-            
-            /* 3. تم (Done) -> أحمر */
-            .status-custom-done { 
-                background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; 
-            }
-            .status-custom-done.active { 
-                background-color: #dc2626; color: white; border-color: #b91c1c; box-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
-            }
-            
-            /* --- خط كايرو للمحرر والتفاصيل --- */
-            .ql-editor, #task-detail-desc {
-                font-family: 'Cairo', sans-serif !important;
-                line-height: 1.8;
-            }
-            
-            /* --- تمييز التاسك عند المدير في القائمة --- */
-            .task-border-started { border-right: 4px solid #16a34a !important; }
-            .task-border-working { border-right: 4px solid #2563eb !important; }
-            .task-border-done { border-right: 4px solid #dc2626 !important; }
+        .status-custom-started { background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .status-custom-started.active { background-color: #16a34a; color: white; border-color: #15803d; box-shadow: 0 0 10px rgba(22, 163, 74, 0.4); }
+        .status-custom-working { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .status-custom-working.active { background-color: #2563eb; color: white; border-color: #1d4ed8; box-shadow: 0 0 10px rgba(37, 99, 235, 0.4); }
+        .status-custom-done { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .status-custom-done.active { background-color: #dc2626; color: white; border-color: #b91c1c; box-shadow: 0 0 10px rgba(220, 38, 38, 0.4); }
 
-                        /* --- تنسيقات بطاقات المهام الملونة (طلب خاص) --- */
-            /* الحالة: بدأ (أخضر فاتح + شادو غامق) */
-            .card-style-started { 
-                background-color: #f0fdf4 !important; /* أخضر فاتح جداً */
-                border: 1px solid #86efac !important;
-                box-shadow: 4px 4px 0px #16a34a !important; /* شادو صريح غامق */
-                transform: translate(-2px, -2px); /* تأثير بسيط */
-            }
-            
-            /* الحالة: جاري (أزرق فاتح + شادو غامق) */
-            .card-style-working { 
-                background-color: #eff6ff !important; /* أزرق فاتح جداً */
-                border: 1px solid #93c5fd !important;
-                box-shadow: 4px 4px 0px #2563eb !important;
-                transform: translate(-2px, -2px);
-            }
-            
-            /* الحالة: تم (أحمر فاتح + شادو غامق) */
-            .card-style-done { 
-                background-color: #fef2f2 !important; /* أحمر فاتح جداً */
-                border: 1px solid #fca5a5 !important;
-                box-shadow: 4px 4px 0px #dc2626 !important;
-                transform: translate(-2px, -2px);
-            }
-            
-            /* تعديل بسيط للنصوص داخل الكروت الملونة لتكون مقروءة */
-            .card-style-started h4, .card-style-working h4, .card-style-done h4 { color: #1e293b !important; }
-            .card-style-started p, .card-style-working p, .card-style-done p { color: #475569 !important; }
+        .ql-editor, #task-detail-desc { font-family: 'Cairo', sans-serif !important; line-height: 1.8; }
+        .task-border-started { border-right: 4px solid #16a34a !important; }
+        .task-border-working { border-right: 4px solid #2563eb !important; }
+        .task-border-done { border-right: 4px solid #dc2626 !important; }
 
-                        /* --- تنسيق أزرار التفعيل (Toggle Switch) --- */
-            .toggle-checkbox:checked {
-                right: 0;
-                border-color: #10b981;
-            }
-            .toggle-checkbox:checked + .toggle-label {
-                background-color: #10b981;
-            }
-            .toggle-checkbox:checked + .toggle-label:before {
-                transform: translateX(100%);
-            }
-            
-            .toggle-label {
-                width: 40px;
-                height: 20px;
-                background-color: #e5e7eb;
-                border-radius: 9999px;
-                position: relative;
-                cursor: pointer;
-                transition: background-color 0.2s ease-in;
-            }
-            
-            .toggle-label:before {
-                content: '';
-                position: absolute;
-                top: 2px;
-                left: 2px;
-                width: 16px;
-                height: 16px;
-                background-color: white;
-                border-radius: 50%;
-                transition: transform 0.2s ease-in;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            }
+        .card-style-started { background-color: #f0fdf4 !important; border: 1px solid #86efac !important; box-shadow: 4px 4px 0px #16a34a !important; transform: translate(-2px, -2px); }
+        .card-style-working { background-color: #eff6ff !important; border: 1px solid #93c5fd !important; box-shadow: 4px 4px 0px #2563eb !important; transform: translate(-2px, -2px); }
+        .card-style-done { background-color: #fef2f2 !important; border: 1px solid #fca5a5 !important; box-shadow: 4px 4px 0px #dc2626 !important; transform: translate(-2px, -2px); }
+        .card-style-started h4, .card-style-working h4, .card-style-done h4 { color: #1e293b !important; }
+        .card-style-started p, .card-style-working p, .card-style-done p { color: #475569 !important; }
+
+        .toggle-checkbox:checked { right: 0; border-color: #10b981; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
+        .toggle-checkbox:checked + .toggle-label:before { transform: translateX(100%); }
+        .toggle-label { width: 40px; height: 20px; background-color: #e5e7eb; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.2s ease-in; }
+        .toggle-label:before { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background-color: white; border-radius: 50%; transition: transform 0.2s ease-in; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
     </style>
 </head>
 
@@ -334,7 +142,7 @@
     <div id="view-login" class="hidden-section min-h-screen flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-900">
         <div class="w-full max-w-sm bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl">
             <div class="text-center mb-8">
-                <img src="MASTER_LOGO_WHPNG.png" class="h-16 mx-auto mb-2 object-contain" alt="Logo">
+                <img src="MASTER_LOGO_WHPNG.png" class="h-16 mx-auto mb-2 object-contain" alt="Logo" onerror="this.src='https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=AL'">
                 <h1 class="text-3xl font-bold text-primary-700 dark:text-primary-400 mb-1">ALMASTER</h1>
                 <p class="text-xs text-slate-500 uppercase tracking-widest font-bold italic">Team Workspace</p>
             </div>
@@ -371,9 +179,7 @@
             </div>
 
             <div class="flex items-center gap-3 relative">
-                
-                <img src="MASTER_LOGO_WHPNG.png" class="h-8 w-auto object-contain opacity-80 hidden md:block" alt="Logo">
-                <button onclick="window.location.href='payroll.html'" class="flex items-center gap-2 px-4 py-2 ...">
+                <img src="MASTER_LOGO_WHPNG.png" class="h-8 w-auto object-contain opacity-80 hidden md:block" alt="Logo" onerror="this.style.display='none'">
                 
                 <button id="admin-payroll-btn" onclick="window.location.href='payroll.html'" class="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition-all border border-green-200 group">
                     <i class="fas fa-money-bill-wave"></i>
@@ -669,6 +475,13 @@
                             <option value="admin">مدير عام (Admin)</option>
                         </select>
                     </div>
+
+                    <div><label class="text-[10px] font-bold uppercase text-slate-400">نوع التوظيف</label>
+                        <select id="edit-employee-type" class="form-input font-bold">
+                            <option value="fulltime">موظف شركة ثابت</option>
+                            <option value="freelance">فريلانسر (مستقل)</option>
+                        </select>
+                    </div>
                 
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">حد الخمول (بالدقائق)</label><input type="number" id="edit-idle" class="form-input" min="1" value="5"></div>
                     <div><label class="text-[10px] font-bold uppercase text-slate-400">حد الخلفية (بالدقائق)</label><input type="number" id="edit-background-limit" class="form-input" min="1" value="60"></div>
@@ -681,7 +494,7 @@
                     </div>
                 
                     <div class="md:col-span-2 pt-4 flex gap-3 border-t dark:border-slate-700 mt-2">
-                        <button type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-primary-700 transition">حفظ التغييرات</button>
+                        <button id="save-user-btn" type="submit" class="flex-1 bg-primary-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-primary-700 transition">حفظ التغييرات</button>
                         <button type="button" onclick="deleteUser()" id="btn-delete" class="px-6 text-red-500 border border-red-200 rounded-xl hover:bg-red-50"><i class="fas fa-trash"></i></button>
                     </div>
                 </form>
@@ -756,8 +569,11 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-        var quillEditor = null; // متغير عام للمحرر
-        let currentUser = null, userProfile = null, lastActionTime = Date.now(), allUsersData = [], dismissedAlerts = [], currentFilter = 'all', attachedFileBase64 = null, attachedFileName = "", openPrivateChats = {};
+        const storage = firebase.storage(); // تهيئة مساحة التخزين السحابية (التحديث الجديد)
+
+        var quillEditor = null; 
+        let currentUser = null, userProfile = null, lastActionTime = Date.now(), allUsersData = [], dismissedAlerts = [], currentFilter = 'all', attachedFileName = "", openPrivateChats = {};
+        let attachedFileObjPublic = null; // التحديث لتخزين الملف ككائن بدل Base64
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
         let unreadCounts = {}; 
 
@@ -765,12 +581,40 @@
         setInterval(updateHeaderTime, 1000);
         updateHeaderTime();
 
-        // دالة مركزية للتحقق من الصلاحيات
+        // 🟢 دالة رفع الملفات إلى Firebase Storage 🟢
+        async function uploadFileToStorage(fileObj, pathStr) {
+            if (!fileObj) return null;
+            try {
+                const uniqueName = Date.now() + '_' + (fileObj.name || 'voice_note.webm');
+                const storageRef = storage.ref().child(pathStr + '/' + uniqueName);
+                await storageRef.put(fileObj);
+                return await storageRef.getDownloadURL();
+            } catch (e) {
+                console.error("Storage Upload Error: ", e);
+                return null;
+            }
+        }
+
+        // 🟢 إشعارات التليجرام عند تسجيل الخروج 🟢
+        async function notifyTelegramOnLogout(userName) {
+            // ضع توكن البوت الخاص بك ومعرف الشات (الجروب أو الخاص) هنا
+            const botToken = 'YOUR_TELEGRAM_BOT_TOKEN_HERE'; 
+            const adminChatId = 'YOUR_ADMIN_CHAT_ID_HERE'; 
+            if(botToken === 'YOUR_TELEGRAM_BOT_TOKEN_HERE') return; // منع الخطأ لو لم يتم التعديل
+            
+            const text = `🔴 تنبيه تسجيل خروج\nقام الموظف/ة: ${userName} بتسجيل الخروج من النظام للتو.`;
+            try {
+                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ chat_id: adminChatId, text: text })
+                });
+            } catch(e) { console.error('Telegram Error:', e); }
+        }
+
         function hasPermission(permName) {
             if (!userProfile) return false;
-            // المدير يملك كل الصلاحيات دائماً
             if (userProfile.role === 'admin') return true;
-            // التحقق من مصفوفة الصلاحيات لباقي الرتب
             if (userProfile.permissions && userProfile.permissions[permName] === true) return true;
             return false;
         }
@@ -799,18 +643,17 @@
                 document.getElementById('chat-fab').classList.add('hidden-section');
             }
         });
+
         function toggleHistoryView() {
             let tasksToShow = [];
             allUsersData.forEach(u => {
                 if(u.tasks) {
                     u.tasks.forEach(t => {
-                        if(t.archived) { // فقط المهام المؤرشفة
-                           tasksToShow.push({...t, ownerName: u.name, ownerEmail: u.email});
-                        }
+                        if(t.archived) { tasksToShow.push({...t, ownerName: u.name, ownerEmail: u.email}); }
                     });
                 }
             });
-            renderTaskList(tasksToShow, true); // true تعني وضع الهيستوري
+            renderTaskList(tasksToShow, true); 
         }
 
         async function handleLogin(e) {
@@ -838,11 +681,14 @@
         }
 
         async function logout() {
-            if(currentUser) await setStatus(currentUser.email, 'Offline', true);
+            if(currentUser) {
+                await setStatus(currentUser.email, 'Offline', true);
+                await notifyTelegramOnLogout(userProfile.name); // إرسال الإشعار
+            }
             auth.signOut().then(() => location.reload());
         }
 
-              function initSystem() {
+        function initSystem() {
             if (Notification.permission !== 'granted' && Notification.permission !== 'denied') { 
                 Notification.requestPermission(); 
             }
@@ -865,14 +711,10 @@
             document.getElementById('menu-user-role').innerText = roleName;
             document.getElementById('menu-user-img').src = userProfile.photo || DEFAULT_PHOTO + userProfile.name;
             
-            // إخفاء زر المرتبات عن غير الأدمن
             const payrollBtn = document.getElementById('admin-payroll-btn');
             if (payrollBtn) {
-                if (userProfile.role === 'admin') {
-                    payrollBtn.classList.remove('hidden-section');
-                } else {
-                    payrollBtn.classList.add('hidden-section');
-                }
+                if (userProfile.role === 'admin') payrollBtn.classList.remove('hidden-section');
+                else payrollBtn.classList.add('hidden-section');
             }
         
             const adminOptionsDiv = document.getElementById('admin-options');
@@ -910,7 +752,6 @@
             }
         }
         
-        // دالة المراقب المعدلة (لعمل Logout)
         function startDailyAutoWatcher() {
             setInterval(async () => {
                 const today = moment().format('YYYY-MM-DD');
@@ -918,35 +759,21 @@
         
                 if (lastReset && lastReset !== today) {
                     console.log("Midnight detected! Resetting database and forcing logout...");
-                    
-                    // تحديث محلي سريع لمنع تكرار العملية
                     localStorage.setItem('last_daily_reset_date', today);
-                    
-                    // 1. تصفير الداتابيز للكل (أول واحد يكتشف اليوم الجديد هو اللي بيصفر)
                     await checkAndResetCounters();
-                    
-                    // 2. تحويل حالة المستخدم الحالي لـ Offline
                     if(currentUser) await setStatus(currentUser.email, 'Offline', true);
-                    
-                    // 3. تسجيل الخروج الفعلي
                     auth.signOut().then(() => {
                         alert("انتهى يوم العمل. تم تسجيل خروجك تلقائياً لبدء يوم جديد.");
                         location.reload();
                     });
                 }
-            }, 60000); // فحص كل دقيقة
+            }, 60000); 
         }
         
-        // دالة جديدة للخروج الإجباري مع التصفير
         async function forceLogoutForNewDay() {
             if (currentUser) {
-                // 1. تحويل الحالة لـ Offline في الداتابيز
                 await setStatus(currentUser.email, 'Offline', true);
-                
-                // 2. تشغيل دالة التصفير لضمان أن أول شخص خرج (أو دخل) صفر الداتابيز
                 await checkAndResetCounters(); 
-                
-                // 3. تسجيل الخروج من Firebase والريفريش
                 auth.signOut().then(() => {
                     alert("انتهى يوم العمل. تم تسجيل خروجك تلقائياً لبدء يوم جديد.");
                     location.reload();
@@ -979,15 +806,10 @@
                         const settingsDoc = await transaction.get(resetRef);
                         const lastResetDate = settingsDoc.exists ? settingsDoc.data().lastDate : null;
             
-                        // القفل السحري: لو التاريخ في السيرفر هو تاريخ النهاردة، السيستم مش هيعمل حاجة ويخرج
                         if (lastResetDate === today) {
-                            console.log("السيستم تم تصفيره بالفعل لهذا اليوم بواسطة: " + settingsDoc.data().resetBy);
                             localStorage.setItem('last_daily_reset_date', today);
-                            return; // إنهاء العملية هنا فوراً
+                            return;
                         }
-            
-                        // لو وصلنا هنا، يبقى ده "أول يوزر" يدخل في اليوم الجديد
-                        console.log("يوم جديد! أول دخول بواسطة: " + userProfile.name + ". جاري تصفير قاعدة البيانات...");
             
                         const usersSnapshot = await db.collection('users').get();
                         usersSnapshot.forEach((doc) => {
@@ -999,7 +821,6 @@
                             });
                         });
             
-                        // تحديث السيرفر فوراً عشان اليوزر اللي يدخل بعد ثانية واحدة يلاقي اليوم "تم تصفيره"
                         transaction.set(resetRef, {
                             lastDate: today,
                             resetBy: userProfile.email,
@@ -1008,9 +829,7 @@
                     });
             
                     localStorage.setItem('last_daily_reset_date', today);
-                    
-                    // إذا حدث التصفير وأنت "موظف" والصفحة مفتوحة، يتم طردك لبدء يوم جديد
-                    // أما لو كنت "أدمن" أو "أول واحد يعمل لوجن" مش هيحصلك Logout
+            
                     if (isAutoReset && userProfile.role !== 'admin') {
                         forceLogoutForNewDay();
                     }
@@ -1019,18 +838,7 @@
                     console.error("فشل عملية الريسيت:", e.message);
                 }
             }
-      function startDailyAutoWatcher() {
-            setInterval(async () => {
-                const today = moment().format('YYYY-MM-DD');
-                const lastReset = localStorage.getItem('last_daily_reset_date');
-        
-                // لو المتصفح لسه فاكر تاريخ قديم، نشيك على السيرفر
-                if (lastReset && lastReset !== today) {
-                    console.log("تغيير تاريخ محلي.. فحص السيرفر للتأكد من التصفير...");
-                    await checkAndResetCounters(true); 
-                }
-            }, 60000); // فحص كل دقيقة
-        }
+
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snapshot => {
                 allUsersData = [];
@@ -1039,12 +847,10 @@
                     const data = doc.data();
                     allUsersData.push(data);
         
-                    // 1. تحديث البروفايل الخاص بي
                     if (currentUser && data.email === currentUser.email) { 
                         const oldTasks = userProfile.tasks || [];
                         const newTasks = data.tasks || [];
                         
-                        // إشعار بمهمة جديدة
                         if (newTasks.length > oldTasks.length) {
                             playNotification();
                             if (Notification.permission === "granted") {
@@ -1053,7 +859,6 @@
                         }
                         userProfile = data; 
                         
-                        // تحديث بادج المهام
                         const badge = document.getElementById('task-badge');
                         if (newTasks.length > 0) {
                             badge.innerText = newTasks.length;
@@ -1063,7 +868,6 @@
                         }
                     }
         
-                    // 2. تحديث شات وعنوان التاسك المفتوح حالياً (التفاصيل)
                     const currentOpenedTaskId = document.getElementById('current-task-id').value;
                     const currentOpenedTaskOwner = document.getElementById('current-task-owner-email').value;
         
@@ -1078,53 +882,41 @@
                     }
                 });
         
-                // 3. إعادة رسم الشبكة الرئيسية
                 renderGrid();
                 
-                // 4. (التصحيح هنا) تحديث القائمة الجانبية للمهام فوراً
                 const taskModal = document.getElementById('modal-task-center');
                 if (!taskModal.classList.contains('hidden')) {
                     let tasksToShow = [];
                     const isAdmin = userProfile.role === 'admin';
-                    const isManager = hasPermission('can_manage_tasks'); // ليدر أو سوبر فايزر
+                    const isManager = hasPermission('can_manage_tasks'); 
         
                     if(isAdmin) {
-                        // المدير يرى كل شيء
                         allUsersData.forEach(u => {
                             if(u.tasks) {
                                 u.tasks.forEach(t => {
-                                    const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
-                                    tasksToShow.push(taskWithInfo);
+                                    tasksToShow.push({...t, ownerName: u.name, ownerEmail: u.email});
                                 });
                             }
                         });
                     } else {
-                        // أ. مهامي أنا (المسندة لي)
                         if(userProfile.tasks) {
                             userProfile.tasks.forEach(t => {
-                                const taskWithInfo = {...t, ownerName: "Me", ownerEmail: userProfile.email};
-                                tasksToShow.push(taskWithInfo);
+                                tasksToShow.push({...t, ownerName: "Me", ownerEmail: userProfile.email});
                             });
                         }
-        
-                        // ب. (الجزء المضاف) المهام التي أنشأتها أنا للآخرين
                         if (isManager) {
                             allUsersData.forEach(u => {
-                                if (u.email === currentUser.email) return; // تخطي نفسي
+                                if (u.email === currentUser.email) return;
                                 if (u.tasks) {
                                     u.tasks.forEach(t => {
-                                        // الشرط: هل إيميل المنشئ هو إيميلي؟
                                         if (t.createdByEmail === currentUser.email) {
-                                            const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
-                                            tasksToShow.push(taskWithInfo);
+                                            tasksToShow.push({...t, ownerName: u.name, ownerEmail: u.email});
                                         }
                                     });
                                 }
                             });
                         }
                     }
-                    
-                    // إعادة الرسم
                     renderTaskList(tasksToShow);
                 }
         
@@ -1132,6 +924,7 @@
                 if(userProfile && userProfile.role === 'admin') renderAdminAlerts();
             });
         }
+
         function setFilter(status) {
             currentFilter = status;
             document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -1144,13 +937,11 @@
             renderGrid();
         }
 
-        // --- Render Grid (Fixed: Shows All properly) ---
         function renderGrid() {
             const grid = document.getElementById('grid-users');
             grid.innerHTML = '';
             
             const showOfflineToggle = document.getElementById('show-offline-toggle').checked;
-            // هنا لم نعد نعتمد على admin فقط، بل الصلاحيات
             const canManageTasks = hasPermission('can_manage_tasks'); 
             
             let displayedCount = 0;
@@ -1177,8 +968,6 @@
                 displayedCount++;
                 const tb = u.timeBank || {};
                 const safeStart = getMillis(u.lastChange);
-                
-                // التحكم في الحالة (فقط المدير أو الشخص نفسه أو مشرف يملك صلاحية تعديل المستخدمين)
                 const canChangeStatus = (isMe || userProfile.role === 'admin' || hasPermission('can_manage_users'));
                 
                 let stripColor = "bg-slate-300";
@@ -1200,7 +989,7 @@
                         </div>
                         <div class="flex-1 min-w-0 pt-1">
                             <h3 class="font-black text-lg text-slate-800 dark:text-white truncate">${u.name}</h3>
-                            <p class="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">${u.title || 'Member'}</p>
+                            <p class="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">${u.title || 'Member'} ${u.employeeType==='freelance'?'(مستقل)':''}</p>
                             
                             <select onchange="setStatus('${u.email}', this.value)" ${!canChangeStatus ? 'disabled' : ''} class="text-[10px] font-bold py-1.5 px-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 border-none focus:ring-2 ring-primary-500/20 cursor-pointer w-full max-w-[120px] transition-all hover:bg-slate-200 dark:hover:bg-slate-600">
                                 <option value="Online" ${u.status === 'Online' ? 'selected' : ''}>🟢 Online</option>
@@ -1261,15 +1050,7 @@
             if(displayedCount === 0) document.getElementById('empty-state').classList.remove('hidden');
             else document.getElementById('empty-state').classList.add('hidden');
         }
-        function getStatusColor(s, isFocus, isIdle) {
-            if (isIdle) return { border: 'border-red-600 border-r-4', text: 'text-red-800', badge: 'bg-red-200 text-red-900', shadow: 'shadow-xl shadow-red-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-red-100/50 dark:bg-red-900/40 border-red-200' };
-            if (s === 'Offline') return { border: 'border-slate-500 border-r-4', text: 'text-slate-700', badge: 'bg-slate-300 text-slate-800', shadow: 'shadow-xl shadow-slate-900/20', cardBg: 'bg-slate-100 dark:bg-slate-900', innerGlow: 'bg-slate-200 dark:bg-slate-800 border-slate-300' };
-            if (s === 'Online') return { border: 'border-green-600 border-r-4', text: 'text-green-800', badge: 'bg-green-200 text-green-900', shadow: 'shadow-xl shadow-green-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-green-100/50 dark:bg-green-900/40 border-green-200' };
-            if (s === 'Meeting') return { border: 'border-blue-600 border-r-4', text: 'text-blue-800', badge: 'bg-blue-200 text-blue-900', shadow: 'shadow-xl shadow-blue-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-blue-100/50 dark:bg-blue-900/40 border-blue-200' };
-            if (s === 'Break') return { border: 'border-yellow-500 border-r-4', text: 'text-yellow-800', badge: 'bg-yellow-200 text-yellow-900', shadow: 'shadow-xl shadow-yellow-900/20', cardBg: 'bg-white dark:bg-slate-800', innerGlow: 'bg-yellow-100/50 dark:bg-yellow-900/40 border-yellow-200' };
-            return { border: 'border-slate-300', text: 'text-slate-600', badge: 'bg-slate-200', shadow: 'shadow-md', cardBg: 'bg-white', innerGlow: 'bg-slate-50' };
-        }
-        
+
         async function setStatus(targetEmail, newStatus, isAuto = false) {
             const userRef = db.collection('users').doc(targetEmail);
             const snapshot = await userRef.get();
@@ -1474,39 +1255,30 @@
             
             let tasksToShow = [];
             const isAdmin = userProfile.role === 'admin';
-            const isManager = hasPermission('can_manage_tasks'); // ليدر أو سوبر فايزر
+            const isManager = hasPermission('can_manage_tasks'); 
         
             if(isAdmin) {
-                // المدير يرى كل شيء
                 allUsersData.forEach(u => {
                     if(u.tasks) {
                         u.tasks.forEach(t => {
-                            const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
-                            tasksToShow.push(taskWithInfo);
+                            tasksToShow.push({...t, ownerName: u.name, ownerEmail: u.email});
                         });
                     }
                 });
             } else {
-                // 1. جلب المهام المسندة "إلي" (كموظف)
                 if(userProfile.tasks) {
                     userProfile.tasks.forEach(t => {
-                        const taskWithInfo = {...t, ownerName: "Me", ownerEmail: userProfile.email};
-                        tasksToShow.push(taskWithInfo);
+                        tasksToShow.push({...t, ownerName: "Me", ownerEmail: userProfile.email});
                     });
                 }
         
-                // 2. [جديد] جلب المهام التي "أنشأتها أنا" لغيري (كليدر)
                 if (isManager) {
                     allUsersData.forEach(u => {
-                        // تخطي نفسي لأن مهامي ضفتها في الخطوة 1
                         if (u.email === currentUser.email) return;
-        
                         if (u.tasks) {
                             u.tasks.forEach(t => {
-                                // الشرط: هل إيميل المنشئ هو إيميلي؟
                                 if (t.createdByEmail === currentUser.email) {
-                                    const taskWithInfo = {...t, ownerName: u.name, ownerEmail: u.email};
-                                    tasksToShow.push(taskWithInfo);
+                                    tasksToShow.push({...t, ownerName: u.name, ownerEmail: u.email});
                                 }
                             });
                         }
@@ -1516,6 +1288,7 @@
             
             renderTaskList(tasksToShow);
         }
+
         function renderTaskList(tasks, isHistoryView = false) {
             const listContainer = document.getElementById('task-list-container');
             listContainer.innerHTML = '';
@@ -1537,13 +1310,16 @@
                 const isCreatedByMe = task.createdByEmail === currentUser.email;
                 const taskStatus = task.status || 'started'; 
         
-                let cardColorClass = taskStatus === 'started' ? 'card-style-started' : (taskStatus === 'working' ? 'card-style-working' : 'card-style-done');
+                // 🟢 تحديث الألوان لتناسب حالة المراجعة الجديدة 🟢
+                let cardColorClass = taskStatus === 'started' ? 'card-style-started' : (taskStatus === 'working' ? 'card-style-working' : (taskStatus === 'review' ? 'bg-purple-50 border border-purple-300 shadow-md' : 'card-style-done'));
         
                 const el = document.createElement('div');
                 el.className = `task-card-modern cursor-pointer group ${cardColorClass}`;
                 el.onclick = (e) => { if(!e.target.closest('.no-click')) showTaskDetail(task, idx); };
         
-                // أزرار التحكم
+                // 🟢 التاج الخاص باسم المشروع 🟢
+                const projTag = task.projectId ? `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[9px] font-bold ml-2 border border-indigo-200">مشروع: ${task.projectName || 'مرتبط'}</span>` : '';
+
                 let adminControls = '';
                 if (isAdmin || (canManageTasks && isCreatedByMe)) {
                     adminControls = `
@@ -1558,21 +1334,33 @@
                         <button onclick="document.getElementById('current-task-id').value='${task.id}'; document.getElementById('current-task-owner-email').value='${task.ownerEmail}'; deleteCurrentTask()" class="admin-action-btn bg-red-50 text-red-600 hover:bg-red-600 hover:text-white" title="حذف نهائي"><i class="fas fa-trash text-[10px]"></i></button>
                     </div>`;
                 }
+
+                // 🟢 أزرار المراجعة للمدير 🟢
+                let adminReviewControls = '';
+                if ((isAdmin || canManageTasks) && taskStatus === 'review') {
+                    adminReviewControls = `
+                    <div class="flex gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-600 no-click">
+                        <button onclick="updateTaskStatus(${task.id}, 'done', '${task.ownerEmail}')" class="flex-1 bg-green-500 text-white text-xs font-bold py-1.5 rounded-lg hover:bg-green-600 transition shadow-sm"><i class="fas fa-check-circle"></i> اعتماد</button>
+                        <button onclick="updateTaskStatus(${task.id}, 'working', '${task.ownerEmail}')" class="flex-1 bg-red-500 text-white text-xs font-bold py-1.5 rounded-lg hover:bg-red-600 transition shadow-sm"><i class="fas fa-times-circle"></i> رفض وإعادة</button>
+                    </div>`;
+                }
         
                 el.innerHTML = `
                     <div class="flex justify-between items-start mb-1">
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-black text-[12px] text-slate-800 dark:text-white truncate">${task.title}</h4>
+                            <h4 class="font-black text-[12px] text-slate-800 dark:text-white truncate">${task.title} ${projTag}</h4>
                             <p class="text-[9px] text-primary-600 font-bold">${task.ownerName || ''}</p>
                         </div>
                         ${adminControls}
                     </div>
                     ${!task.archived && isAssignedToMe ? createStatusControls(task, taskStatus) : ''}
+                    ${adminReviewControls}
                 `;
                 listContainer.appendChild(el);
             });
         }
-       async function archiveTaskAction(taskId, ownerEmail, shouldArchive) {
+
+        async function archiveTaskAction(taskId, ownerEmail, shouldArchive) {
             const actionText = shouldArchive ? "أرشفة هذه المهمة؟" : "استعادة هذه المهمة للقائمة الحالية؟";
             if(!confirm("هل تريد " + actionText)) return;
             
@@ -1582,32 +1370,30 @@
             
             const taskIndex = tasks.findIndex(t => t.id === taskId);
             if (taskIndex > -1) {
-                tasks[taskIndex].archived = shouldArchive; // true للأرشفة، false للاستعادة
+                tasks[taskIndex].archived = shouldArchive; 
                 await userRef.update({ tasks: tasks });
-                
-                // لو بنعمل استعادة، نرجع نفتح القائمة الحالية، لو أرشفة نفتح الأرشيف
                 if(shouldArchive) openTaskCenter(); else toggleHistoryView();
             }
         }
 
-// دالة مساعدة لإنشاء أزرار الحالة (عشان الكود يكون أنظف)
-function createStatusControls(task, taskStatus) {
-    return `
-    <div class="flex gap-2 mt-3 pt-2 border-t border-slate-100/20 dark:border-slate-700 no-click">
-        <div onclick="updateTaskStatus(${task.id}, 'started', '${task.ownerEmail}')" class="status-pill status-custom-started flex-1 ${taskStatus === 'started' ? 'active' : ''}">
-            <i class="fas fa-play text-[8px]"></i> بدأ
-        </div>
-        <div onclick="updateTaskStatus(${task.id}, 'working', '${task.ownerEmail}')" class="status-pill status-custom-working flex-1 ${taskStatus === 'working' ? 'active' : ''}">
-            <i class="fas fa-spinner fa-spin text-[8px]"></i> جاري
-        </div>
-        <div onclick="updateTaskStatus(${task.id}, 'done', '${task.ownerEmail}')" class="status-pill status-custom-done flex-1 ${taskStatus === 'done' ? 'active' : ''}">
-            <i class="fas fa-check text-[8px]"></i> تم
-        </div>
-    </div>`;
-}
+        // 🟢 تحديث أزرار الحالة (استبدال "تم" بـ "مراجعة") 🟢
+        function createStatusControls(task, taskStatus) {
+            if(taskStatus === 'done') return `<div class="mt-2 text-center text-xs font-bold text-green-600 bg-green-50 py-1 rounded border border-green-200">تم الاعتماد ✅</div>`;
+            return `
+            <div class="flex gap-2 mt-3 pt-2 border-t border-slate-100/20 dark:border-slate-700 no-click">
+                <div onclick="updateTaskStatus(${task.id}, 'started', '${task.ownerEmail}')" class="status-pill status-custom-started flex-1 ${taskStatus === 'started' ? 'active' : ''}">
+                    <i class="fas fa-play text-[8px]"></i> بدأ
+                </div>
+                <div onclick="updateTaskStatus(${task.id}, 'working', '${task.ownerEmail}')" class="status-pill status-custom-working flex-1 ${taskStatus === 'working' ? 'active' : ''}">
+                    <i class="fas fa-spinner fa-spin text-[8px]"></i> جاري
+                </div>
+                <div onclick="updateTaskStatus(${task.id}, 'review', '${task.ownerEmail}')" class="status-pill bg-purple-100 text-purple-700 border border-purple-200 flex-1 ${taskStatus === 'review' ? 'active shadow-md scale-105' : ''}">
+                    <i class="fas fa-eye text-[8px]"></i> مراجعة
+                </div>
+            </div>`;
+        }
 
         async function updateTaskStatus(taskId, newStatus, ownerEmail) {
-            // 1. تحديث قاعدة البيانات
             const userRef = db.collection('users').doc(ownerEmail);
             const doc = await userRef.get();
             if (!doc.exists) return;
@@ -1616,13 +1402,11 @@ function createStatusControls(task, taskStatus) {
             const taskIndex = tasks.findIndex(t => t.id === taskId);
             
             if (taskIndex > -1) {
-                // إذا كانت الحالة هي نفسها، لا تفعل شيئاً
                 if(tasks[taskIndex].status === newStatus) return;
-        
                 tasks[taskIndex].status = newStatus;
                 
-                // 2. رسالة الشات التلقائية بالألوان
-                const statusNames = {'started': 'بدأ العمل 🟢', 'working': 'جاري العمل 🔵', 'done': 'أنهى المهمة 🔴'};
+                // 🟢 تحديث مسميات الحالات في الشات 🟢
+                const statusNames = {'started': 'بدأ العمل 🟢', 'working': 'جاري العمل 🔵', 'review': 'أرسلها للمراجعة 👁️‍🗨️', 'done': 'تم الاعتماد النهائي ✅'};
                 const sysComment = {
                     user: 'system',
                     name: 'النظام',
@@ -1633,41 +1417,34 @@ function createStatusControls(task, taskStatus) {
                 tasks[taskIndex].comments.push(sysComment);
         
                 await userRef.update({ tasks: tasks });
-        
-                // 3. تحديث الواجهة فوراً (إعادة تحميل القائمة والتفاصيل)
                 openTaskCenter(); 
                 
-                // إذا كان التاسك مفتوحاً في التفاصيل، قم بتحديثه
                 if(document.getElementById('current-task-id').value == taskId) {
                      const updatedTask = {...tasks[taskIndex], ownerName: userProfile.name, ownerEmail: ownerEmail};
-                     showTaskDetail(updatedTask, 0); // رقم 0 هنا مجرد placeholder مش هيأثر
+                     showTaskDetail(updatedTask, 0); 
                 }
             }
         }
 
         function showTaskDetail(task, idx) {
-            // Active Class Styling
             document.querySelectorAll('.task-card-modern').forEach(e => e.classList.remove('active'));
             if(document.querySelectorAll('.task-card-modern')[idx]) document.querySelectorAll('.task-card-modern')[idx].classList.add('active');
 
             document.getElementById('task-empty-view').classList.add('hidden');
             document.getElementById('task-detail-view').classList.remove('hidden');
 
-            // Header Info
             document.getElementById('task-detail-title').innerText = task.title;
-            document.getElementById('task-detail-desc').innerHTML = task.desc; // استخدام HTML لعرض التنسيق            document.getElementById('task-detail-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
+            document.getElementById('task-detail-desc').innerHTML = task.desc; 
+            document.getElementById('task-detail-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
             document.getElementById('task-detail-owner').innerText = task.createdBy || "Admin";
 
-            // Status Badge in Detail View
-            const statusColors = {'started': 'bg-gray-100 text-gray-600', 'working': 'bg-blue-100 text-blue-600', 'done': 'bg-green-100 text-green-600'};
-            const statusNames = {'started': 'لم يبدأ / جديد', 'working': 'جاري العمل', 'done': 'مكتملة'};
+            const statusColors = {'started': 'bg-gray-100 text-gray-600', 'working': 'bg-blue-100 text-blue-600', 'review': 'bg-purple-100 text-purple-700', 'done': 'bg-green-100 text-green-600'};
+            const statusNames = {'started': 'لم يبدأ / جديد', 'working': 'جاري العمل', 'review': 'قيد المراجعة', 'done': 'مكتملة'};
             const currentStatus = task.status || 'started';
             
-            // إضافة بادج الحالة بجوار العنوان
             const statusHTML = `<span class="px-3 py-1 ml-2 rounded-full text-xs font-black ${statusColors[currentStatus]}">${statusNames[currentStatus]}</span>`;
             document.getElementById('task-detail-title').innerHTML = task.title + statusHTML;
 
-            // Attachments
             const attContainer = document.getElementById('task-detail-attachments');
             attContainer.innerHTML = '';
             if (task.file) {
@@ -1680,14 +1457,13 @@ function createStatusControls(task, taskStatus) {
                                 <p class="text-[10px] text-slate-400">انقر للتحميل</p>
                             </div>
                         </div>
-                        <a href="${task.file}" download="task_attachment" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 w-8 h-8 flex items-center justify-center rounded-full transition shadow-sm">
+                        <a href="${task.file}" target="_blank" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 w-8 h-8 flex items-center justify-center rounded-full transition shadow-sm">
                             <i class="fas fa-download text-xs"></i>
                         </a>
                     </div>
                 `;
             }
 
-            // Chat / Comments Render
             const commentsContainer = document.getElementById('task-comments-list');
             commentsContainer.innerHTML = '';
             
@@ -1728,10 +1504,8 @@ function createStatusControls(task, taskStatus) {
                     }
                 });
             }
-            // Auto scroll to bottom
             setTimeout(() => { commentsContainer.scrollTop = commentsContainer.scrollHeight; }, 100);
 
-            // Set hidden inputs for interactions
             document.getElementById('current-task-id').value = task.id; 
             document.getElementById('current-task-owner-email').value = task.ownerEmail; 
         }
@@ -1754,12 +1528,10 @@ function createStatusControls(task, taskStatus) {
             openTaskCenter(); 
         }
 
-        // Open Modal to Edit EXISTING Task
         async function openEditTaskModal() {
             const taskId = parseInt(document.getElementById('current-task-id').value);
             const targetEmail = document.getElementById('current-task-owner-email').value;
         
-            // جلب البيانات
             const doc = await db.collection('users').doc(targetEmail).get();
             const tasks = doc.data().tasks || [];
             const task = tasks.find(t => t.id === taskId);
@@ -1770,20 +1542,18 @@ function createStatusControls(task, taskStatus) {
             document.getElementById('task-edit-id').value = task.id;
             document.getElementById('new-task-title').value = task.title;
             
-            // وضع النص المنسق داخل المحرر
             if(quillEditor) quillEditor.root.innerHTML = task.desc || '';
             
             document.getElementById('task-modal-title').innerText = "تعديل المهمة";
             document.getElementById('modal-create-task').classList.remove('hidden');
         }
-        // Open Modal to Create NEW Task
+
         function openAddTaskModal(targetEmail) {
             document.getElementById('new-task-target-email').value = targetEmail;
             document.getElementById('task-edit-id').value = ""; 
             document.getElementById('new-task-title').value = '';
             document.getElementById('new-task-file').value = '';
             
-            // تفريغ المحرر
             if(quillEditor) quillEditor.root.innerHTML = '';
             
             document.getElementById('task-modal-title').innerText = "إسناد مهمة جديدة";
@@ -1795,7 +1565,7 @@ function createStatusControls(task, taskStatus) {
             
             const btn = e.target.querySelector('button[type="submit"]');
             const oldText = btn.innerText;
-            btn.innerText = "جاري الحفظ...";
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الرفع والحفظ...';
             btn.disabled = true;
         
             try {
@@ -1805,13 +1575,10 @@ function createStatusControls(task, taskStatus) {
                 const desc = quillEditor ? quillEditor.root.innerHTML : '';
                 const fileInput = document.getElementById('new-task-file');
                 
-                let fileBase64 = null;
+                // 🟢 رفع المرفق إلى Firebase Storage بدلاً من Base64 🟢
+                let fileUrl = null;
                 if (fileInput.files.length > 0) {
-                    const reader = new FileReader();
-                    fileBase64 = await new Promise((resolve) => {
-                        reader.onload = (event) => resolve(event.target.result);
-                        reader.readAsDataURL(fileInput.files[0]);
-                    });
+                    fileUrl = await uploadFileToStorage(fileInput.files[0], 'tasks/attachments');
                 }
         
                 const userRef = db.collection('users').doc(targetEmail);
@@ -1819,24 +1586,21 @@ function createStatusControls(task, taskStatus) {
                 let tasks = doc.data().tasks || [];
         
                 if (editId) {
-                    // --- تعديل مهمة ---
                     const taskIndex = tasks.findIndex(t => t.id == editId);
                     if (taskIndex > -1) {
                         tasks[taskIndex].title = title;
                         tasks[taskIndex].desc = desc; 
-                        if (fileBase64) tasks[taskIndex].file = fileBase64;
-                        // لا نغير الـ createdByEmail عند التعديل للحفاظ على المرجعية
+                        if (fileUrl) tasks[taskIndex].file = fileUrl; 
                     }
                 } else {
-                    // --- إضافة مهمة جديدة ---
                     const newTask = {
                         id: Date.now(),
                         title: title,
                         desc: desc,
-                        file: fileBase64,
+                        file: fileUrl,
                         comments: [],
                         createdBy: userProfile.name,
-                        createdByEmail: currentUser.email, // [جديد] تسجيل إيميل الليدر/المدير
+                        createdByEmail: currentUser.email,
                         status: 'started',
                         ownerEmail: targetEmail 
                     };
@@ -1862,25 +1626,28 @@ function createStatusControls(task, taskStatus) {
                 btn.disabled = false;
             }
         }
+
         async function addTaskNote(e) {
             e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+
             const taskId = parseInt(document.getElementById('current-task-id').value);
             const txt = document.getElementById('note-input').value;
             const fileInput = document.getElementById('note-attachment');
             const targetUserEmail = document.getElementById('current-task-owner-email').value;
             
-            if (!txt && !fileInput.files[0]) return;
-        
-            let fileBase64 = null;
-            if (fileInput.files[0]) {
-                const reader = new FileReader();
-                fileBase64 = await new Promise(resolve => {
-                    reader.onload = e => resolve(e.target.result);
-                    reader.readAsDataURL(fileInput.files[0]);
-                });
+            if (!txt && !fileInput.files[0]) {
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i>'; btn.disabled = false;
+                return;
             }
         
-            // مسح الحقل فوراً لتحسين التجربة
+            // 🟢 رفع ملف الشات إلى Storage 🟢
+            let fileUrl = null;
+            if (fileInput.files[0]) {
+                fileUrl = await uploadFileToStorage(fileInput.files[0], 'tasks/notes');
+            }
+        
             document.getElementById('note-input').value = '';
             document.getElementById('note-attachment').value = '';
         
@@ -1894,40 +1661,30 @@ function createStatusControls(task, taskStatus) {
                     user: currentUser.email,
                     name: userProfile.name,
                     text: txt,
-                    file: fileBase64,
+                    file: fileUrl,
                     time: Date.now()
                 };
                 if (!tasks[taskIndex].comments) tasks[taskIndex].comments = [];
                 tasks[taskIndex].comments.push(newComment);
                 
                 await userRef.update({ tasks: tasks });
-                
-                // تحديث محلي فوري (عشان تظهر الرسالة علطول)
                 renderTaskComments(tasks[taskIndex].comments, targetUserEmail);
             }
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i>'; btn.disabled = false;
         }
-        async function addTask(email) {
-            alert("يرجى استخدام زر إسناد المهام في البطاقة (الأيقونة الجديدة)");
-        }
-        async function toggleTask(email, idx, done) { /* Legacy */ }
-        async function deleteTask(email, idx) { /* Legacy */ }
 
-        // --- Standard Logic Preserved ---
+        // --- Standard Chat Logic ---
         function handleFileSelect(input) {
             const file = input.files[0];
             if(!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                attachedFileBase64 = e.target.result;
-                attachedFileName = file.name;
-                document.getElementById('attachment-preview').classList.remove('hidden');
-                document.getElementById('file-name').innerText = attachedFileName;
-            };
-            reader.readAsDataURL(file);
+            attachedFileObjPublic = file; // تخزين كائن الملف للرفع لاحقاً
+            attachedFileName = file.name;
+            document.getElementById('attachment-preview').classList.remove('hidden');
+            document.getElementById('file-name').innerText = attachedFileName;
         }
 
         function clearAttachment() {
-            attachedFileBase64 = null;
+            attachedFileObjPublic = null;
             attachedFileName = "";
             document.getElementById('attachment-preview').classList.add('hidden');
             document.getElementById('chat-file').value = "";
@@ -1945,7 +1702,6 @@ function createStatusControls(task, taskStatus) {
                     t.innerHTML += renderMessage(m, isMe);
                 });
                 
-                // Force Scroll Bottom
                 setTimeout(() => { t.scrollTop = t.scrollHeight; }, 100);
                 
                 if(isNew && !s.metadata.hasPendingWrites) {
@@ -1956,6 +1712,7 @@ function createStatusControls(task, taskStatus) {
                 }
             });
         }
+        
         function listenToPrivateMessages() {
             if(!currentUser) return;
             
@@ -1970,7 +1727,6 @@ function createStatusControls(task, taskStatus) {
                                 if (msgTime > (Date.now() - 10000)) { 
                                     playNotification();
                                     
-                                    // Update Badge Count for Specific Sender
                                     if(!unreadCounts[m.sender]) unreadCounts[m.sender] = 0;
                                     unreadCounts[m.sender]++;
                                     
@@ -2033,38 +1789,34 @@ function createStatusControls(task, taskStatus) {
 
             mediaRecorder.onstop = async () => {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                const reader = new FileReader();
-                reader.readAsDataURL(audioBlob);
-                reader.onloadend = async () => {
-                    const base64Audio = reader.result;
-                    
-                    if (chatId === 'public') {
-                        await db.collection("messages").add({
-                            user: currentUser.email,
-                            name: userProfile.name,
-                            text: "", 
-                            file: base64Audio, 
+                // 🟢 رفع الريكورد لـ Firebase Storage 🟢
+                const fileUrl = await uploadFileToStorage(audioBlob, 'chat/voice');
+
+                if (chatId === 'public') {
+                    await db.collection("messages").add({
+                        user: currentUser.email,
+                        name: userProfile.name,
+                        text: "", 
+                        file: fileUrl, 
+                        fileName: "voice_note.webm",
+                        type: "voice", 
+                        time: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    if(targetEmail) {
+                        await db.collection("private_messages").add({
+                            sender: currentUser.email.toLowerCase(),
+                            receiver: targetEmail.toLowerCase(),
+                            text: "",
+                            file: fileUrl,
                             fileName: "voice_note.webm",
-                            type: "voice", 
-                            time: firebase.firestore.FieldValue.serverTimestamp()
+                            type: "voice",
+                            time: firebase.firestore.FieldValue.serverTimestamp(),
+                            name: userProfile.name
                         });
-                    } else {
-                        if(targetEmail) {
-                            await db.collection("private_messages").add({
-                                sender: currentUser.email.toLowerCase(),
-                                receiver: targetEmail.toLowerCase(),
-                                text: "",
-                                file: base64Audio,
-                                fileName: "voice_note.webm",
-                                type: "voice",
-                                time: firebase.firestore.FieldValue.serverTimestamp(),
-                                name: userProfile.name
-                            });
-                        }
                     }
-                    
-                    cleanupRecording(chatId);
-                };
+                }
+                cleanupRecording(chatId);
             };
 
             mediaRecorder.stop();
@@ -2080,7 +1832,7 @@ function createStatusControls(task, taskStatus) {
 
         function cleanupRecording(chatId) {
             clearInterval(recordingTimer);
-            if(mediaRecorder) mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            if(mediaRecorder && mediaRecorder.stream) mediaRecorder.stream.getTracks().forEach(t => t.stop());
             toggleRecordUI(chatId, false);
             audioChunks = [];
         }
@@ -2118,17 +1870,28 @@ function createStatusControls(task, taskStatus) {
         async function sendMessage(e){ 
             e.preventDefault(); 
             const i=document.getElementById("chat-input"); 
-            if(i.value.trim() || attachedFileBase64){ 
+            if(i.value.trim() || attachedFileObjPublic){ 
+                const btn = e.target.querySelector('button[type="submit"]');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+
+                // 🟢 رفع الملف العام لـ Storage 🟢
+                let fileUrl = null;
+                if(attachedFileObjPublic) {
+                    fileUrl = await uploadFileToStorage(attachedFileObjPublic, 'chat/public');
+                }
+
                 const msg = {
-                    text:i.value.trim(),
-                    user:currentUser.email,
-                    name:userProfile.name,
-                    time:firebase.firestore.FieldValue.serverTimestamp(),
-                    file: attachedFileBase64,
-                    fileName: attachedFileName
+                    text: i.value.trim(),
+                    user: currentUser.email,
+                    name: userProfile.name,
+                    time: firebase.firestore.FieldValue.serverTimestamp(),
+                    file: fileUrl,
+                    fileName: attachedFileName,
+                    type: fileUrl ? 'file' : 'text'
                 };
                 await db.collection("messages").add(msg); 
                 i.value=""; clearAttachment();
+                btn.innerHTML = '<i class="fas fa-paper-plane text-xs"></i>'; btn.disabled = false;
             } 
         }
 
@@ -2150,7 +1913,7 @@ function createStatusControls(task, taskStatus) {
             if (m.file) {
                 const mt = m.text ? "mt-3" : ""; 
                 
-                if (m.type === 'voice' || m.file.startsWith("data:audio") || (m.fileName && m.fileName.endsWith('webm'))) {
+                if (m.type === 'voice' || m.file.startsWith("data:audio") || (m.fileName && m.fileName.endsWith('webm')) || m.file.includes('voice_note')) {
                     content += `
                     <div class="${mt} flex items-center gap-2 min-w-[200px]">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center ${isMe ? 'bg-white/20' : 'bg-primary-100 text-primary-600'}">
@@ -2161,7 +1924,7 @@ function createStatusControls(task, taskStatus) {
                         </audio>
                     </div>`;
                 } 
-                else if (m.file.startsWith("data:image")) {
+                else if (m.file.match(/\.(jpeg|jpg|gif|png)$/) != null || m.file.startsWith("data:image") || m.file.includes('alt=media')) {
                     content += `
                     <div class="${mt} relative overflow-hidden rounded-lg border ${isMe ? 'border-white/20' : 'border-slate-200 dark:border-slate-600'}">
                         <img src="${m.file}" class="max-w-[220px] max-h-[200px] object-cover cursor-pointer hover:scale-105 transition-transform duration-500" onclick="openImagePreview(this.src)">
@@ -2169,7 +1932,7 @@ function createStatusControls(task, taskStatus) {
                 } 
                 else {
                     content += `
-                    <a href="${m.file}" download="${m.fileName || 'file'}" class="${mt} flex items-center gap-3 p-2.5 rounded-lg border ${isMe ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-50'} transition group">
+                    <a href="${m.file}" target="_blank" download="${m.fileName || 'file'}" class="${mt} flex items-center gap-3 p-2.5 rounded-lg border ${isMe ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-50'} transition group">
                         <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-slate-600 text-primary-600 dark:text-primary-400">
                             <i class="fas fa-file-alt text-base"></i>
                         </div>
@@ -2218,14 +1981,12 @@ function createStatusControls(task, taskStatus) {
             makeDraggable(chatWindow);
         }
 
-        // -- الدردشة الخاصة (Fixed Case Sensitivity) --
         function closePrivateChat(email) {
             const chatId = [currentUser.email.toLowerCase().trim(), email.toLowerCase().trim()].sort().join("_").replace(/[@.]/g, "_");
             const el = document.getElementById(`chat-priv-${chatId}`);
             if(el) el.remove();
             delete openPrivateChats[email];
             
-            // Reset Badge when opened
             unreadCounts[email] = 0;
             const safeId = email.replace(/[@.]/g, "_");
             const badgeEl = document.getElementById(`badge-${safeId}`);
@@ -2235,24 +1996,20 @@ function createStatusControls(task, taskStatus) {
         function handlePrivateFile(input, targetEmail) {
             const file = input.files[0];
             if(!file) return;
-            const reader = new FileReader();
             
             const myEmail = currentUser.email.toLowerCase().trim();
-            const otherEmail = targetEmail.toLowerCase().trim();
-            const chatId = [myEmail, otherEmail].sort().join("_").replace(/[@.]/g, "_");
+            const targetEmailLower = targetEmail.toLowerCase().trim();
+            const chatId = [myEmail, targetEmailLower].sort().join("_").replace(/[@.]/g, "_");
 
-            reader.onload = (e) => {
-                if(!openPrivateChats[otherEmail]) openPrivateChats[otherEmail] = {};
-                openPrivateChats[otherEmail].file = e.target.result;
-                openPrivateChats[otherEmail].fileName = file.name;
-                
-                const previewText = document.getElementById(`preview-${chatId}`);
-                if(previewText) {
-                    previewText.innerHTML = `<i class="fas fa-file-invoice mr-1"></i> ${file.name}`;
-                    previewText.parentElement.classList.remove('hidden');
-                }
-            };
-            reader.readAsDataURL(file);
+            if(!openPrivateChats[targetEmailLower]) openPrivateChats[targetEmailLower] = {};
+            openPrivateChats[targetEmailLower].fileObj = file; // كائن الملف بدل Base64
+            openPrivateChats[targetEmailLower].fileName = file.name;
+            
+            const previewText = document.getElementById(`preview-${chatId}`);
+            if(previewText) {
+                previewText.innerHTML = `<i class="fas fa-file-invoice mr-1"></i> ${file.name}`;
+                previewText.parentElement.classList.remove('hidden');
+            }
         }
 
         function openPrivateChat(otherEmail, otherName) {
@@ -2261,7 +2018,6 @@ function createStatusControls(task, taskStatus) {
 
             if(openPrivateChats[targetEmail]) return;
             
-            // Reset Badge
             unreadCounts[targetEmail] = 0;
             const safeId = targetEmail.replace(/[@.]/g, "_");
             const badgeEl = document.getElementById(`badge-${safeId}`);
@@ -2333,16 +2089,17 @@ function createStatusControls(task, taskStatus) {
             </div>`;
             
             document.getElementById('private-chats-container').insertAdjacentHTML('beforeend', chatHtml);
-            openPrivateChats[targetEmail] = { file: null, fileName: "" };
+            openPrivateChats[targetEmail] = { fileObj: null, fileName: "" };
             
             makeDraggable(document.getElementById(windowId));
             listenToSpecificChat(targetEmail, chatId);
         }
 
         function cancelPrivateFile(email, chatId) {
-            if(openPrivateChats[email]) {
-                openPrivateChats[email].file = null;
-                openPrivateChats[email].fileName = "";
+            const targetEmailLower = email.toLowerCase().trim();
+            if(openPrivateChats[targetEmailLower]) {
+                openPrivateChats[targetEmailLower].fileObj = null;
+                openPrivateChats[targetEmailLower].fileName = "";
             }
             document.getElementById(`preview-box-${chatId}`).classList.add('hidden');
             document.getElementById(`file-${chatId}`).value = "";
@@ -2356,27 +2113,36 @@ function createStatusControls(task, taskStatus) {
             
             const fileData = openPrivateChats[targetEmail];
             
-            if(input.value.trim() || (fileData && fileData.file)) {
+            if(input.value.trim() || (fileData && fileData.fileObj)) {
+                const btn = e.target.querySelector('button[type="submit"]');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+
+                // 🟢 رفع الملف الخاص إلى Storage 🟢
+                let fileUrl = null;
+                if (fileData && fileData.fileObj) {
+                    fileUrl = await uploadFileToStorage(fileData.fileObj, 'chat/private');
+                }
+
                 const msg = {
                     text: input.value.trim(),
                     sender: myEmail,
                     receiver: targetEmail,
                     time: firebase.firestore.FieldValue.serverTimestamp(),
-                    file: fileData ? fileData.file : null,
+                    file: fileUrl,
                     fileName: fileData ? fileData.fileName : "",
-                    name: userProfile.name
+                    name: userProfile.name,
+                    type: fileUrl ? 'file' : 'text'
                 };
                 
                 try {
                     await db.collection("private_messages").add(msg);
-                    
                     input.value = "";
-                    if(fileData) { fileData.file = null; fileData.fileName = ""; }
+                    if(fileData) { fileData.fileObj = null; fileData.fileName = ""; }
                     document.getElementById(`preview-box-${chatId}`).classList.add('hidden');
-                    
                 } catch(err) {
                     console.error("Error:", err);
                 }
+                btn.innerHTML = '<i class="fas fa-paper-plane text-xs"></i>'; btn.disabled = false;
             }
         }
 
@@ -2403,7 +2169,6 @@ function createStatusControls(task, taskStatus) {
                         container.innerHTML += renderMessage(m, isMe);
                     });
                 }
-                // Force Scroll Bottom
                 setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
             };
         
@@ -2465,12 +2230,10 @@ function createStatusControls(task, taskStatus) {
             }
         }
 
-        // -- إدارة البيانات (Edit & Reports) --
         async function openEditModal(e) {
             document.getElementById("modal-edit").classList.remove("hidden"); 
             const t = document.getElementById("edit-email");
             
-            // قائمة الصلاحيات المتاحة
             const allPerms = [
                 { id: 'can_manage_tasks', label: 'إدارة المهام (إضافة/تعديل)' },
                 { id: 'can_screenshot', label: 'طلب لقطة شاشة' },
@@ -2480,7 +2243,6 @@ function createStatusControls(task, taskStatus) {
                 { id: 'can_archive_chat', label: 'أرشيف الشات' }
             ];
         
-            // رسم واجهة الصلاحيات
             const permGrid = document.getElementById('permissions-grid');
             permGrid.innerHTML = '';
             allPerms.forEach(p => {
@@ -2501,7 +2263,8 @@ function createStatusControls(task, taskStatus) {
                 t.setAttribute("data-mode", "new"); 
                 document.getElementById("edit-preview").src = DEFAULT_PHOTO + "New"; 
                 document.getElementById("edit-background-limit").value = 60; 
-                togglePermissionsView(); // تحديث العرض
+                document.getElementById("edit-employee-type").value = "fulltime"; // Default
+                togglePermissionsView(); 
             } else { 
                 const d = (await db.collection("users").doc(e).get()).data(); 
                 t.readOnly = true; 
@@ -2512,41 +2275,37 @@ function createStatusControls(task, taskStatus) {
                 document.getElementById("edit-title").value = d.title || ""; 
                 document.getElementById("edit-dept").value = d.department || "";
                 document.getElementById("edit-role").value = d.role || "employee"; 
+                document.getElementById("edit-employee-type").value = d.employeeType || "fulltime"; // 🟢 استدعاء نوع الموظف 🟢
                 document.getElementById("edit-idle").value = d.idleLimit || 5; 
                 document.getElementById("edit-background-limit").value = d.backgroundLimit || 60;
                 document.getElementById("edit-photo-base64").value = d.photo || ""; 
                 document.getElementById("edit-preview").src = d.photo || DEFAULT_PHOTO + d.name; 
         
-                // تفعيل الصلاحيات المحفوظة
                 if (d.permissions) {
                     allPerms.forEach(p => {
                         document.getElementById(`perm-${p.id}`).checked = d.permissions[p.id] === true;
                     });
                 }
                 
-                togglePermissionsView(); // تحديث العرض
+                togglePermissionsView(); 
             }
         }
         
-        // دالة مساعدة لإظهار/إخفاء الصلاحيات بناءً على الرتبة
         function togglePermissionsView() {
             const role = document.getElementById("edit-role").value;
             const wrapper = document.getElementById("permissions-wrapper");
             const items = document.querySelectorAll('.perm-item');
         
             if (role === 'admin' || role === 'employee') {
-                wrapper.classList.add('hidden'); // المدير والموظف لا يحتاجون تخصيص
+                wrapper.classList.add('hidden'); 
             } else {
                 wrapper.classList.remove('hidden');
-                
                 if (role === 'leader') {
-                    // الليدر يظهر له فقط إدارة المهام
                     items.forEach(item => {
                         if (item.dataset.id === 'can_manage_tasks') item.classList.remove('hidden');
                         else item.classList.add('hidden');
                     });
                 } else if (role === 'supervisor') {
-                    // السوبر فايزر يظهر له كل شيء
                     items.forEach(item => item.classList.remove('hidden'));
                 }
             }
@@ -2554,20 +2313,31 @@ function createStatusControls(task, taskStatus) {
         
         async function saveUserChanges(e) {
             e.preventDefault(); 
+            const btn = document.getElementById('save-user-btn');
+            const oldText = btn.innerText;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...'; btn.disabled = true;
+
             const em = document.getElementById("edit-email").value.toLowerCase().trim();
             const role = document.getElementById("edit-role").value;
+            const empType = document.getElementById("edit-employee-type").value; // 🟢 نوع الموظف (للمرتبات) 🟢
             
-            // تجميع الصلاحيات
             let permissions = {};
             if (role === 'leader' || role === 'supervisor') {
                 const checkboxes = document.querySelectorAll('#permissions-grid input[type="checkbox"]');
                 checkboxes.forEach(cb => {
-                    // نحفظ الصلاحية فقط إذا كانت مرئية (لتجنب حفظ صلاحيات مخفية بالخطأ)
                     const parent = cb.closest('.perm-item');
                     if (!parent.classList.contains('hidden')) {
                         permissions[cb.id.replace('perm-', '')] = cb.checked;
                     }
                 });
+            }
+
+            // 🟢 رفع الصورة الجديدة إلى Storage إن وُجدت 🟢
+            let finalPhotoUrl = document.getElementById("edit-photo-base64").value;
+            if (finalPhotoUrl.startsWith('data:image')) {
+                const storageRef = storage.ref().child('profiles/user_' + Date.now() + '.jpg');
+                await storageRef.putString(finalPhotoUrl, 'data_url');
+                finalPhotoUrl = await storageRef.getDownloadURL();
             }
         
             const data = { 
@@ -2575,26 +2345,50 @@ function createStatusControls(task, taskStatus) {
                 title: document.getElementById("edit-title").value, 
                 department: document.getElementById("edit-dept").value,
                 role: role,
-                permissions: permissions, // حفظ المصفوفة الجديدة
+                employeeType: empType, // الحفظ في الداتابيز
+                permissions: permissions, 
                 idleLimit: parseInt(document.getElementById("edit-idle").value) || 5, 
                 backgroundLimit: parseInt(document.getElementById("edit-background-limit").value) || 60,
-                photo: document.getElementById("edit-photo-base64").value 
+                photo: finalPhotoUrl 
             };
         
-            if (document.getElementById("edit-email").getAttribute("data-mode") === "new") { 
-                data.email = em; 
-                data.status = "Offline"; 
-                data.timeBank = {}; 
-                data.tasks = [];
-                await db.collection("users").doc(em).set(data); 
-            } else {
-                await db.collection("users").doc(em).update(data);
+            try {
+                if (document.getElementById("edit-email").getAttribute("data-mode") === "new") { 
+                    data.email = em; 
+                    data.status = "Offline"; 
+                    data.timeBank = {}; 
+                    data.tasks = [];
+                    await db.collection("users").doc(em).set(data); 
+                } else {
+                    await db.collection("users").doc(em).update(data);
+                }
+                closeModal("modal-edit");
+            } catch(err) {
+                console.error(err);
+                alert("حدث خطأ أثناء الحفظ.");
             }
-            
-            closeModal("modal-edit");
+            btn.innerText = oldText; btn.disabled = false;
         }
+
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function handleImageUpload(el){ if(el.files && el.files[0]){ const r=new FileReader(); r.onload=function(e){ const i=new Image(); i.src=e.target.result; i.onload=function(){ const c=document.createElement("canvas"),ctx=c.getContext("2d"),s=300/i.width; c.width=300; c.height=i.height*s; ctx.drawImage(i,0,0,c.width,c.height); const b=c.toDataURL("image/jpeg",.7); document.getElementById("edit-preview").src=b; document.getElementById("edit-photo-base64").value=b; }; }; r.readAsDataURL(el.files[0]); } }
+        
+        function handleImageUpload(el){ 
+            if(el.files && el.files[0]){ 
+                const r=new FileReader(); 
+                r.onload=function(e){ 
+                    const i=new Image(); i.src=e.target.result; 
+                    i.onload=function(){ 
+                        const c=document.createElement("canvas"),ctx=c.getContext("2d"),s=300/i.width; 
+                        c.width=300; c.height=i.height*s; ctx.drawImage(i,0,0,c.width,c.height); 
+                        const b=c.toDataURL("image/jpeg",.7); 
+                        document.getElementById("edit-preview").src=b; 
+                        document.getElementById("edit-photo-base64").value=b; // نتركها base64 مؤقتاً وسيتم رفعها عند ضغط حفظ
+                    }; 
+                }; 
+                r.readAsDataURL(el.files[0]); 
+            } 
+        }
+
         async function deleteUser(){ if(confirm("هل أنت متأكد من حذف هذا الموظف نهائياً؟")){ await db.collection("users").doc(document.getElementById("edit-email").value).delete(); closeModal("modal-edit"); } }
         function openReportModal(){ document.getElementById("modal-report").classList.remove("hidden"); }
         function updateReportDropdown(){ const e=document.getElementById("report-user-select"),v=e.value; e.innerHTML='<option value="all">-- جميع الموظفين --</option>'; allUsersData.forEach(u=>{e.innerHTML+=`<option value="${u.email}">${u.name}</option>`}); e.value=v; }
@@ -2642,7 +2436,6 @@ function createStatusControls(task, taskStatus) {
                     const userName = d.name || d.user;
                     const dateKey = moment(d.end_time.toDate()).format('YYYY-MM-DD');
         
-                    // حساب الإحصائيات
                     if (status !== 'Offline') {
                         if (!dataGrouped[dateKey]) dataGrouped[dateKey] = {};
                         if (!dataGrouped[dateKey][userName]) dataGrouped[dateKey][userName] = { Online: 0, Break: 0, Meeting: 0, Idle: 0, Total: 0 };
@@ -2654,7 +2447,6 @@ function createStatusControls(task, taskStatus) {
                             dataGrouped[dateKey][userName].Total += duration;
                         }
         
-                        // تصميم البطاقة الاحترافية للسجل
                         let config = getStatusConfig(status);
                         logsMarkup += `
                         <div class="flex items-start gap-3 p-3 mb-2 rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
@@ -2695,7 +2487,6 @@ function createStatusControls(task, taskStatus) {
                 });
                 totalDurationText.innerText = formatDuration(grandTotals.Total);
         
-                // إضافة قسم السجل المطور أسفل الملخص
                 const detailsSection = `
                     <div id="report-details-area-new" class="mt-6">
                         <h4 class="text-xs font-black mb-3 text-slate-500 flex items-center gap-2">
@@ -2716,7 +2507,6 @@ function createStatusControls(task, taskStatus) {
             }
         }
         
-        // دالة مساعدة للألوان والأيقونات (أضفها في أي مكان في السكريبت)
         function getStatusConfig(status) {
             switch(status) {
                 case 'Online': return { icon: 'fa-laptop-code', bgColor: 'bg-green-50', textColor: 'text-green-600' };
@@ -2726,27 +2516,27 @@ function createStatusControls(task, taskStatus) {
                 default: return { icon: 'fa-history', bgColor: 'bg-slate-50', textColor: 'text-slate-600' };
             }
         }
-                function downloadDetailedExcel(dataGrouped, from, to) {
-                    let csvContent = "\ufeff"; 
-                    csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
-                    
-                    const sortedDates = Object.keys(dataGrouped).sort().reverse();
-                    
-                    sortedDates.forEach(date => {
-                        Object.keys(dataGrouped[date]).forEach(user => {
-                            const d = dataGrouped[date][user];
-                            csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
-                        });
-                    });
-                    
-                    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
+        function downloadDetailedExcel(dataGrouped, from, to) {
+            let csvContent = "\ufeff"; 
+            csvContent += "التاريخ,اسم الموظف,Online (العمل),Break (استراحة),Meeting (اجتماع),Idle (خمول),الإجمالي المسجل\n";
+            
+            const sortedDates = Object.keys(dataGrouped).sort().reverse();
+            
+            sortedDates.forEach(date => {
+                Object.keys(dataGrouped[date]).forEach(user => {
+                    const d = dataGrouped[date][user];
+                    csvContent += `${date},${user},${formatDuration(d.Online)},${formatDuration(d.Break)},${formatDuration(d.Meeting)},${formatDuration(d.Idle)},${formatDuration(d.Total)}\n`;
+                });
+            });
+            
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", `Almaster_Performance_${from}_to_${to}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
 
         function formatDuration(ms) {
             if (!ms || ms < 0) return "00:00:00";
@@ -2797,7 +2587,6 @@ function createStatusControls(task, taskStatus) {
                     const time = moment(log.end_time.toDate()).format('hh:mm A');
                     const duration = formatDurationText(log.duration_ms);
                     
-                    // تحديد اللون والأيقونة بناءً على الحالة اللي كان فيها "From"
                     let config = { color: 'bg-slate-400', icon: 'fa-ghost', label: 'غير معروف', textColor: 'text-slate-500' };
                     
                     if(log.from_status === 'Online') config = { color: 'bg-green-500', icon: 'fa-laptop-code', label: 'وقت عمل فعلي', textColor: 'text-green-600' };
@@ -2844,7 +2633,7 @@ function createStatusControls(task, taskStatus) {
                 timelineContainer.innerHTML = `<p class="text-center text-red-500 text-xs p-4">خطأ في تحميل السجل</p>`;
             }
         }       
-        // دالة مساعدة لتنسيق الوقت بشكل نصي مقروء
+        
         function formatDurationText(ms) {
             if (!ms || ms < 0) return "0 دقيقة";
             const totalSeconds = Math.floor(ms / 1000);
@@ -2900,33 +2689,6 @@ function createStatusControls(task, taskStatus) {
             const safeId = email.replace(/[@.]/g, "_");
             const el = document.getElementById(`alert-active-${safeId}`);
             if(el) el.remove();
-        }
-
-        async function addTask(email) {
-            const txt = prompt("أدخل تفاصيل المهمة الجديدة:");
-            if(txt && txt.trim()) {
-                const userRef = db.collection('users').doc(email);
-                const doc = await userRef.get();
-                const tasks = doc.data().tasks || [];
-                tasks.push({ text: txt.trim(), done: false });
-                await userRef.update({ tasks: tasks });
-            }
-        }
-
-        async function toggleTask(email, idx, done) {
-            const userRef = db.collection('users').doc(email);
-            const doc = await userRef.get();
-            const tasks = doc.data().tasks || [];
-            if(tasks[idx]) { tasks[idx].done = done; await userRef.update({ tasks: tasks }); }
-        }
-
-        async function deleteTask(email, idx) {
-            if(confirm("هل تريد حذف هذه المهمة؟")) {
-                const userRef = db.collection('users').doc(email);
-                const doc = await userRef.get();
-                const tasks = doc.data().tasks || [];
-                tasks.splice(idx, 1); await userRef.update({ tasks: tasks });
-            }
         }
 
         async function requestScreenshot(targetEmail) {
@@ -3007,12 +2769,16 @@ function createStatusControls(task, taskStatus) {
 
                         const chatId = [currentUser.email.toLowerCase(), adminEmail.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
                         
+                        // نرفع لقطة الشاشة للـ Storage بدل Base64
+                        const fileBlob = await (await fetch(screenshotBase64)).blob();
+                        const fileUrl = await uploadFileToStorage(fileBlob, 'chat/screenshots');
+                        
                         await db.collection("private_messages").add({
                             text: "📷 تم إرسال لقطة شاشة تلقائية بطلب من الإدارة",
                             sender: currentUser.email.toLowerCase(),
                             receiver: adminEmail.toLowerCase(),
                             time: firebase.firestore.FieldValue.serverTimestamp(),
-                            file: screenshotBase64,
+                            file: fileUrl,
                             fileName: "screenshot.jpg",
                             name: userProfile.name
                         });
@@ -3042,15 +2808,14 @@ function createStatusControls(task, taskStatus) {
 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                // قائمة بكل النوافذ (Modals) في النظام
                 const modals = [
                     'modal-edit', 
                     'modal-report', 
                     'modal-logs', 
                     'image-preview-modal', 
                     'chat-window', 
-                    'modal-task-center', // نافذة المهام الرئيسية
-                    'modal-create-task'  // نافذة إنشاء/تعديل مهمة
+                    'modal-task-center', 
+                    'modal-create-task'  
                 ];
         
                 modals.forEach(id => {
@@ -3058,20 +2823,17 @@ function createStatusControls(task, taskStatus) {
                     if (element && !element.classList.contains('hidden')) {
                         element.classList.add('hidden');
                         
-                        // تنظيف خاص عند إغلاق معاينة الصور
                         if(id === 'image-preview-modal') {
                             const img = document.getElementById('preview-img-target');
                             if(img) img.src = ""; 
                         }
                         
-                        // تنظيف خاص عند إغلاق الشات
                         if(id === 'chat-window') {
                             document.getElementById("chat-badge").classList.add("hidden");
                         }
                     }
                 });
                 
-                // إغلاق القائمة المنسدلة العلوية أيضاً
                 const menu = document.getElementById('main-dropdown');
                 if (menu && menu.classList.contains('active')) {
                     menu.classList.remove('active');
@@ -3103,27 +2865,15 @@ function createStatusControls(task, taskStatus) {
                     return;
                 }
 
-                let csvContent = "\ufeffالتاريخ,الاسم,الرسالة,اسم الملف المرفق\n";
-                const mediaFolder = zip.folder("Media_Files");
+                let csvContent = "\ufeffالتاريخ,الاسم,الرسالة,رابط الملف\n"; // تم تغيير لـ رابط الملف بدل الملف نفسه لأننا رفعناه سحابيا
 
                 snapshot.docs.forEach((doc, index) => {
                     const m = doc.data();
                     const time = m.time ? moment(m.time.toDate()).format('YYYY-MM-DD HH:mm:ss') : '-';
                     const safeText = (m.text || "").replace(/,/g, "،").replace(/\n/g, " ");
-                    let fileName = "لا يوجد";
+                    const fileLink = m.file ? m.file : "لا يوجد";
 
-                    if (m.file) {
-                        let extension = "bin";
-                        if (m.file.includes("image/jpeg")) extension = "jpg";
-                        else if (m.file.includes("image/png")) extension = "png";
-                        else if (m.file.includes("application/pdf")) extension = "pdf";
-                        else if (m.file.includes("audio")) extension = "webm";
-                        
-                        fileName = `File_${index}_${moment().format('HHmmss')}.${extension}`;
-                        const base64Data = m.file.split(',')[1];
-                        if(base64Data) mediaFolder.file(fileName, base64Data, {base64: true});
-                    }
-                    csvContent += `${time},${m.name},${safeText},${fileName}\n`;
+                    csvContent += `${time},${m.name},${safeText},${fileLink}\n`;
                 });
 
                 zip.file("Public_Chat_Log.csv", csvContent);
@@ -3184,28 +2934,17 @@ function createStatusControls(task, taskStatus) {
 
                 Object.keys(conversations).forEach(folderName => {
                     const folder = zip.folder(folderName);
-                    const mediaBox = folder.folder("Attachments");
                     
                     const msgs = conversations[folderName].sort((a, b) => (a.time?.seconds || 0) - (b.time?.seconds || 0));
                     
-                    let csv = "\ufeffالتاريخ,المرسل,المستقبل,الرسالة,اسم الملف\n";
+                    let csv = "\ufeffالتاريخ,المرسل,المستقبل,الرسالة,رابط الملف\n";
                     
                     msgs.forEach((m, idx) => {
                         const time = m.time ? moment(m.time.toDate()).format('YYYY-MM-DD HH:mm:ss') : '-';
                         const safeText = (m.text || "").replace(/,/g, "،").replace(/\n/g, " ");
-                        let fName = "لا يوجد";
-
-                        if (m.file) {
-                            let ext = "bin";
-                            if (m.file.includes("image")) ext = "jpg";
-                            else if (m.file.includes("pdf")) ext = "pdf";
-                            else if (m.file.includes("audio")) ext = "webm";
-                            
-                            fName = `Att_${idx}_${moment().format('ss')}.${ext}`;
-                            const b64 = m.file.split(',')[1];
-                            if(b64) mediaBox.file(fName, b64, {base64:true});
-                        }
-                        csv += `${time},${m.sender},${m.receiver},${safeText},${fName}\n`;
+                        const fileLink = m.file ? m.file : "لا يوجد";
+                        
+                        csv += `${time},${m.sender},${m.receiver},${safeText},${fileLink}\n`;
                     });
                     
                     folder.file("Chat_History.csv", csv);
@@ -3238,68 +2977,6 @@ function createStatusControls(task, taskStatus) {
             }
             alert("تم التنظيف بنجاح! ✅");
         }
-
-        // دالة لتحديث الشات فقط داخل التاسك
-        function renderTaskComments(comments, ownerEmail) {
-            const commentsContainer = document.getElementById('task-comments-list');
-            
-            commentsContainer.innerHTML = '';
-            
-            if(!comments || comments.length === 0) {
-                commentsContainer.innerHTML = '<div class="flex flex-col items-center justify-center py-10 opacity-50"><i class="far fa-comments text-4xl mb-2 text-slate-300"></i><p class="text-xs text-slate-400">لا توجد مناقشات بعد.</p></div>';
-            } else {
-                comments.forEach(c => {
-                    const isSystem = c.user === 'system';
-                    if (isSystem) {
-                        commentsContainer.innerHTML += `
-                            <div class="flex justify-center my-2">
-                                <span class="bg-slate-100 text-slate-500 text-[9px] px-3 py-1 rounded-full font-bold border border-slate-200">
-                                    ${c.text} • ${moment(c.time).format('h:mm A')}
-                                </span>
-                            </div>`;
-                    } else {
-                        const isMe = c.user === currentUser.email;
-                        commentsContainer.innerHTML += `
-                            <div class="flex gap-3 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in">
-                                <img src="${DEFAULT_PHOTO + encodeURIComponent(c.name)}" class="w-8 h-8 rounded-full border border-slate-200 bg-white object-cover shadow-sm">
-                                <div class="max-w-[85%]">
-                                    <div class="flex items-center gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
-                                        <span class="text-[10px] font-bold text-slate-700">${c.name}</span>
-                                        <span class="text-[9px] text-slate-400">${moment(c.time).fromNow()}</span>
-                                    </div>
-                                    <div class="p-3 rounded-2xl ${isMe ? 'bg-primary-600 text-white rounded-tl-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tr-none'} text-xs leading-relaxed shadow-sm">
-                                        <p class="whitespace-pre-wrap font-cairo">${c.text}</p>
-                                        ${c.file ? `<div class="mt-2 pt-2 border-t ${isMe ? 'border-white/20' : 'border-slate-100'}"><img src="${c.file}" class="max-w-full rounded-lg cursor-pointer hover:opacity-90" onclick="openImagePreview(this.src)"></div>` : ''}
-                                    </div>
-                                </div>
-                            </div>`;
-                    }
-                });
-            }
-        
-            // Force Scroll to Bottom Always
-            setTimeout(() => { commentsContainer.scrollTop = commentsContainer.scrollHeight; }, 150);
-        }        
-        // دالة لتحديث عنوان وحالة التاسك في التفاصيل
-        function updateTaskDetailHeader(task) {
-            const statusColors = {'started': 'bg-green-100 text-green-700', 'working': 'bg-blue-100 text-blue-700', 'done': 'bg-red-100 text-red-700'};
-            const statusNames = {'started': 'بدأ العمل', 'working': 'جاري العمل', 'done': 'تم الانتهاء'};
-            const currentStatus = task.status || 'started';
-            
-            const statusHTML = `<span class="px-3 py-1 ml-2 rounded-full text-xs font-black ${statusColors[currentStatus]}">${statusNames[currentStatus]}</span>`;
-            // نحدث فقط لو العنوان اتغير عشان منعملش ريفريش يضايق العين
-            const currentHTML = document.getElementById('task-detail-title').innerHTML;
-            if(!currentHTML.includes(statusNames[currentStatus])) {
-                document.getElementById('task-detail-title').innerHTML = task.title + statusHTML;
-            }
-        }
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
