@@ -22,7 +22,7 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: { primary: { 50: '#f0f9ff', 500: '#0ea5e9', 600: '#0284c7' }, dark: { 800: '#1e293b', 900: '#0f172a', 950: '#0b1120' } },
+                    colors: { primary: { 500: '#0ea5e9', 600: '#0284c7' }, dark: { 800: '#1e293b', 900: '#0f172a', 950: '#0b1120' } },
                     fontFamily: { sans: ['Outfit', 'Cairo', 'sans-serif'] }
                 }
             }
@@ -34,135 +34,120 @@
         .hidden-section { display: none !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 20px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 20px; }
         
-        .status-card { transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.03); background: rgba(30, 41, 59, 0.4); }
+        /* كروت الحالات المبتكرة */
+        .status-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(255,255,255,0.03); background: rgba(30, 41, 59, 0.4); }
+        .status-card:hover { transform: scale(1.02); background: rgba(30, 41, 59, 0.6); }
         .active-Online { background: linear-gradient(135deg, #059669 0%, #064e3b 100%) !important; border-color: #10b981 !important; box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.3); }
         .active-Break { background: linear-gradient(135deg, #d97706 0%, #78350f 100%) !important; border-color: #f59e0b !important; box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.3); }
         .active-Meeting { background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%) !important; border-color: #3b82f6 !important; box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.3); }
 
-        .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 18px; font-size: 12.5px; position: relative; }
-        .bubble-me { background: #0ea5e9; color: white; border-bottom-left-radius: 2px; }
-        .bubble-them { background: #1e293b; color: #f1f5f9; border-bottom-right-radius: 2px; border: 1px solid rgba(255,255,255,0.05); }
+        /* نبض الحالة */
+        .pulse-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; }
+        .pulse-dot::after { content: ''; position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: inherit; border-radius: 50%; animation: pulse-ring 1.5s cubic-bezier(0.24, 0, 0.38, 1) infinite; }
+        @keyframes pulse-ring { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
+
+        /* فقاعات الشات */
+        .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 20px; font-size: 13px; position: relative; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .bubble-me { background: #0ea5e9; color: white; border-bottom-left-radius: 4px; align-self: flex-end; }
+        .bubble-them { background: #1e293b; color: #f1f5f9; border-bottom-right-radius: 4px; border: 1px solid rgba(255,255,255,0.05); align-self: flex-start; }
 
         .task-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s; }
         .task-card.active { border-right: 4px solid #0ea5e9; background: #1e293b; }
 
         .btn-glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px); }
-        .btn-glass:hover { background: rgba(255,255,255,0.08); }
-
-        .pulse-dot { position: relative; width: 6px; height: 6px; border-radius: 50%; }
-        .pulse-dot::after { content: ''; position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: inherit; border-radius: 50%; animation: p-ring 1.5s infinite; }
-        @keyframes p-ring { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+        .btn-glass:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
     </style>
 </head>
 
-<body class="dark overflow-hidden">
+<body class="dark selection:bg-primary-500/30">
 
     <div id="loader" class="fixed inset-0 z-[300] bg-dark-950 flex flex-col items-center justify-center">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-primary-500 mb-4"></div>
-        <h2 class="text-[9px] font-black tracking-[0.4em] text-slate-500 uppercase animate-pulse">ALMASTER SYSTEM</h2>
+        <h2 class="text-[10px] font-black tracking-[0.5em] text-slate-500 uppercase animate-pulse">Establishing Secure Session</h2>
     </div>
-
-    <header class="h-14 border-b border-white/5 bg-dark-950/80 backdrop-blur-md px-6 flex items-center justify-between shrink-0 z-50">
-        <div class="flex items-center gap-4">
-            <img src="MASTER_LOGO_WHPNG.png" class="h-10 object-contain w-auto">
-            <div class="h-4 w-[1px] bg-white/10 mx-1"></div>
-            <span class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Employee Workspace</span>
-        </div>
-        <div class="flex flex-col items-center">
-            <div id="header-time" class="text-lg font-black font-mono tracking-widest text-primary-500">00:00:00</div>
-            <div id="header-date" class="text-[8px] font-bold text-slate-600 uppercase">Loading Date...</div>
-        </div>
-        <div class="flex items-center gap-3">
-            <div class="flex items-center gap-2 text-[9px] font-bold text-green-500 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
-                <span class="pulse-dot bg-green-500"></span> Live Node
-            </div>
-        </div>
-    </header>
 
     <main class="flex-1 flex overflow-hidden">
         
-        <aside class="w-[320px] border-l border-white/5 flex flex-col bg-dark-950 shrink-0 h-full overflow-hidden">
+        <aside class="w-[340px] border-l border-white/5 flex flex-col bg-dark-950 shrink-0 h-full">
             
-            <div class="p-6 shrink-0">
-                <div class="p-4 rounded-[1.8rem] bg-gradient-to-br from-dark-900 to-dark-950 border border-white/5 shadow-2xl">
-                    <div class="flex items-center gap-4">
-                        <div class="relative shrink-0">
-                            <img id="user-img" src="" class="w-12 h-12 rounded-xl object-cover border border-white/10 bg-dark-800">
-                            <span id="user-status-dot" class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-dark-950 bg-slate-500"></span>
-                        </div>
-                        <div class="overflow-hidden text-right">
+            <div class="p-6 shrink-0 bg-dark-950/50">
+                <img src="MASTER_LOGO_WHPNG.png" class="h-10 mb-8 opacity-80" onerror="this.style.display='none'">
+                
+                <div class="p-4 rounded-[2rem] bg-gradient-to-br from-dark-900 to-dark-950 border border-white/5 shadow-2xl">
+                    <div class="flex items-center gap-4 mb-3">
+                        <img id="user-img" src="" class="w-14 h-14 rounded-2xl object-cover border-2 border-primary-500/20 bg-dark-800">
+                        <div class="overflow-hidden">
                             <h2 id="user-name" class="font-black text-sm truncate text-white">Loading...</h2>
-                            <p id="user-role" class="text-[8px] text-primary-500 font-bold uppercase tracking-widest">Team Specialist</p>
+                            <p id="user-role" class="text-[9px] text-primary-500 font-bold uppercase tracking-widest">Team Member</p>
                         </div>
+                    </div>
+                    <div id="live-indicator" class="flex items-center gap-2 text-[8px] font-bold text-green-500 px-2">
+                        <span class="pulse-dot bg-green-500"></span> نظام العمل متصل
                     </div>
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto custom-scrollbar px-6 space-y-5 pb-4">
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-6 space-y-5 pb-6">
                 
-                <div class="space-y-2.5">
-                    <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest mr-1">Status Management</p>
+                <div class="space-y-3">
+                    <p class="text-[9px] font-black text-slate-600 uppercase tracking-widest mr-2">تحديث الحالة:</p>
                     
-                    <div id="card-Online" onclick="handleStatusClick('Online')" class="status-card cursor-pointer p-3.5 rounded-xl flex items-center justify-between group">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-green-500/10 text-green-500 flex items-center justify-center transition group-hover:scale-110"><i class="fas fa-laptop-code text-xs"></i></div>
-                            <div><p class="text-[8px] font-black opacity-40 uppercase">Working</p><p id="timer-online" class="text-xs font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                    <div id="card-Online" onclick="handleStatusClick('Online')" class="status-card cursor-pointer p-4 rounded-2xl flex items-center justify-between group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-green-500/10 text-green-500 flex items-center justify-center transition group-hover:scale-110"><i class="fas fa-laptop-code text-base"></i></div>
+                            <div><p class="text-[9px] font-black opacity-40 uppercase">Active</p><p id="timer-online" class="text-sm font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
                         </div>
-                        <i class="fas fa-play text-[8px] opacity-20"></i>
                     </div>
 
-                    <div id="card-Break" onclick="handleStatusClick('Break')" class="status-card cursor-pointer p-3.5 rounded-xl flex items-center justify-between group">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center transition group-hover:scale-110"><i class="fas fa-coffee text-xs"></i></div>
-                            <div><p class="text-[8px] font-black opacity-40 uppercase">Break</p><p id="timer-break" class="text-xs font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                    <div id="card-Break" onclick="handleStatusClick('Break')" class="status-card cursor-pointer p-4 rounded-2xl flex items-center justify-between group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center transition group-hover:scale-110"><i class="fas fa-coffee text-base"></i></div>
+                            <div><p class="text-[9px] font-black opacity-40 uppercase">Break</p><p id="timer-break" class="text-sm font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
                         </div>
-                        <i class="fas fa-pause text-[8px] opacity-20"></i>
                     </div>
 
-                    <div id="card-Meeting" onclick="handleStatusClick('Meeting')" class="status-card cursor-pointer p-3.5 rounded-xl flex items-center justify-between group">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center transition group-hover:scale-110"><i class="fas fa-users text-xs"></i></div>
-                            <div><p class="text-[8px] font-black opacity-40 uppercase">Meeting</p><p id="timer-meeting" class="text-xs font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                    <div id="card-Meeting" onclick="handleStatusClick('Meeting')" class="status-card cursor-pointer p-4 rounded-2xl flex items-center justify-between group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center transition group-hover:scale-110"><i class="fas fa-users text-base"></i></div>
+                            <div><p class="text-[9px] font-black opacity-40 uppercase">In Meeting</p><p id="timer-meeting" class="text-sm font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
                         </div>
-                        <i class="fas fa-handshake text-[8px] opacity-20"></i>
                     </div>
 
-                    <div class="bg-red-500/5 border border-red-500/10 p-2.5 rounded-lg flex items-center justify-between">
-                        <p class="text-[8px] font-black text-red-400 uppercase tracking-tighter opacity-60">Idle Time</p>
-                        <p id="timer-idle" class="text-xs font-black text-red-500 stat-idle" data-val="0" data-isidle="false" data-start="0">00:00:00</p>
+                    <div class="bg-red-500/5 border border-red-500/10 p-3 rounded-xl flex items-center justify-between">
+                        <p class="text-[9px] font-black text-red-400 uppercase tracking-tighter opacity-60">Idle (خمول)</p>
+                        <p id="timer-idle" class="text-sm font-black text-red-500 stat-idle" data-val="0" data-isidle="false" data-start="0">00:00:00</p>
                     </div>
                 </div>
 
                 <div class="pt-2 space-y-2">
-                    <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest mr-1">Communications</p>
+                    <p class="text-[9px] font-black text-slate-600 uppercase tracking-widest mr-2">مركز التواصل والأرشيف:</p>
                     
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="toggleChat()" class="py-3 btn-glass text-primary-500 rounded-xl font-black text-[9px] flex items-center justify-center gap-2 relative transition-all active:scale-95">
-                            <i class="fas fa-globe-africa text-[10px]"></i> Group
-                            <span id="chat-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[7px] w-3.5 h-3.5 rounded-full flex items-center justify-center hidden border border-dark-950">!</span>
-                        </button>
-                        <button onclick="openLogsModal()" class="py-3 btn-glass text-slate-400 rounded-xl border border-white/5 font-black text-[9px] flex items-center justify-center gap-2 transition-all active:scale-95">
-                            <i class="fas fa-history text-[10px]"></i> History
-                        </button>
-                    </div>
+                    <button onclick="toggleChat()" class="w-full py-4 btn-glass text-primary-500 rounded-2xl font-black text-[11px] flex items-center justify-center gap-3 relative transition-all active:scale-95">
+                        <i class="fas fa-comments"></i> الدردشة العامة
+                        <span id="chat-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center hidden border border-dark-950">!</span>
+                    </button>
 
                     <div class="relative">
-                        <button onclick="toggleUsersDropdown()" class="w-full py-3 btn-glass rounded-xl flex items-center justify-between px-4 transition-all active:scale-95 border border-primary-500/10">
-                            <span class="text-[9px] font-black text-slate-300 uppercase">💬 Direct Message</span>
-                            <i class="fas fa-chevron-up text-[7px] text-slate-600"></i>
+                        <button onclick="toggleUsersDropdown()" class="w-full py-4 btn-glass rounded-2xl flex items-center justify-between px-5 transition-all active:scale-95">
+                            <span class="text-[11px] font-black text-slate-300">💬 محادثة خاصة</span>
+                            <i class="fas fa-chevron-up text-[9px] text-slate-600"></i>
                         </button>
-                        <div id="users-dropdown" class="absolute bottom-full left-0 right-0 mb-2 bg-dark-900 border border-white/10 rounded-2xl shadow-2xl max-h-56 overflow-y-auto custom-scrollbar z-[60] hidden">
+                        <div id="users-dropdown" class="absolute bottom-full left-0 right-0 mb-3 bg-dark-900 border border-white/10 rounded-[1.5rem] shadow-2xl max-h-64 overflow-y-auto custom-scrollbar z-[60] hidden">
                             <div id="users-list-content" class="p-2 space-y-1"></div>
                         </div>
                     </div>
+
+                    <button onclick="openLogsModal()" class="w-full py-4 btn-glass text-slate-400 rounded-2xl font-black text-[11px] flex items-center justify-center gap-3 transition-all active:scale-95">
+                        <i class="fas fa-history text-[10px]"></i> سجل نشاط اليوم (History)
+                    </button>
                 </div>
             </div>
 
-            <div class="p-4 shrink-0 border-t border-white/5 bg-dark-950">
-                <button onclick="logout()" class="w-full py-2 rounded-xl text-slate-600 font-bold hover:text-red-500 transition-all flex items-center justify-center gap-2 text-[9px] uppercase tracking-[0.3em] active:scale-95">
-                    <i class="fas fa-power-off text-[8px]"></i> Sign Out
+            <div class="p-6 shrink-0 border-t border-white/5">
+                <button onclick="logout()" class="w-full py-3.5 rounded-2xl text-slate-600 font-black hover:text-red-500 transition-all flex items-center justify-center gap-3 text-[10px] uppercase tracking-widest">
+                    <i class="fas fa-power-off"></i> تسجيل الخروج
                 </button>
             </div>
         </aside>
@@ -171,126 +156,128 @@
             
             <div class="w-72 border-l border-white/5 bg-dark-950 flex flex-col shrink-0">
                 <div class="p-6 shrink-0 bg-dark-950">
-                    <div class="mb-5">
-                        <div id="clock-h" class="text-3xl font-black text-white leading-none">00:00</div>
-                        <div id="clock-d" class="text-[8px] font-bold text-slate-600 uppercase tracking-widest mt-1">Loading System...</div>
+                    <div id="header-time-date" class="mb-6">
+                        <div id="clock-h" class="text-2xl font-black text-white">00:00</div>
+                        <div id="clock-d" class="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-1">Loading Date...</div>
                     </div>
-                    <div class="flex p-1 bg-dark-900 rounded-lg border border-white/5">
-                        <button onclick="changeTaskTab(false, this)" class="task-tab-btn flex-1 py-1.5 text-[10px] font-black rounded-md bg-dark-800 text-white shadow-xl">Current</button>
-                        <button onclick="changeTaskTab(true, this)" class="task-tab-btn flex-1 py-1.5 text-[10px] font-black rounded-md text-slate-600">Archive</button>
+                    <div class="flex p-1 bg-dark-900 rounded-xl border border-white/5 shadow-inner">
+                        <button onclick="changeTaskTab(false, this)" class="task-tab-btn flex-1 py-2 text-[10px] font-black rounded-lg bg-dark-800 text-white shadow-xl transition-all">Current</button>
+                        <button onclick="changeTaskTab(true, this)" class="task-tab-btn flex-1 py-2 text-[10px] font-black rounded-lg text-slate-600 transition-all">Archived</button>
                     </div>
                 </div>
                 <div id="task-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"></div>
             </div>
 
-            <div id="task-detail-pane" class="flex-1 bg-dark-950 flex flex-col h-full overflow-hidden border-r border-white/5">
+            <div id="task-detail-pane" class="flex-1 bg-dark-950 flex flex-col relative h-full overflow-hidden border-r border-white/5">
+                
                 <div id="task-empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-900 h-full">
-                    <img src="MASTER_LOGO_WHPNG.png" class="h-16 opacity-[0.03] mb-6 grayscale">
-                    <p class="font-black text-[9px] uppercase tracking-[0.5em] text-slate-800">Standby for incoming tasks</p>
+                    <img src="MASTER_LOGO_WHPNG.png" class="h-20 opacity-[0.03] mb-8 grayscale">
+                    <p class="font-black text-[10px] uppercase tracking-[0.5em] text-slate-800">Select an active task to start</p>
                 </div>
 
-                <div id="task-content" class="hidden flex flex-col h-full overflow-hidden">
+                <div id="task-content" class="hidden flex flex-col h-full overflow-hidden animate-fade-in">
                     <div class="flex-1 overflow-y-auto p-10 custom-scrollbar">
                         <div class="max-w-4xl mx-auto">
-                            <div class="flex justify-between items-start mb-8">
+                            <div class="flex justify-between items-start mb-10">
                                 <div class="flex-1">
                                     <div id="task-project-tag"></div>
-                                    <h1 id="task-title" class="text-3xl font-black text-white mb-3 leading-tight">Title</h1>
-                                    <div class="flex items-center gap-5 text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                                    <h1 id="task-title" class="text-4xl font-black text-white mb-4 leading-tight">Task Title</h1>
+                                    <div class="flex items-center gap-5 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                                         <span class="flex items-center gap-2"><i class="far fa-clock text-primary-500"></i> <span id="task-date"></span></span>
-                                        <span class="flex items-center gap-2"><i class="fas fa-user-circle text-primary-500"></i> BY: <span id="task-assigner">...</span></span>
+                                        <span class="flex items-center gap-2"><i class="fas fa-user-circle text-primary-500"></i> BY: <span id="task-assigner">Admin</span></span>
                                     </div>
                                 </div>
                                 <div id="task-status-badge"></div>
                             </div>
-                            <div id="task-desc" class="text-base leading-relaxed text-slate-400 bg-white/[0.01] p-8 rounded-[2rem] border border-white/5 mb-8 font-cairo"></div>
-                            <div id="task-files" class="mb-10"></div>
-                            <div class="space-y-6 pb-20">
-                                <h4 class="font-black text-[9px] uppercase tracking-[0.3em] text-primary-500 flex items-center gap-3"><span class="w-6 h-[1px] bg-primary-500/30"></span> Activity Logs</h4>
-                                <div id="task-comments" class="flex flex-col gap-5"></div>
+                            <div id="task-desc" class="text-lg leading-relaxed text-slate-400 bg-white/[0.01] p-10 rounded-[2.5rem] border border-white/5 mb-10 font-cairo"></div>
+                            <div id="task-files" class="mb-12"></div>
+
+                            <div class="space-y-8 pb-20">
+                                <h4 class="font-black text-[10px] uppercase tracking-[0.3em] text-primary-500 flex items-center gap-3">
+                                    <span class="w-8 h-[1px] bg-primary-500/30"></span> Discussion Thread
+                                </h4>
+                                <div id="task-comments" class="flex flex-col gap-6"></div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="p-5 bg-dark-900 border-t border-white/5 flex flex-col gap-3 shrink-0 shadow-2xl">
-                        <div id="task-action-controls" class="flex gap-2"></div>
-                        <form onsubmit="handleCommentSubmit(event)" class="flex gap-2 items-center bg-dark-950 p-1.5 rounded-xl border border-white/5">
+                    <div class="p-6 bg-dark-900/80 backdrop-blur-xl border-t border-white/5 flex flex-col gap-4 shrink-0 shadow-[0_-20px_50px_rgba(0,0,0,0.3)]">
+                        <div id="task-action-controls" class="flex gap-3"></div>
+                        <form onsubmit="handleCommentSubmit(event)" class="flex gap-3 items-center bg-dark-950 p-2 rounded-2xl border border-white/10">
                             <input type="file" id="comment-file" class="hidden" onchange="handleFileSelect(this)">
-                            <button type="button" onclick="document.getElementById('comment-file').click()" class="w-10 h-10 rounded-lg hover:bg-white/5 text-slate-500 transition"><i class="fas fa-paperclip"></i></button>
-                            <input type="text" id="comment-input" class="flex-1 bg-transparent border-none focus:ring-0 text-[11px] text-white px-2" placeholder="Send a message or attachment..." autocomplete="off">
-                            <button type="submit" id="comment-btn" class="w-10 h-10 bg-primary-600 rounded-lg hover:bg-primary-500 transition shadow-lg"><i class="fas fa-paper-plane text-xs"></i></button>
+                            <button type="button" onclick="document.getElementById('comment-file').click()" class="w-12 h-11 rounded-xl hover:bg-white/5 text-slate-500 transition"><i class="fas fa-paperclip text-lg"></i></button>
+                            <input type="text" id="comment-input" class="flex-1 bg-transparent border-none focus:ring-0 text-xs text-white px-3" placeholder="أضف تعليقاً أو استفساراً..." autocomplete="off">
+                            <button type="submit" id="comment-btn" class="w-14 h-11 bg-primary-600 rounded-xl hover:bg-primary-500 transition shadow-lg shadow-primary-500/20"><i class="fas fa-paper-plane"></i></button>
                         </form>
-                        <div id="file-preview" class="hidden px-2 text-[8px] font-bold text-primary-500 italic animate-pulse"></div>
+                        <div id="file-preview" class="hidden px-4 text-[9px] font-bold text-primary-500 animate-pulse italic"></div>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <div id="chat-window" class="chat-window fixed bottom-20 left-6 w-[340px] h-[520px] bg-dark-900 border border-white/10 rounded-[2.5rem] overflow-hidden hidden flex flex-col shadow-2xl">
-        <div class="p-4 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header cursor-move">
-            <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white"><i class="fas fa-globe-africa text-xs"></i></div><h3 class="font-black text-[10px] uppercase tracking-widest">Global Lounge</h3></div>
+    <div id="chat-window" class="chat-window fixed bottom-20 left-6 w-[350px] h-[500px] bg-dark-900 border border-white/10 rounded-[2.5rem] overflow-hidden hidden animate-fade-in flex flex-col shrink-0">
+        <div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header cursor-move">
+            <h3 class="font-black text-xs uppercase tracking-widest"><i class="fas fa-globe-africa mr-2 text-primary-500"></i>Group Lounge</h3>
             <button onclick="toggleChat()" class="text-slate-600 hover:text-white transition"><i class="fas fa-times text-sm"></i></button>
         </div>
         <div id="chat-messages" class="flex-1 overflow-y-auto p-5 flex flex-col gap-4 custom-scrollbar bg-dark-950/20"></div>
-        <form onsubmit="handleGlobalMessage(event)" class="p-3 bg-dark-900 border-t border-white/5 flex gap-2">
-            <input type="text" id="chat-input" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-[10px] text-white outline-none focus:border-primary-500" placeholder="Type to everyone..." autocomplete="off">
-            <button type="submit" class="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane text-xs"></i></button>
+        <form onsubmit="handleGlobalMessage(event)" class="p-4 bg-dark-900 border-t border-white/5 flex gap-2">
+            <input type="text" id="chat-input" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-[11px] text-white outline-none focus:border-primary-500" placeholder="رسالة للجميع..." autocomplete="off">
+            <button type="submit" class="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane text-xs"></i></button>
         </form>
     </div>
 
     <div id="private-chats-container"></div>
 
-    <div id="modal-logs" class="fixed inset-0 z-[250] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4" onclick="closeModal('modal-logs')">
-        <div class="bg-dark-900 w-full max-w-md rounded-[2.5rem] flex flex-col max-h-[70vh] border border-white/5 shadow-2xl" onclick="event.stopPropagation()">
-            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-dark-950">
-                <h3 class="font-black text-sm uppercase tracking-widest text-primary-500">Activity Timeline</h3>
-                <button onclick="closeModal('modal-logs')" class="text-slate-500 hover:text-white"><i class="fas fa-times text-sm"></i></button>
+    <div id="modal-logs" class="fixed inset-0 z-[250] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onclick="closeModal('modal-logs')">
+        <div class="bg-dark-900 w-full max-w-lg rounded-[3rem] flex flex-col max-h-[75vh] border border-white/5 shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <div class="p-8 border-b border-white/5 bg-dark-950 flex justify-between items-center">
+                <h3 class="font-black text-xl text-white">Daily Timeline</h3>
+                <button onclick="closeModal('modal-logs')" class="text-slate-500 hover:text-white"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-5" id="logs-timeline"></div>
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-6" id="logs-timeline"></div>
         </div>
     </div>
 
     <div id="modal-qa" class="fixed inset-0 z-[250] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-dark-900 w-full max-w-sm rounded-[2rem] p-8 border border-primary-500/20 shadow-2xl">
-            <h3 class="text-lg font-black text-primary-500 mb-4 text-center tracking-tight uppercase">Review Submission</h3>
-            <p class="text-[10px] text-slate-500 mb-6 text-center leading-relaxed font-bold italic">اختر المشرف المسؤول لاعتماد المهمة:</p>
+        <div class="bg-dark-900 w-full max-w-sm rounded-[2.5rem] p-10 border border-primary-500/20 shadow-2xl animate-fade-in">
+            <h3 class="text-xl font-black text-primary-500 mb-4 text-center tracking-tight uppercase">Quality Review</h3>
+            <p class="text-[11px] text-slate-500 mb-8 text-center leading-relaxed font-bold italic">اختر المشرف المسؤول ليتم اعتماد المهمة ضمن إنتاجية اليوم:</p>
             <input type="hidden" id="review-task-id">
-            <select id="qa-manager-select" class="form-input font-black mb-6 bg-dark-950 h-10 border-white/10 text-xs"></select>
-            <div class="flex gap-2"><button onclick="confirmQA()" class="flex-1 bg-primary-600 py-3 rounded-xl font-black text-xs shadow-xl">Confirm</button><button onclick="closeModal('modal-qa')" class="px-5 bg-dark-800 rounded-xl font-bold text-xs">Back</button></div>
+            <select id="qa-manager-select" class="form-input font-black mb-8 border-2 border-white/5 bg-dark-950 h-12"></select>
+            <div class="flex gap-2">
+                <button onclick="confirmQA()" class="flex-1 bg-primary-600 py-4 rounded-2xl font-black shadow-xl active:scale-95 transition-all">Submit for Review</button>
+                <button onclick="closeModal('modal-qa')" class="px-6 bg-dark-800 rounded-2xl font-bold text-slate-400">Back</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // --- 1. CORE CONFIG & GLOBALS ---
         const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(); const auth = firebase.auth(); const storage = firebase.storage();
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const storage = firebase.storage();
 
         let currentUser = null, userProfile = null, allUsersData = [], currentTasks = [], historyMode = false, selectedTaskId = null, attachedFileObj = null, lastActionTime = Date.now();
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
 
-        // 🟢 FIX CLOCK FUNCTION 🟢
-        function startClock() {
-            const update = () => {
-                const now = moment();
-                const hTime = document.getElementById('header-time');
-                const hDate = document.getElementById('header-date');
-                const cH = document.getElementById('clock-h');
-                const cD = document.getElementById('clock-d');
-                if(hTime) hTime.innerText = now.format('HH:mm:ss');
-                if(hDate) hDate.innerText = now.format('dddd, DD MMMM YYYY');
-                if(cH) cH.innerText = now.format('HH:mm');
-                if(cD) cD.innerText = now.format('ddd, MMM DD');
-            };
-            update(); setInterval(update, 1000);
-        }
-
+        // 🟢 HELPERS 🟢
         const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : v) : Date.now();
-        function formatDuration(ms) { if(ms < 0) ms = 0; const s = Math.floor((ms/1000)%60).toString().padStart(2,'0'); const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0'); const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0'); return `${h}:${m}:${s}`; }
-        async function uploadFileToStorage(file, path) { if (!file) return null; const ref = storage.ref().child(`${path}/${Date.now()}_${file.name}`); await ref.put(file); return await ref.getDownloadURL(); }
+        const formatDuration = (ms) => {
+            if(ms < 0) ms = 0;
+            const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
+            const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0');
+            const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
+            return `${h}:${m}:${s}`;
+        }
+        function toggleLoader(s) { document.getElementById('loader').classList.toggle('hidden', !s); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 
+        // --- 2. AUTH & INIT ---
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
@@ -304,15 +291,16 @@
         });
 
         function initWorkspace() {
-            startClock();
+            startClock(); // السطر الجديد مكان المحذوف
             listenToProfile();
             listenToAllUsers();
             listenToGlobalMessages();
             listenToPrivateMessages();
             startIdleTracker();
             setInterval(updateTimersUI, 1000);
-            document.getElementById('loader').classList.add('hidden');
-
+            toggleLoader(false);
+            
+            // ESC Key Implementation
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     ['chat-window', 'users-dropdown', 'modal-qa', 'modal-logs'].forEach(id => closeModal(id));
@@ -321,6 +309,7 @@
             });
         }
 
+        // --- 3. DATABASE LISTENERS ---
         function listenToProfile() {
             db.collection('users').doc(currentUser.email.toLowerCase()).onSnapshot(doc => {
                 if(!doc.exists) return;
@@ -334,30 +323,257 @@
                 }
             });
         }
+        function startClock() {
+            const update = () => {
+                const now = moment();
+                // تحديث الساعة الكبيرة في الهيدر
+                if(document.getElementById('header-time')) document.getElementById('header-time').innerText = now.format('HH:mm:ss');
+                if(document.getElementById('header-date')) document.getElementById('header-date').innerText = now.format('dddd, DD MMMM YYYY');
+                // تحديث الساعة الصغيرة فوق التاسكات
+                if(document.getElementById('clock-h')) document.getElementById('clock-h').innerText = now.format('HH:mm');
+                if(document.getElementById('clock-d')) document.getElementById('clock-d').innerText = now.format('ddd, MMM DD');
+            };
+            update(); // تشغيل فوري
+            setInterval(update, 1000); // تحديث كل ثانية
+        }
 
-        function listenToAllUsers() { db.collection('users').onSnapshot(snap => { allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() })); renderPrivateUsersList(); }); }
+        function listenToAllUsers() {
+            db.collection('users').onSnapshot(snap => {
+                allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
+                renderPrivateUsersList();
+            });
+        }
 
+        // --- 4. UI RENDERERS ---
         function updateProfileUI(data) {
             document.getElementById('user-name').innerText = data.name;
+            document.getElementById('user-role').innerText = data.title || (data.role === 'leader' ? 'Team Lead' : 'Specialist');
             document.getElementById('user-img').src = data.photo || DEFAULT_PHOTO + data.name;
+            
             const status = data.status || 'Offline';
             const tb = data.timeBank || {};
             const safeStart = getMillis(data.lastChange);
 
-            ['timer-online', 'timer-break', 'timer-meeting'].forEach(id => {
-                const key = id.split('-')[1].charAt(0).toUpperCase() + id.split('-')[1].slice(1);
-                const el = document.getElementById(id);
-                el.dataset.val = tb[key] || 0; el.dataset.active = status === key; el.dataset.start = safeStart;
+            // Update Raw Data for Timers
+            const map = { 'Online': 'timer-online', 'Break': 'timer-break', 'Meeting': 'timer-meeting' };
+            Object.keys(map).forEach(key => {
+                const el = document.getElementById(map[key]);
+                el.dataset.val = tb[key] || 0;
+                el.dataset.active = status === key;
+                el.dataset.start = safeStart;
             });
+            
             const idleEl = document.getElementById('timer-idle');
             idleEl.dataset.val = data.idleBank || 0; idleEl.dataset.isidle = data.isIdle; idleEl.dataset.start = getMillis(data.idleSince);
 
+            // 🟢 Visual Status Cards Update 🟢
             ['Online', 'Break', 'Meeting'].forEach(s => {
                 const card = document.getElementById('card-' + s);
                 card.classList.remove('active-Online', 'active-Break', 'active-Meeting');
                 if(s === status) card.classList.add('active-' + s);
             });
             document.getElementById('user-status-dot').className = `absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-dark-950 ${status==='Online'?'bg-green-500':status==='Break'?'bg-orange-500':'bg-blue-500'}`;
+        }
+
+        function renderTaskList() {
+            const container = document.getElementById('task-list');
+            container.innerHTML = '';
+            const filtered = currentTasks.filter(t => historyMode ? t.archived : !t.archived);
+            filtered.sort((a,b) => b.id - a.id);
+
+            filtered.forEach(t => {
+                const card = document.createElement('div');
+                card.className = `task-card p-5 rounded-[1.5rem] cursor-pointer ${selectedTaskId == t.id ? 'active' : ''}`;
+                card.onclick = () => { selectedTaskId = t.id; renderTaskList(); renderTaskDetail(t); };
+                
+                let icon = t.status === 'done' ? '<i class="fas fa-check-circle text-green-500"></i>' : (t.status === 'review' ? '<i class="fas fa-eye text-purple-500"></i>' : '<i class="far fa-circle text-slate-700"></i>');
+                card.innerHTML = `<div class="flex justify-between items-start mb-2"><h4 class="font-bold text-[13px] truncate w-44 text-slate-300">${t.title}</h4>${icon}</div><div class="flex justify-between items-center"><span class="text-[9px] font-bold text-slate-600 uppercase tracking-tighter">${moment(t.id).fromNow()}</span>${t.projectId ? `<span class="bg-indigo-500/10 text-indigo-400 text-[7px] px-1.5 py-0.5 rounded font-black border border-indigo-500/10">ERP</span>` : ''}</div>`;
+                container.appendChild(card);
+            });
+        }
+
+        function renderTaskDetail(task) {
+            document.getElementById('task-empty-state').classList.add('hidden');
+            document.getElementById('task-content').classList.remove('hidden');
+            
+            document.getElementById('task-title').innerText = task.title;
+            document.getElementById('task-desc').innerHTML = task.desc;
+            document.getElementById('task-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
+            document.getElementById('task-assigner').innerText = task.createdBy || "System";
+
+            document.getElementById('task-project-tag').innerHTML = task.projectId ? `<span class="bg-primary-600/10 text-primary-500 text-[10px] font-black px-4 py-1.5 rounded-full border border-primary-500/20 mb-4 inline-block uppercase tracking-wider">PROJECT: ${task.projectName || 'ERP'}</span>` : '';
+
+            const map = { 'started':['NEW','bg-slate-800 text-slate-400'], 'working':['ON GOING','bg-blue-500/20 text-blue-400'], 'review':['IN REVIEW','bg-purple-500/20 text-purple-400'], 'done':['COMPLETED','bg-green-500/20 text-green-400'] };
+            const m = map[task.status] || map['started'];
+            document.getElementById('task-status-badge').innerHTML = `<span class="${m[1]} px-5 py-2 rounded-xl text-[11px] font-black border border-white/5">${m[0]}</span>`;
+
+            document.getElementById('task-files').innerHTML = task.file ? `<div class="p-6 bg-dark-900 border border-white/5 rounded-[2rem] flex justify-between items-center shadow-lg"><div class="flex items-center gap-5"><div class="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center text-2xl"><i class="fas fa-file-pdf"></i></div><div><p class="text-sm font-black text-slate-200">Main Attachment</p><p class="text-[10px] text-slate-500">Official Document Files</p></div></div><a href="${task.file}" target="_blank" class="w-12 h-12 rounded-full bg-dark-800 flex items-center justify-center hover:bg-primary-600 transition shadow-xl"><i class="fas fa-download"></i></a></div>` : '';
+
+            const btnBox = document.getElementById('task-action-controls');
+            btnBox.innerHTML = '';
+            if(!task.archived && task.status !== 'done') {
+                if(task.status === 'started') btnBox.innerHTML += `<button onclick="updateTaskStep('${task.id}', 'working')" class="flex-1 py-4 bg-primary-600 rounded-2xl font-black text-xs shadow-xl active:scale-95 transition-all">START EXECUTION</button>`;
+                if(task.status === 'working') btnBox.innerHTML += `<button onclick="openQAModal('${task.id}')" class="flex-1 py-4 bg-purple-600 rounded-2xl font-black text-xs shadow-xl active:scale-95 transition-all">SEND FOR REVIEW</button>`;
+            } else if(task.status === 'done') btnBox.innerHTML = `<div class="flex-1 py-4 bg-green-500/10 text-green-500 text-center rounded-2xl font-black text-xs border border-green-500/20">TASK CLOSED ✅</div>`;
+
+            renderThreadBubbles(task.comments || []);
+        }
+
+        // 🟢 RENDER PROFESSIONAL BUBBLES 🟢
+        function renderThreadBubbles(comments) {
+            const box = document.getElementById('task-comments');
+            box.innerHTML = '';
+            comments.forEach(c => {
+                const isMe = c.user === currentUser.email;
+                if(c.user === 'system') {
+                    box.innerHTML += `<div class="flex justify-center my-2"><span class="bg-dark-900 text-[9px] px-4 py-1 rounded-full text-slate-600 border border-white/5 font-bold uppercase">${c.text}</span></div>`;
+                } else {
+                    const userData = allUsersData.find(u => u.email.toLowerCase() === c.user.toLowerCase());
+                    const photo = userData?.photo || DEFAULT_PHOTO + encodeURIComponent(c.name);
+                    box.innerHTML += `
+                        <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in group">
+                            <img src="${photo}" class="w-9 h-9 rounded-xl shrink-0 object-cover border border-white/10 shadow-lg">
+                            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%]">
+                                <div class="flex items-center gap-2 mb-1 px-1"><span class="text-[9px] font-black text-slate-500 uppercase">${c.name}</span></div>
+                                <div class="chat-bubble ${isMe ? 'bubble-me' : 'bubble-them shadow-md'}">
+                                    <p class="whitespace-pre-wrap">${c.text}</p>
+                                    ${c.file ? `<div class="mt-3 pt-3 border-t border-white/10"><a href="${c.file}" target="_blank" class="text-[10px] font-black text-primary-200 underline flex items-center gap-2"><i class="fas fa-paperclip"></i> View Media</a></div>` : ''}
+                                </div>
+                                <span class="text-[8px] text-slate-700 mt-1 font-bold">${moment(c.time).format('h:mm A')}</span>
+                            </div>
+                        </div>`;
+                }
+            });
+            box.parentElement.scrollTop = box.parentElement.scrollHeight;
+        }
+
+        // --- 5. CORE ACTIONS ---
+        async function handleStatusClick(s) {
+            if(userProfile.status === s) return;
+            const card = document.getElementById('card-' + s);
+            card.className = `status-card cursor-pointer p-4 rounded-2xl flex items-center justify-between active-${s} transform scale-105 transition-all`;
+            await setStatus(currentUser.email.toLowerCase(), s, false);
+        }
+
+        async function setStatus(target, newStatus, isAuto) {
+            const userRef = db.collection('users').doc(target);
+            const uData = (await userRef.get()).data();
+            const now = Date.now();
+            let idleB = uData.idleBank || 0;
+            if (uData.isIdle && uData.idleSince) {
+                const dur = now - getMillis(uData.idleSince);
+                idleB += dur;
+                await db.collection('logs').add({ user: target, name: uData.name, from_status: 'Idle (Auto)', to_status: newStatus, start_time: uData.idleSince, end_time: firebase.firestore.FieldValue.serverTimestamp(), duration_ms: dur, auto: true });
+            }
+            const duration = now - getMillis(uData.lastChange);
+            let tb = uData.timeBank || {};
+            const old = uData.status || 'Offline';
+            tb[old] = (tb[old] || 0) + duration;
+            const ts = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection('logs').add({ user: target, name: uData.name, from_status: old, to_status: newStatus, start_time: uData.lastChange || ts, end_time: ts, duration_ms: duration, auto: isAuto });
+            await userRef.update({ status: newStatus, lastChange: ts, timeBank: tb, isIdle: false, idleSince: null, idleBank: idleB });
+        }
+
+        async function handleCommentSubmit(e) {
+            e.preventDefault();
+            const inp = document.getElementById('comment-input');
+            if(!inp.value.trim() && !attachedFileObj) return;
+            const btn = document.getElementById('comment-btn'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+            let url = attachedFileObj ? await uploadFileToStorage(attachedFileObj, 'tasks/comments') : null;
+            const tasks = [...userProfile.tasks];
+            const idx = tasks.findIndex(t => t.id == selectedTaskId);
+            if(idx > -1) {
+                tasks[idx].comments = tasks[idx].comments || [];
+                tasks[idx].comments.push({ user: currentUser.email, name: userProfile.name, text: inp.value.trim(), file: url, time: Date.now() });
+                await db.collection('users').doc(currentUser.email).update({ tasks });
+                inp.value = ''; attachedFileObj = null; document.getElementById('file-preview').classList.add('hidden');
+            }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+        }
+
+        // --- 6. CHAT SYSTEMS ---
+        function renderPrivateUsersList() {
+            const box = document.getElementById('users-list-content');
+            box.innerHTML = '';
+            allUsersData.filter(u => u.email !== currentUser.email).forEach(u => {
+                const s = u.status || 'Offline';
+                const pulseColor = s === 'Online' ? 'bg-green-500' : s === 'Break' ? 'bg-orange-500' : 'bg-slate-700';
+                box.innerHTML += `
+                    <div onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}', '${u.title}')" class="flex items-center gap-4 p-3 rounded-2xl hover:bg-dark-950 transition cursor-pointer group">
+                        <div class="relative"><img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-10 h-10 rounded-xl object-cover border border-white/10"><span class="absolute -bottom-1 -right-1 pulse-dot ${pulseColor} border-2 border-dark-900"></span></div>
+                        <div class="flex-1 text-right overflow-hidden"><p class="text-xs font-black text-slate-200 truncate group-hover:text-primary-500">${u.name}</p><p class="text-[8px] font-bold text-slate-600 uppercase tracking-widest">${u.title || 'Member'}</p></div>
+                    </div>`;
+            });
+        }
+
+        function listenToGlobalMessages() {
+            db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s => {
+                const t = document.getElementById("chat-messages");
+                t.innerHTML = "";
+                s.forEach(d => {
+                    const m = d.data();
+                    const userData = allUsersData.find(u => u.email.toLowerCase() === m.user.toLowerCase());
+                    m.photo = userData?.photo; m.name = userData?.name || m.name;
+                    t.innerHTML += renderBubbleInLounge(m);
+                });
+                t.scrollTop = t.scrollHeight;
+                if(document.getElementById("chat-window").classList.contains("hidden")) document.getElementById("chat-badge").classList.remove("hidden");
+            });
+        }
+
+        function renderBubbleInLounge(m) {
+            const isMe = m.user === currentUser.email;
+            const photo = m.photo || DEFAULT_PHOTO + encodeURIComponent(m.name);
+            return `<div class="flex gap-3 ${isMe?'flex-row-reverse':''} animate-fade-in"><img src="${photo}" class="w-7 h-7 rounded-lg shrink-0 object-cover border border-white/10 shadow-sm"><div class="chat-bubble ${isMe?'bubble-me':'bubble-them'}"><p class="font-black text-[9px] mb-1 ${isMe?'text-primary-100':'text-primary-500'}">${m.name}</p><p>${m.text}</p></div></div>`;
+        }
+
+        async function handleGlobalMessage(e) {
+            e.preventDefault();
+            const i = document.getElementById("chat-input"); if(!i.value.trim()) return;
+            await db.collection("messages").add({ text: i.value.trim(), user: currentUser.email, name: userProfile.name, time: firebase.firestore.FieldValue.serverTimestamp() });
+            i.value = "";
+        }
+
+        function openPrivateChat(email, name, photo, title) {
+            closeModal('users-dropdown');
+            const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
+            if(document.getElementById(`chat-win-${chatId}`)) return;
+            const win = document.createElement('div');
+            win.id = `chat-win-${chatId}`;
+            win.className = "chat-window fixed bottom-8 left-8 w-[320px] h-[480px] bg-dark-900 border border-white/10 rounded-[2.5rem] shadow-2xl animate-fade-in flex flex-col";
+            win.innerHTML = `<div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header cursor-move shrink-0 rounded-t-[2.5rem]"><div class="flex items-center gap-3"><img src="${photo||DEFAULT_PHOTO+name}" class="w-8 h-8 rounded-xl object-cover"><div class="text-right"><p class="text-[11px] font-black text-white">${name}</p><p class="text-[8px] text-primary-500 font-bold uppercase">${title||'Specialist'}</p></div></div><button onclick="this.parentElement.parentElement.remove()" class="text-slate-600 hover:text-white"><i class="fas fa-times"></i></button></div><div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar bg-dark-950/20"></div><form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-3 bg-dark-900 border-t border-white/5 flex gap-2 rounded-b-[2.5rem]"><input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2.5 text-[11px] text-white outline-none focus:border-primary-500" placeholder="Chat with ${name}..." autocomplete="off"><button class="bg-primary-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane text-xs"></i></button></form>`;
+            document.getElementById('private-chats-container').appendChild(win);
+            listenToPrivateChat(email, chatId);
+        }
+
+        async function sendPrivateMsg(e, email, chatId) { e.preventDefault(); const inp = document.getElementById(`input-${chatId}`); if(!inp.value.trim()) return; await db.collection('private_messages').add({ sender: currentUser.email.toLowerCase(), receiver: email.toLowerCase(), text: inp.value.trim(), time: firebase.firestore.FieldValue.serverTimestamp(), name: userProfile.name }); inp.value = ''; }
+        function listenToPrivateChat(email, chatId) {
+            const box = document.getElementById(`msgs-${chatId}`);
+            db.collection('private_messages').orderBy('time', 'asc').onSnapshot(snap => {
+                box.innerHTML = '';
+                snap.docs.forEach(doc => {
+                    const m = doc.data();
+                    if((m.sender === currentUser.email.toLowerCase() && m.receiver === email.toLowerCase()) || (m.sender === email.toLowerCase() && m.receiver === currentUser.email.toLowerCase())) {
+                        const isMe = m.sender === currentUser.email.toLowerCase();
+                        box.innerHTML += `<div class="chat-bubble ${isMe?'bubble-me':'bubble-them'}">${m.text}</div>`;
+                    }
+                });
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        // --- 7. HISTORY & TIMERS ---
+        async function openLogsModal() {
+            const container = document.getElementById('logs-timeline'); container.innerHTML = '';
+            openModal('modal-logs');
+            const start = new Date(); start.setHours(0,0,0,0);
+            const snap = await db.collection('logs').where('user', '==', currentUser.email.toLowerCase()).where('end_time', '>=', start).orderBy('end_time', 'desc').get();
+            if(snap.empty) container.innerHTML = '<p class="text-center py-10 text-xs text-slate-700">لا توجد سجلات حركية لليوم</p>';
+            snap.forEach(doc => {
+                const l = doc.data();
+                const config = l.to_status === 'Online' ? 'bg-green-500' : l.to_status === 'Break' ? 'bg-orange-500' : 'bg-blue-500';
+                container.innerHTML += `<div class="relative pb-6 border-r border-white/5 pr-6"><div class="absolute -right-1 top-2 w-2 h-2 rounded-full ${config} shadow-[0_0_10px_rgba(0,0,0,1)]"></div><div class="bg-dark-900/50 p-4 rounded-2xl border border-white/5"><div class="flex justify-between items-center mb-1"><p class="text-[10px] font-black text-primary-500">${moment(l.end_time.toDate()).format('hh:mm A')}</p><span class="text-[8px] opacity-40 font-bold uppercase">${l.auto?'Auto':'Manual'}</span></div><p class="text-[11px] font-bold text-slate-300 uppercase">Moved to <span class="text-white">${l.to_status}</span></p></div></div>`;
+            });
         }
 
         function updateTimersUI() {
@@ -369,86 +585,29 @@
             });
         }
 
-        function renderBubble(m) {
-            const isMe = m.user === currentUser.email || m.sender === currentUser.email;
-            const userData = allUsersData.find(u => u.email.toLowerCase() === (m.user || m.sender || '').toLowerCase());
-            const avatar = userData?.photo || DEFAULT_PHOTO + encodeURIComponent(m.name || 'U');
-            return `
-                <div class="flex gap-3 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in group">
-                    <img src="${avatar}" class="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0">
-                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%]">
-                        <span class="text-[8px] font-black text-slate-600 mb-0.5 px-1">${m.name}</span>
-                        <div class="chat-bubble ${isMe ? 'bubble-me' : 'bubble-them shadow-md'}"><p>${m.text}</p></div>
-                        <span class="text-[7px] text-slate-700 mt-1 font-bold">${m.time ? moment(m.time.toDate()).format('h:mm A') : 'Now'}</span>
-                    </div>
-                </div>`;
-        }
-
-        function renderTaskList() {
-            const container = document.getElementById('task-list'); container.innerHTML = '';
-            const filtered = currentTasks.filter(t => historyMode ? t.archived : !t.archived).sort((a,b) => b.id - a.id);
-            filtered.forEach(t => {
-                const card = document.createElement('div'); card.className = `task-card p-4 rounded-xl cursor-pointer ${selectedTaskId == t.id ? 'active' : ''}`;
-                card.onclick = () => { selectedTaskId = t.id; renderTaskList(); renderTaskDetail(t); };
-                let icon = t.status === 'done' ? '<i class="fas fa-check-circle text-green-500"></i>' : (t.status === 'review' ? '<i class="fas fa-eye text-purple-500"></i>' : '<i class="far fa-circle text-slate-700"></i>');
-                card.innerHTML = `<div class="flex justify-between items-start mb-2"><h4 class="font-bold text-[12px] truncate w-40 text-slate-300">${t.title}</h4><span>${icon}</span></div><div class="flex justify-between items-center"><span class="text-[8px] font-bold text-slate-600 uppercase">${moment(t.id).fromNow()}</span>${t.projectId ? `<span class="bg-primary-500/10 text-primary-400 text-[7px] px-1.5 py-0.5 rounded font-black border border-primary-500/10 uppercase">ERP</span>` : ''}</div>`;
-                container.appendChild(card);
+        function startIdleTracker() {
+            ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+                document.addEventListener(evt, () => {
+                    lastActionTime = Date.now();
+                    if(userProfile?.isIdle) db.collection('users').doc(currentUser.email).update({ isIdle: false, idleSince: null });
+                }, true);
             });
+            setInterval(() => {
+                if(!userProfile || userProfile.status !== 'Online' || userProfile.isIdle) return;
+                if(Date.now() - lastActionTime > (userProfile.idleLimit || 5) * 60000) db.collection('users').doc(currentUser.email).update({ isIdle: true, idleSince: firebase.firestore.Timestamp.now() });
+            }, 10000);
         }
 
-        function renderTaskDetail(task) {
-            document.getElementById('task-empty-state').classList.add('hidden'); document.getElementById('task-content').classList.remove('hidden');
-            document.getElementById('task-title').innerText = task.title; document.getElementById('task-desc').innerHTML = task.desc;
-            document.getElementById('task-date').innerText = moment(task.id).format('D MMM YYYY, h:mm A');
-            document.getElementById('task-assigner').innerText = task.createdBy || "Admin";
-            document.getElementById('task-project-tag').innerHTML = task.projectId ? `<span class="bg-primary-600/10 text-primary-500 text-[9px] font-black px-4 py-1.5 rounded-full border border-primary-500/20 mb-4 inline-block uppercase tracking-wider">PROJECT: ${task.projectName || 'ERP'}</span>` : '';
-            const map = { 'started':['NEW','bg-slate-800 text-slate-400'], 'working':['ACTIVE','bg-blue-500/20 text-blue-400'], 'review':['REVIEW','bg-purple-500/20 text-purple-400'], 'done':['DONE','bg-green-500/20 text-green-400'] };
-            const m = map[task.status] || map['started'];
-            document.getElementById('task-status-badge').innerHTML = `<span class="${m[1]} px-5 py-2 rounded-xl text-[10px] font-black border border-white/5">${m[0]}</span>`;
-            document.getElementById('task-files').innerHTML = task.file ? `<div class="p-6 bg-dark-900 border border-white/5 rounded-3xl flex justify-between items-center"><div class="flex items-center gap-5"><div class="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center text-xl"><i class="fas fa-file-pdf"></i></div><div><p class="text-xs font-black text-slate-200">Main Attachment</p></div></div><a href="${task.file}" target="_blank" class="w-10 h-10 rounded-full bg-dark-800 flex items-center justify-center hover:bg-primary-600 transition"><i class="fas fa-download"></i></a></div>` : '';
-            const btnBox = document.getElementById('task-action-controls'); btnBox.innerHTML = '';
-            if(!task.archived && task.status !== 'done') {
-                if(task.status === 'started') btnBox.innerHTML += `<button onclick="updateTaskStep('${task.id}', 'working')" class="flex-1 py-4 bg-primary-600 rounded-2xl font-black text-xs shadow-xl active:scale-95 transition-all uppercase">Start Mission</button>`;
-                if(task.status === 'working') btnBox.innerHTML += `<button onclick="openQAModal('${task.id}')" class="flex-1 py-4 bg-purple-600 rounded-2xl font-black text-xs shadow-xl active:scale-95 transition-all uppercase">Submit Review</button>`;
-            } else if(task.status === 'done') btnBox.innerHTML = `<div class="flex-1 py-4 bg-green-500/10 text-green-500 text-center rounded-2xl font-black text-xs border border-green-500/20">CLOSED ✅</div>`;
-            const box = document.getElementById('task-comments'); box.innerHTML = ''; (task.comments || []).forEach(c => { box.innerHTML += renderBubble(c); }); box.parentElement.scrollTop = box.parentElement.scrollHeight;
-        }
-
-        async function handleStatusClick(s) { if(userProfile.status === s) return; await setStatus(currentUser.email.toLowerCase(), s, false); }
-        async function handleCommentSubmit(e) { e.preventDefault(); const inp = document.getElementById('comment-input'); if(!inp.value.trim() && !attachedFileObj) return; document.getElementById('comment-btn').disabled = true; let url = attachedFileObj ? await uploadFileToStorage(attachedFileObj, 'tasks/comments') : null; const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == selectedTaskId); if(idx > -1) { tasks[idx].comments = tasks[idx].comments || []; tasks[idx].comments.push({ user: currentUser.email, name: userProfile.name, text: inp.value.trim(), file: url, time: firebase.firestore.Timestamp.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); inp.value = ''; attachedFileObj = null; document.getElementById('file-preview').classList.add('hidden'); } document.getElementById('comment-btn').disabled = false; }
-        async function handleGlobalMessage(e) { e.preventDefault(); const i = document.getElementById("chat-input"); if(!i.value.trim()) return; await db.collection("messages").add({ text: i.value.trim(), user: currentUser.email, name: userProfile.name, time: firebase.firestore.FieldValue.serverTimestamp() }); i.value = ""; }
+        // --- 8. UTILS ---
+        function changeTaskTab(mode, btn) { historyMode = mode; renderTaskList(); document.querySelectorAll('.task-tab-btn').forEach(b => b.className = "task-tab-btn flex-1 py-2 text-[10px] font-black rounded-md text-slate-600"); btn.className = "task-tab-btn flex-1 py-2 text-[10px] font-black rounded-md bg-dark-800 text-white shadow-xl"; }
         function toggleUsersDropdown() { document.getElementById('users-dropdown').classList.toggle('hidden'); document.getElementById('users-dropdown').classList.toggle('active'); }
         function toggleChat() { document.getElementById('chat-window').classList.toggle('hidden'); document.getElementById('chat-badge').classList.add('hidden'); }
-        function changeTaskTab(mode, btn) { historyMode = mode; renderTaskList(); document.querySelectorAll('.task-tab-btn').forEach(b => b.className = "task-tab-btn flex-1 py-2 text-[10px] font-black rounded-md text-slate-600"); btn.className = "task-tab-btn flex-1 py-2 text-[10px] font-black rounded-md bg-dark-800 text-white shadow-xl"; }
-        function handleFileSelect(i) { if(i.files[0]) { attachedFileObj = i.files[0]; document.getElementById('file-preview').innerText = "📎 Ready: " + attachedFileObj.name; document.getElementById('file-preview').classList.remove('hidden'); } }
-
-        function renderPrivateUsersList() {
-            const box = document.getElementById('users-list-content'); box.innerHTML = '';
-            allUsersData.filter(u => u.email !== currentUser.email).forEach(u => {
-                const s = u.status || 'Offline'; const pulseColor = s === 'Online' ? 'bg-green-500' : s === 'Break' ? 'bg-orange-500' : 'bg-slate-700';
-                box.innerHTML += `<div onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}', '${u.title}')" class="flex items-center gap-4 p-3 rounded-2xl hover:bg-dark-950 transition cursor-pointer group"><div class="relative shrink-0"><img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-9 h-9 rounded-xl object-cover border border-white/10"><span class="absolute -bottom-1 -right-1 pulse-dot ${pulseColor} border-2 border-dark-900"></span></div><div class="flex-1 text-right overflow-hidden"><p class="text-[11px] font-black text-slate-200 truncate group-hover:text-primary-500">${u.name}</p><p class="text-[7px] font-bold text-slate-600 uppercase tracking-widest">${u.title || 'Member'}</p></div></div>`;
-            });
-        }
-
-        function listenToGlobalMessages() { db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s => { const t = document.getElementById("chat-messages"); t.innerHTML = ""; s.forEach(d => { t.innerHTML += renderBubble(d.data()); }); t.scrollTop = t.scrollHeight; if(document.getElementById("chat-window").classList.contains("hidden")) document.getElementById("chat-badge").classList.remove("hidden"); }); }
-        function listenToPrivateMessages() { db.collection("private_messages").where("receiver", "==", currentUser.email.toLowerCase()).onSnapshot(s => { if(!s.metadata.hasPendingWrites) { s.docChanges().forEach(c => { if (c.type === "added") document.getElementById("chat-badge")?.classList.remove("hidden"); }); } }); }
-
-        function openPrivateChat(email, name, photo, title) {
-            closeModal('users-dropdown'); const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_"); if(document.getElementById(`chat-win-${chatId}`)) return;
-            const win = document.createElement('div'); win.id = `chat-win-${chatId}`; win.className = "chat-window fixed bottom-8 left-8 w-[310px] h-[460px] bg-dark-900 border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col";
-            win.innerHTML = `<div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header cursor-move shrink-0 rounded-t-[2.5rem]"><div class="flex items-center gap-3"><img src="${photo||DEFAULT_PHOTO+name}" class="w-7 h-7 rounded-lg object-cover"><div class="text-right"><p class="text-[10px] font-black text-white">${name}</p></div></div><button onclick="this.parentElement.parentElement.remove()" class="text-slate-600 hover:text-white"><i class="fas fa-times"></i></button></div><div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar bg-dark-950/20"></div><form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-3 bg-dark-900 border-t border-white/5 flex gap-2 rounded-b-[2.5rem]"><input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-[10px] text-white outline-none" placeholder="Reply..." autocomplete="off"><button class="bg-primary-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fas fa-paper-plane text-[10px]"></i></button></form>`;
-            document.getElementById('private-chats-container').appendChild(win); listenToPrivateChat(email, chatId);
-        }
-
-        async function sendPrivateMsg(e, email, chatId) { e.preventDefault(); const inp = document.getElementById(`input-${chatId}`); if(!inp.value.trim()) return; await db.collection('private_messages').add({ sender: currentUser.email.toLowerCase(), receiver: email.toLowerCase(), text: inp.value.trim(), time: firebase.firestore.FieldValue.serverTimestamp(), name: userProfile.name }); inp.value = ''; }
-        function listenToPrivateChat(email, chatId) { const box = document.getElementById(`msgs-${chatId}`); db.collection('private_messages').orderBy('time', 'asc').onSnapshot(snap => { box.innerHTML = ''; snap.docs.forEach(doc => { const m = doc.data(); if((m.sender === currentUser.email.toLowerCase() && m.receiver === email.toLowerCase()) || (m.sender === email.toLowerCase() && m.receiver === currentUser.email.toLowerCase())) { box.innerHTML += renderBubble(m); } }); box.scrollTop = box.scrollHeight; }); }
-
-        async function openLogsModal() { const c = document.getElementById('logs-timeline'); c.innerHTML = ''; openModal('modal-logs'); const snap = await db.collection('logs').where('user', '==', currentUser.email.toLowerCase()).where('end_time', '>=', new Date(new Date().setHours(0,0,0,0))).orderBy('end_time', 'desc').get(); if(snap.empty) c.innerHTML = '<p class="text-center py-10 text-[10px] text-slate-700 uppercase">Empty Feed</p>'; snap.forEach(doc => { const l = doc.data(); const cls = l.to_status === 'Online' ? 'bg-green-500' : l.to_status === 'Break' ? 'bg-orange-500' : 'bg-blue-500'; c.innerHTML += `<div class="relative pb-6 border-r border-white/5 pr-6"><div class="absolute -right-[4px] top-2 w-2 h-2 rounded-full ${cls}"></div><div class="bg-dark-900/50 p-4 rounded-2xl border border-white/5 shadow-sm"><div class="flex justify-between items-center mb-1"><p class="text-[9px] font-black text-primary-500">${moment(l.end_time.toDate()).format('hh:mm A')}</p></div><p class="text-[10px] font-bold text-slate-300">Switched to <span class="text-white underline">${l.to_status}</span></p></div></div>`; }); }
-        async function updateTaskStep(id, s) { const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == id); if(idx > -1) { tasks[idx].status = s; tasks[idx].comments = tasks[idx].comments || []; tasks[idx].comments.push({ user: 'system', text: `Status updated to ${s}`, time: firebase.firestore.Timestamp.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); } }
+        async function updateTaskStep(id, s) { const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == id); if(idx > -1) { tasks[idx].status = s; tasks[idx].comments = tasks[idx].comments || []; tasks[idx].comments.push({ user: 'system', text: `Changed Status to: ${s}`, time: Date.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); } }
         function openQAModal(id) { document.getElementById('review-task-id').value = id; const sel = document.getElementById('qa-manager-select'); sel.innerHTML = ''; allUsersData.filter(u => ['admin', 'supervisor', 'leader'].includes(u.role)).forEach(m => sel.innerHTML += `<option value="${m.email}">${m.name} (${m.role})</option>`); openModal('modal-qa'); }
-        async function confirmQA() { const id = document.getElementById('review-task-id').value; const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == id); if(idx > -1) { tasks[idx].status = 'review'; tasks[idx].reviewerEmail = document.getElementById('qa-manager-select').value; tasks[idx].comments.push({ user: 'system', text: `Submitted for review`, time: firebase.firestore.Timestamp.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); closeModal('modal-qa'); } }
-        function startIdleTracker() { ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => { document.addEventListener(evt, () => { lastActionTime = Date.now(); if(userProfile?.isIdle) db.collection('users').doc(currentUser.email).update({ isIdle: false, idleSince: null }); }, true); }); setInterval(() => { if(!userProfile || userProfile.status !== 'Online' || userProfile.isIdle) return; if(Date.now() - lastActionTime > (userProfile.idleLimit || 5) * 60000) db.collection('users').doc(currentUser.email).update({ isIdle: true, idleSince: firebase.firestore.Timestamp.now() }); }, 10000); }
-        async function logout() { if(confirm("End Session?")) { await setStatus(currentUser.email, 'Offline', true); auth.signOut().then(() => window.location.replace('index.html')); } }
+        async function confirmQA() { const id = document.getElementById('review-task-id').value; const rev = document.getElementById('qa-manager-select').value; const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == id); if(idx > -1) { tasks[idx].status = 'review'; tasks[idx].reviewerEmail = rev; tasks[idx].comments.push({ user: 'system', text: `Sent to: ${rev} for review`, time: Date.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); closeModal('modal-qa'); } }
+        function handleFileSelect(i) { if(i.files[0]) { attachedFileObj = i.files[0]; document.getElementById('file-preview').innerText = "📎 Attachment Ready: " + attachedFileObj.name; document.getElementById('file-preview').classList.remove('hidden'); } }
+        function listenToPrivateMessages() { db.collection("private_messages").where("receiver", "==", currentUser.email.toLowerCase()).onSnapshot(s => { if(!s.metadata.hasPendingWrites) { s.docChanges().forEach(c => { if (c.type === "added") playNotification(); }); } }); }
+        async function logout() { if(confirm("Are you sure you want to end your session?")) { await setStatus(currentUser.email, 'Offline', true); auth.signOut().then(() => window.location.replace('index.html')); } }
     </script>
 </body>
 </html>
