@@ -381,32 +381,43 @@
         }
 
        function updateProfileUI(data) {
+            // 1. تحديث الاسم والصورة
             document.getElementById('user-name').innerText = data.name;
             document.getElementById('user-img').src = data.photo || DEFAULT_PHOTO + encodeURIComponent(data.name);
             
-            // التعديل هنا: سحب المسمى الوظيفي من البيانات بدلاً من النص الثابت
+            // 2. تحديث المسمى الوظيفي (Title) من قاعدة البيانات
             document.getElementById('user-role').innerText = data.title || "قائد فريق"; 
             
-            const status = data.status || 'Offline';
-            // ... باقي الكود كما هو
+            // 3. تعريف الحالة (هنا كان الخطأ، قمنا بتعريفها مرة واحدة فقط)
             const status = data.status || 'Offline';
             const tb = data.timeBank || {};
             const safeStart = getMillis(data.lastChange);
-
+        
+            // 4. تحديث العدادات (Timers)
             ['timer-online', 'timer-break', 'timer-meeting'].forEach(id => {
                 const key = id.split('-')[1].charAt(0).toUpperCase() + id.split('-')[1].slice(1);
                 const el = document.getElementById(id);
-                el.dataset.val = tb[key] || 0; el.dataset.active = status === key; el.dataset.start = safeStart;
+                if (el) {
+                    el.dataset.val = tb[key] || 0; 
+                    el.dataset.active = status === key; 
+                    el.dataset.start = safeStart;
+                }
             });
-
+        
+            // 5. تحديث شكل بطاقات الحالة (Active State)
             ['Online', 'Break', 'Meeting'].forEach(s => {
                 const card = document.getElementById('card-' + s);
-                card.classList.remove('active-Online', 'active-Break', 'active-Meeting');
-                if(s === status) card.classList.add('active-' + s);
+                if (card) {
+                    card.classList.remove('active-Online', 'active-Break', 'active-Meeting');
+                    if(s === status) card.classList.add('active-' + s);
+                }
             });
             
+            // 6. تحديث نقطة الحالة بجانب الصورة
             const dot = document.getElementById('user-status-dot');
-            dot.className = `absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-dark-950 ${status==='Online'?'bg-green-500':status==='Break'?'bg-orange-500':'bg-blue-500'}`;
+            if (dot) {
+                dot.className = `absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-dark-950 ${status==='Online'?'bg-green-500':status==='Break'?'bg-orange-500':'bg-blue-500'}`;
+            }
         }
         function openAddTaskModal() {
             // 1. إعادة تعيين الحقول
@@ -742,4 +753,5 @@
     </script>
 </body>
 </html>
+
 
