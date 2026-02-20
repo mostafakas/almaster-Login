@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مساحة العمل | ALMASTER</title>
-    <meta name="theme-color" content="#0f172a">
+    <title>مساحة عمل الموظف | ALMASTER</title>
+    <meta name="theme-color" content="#020617">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -37,183 +37,225 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 20px; }
         
         /* تأثير البطاقة النشطة */
-        .status-card-active { transform: scale(1.05); border-width: 3px; box-shadow: 0 0 20px rgba(14, 165, 233, 0.2); }
-        .active-Online { background-color: #064e3b !important; border-color: #10b981 !important; color: white !important; }
-        .active-Break { background-color: #78350f !important; border-color: #f59e0b !important; color: white !important; }
-        .active-Meeting { background-color: #1e3a8a !important; border-color: #3b82f6 !important; color: white !important; }
+        .status-card-active { transform: scale(1.02); border-width: 2px; }
+        .active-Online { background-color: #064e3b !important; border-color: #10b981 !important; }
+        .active-Break { background-color: #78350f !important; border-color: #f59e0b !important; }
+        .active-Meeting { background-color: #1e3a8a !important; border-color: #3b82f6 !important; }
 
         .task-card { background: #0f172a; border: 1px solid #1e293b; transition: all 0.2s; }
         .task-card:hover { border-color: #0ea5e9; background: #1e293b; }
         .task-card.active { border-right: 5px solid #0ea5e9; background: #1e293b; }
 
-        .ql-editor { direction: rtl; text-align: right; font-family: 'Cairo', sans-serif; color: white; }
-        .ql-toolbar { background: #f1f5f9 !important; border-radius: 8px 8px 0 0; }
+        /* Dropdown الزملاء المطور */
+        #users-dropdown { transform-origin: top; transition: all 0.2s ease-out; transform: scaleY(0); opacity: 0; }
+        #users-dropdown.active { transform: scaleY(1); opacity: 1; }
+
+        .chat-window { position: fixed; z-index: 100; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .chat-header { cursor: move; user-select: none; }
     </style>
 </head>
 
-<body class="dark text-slate-100">
+<body class="dark selection:bg-primary-500 selection:text-white">
 
-    <div id="loader" class="fixed inset-0 z-[200] bg-dark-950 flex flex-col items-center justify-center">
+    <div id="loader" class="fixed inset-0 z-[300] bg-dark-950 flex flex-col items-center justify-center">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500 mb-4"></div>
-        <h2 class="text-lg font-bold animate-pulse tracking-widest">جاري تهيئة مساحة العمل...</h2>
+        <h2 class="text-lg font-bold animate-pulse tracking-widest uppercase">Initializing Workspace</h2>
     </div>
-
-    <header class="h-16 border-b border-white/5 bg-dark-900 px-6 flex items-center justify-between shrink-0 z-50">
-        <div class="flex items-center gap-4">
-            <img src="MASTER_LOGO_WHPNG.png" class="h-8 object-contain" onerror="this.src='https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=AL'">
-            <div class="h-6 w-[1px] bg-white/10 mx-2"></div>
-            <h2 class="text-sm font-black tracking-tight text-slate-400">EMPLOYEE <span class="text-white">WORKSPACE</span></h2>
-        </div>
-        <div class="flex flex-col items-center">
-            <div id="header-time" class="text-xl font-black font-mono tracking-widest text-primary-500">00:00:00</div>
-            <div id="header-date" class="text-[9px] font-bold text-slate-500 uppercase">Loading Date...</div>
-        </div>
-        <div class="flex items-center gap-3">
-            <div id="connection-status" class="flex items-center gap-2 text-[10px] font-bold text-green-500 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
-                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span> متصل مباشر
-            </div>
-        </div>
-    </header>
 
     <main class="flex-1 flex overflow-hidden">
         
-        <div class="w-1/3 max-w-[380px] border-l border-white/5 p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar bg-dark-950/50">
+        <aside class="w-1/3 max-w-[400px] border-l border-white/5 flex flex-col bg-dark-950/80 backdrop-blur-md overflow-hidden h-full">
             
-            <div class="flex items-center gap-4 p-4 rounded-3xl bg-dark-900 border border-white/5 shrink-0">
-                <img id="user-img" src="" class="w-16 h-16 rounded-2xl object-cover border-2 border-primary-500 shadow-lg shadow-primary-500/10">
-                <div class="overflow-hidden">
-                    <h3 id="user-name" class="font-black text-lg truncate">User Name</h3>
-                    <p id="user-role" class="text-[10px] font-bold text-primary-500 uppercase tracking-widest">Position</p>
+            <div class="p-6 border-b border-white/5 bg-dark-900 shrink-0">
+                <div class="flex items-center justify-between mb-6">
+                    <img src="MASTER_LOGO_WHPNG.png" class="h-7 object-contain" onerror="this.src='https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=AL'">
+                    <div class="flex items-center gap-2 text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span> Live
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="relative">
+                        <img id="user-img" src="" class="w-16 h-16 rounded-2xl object-cover border-2 border-primary-500 shadow-xl shadow-primary-500/20 bg-dark-800">
+                        <span id="user-status-dot" class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-dark-900 bg-slate-500"></span>
+                    </div>
+                    <div class="overflow-hidden">
+                        <h2 id="user-name" class="font-black text-lg truncate">Loading...</h2>
+                        <p id="user-role" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">Member</p>
+                        <button onclick="viewLogs(currentUser.email)" class="text-[10px] font-black text-primary-500 hover:text-white transition uppercase flex items-center gap-2">
+                            <i class="fas fa-history"></i> عرض سجل الحركات (History)
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-3 shrink-0">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">تحكم في حالتك الحالية:</p>
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">إحصائيات وحالة اليوم:</p>
                 
-                <div id="card-Online" onclick="handleStatusClick('Online')" class="group cursor-pointer transition-all p-4 rounded-2xl border border-white/5 bg-dark-900 flex items-center justify-between hover:border-green-500/50">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-xl bg-green-500/10 text-green-500 flex items-center justify-center group-hover:scale-110 transition"><i class="fas fa-laptop-code"></i></div>
-                        <div><p class="text-[10px] font-bold opacity-60">وقت العمل</p><p id="timer-online" class="text-base font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                <div class="grid grid-cols-1 gap-3">
+                    <div id="card-Online" onclick="handleStatusClick('Online')" class="group cursor-pointer transition-all p-4 rounded-2xl border border-white/5 bg-dark-900 flex items-center justify-between hover:border-green-500/40">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-green-500/10 text-green-500 flex items-center justify-center transition group-hover:scale-110"><i class="fas fa-laptop-code"></i></div>
+                            <div><p class="text-[10px] font-black opacity-50 uppercase">وقت العمل</p><p id="timer-online" class="text-base font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                        </div>
+                        <span class="text-[9px] font-black opacity-0 group-hover:opacity-100 transition text-green-400">بدأ العمل</span>
                     </div>
-                    <i class="fas fa-play text-xs opacity-0 group-hover:opacity-100 transition"></i>
+
+                    <div id="card-Break" onclick="handleStatusClick('Break')" class="group cursor-pointer transition-all p-4 rounded-2xl border border-white/5 bg-dark-900 flex items-center justify-between hover:border-orange-500/40">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center transition group-hover:scale-110"><i class="fas fa-coffee"></i></div>
+                            <div><p class="text-[10px] font-black opacity-50 uppercase">استراحة</p><p id="timer-break" class="text-base font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                        </div>
+                        <span class="text-[9px] font-black opacity-0 group-hover:opacity-100 transition text-orange-400">توقف مؤقت</span>
+                    </div>
+
+                    <div id="card-Meeting" onclick="handleStatusClick('Meeting')" class="group cursor-pointer transition-all p-4 rounded-2xl border border-white/5 bg-dark-900 flex items-center justify-between hover:border-blue-500/40">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center transition group-hover:scale-110"><i class="fas fa-users"></i></div>
+                            <div><p class="text-[10px] font-black opacity-50 uppercase">اجتماع</p><p id="timer-meeting" class="text-base font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                        </div>
+                        <span class="text-[9px] font-black opacity-0 group-hover:opacity-100 transition text-blue-400">دخول اجتماع</span>
+                    </div>
                 </div>
 
-                <div id="card-Break" onclick="handleStatusClick('Break')" class="group cursor-pointer transition-all p-4 rounded-2xl border border-white/5 bg-dark-900 flex items-center justify-between hover:border-orange-500/50">
+                <div class="bg-red-500/5 border border-red-500/10 p-4 rounded-2xl flex items-center justify-between shrink-0">
                     <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-110 transition"><i class="fas fa-coffee"></i></div>
-                        <div><p class="text-[10px] font-bold opacity-60">استراحة</p><p id="timer-break" class="text-base font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                        <div class="w-10 h-10 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center animate-pulse"><i class="fas fa-keyboard"></i></div>
+                        <div><p class="text-[10px] font-black text-red-400 opacity-60 uppercase">الخمول (Idle)</p><p id="timer-idle" class="text-lg font-black text-red-600 stat-idle" data-val="0" data-isidle="false" data-start="0">00:00:00</p></div>
                     </div>
-                    <i class="fas fa-pause text-xs opacity-0 group-hover:opacity-100 transition"></i>
                 </div>
 
-                <div id="card-Meeting" onclick="handleStatusClick('Meeting')" class="group cursor-pointer transition-all p-4 rounded-2xl border border-white/5 bg-dark-900 flex items-center justify-between hover:border-blue-500/50">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition"><i class="fas fa-users"></i></div>
-                        <div><p class="text-[10px] font-bold opacity-60">اجتماع</p><p id="timer-meeting" class="text-base font-black stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p></div>
+                <div class="pt-4 border-t border-white/5 space-y-3">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2 mb-2">تواصل مباشر:</p>
+                    
+                    <button onclick="toggleChat()" class="w-full py-4 bg-primary-600/10 text-primary-500 rounded-2xl border border-primary-500/20 font-black text-xs hover:bg-primary-600 hover:text-white transition flex items-center justify-center gap-3 relative">
+                        <i class="fas fa-globe"></i> الدردشة العامة (Group Chat)
+                        <span id="chat-badge" class="absolute left-4 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center hidden border-2 border-dark-950">!</span>
+                    </button>
+
+                    <div class="relative mt-2">
+                        <button onclick="toggleUsersDropdown()" class="w-full py-4 bg-dark-900 border border-white/10 rounded-2xl flex items-center justify-between px-5 hover:border-primary-500 transition">
+                            <span class="text-xs font-black text-slate-300">💬 محادثة خاصة (الزملاء)</span>
+                            <i class="fas fa-chevron-down text-[10px] text-slate-500"></i>
+                        </button>
+                        <div id="users-dropdown" class="absolute bottom-full left-0 right-0 mb-2 bg-dark-800 border border-white/10 rounded-2xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar z-[60] hidden">
+                            <div id="users-list-content" class="p-2 space-y-1">
+                                </div>
+                        </div>
                     </div>
-                    <i class="fas fa-handshake text-xs opacity-0 group-hover:opacity-100 transition"></i>
                 </div>
             </div>
+        </aside>
 
-            <div class="space-y-4 mt-2 shrink-0">
-                <div class="bg-red-500/5 border border-red-500/10 p-4 rounded-2xl flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center animate-pulse"><i class="fas fa-keyboard"></i></div>
-                    <div><p class="text-[10px] font-bold text-red-400 opacity-60 uppercase">الخمول اليومي</p><p id="timer-idle" class="text-lg font-black text-red-500 stat-idle" data-val="0" data-isidle="false" data-start="0">00:00:00</p></div>
-                </div>
-
-                <div class="relative">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2 mb-2">تواصل سريع مع الزملاء:</p>
-                    <select id="chat-select" onchange="startChat(this)" class="form-input bg-dark-900 border-white/10 text-white font-bold cursor-pointer hover:border-primary-500">
-                        <option value="" disabled selected>💬 اختر زميل لبدء محادثة...</option>
-                    </select>
-                </div>
-            </div>
-
-            <button onclick="logout()" class="mt-auto w-full py-4 rounded-2xl bg-red-500/10 text-red-500 font-black hover:bg-red-500 hover:text-white transition flex items-center justify-center gap-3 shadow-lg">
-                <i class="fas fa-sign-out-alt"></i> تسجيل الخروج النهائي
-            </button>
-        </div>
-
-        <div class="flex-1 flex overflow-hidden">
+        <section class="flex-1 flex overflow-hidden">
             
-            <div class="w-80 border-l border-white/5 bg-dark-900/50 flex flex-col shrink-0">
-                <div class="p-6 border-b border-white/5 flex flex-col gap-4">
-                    <h3 class="font-black text-lg flex items-center gap-3"><i class="fas fa-clipboard-list text-primary-500"></i> قائمة المهام</h3>
+            <div class="w-80 border-l border-white/5 bg-dark-900 flex flex-col shrink-0">
+                <div class="p-6 border-b border-white/5 bg-dark-950/50">
+                    <h3 class="font-black text-lg flex items-center gap-3 mb-4"><i class="fas fa-tasks text-primary-500"></i> مهام العمل</h3>
                     <div class="flex p-1 bg-dark-950 rounded-xl border border-white/5">
-                        <button onclick="changeTaskTab(false, this)" class="task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg bg-dark-800 text-white">المهام الحالية</button>
-                        <button onclick="changeTaskTab(true, this)" class="task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg text-slate-500">الأرشيف</button>
+                        <button onclick="changeTaskTab(false, this)" class="task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg bg-dark-800 text-white shadow-lg">الحالية</button>
+                        <button onclick="changeTaskTab(true, this)" class="task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg text-slate-500 transition">الأرشيف</button>
                     </div>
                 </div>
                 <div id="task-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     </div>
             </div>
 
-            <div id="task-detail-pane" class="flex-1 bg-dark-950 flex flex-col overflow-hidden relative">
+            <div class="flex-1 bg-dark-950 flex flex-col relative overflow-hidden h-full">
                 
-                <div id="task-empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-600">
-                    <i class="fas fa-folder-open text-7xl mb-4 opacity-20"></i>
-                    <p class="font-bold">اختر مهمة من القائمة لعرض التفاصيل والملفات</p>
+                <div id="task-empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-700 h-full">
+                    <i class="fas fa-folder-open text-8xl mb-4 opacity-10"></i>
+                    <p class="font-bold text-lg">اختر مهمة من القائمة لعرض التفاصيل والملفات</p>
                 </div>
 
-                <div id="task-content" class="hidden h-full flex flex-col">
+                <div id="task-content" class="hidden flex flex-col h-full">
                     <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                        <div class="max-w-3xl mx-auto">
-                            <div class="flex justify-between items-start mb-6">
+                        <div class="max-w-4xl mx-auto">
+                            <div class="flex justify-between items-start mb-8">
                                 <div>
                                     <div id="task-project-tag"></div>
-                                    <h1 id="task-title" class="text-3xl font-black mb-2 text-white">Task Title</h1>
-                                    <p class="text-xs text-slate-500 italic"><span id="task-date"></span> | الإسناد: <span id="task-assigner" class="text-primary-500 font-bold">Admin</span></p>
+                                    <h1 id="task-title" class="text-4xl font-black text-white mb-3">Task Title</h1>
+                                    <div class="flex items-center gap-4 text-xs text-slate-500 bg-white/5 w-fit px-4 py-2 rounded-xl border border-white/5">
+                                        <span><i class="far fa-calendar-alt text-primary-500 ml-1"></i> <span id="task-date"></span></span>
+                                        <div class="w-1 h-1 rounded-full bg-slate-700"></div>
+                                        <span><i class="fas fa-user-edit text-primary-500 ml-1"></i> الإسناد: <span id="task-assigner" class="font-bold text-slate-300">Admin</span></span>
+                                    </div>
                                 </div>
                                 <div id="task-status-badge"></div>
                             </div>
                             
-                            <div id="task-desc" class="text-lg leading-relaxed text-slate-300 mb-8 border-b border-white/5 pb-8"></div>
+                            <div id="task-desc" class="text-lg leading-relaxed text-slate-300 bg-white/5 p-8 rounded-3xl border border-white/5 mb-8"></div>
                             
-                            <div id="task-files" class="grid grid-cols-1 gap-3 mb-8"></div>
+                            <div id="task-files" class="grid grid-cols-1 gap-3 mb-10"></div>
 
                             <div class="space-y-6">
-                                <h4 class="font-black text-sm border-r-4 border-primary-500 pr-3">المناقشات والردود</h4>
-                                <div id="task-comments" class="space-y-4 pb-10"></div>
+                                <h4 class="font-black text-sm border-r-4 border-primary-500 pr-3 text-slate-200">المناقشات والردود الحية</h4>
+                                <div id="task-comments" class="space-y-4 pb-12"></div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="p-4 bg-dark-900 border-t border-white/10 flex flex-col gap-3">
-                        <div id="task-action-controls" class="flex gap-2">
-                            </div>
-                        <form onsubmit="sendComment(event)" class="flex gap-3 items-center bg-dark-950 p-2 rounded-2xl border border-white/10">
+                    <div class="p-6 bg-dark-900 border-t border-white/5 flex flex-col gap-4 shrink-0">
+                        <div id="task-action-controls" class="flex gap-3"></div>
+                        <form onsubmit="sendComment(event)" class="flex gap-3 items-center bg-dark-950 p-2 rounded-2xl border border-white/10 shadow-inner">
                             <input type="file" id="comment-file" class="hidden" onchange="handleFileSelect(this)">
-                            <button type="button" onclick="document.getElementById('comment-file').click()" class="w-10 h-10 rounded-xl hover:bg-white/5 text-slate-500 transition"><i class="fas fa-paperclip"></i></button>
-                            <input type="text" id="comment-input" class="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2" placeholder="اكتب ردك أو استفسارك هنا..." autocomplete="off">
-                            <button type="submit" class="w-12 h-10 bg-primary-600 rounded-xl hover:bg-primary-500 transition shadow-lg shadow-primary-500/20"><i class="fas fa-paper-plane"></i></button>
+                            <button type="button" onclick="document.getElementById('comment-file').click()" class="w-12 h-11 rounded-xl hover:bg-white/5 text-slate-500 transition border border-transparent hover:border-white/5"><i class="fas fa-paperclip text-lg"></i></button>
+                            <input type="text" id="comment-input" class="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 text-white" placeholder="اكتب ردك هنا..." autocomplete="off">
+                            <button type="submit" id="comment-btn" class="w-14 h-11 bg-primary-600 rounded-xl hover:bg-primary-500 transition shadow-lg shadow-primary-500/20"><i class="fas fa-paper-plane"></i></button>
                         </form>
-                        <div id="file-preview" class="hidden px-4 text-[10px] text-primary-500 font-bold"></div>
+                        <div id="file-preview" class="hidden px-4 text-[10px] text-primary-500 font-bold animate-pulse"></div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     </main>
+
+    <div id="chat-window" class="chat-window fixed top-20 left-10 w-[400px] h-[600px] bg-dark-900 border border-white/10 rounded-3xl overflow-hidden hidden animate-fade-in shadow-2xl">
+        <div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white"><i class="fas fa-globe-africa"></i></div>
+                <div><h3 class="font-black text-sm">الدردشة العامة</h3><p class="text-[9px] text-slate-500 font-bold">كل الزملاء متصلون هنا</p></div>
+            </div>
+            <button onclick="toggleChat()" class="w-8 h-8 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-500 transition flex items-center justify-center"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-3 custom-scrollbar bg-dark-950/20"></div>
+        <form onsubmit="sendMessage(event)" class="p-4 bg-dark-900 border-t border-white/5 flex gap-2">
+            <input type="text" id="chat-input" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-primary-500" placeholder="اكتب رسالة للجميع..." autocomplete="off">
+            <button type="submit" class="w-11 h-11 bg-primary-600 rounded-xl flex items-center justify-center hover:bg-primary-500 transition"><i class="fas fa-paper-plane text-sm"></i></button>
+        </form>
+    </div>
 
     <div id="private-chats-container"></div>
 
-    <div id="modal-qa" class="fixed inset-0 z-[250] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-dark-900 w-full max-w-sm rounded-3xl p-6 border border-primary-500/30">
-            <h3 class="text-xl font-black text-primary-500 mb-4 text-center">إرسال للمراجعة 👁️‍🗨️</h3>
-            <p class="text-xs text-slate-400 mb-6 leading-relaxed text-center">لقد قمت بإنهاء العمل على هذه المهمة. يرجى اختيار المدير المسؤول ليتم مراجعة المخرجات واعتماد المهمة نهائياً.</p>
-            <select id="qa-manager-select" class="form-input font-bold mb-6"></select>
+    <div id="modal-qa" class="fixed inset-0 z-[250] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-dark-900 w-full max-w-sm rounded-[2.5rem] p-8 border border-primary-500/20 shadow-2xl animate-fade-in">
+            <div class="w-16 h-16 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center mx-auto mb-6 text-2xl border border-purple-500/30"><i class="fas fa-eye"></i></div>
+            <h3 class="text-xl font-black text-white mb-2 text-center uppercase tracking-tight">إرسال للمراجعة</h3>
+            <p class="text-[11px] text-slate-400 mb-6 leading-relaxed text-center font-bold">يرجى اختيار المدير المسؤول ليتم مراجعة المخرجات واعتماد المهمة نهائياً في نسبة إنجاز المشروع.</p>
+            <input type="hidden" id="review-task-id">
+            <select id="qa-manager-select" class="form-input font-black mb-8 border-2 border-white/5 text-sm"></select>
             <div class="flex gap-2">
-                <button onclick="confirmQA()" class="flex-1 bg-primary-600 py-3 rounded-xl font-black shadow-lg">تأكيد الإرسال</button>
-                <button onclick="closeModal('modal-qa')" class="px-6 py-3 bg-dark-800 rounded-xl font-bold">إلغاء</button>
+                <button onclick="confirmQA()" class="flex-1 bg-primary-600 py-4 rounded-2xl font-black shadow-lg shadow-primary-500/20 transition hover:bg-primary-500">تأكيد الإرسال</button>
+                <button onclick="closeModal('modal-qa')" class="px-6 py-4 bg-dark-800 rounded-2xl font-bold text-slate-400 hover:text-white transition">إلغاء</button>
             </div>
         </div>
     </div>
 
-    <div id="img-preview-modal" class="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 hidden" onclick="this.classList.add('hidden')">
-        <img id="preview-target" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
+    <div id="modal-logs" class="fixed inset-0 z-[250] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-dark-900 w-full max-w-xl rounded-[2.5rem] flex flex-col max-h-[85vh] border border-white/5 shadow-2xl">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-dark-950/50">
+                <h3 class="font-black text-lg flex items-center gap-3"><i class="fas fa-history text-primary-500"></i> سجل حركاتي اليوم</h3>
+                <button onclick="closeModal('modal-logs')" class="text-slate-500 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar relative">
+                <div id="logs-timeline" class="relative border-r-2 border-white/5 mr-4 pr-6 space-y-6"></div>
+                <div id="logs-loader" class="absolute inset-0 bg-dark-900/80 flex items-center justify-center hidden"><div class="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full"></div></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // --- 1. Firebase Config ---
+        // --- 1. CONFIG & INIT ---
         const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -221,50 +263,37 @@
         const storage = firebase.storage();
 
         let currentUser = null, userProfile = null, allUsers = [];
-        let currentTasks = [], historyMode = false, selectedTaskId = null, attachedFile = null;
+        let currentTasks = [], historyMode = false, selectedTaskId = null, attachedFileObj = null, lastActionTime = Date.now();
+        const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
 
-        // --- 2. Auth Watcher ---
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
                 const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
                 if(doc.exists) {
                     userProfile = doc.data();
-                    // تأكيد الرتبة: لو أدمن أو سوبر يروح صفحته (Security)
                     if (userProfile.role === 'admin') { window.location.replace('admin.html'); return; }
-                    
-                    document.getElementById('user-name').innerText = userProfile.name;
-                    document.getElementById('user-role').innerText = userProfile.role === 'leader' ? 'Team Leader' : 'Team Member';
-                    document.getElementById('user-img').src = userProfile.photo || `https://ui-avatars.com/api/?background=0ea5e9&color=fff&name=${userProfile.name}`;
-                    
-                    document.getElementById('loader').classList.add('hidden');
                     initWorkspace();
                 } else { auth.signOut(); }
             } else { window.location.replace('index.html'); }
         });
 
-        // --- 3. Workspace Initialization ---
         function initWorkspace() {
             startClock();
             startIdleTracker();
             listenToProfile();
             listenToAllUsers();
+            initGlobalChat();
+            listenToPrivateMessages();
             setInterval(updateTimersUI, 1000);
+            document.getElementById('loader').classList.add('hidden');
         }
 
-        function startClock() {
-            setInterval(() => {
-                const now = moment();
-                document.getElementById('header-time').innerText = now.format('HH:mm:ss');
-                document.getElementById('header-date').innerText = now.format('dddd, DD MMMM YYYY');
-            }, 1000);
-        }
-
-        // --- 4. Real-time Listeners ---
+        // --- 2. LISTENERS ---
         function listenToProfile() {
             db.collection('users').doc(currentUser.email.toLowerCase()).onSnapshot(doc => {
                 userProfile = doc.data();
-                updateEmployeeUI(userProfile);
+                updateProfileUI(userProfile);
                 currentTasks = userProfile.tasks || [];
                 renderTasks();
                 if(selectedTaskId) {
@@ -277,17 +306,21 @@
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snap => {
                 allUsers = snap.docs.map(d => ({ email: d.id, ...d.data() }));
-                updateChatSelect();
+                renderUsersDropdown();
             });
         }
 
-        // --- 5. UI Renderers ---
-        function updateEmployeeUI(data) {
+        // --- 3. UI RENDERERS ---
+        function updateProfileUI(data) {
+            document.getElementById('user-name').innerText = data.name;
+            document.getElementById('user-role').innerText = data.title || (data.role === 'leader' ? 'Team Leader' : 'Team Member');
+            document.getElementById('user-img').src = data.photo || DEFAULT_PHOTO + data.name;
+            
             const status = data.status || 'Offline';
             const tb = data.timeBank || {};
             const safeStart = getMillis(data.lastChange);
 
-            // Update Timers Data
+            // Update Timers
             const timers = [
                 { id: 'timer-online', val: tb['Online'] || 0, active: status === 'Online' },
                 { id: 'timer-break', val: tb['Break'] || 0, active: status === 'Break' },
@@ -298,19 +331,37 @@
                 el.dataset.val = t.val; el.dataset.active = t.active; el.dataset.start = safeStart;
             });
             
-            // Idle Data
             const idleEl = document.getElementById('timer-idle');
-            idleEl.dataset.val = data.idleBank || 0;
-            idleEl.dataset.isidle = data.isIdle;
-            idleEl.dataset.start = getMillis(data.idleSince);
+            idleEl.dataset.val = data.idleBank || 0; idleEl.dataset.isidle = data.isIdle; idleEl.dataset.start = getMillis(data.idleSince);
 
             // 🟢 Update Card Styling 🟢
             ['Online', 'Break', 'Meeting'].forEach(s => {
                 const card = document.getElementById('card-' + s);
                 card.classList.remove('status-card-active', 'active-Online', 'active-Break', 'active-Meeting');
-                if(s === status) {
-                    card.classList.add('status-card-active', 'active-' + s);
-                }
+                if(s === status) { card.classList.add('status-card-active', 'active-' + s); }
+            });
+            
+            const dot = document.getElementById('user-status-dot');
+            dot.className = `absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-dark-900 ${status==='Online'?'bg-green-500':status==='Break'?'bg-orange-500':'bg-blue-500'}`;
+        }
+
+        function renderUsersDropdown() {
+            const container = document.getElementById('users-list-content');
+            container.innerHTML = '';
+            allUsers.filter(u => u.email !== currentUser.email).forEach(u => {
+                const statusColor = u.status === 'Online' ? 'bg-green-500' : u.status === 'Break' ? 'bg-orange-500' : 'bg-slate-500';
+                container.innerHTML += `
+                    <div onclick="openPrivateChat('${u.email}', '${u.name}')" class="flex items-center gap-3 p-3 rounded-xl hover:bg-dark-900 transition cursor-pointer group">
+                        <div class="relative shrink-0">
+                            <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-9 h-9 rounded-xl object-cover">
+                            <span class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-dark-800 ${statusColor}"></span>
+                        </div>
+                        <div class="overflow-hidden">
+                            <p class="text-xs font-black truncate text-slate-200 group-hover:text-primary-500 transition">${u.name}</p>
+                            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">${u.title || 'Team Member'}</p>
+                        </div>
+                    </div>
+                `;
             });
         }
 
@@ -326,19 +377,19 @@
                 card.className = `task-card p-4 rounded-2xl cursor-pointer ${isActive ? 'active' : ''}`;
                 card.onclick = () => selectTask(t);
                 
-                let statusIcon = '<i class="fas fa-circle text-[8px] text-slate-600"></i>';
+                let statusIcon = '<i class="fas fa-circle text-[8px] text-slate-700"></i>';
                 if(t.status === 'working') statusIcon = '<i class="fas fa-spinner fa-spin text-[8px] text-blue-500"></i>';
                 if(t.status === 'review') statusIcon = '<i class="fas fa-eye text-[8px] text-purple-500"></i>';
                 if(t.status === 'done') statusIcon = '<i class="fas fa-check-circle text-[8px] text-green-500"></i>';
 
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <h4 class="font-bold text-xs truncate w-48 text-slate-200">${t.title}</h4>
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold text-xs truncate w-44 text-slate-200">${t.title}</h4>
                         ${statusIcon}
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-[9px] text-slate-500">${moment(t.id).fromNow()}</span>
-                        ${t.projectId ? `<span class="bg-indigo-500/10 text-indigo-400 text-[8px] px-2 py-0.5 rounded border border-indigo-500/20">PROJ</span>` : ''}
+                        <span class="text-[9px] font-bold text-slate-600">${moment(t.id).fromNow()}</span>
+                        ${t.projectId ? `<span class="bg-indigo-500/10 text-indigo-400 text-[8px] px-2 py-0.5 rounded border border-indigo-500/20 font-black">ERP</span>` : ''}
                     </div>
                 `;
                 container.appendChild(card);
@@ -356,32 +407,28 @@
         function updateTaskDetail(task) {
             document.getElementById('task-title').innerText = task.title;
             document.getElementById('task-desc').innerHTML = task.desc;
-            document.getElementById('task-date').innerText = moment(task.id).format('LLLL');
+            document.getElementById('task-date').innerText = moment(task.id).format('D MMMM YYYY, h:mm A');
             document.getElementById('task-assigner').innerText = task.createdBy || "Admin";
 
-            // Project Tag
             const tagBox = document.getElementById('task-project-tag');
-            tagBox.innerHTML = task.projectId ? `<span class="bg-primary-600/10 text-primary-500 text-[10px] font-black px-3 py-1 rounded-full border border-primary-500/20 mb-2 inline-block">مشروع: ${task.projectName || 'مرتبط'}</span>` : '';
+            tagBox.innerHTML = task.projectId ? `<span class="bg-primary-600/10 text-primary-500 text-[10px] font-black px-4 py-1.5 rounded-full border border-primary-500/20 mb-3 inline-block uppercase tracking-wider">Project: ${task.projectName || 'Active'}</span>` : '';
 
-            // Status Badge
             const badgeBox = document.getElementById('task-status-badge');
-            const map = { 'started':['جديد','bg-slate-800 text-slate-400'], 'working':['جاري العمل','bg-blue-500/20 text-blue-400'], 'review':['قيد المراجعة','bg-purple-500/20 text-purple-400'], 'done':['مكتملة','bg-green-500/20 text-green-400'] };
+            const map = { 'started':['مهمة جديدة','bg-slate-800 text-slate-400'], 'working':['قيد التنفيذ','bg-blue-500/20 text-blue-400'], 'review':['في انتظار المراجعة','bg-purple-500/20 text-purple-400'], 'done':['مكتملة ومعتمدة','bg-green-500/20 text-green-400'] };
             const m = map[task.status] || map['started'];
-            badgeBox.innerHTML = `<span class="${m[1]} px-4 py-1.5 rounded-full text-[10px] font-black border border-white/5">${m[0]}</span>`;
+            badgeBox.innerHTML = `<span class="${m[1]} px-5 py-2 rounded-xl text-[11px] font-black border border-white/5 shadow-sm">${m[0]}</span>`;
 
-            // Files
             const fileBox = document.getElementById('task-files');
-            fileBox.innerHTML = task.file ? `<div class="p-4 bg-dark-900 border border-white/5 rounded-2xl flex justify-between items-center"><div class="flex items-center gap-3"><i class="fas fa-file-pdf text-red-500 text-xl"></i><div><p class="text-xs font-bold text-slate-200">مرفق المهمة الرئيسي</p></div></div><a href="${task.file}" target="_blank" class="w-9 h-9 rounded-full bg-dark-800 flex items-center justify-center hover:bg-primary-500 transition"><i class="fas fa-download text-xs"></i></a></div>` : '';
+            fileBox.innerHTML = task.file ? `<div class="p-5 bg-dark-900 border border-white/5 rounded-3xl flex justify-between items-center"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center text-xl"><i class="fas fa-file-pdf"></i></div><div><p class="text-xs font-black text-slate-200">مرفق المهمة الأساسي</p><p class="text-[10px] text-slate-500">اضغط للتحميل أو العرض</p></div></div><a href="${task.file}" target="_blank" class="w-11 h-11 rounded-full bg-dark-800 flex items-center justify-center hover:bg-primary-600 transition shadow-lg"><i class="fas fa-download text-sm"></i></a></div>` : '';
 
-            // Action Buttons
             const actionBox = document.getElementById('task-action-controls');
             actionBox.innerHTML = '';
             if(!task.archived && task.status !== 'done') {
-                if(task.status === 'started') actionBox.innerHTML += `<button onclick="updateStatus('${task.id}', 'working')" class="flex-1 py-3 bg-blue-600 rounded-xl font-black text-xs transition active:scale-95"><i class="fas fa-play mr-2"></i> بدء التنفيذ الآن</button>`;
-                if(task.status === 'working') actionBox.innerHTML += `<button onclick="openQAModal('${task.id}')" class="flex-1 py-3 bg-purple-600 rounded-xl font-black text-xs transition active:scale-95"><i class="fas fa-eye mr-2"></i> إرسال للمراجعة والاعتماد</button>`;
-                if(task.status === 'review') actionBox.innerHTML += `<div class="flex-1 py-3 bg-dark-800 text-slate-500 text-center rounded-xl font-black text-xs border border-white/5 animate-pulse">قيد مراجعة المدير حالياً...</div>`;
+                if(task.status === 'started') actionBox.innerHTML += `<button onclick="updateTaskStep('${task.id}', 'working')" class="flex-1 py-4 bg-blue-600 rounded-2xl font-black text-sm transition transform active:scale-95 shadow-xl shadow-blue-600/20"><i class="fas fa-play ml-2"></i> بدء التنفيذ الآن</button>`;
+                if(task.status === 'working') actionBox.innerHTML += `<button onclick="openQAModal('${task.id}')" class="flex-1 py-4 bg-purple-600 rounded-2xl font-black text-sm transition transform active:scale-95 shadow-xl shadow-purple-600/20"><i class="fas fa-eye ml-2"></i> إرسال للمراجعة والاعتماد</button>`;
+                if(task.status === 'review') actionBox.innerHTML += `<div class="flex-1 py-4 bg-dark-800 text-slate-500 text-center rounded-2xl font-black text-xs border border-white/5 animate-pulse">قيد مراجعة الجودة حالياً...</div>`;
             } else if(task.status === 'done') {
-                actionBox.innerHTML = `<div class="flex-1 py-3 bg-green-500/10 text-green-500 text-center rounded-xl font-black text-xs border border-green-500/20">المهمة مكتملة ومعتمدة ✅</div>`;
+                actionBox.innerHTML = `<div class="flex-1 py-4 bg-green-500/10 text-green-500 text-center rounded-2xl font-black text-sm border border-green-500/20">المهمة مكتملة ومغلقة ✅</div>`;
             }
 
             renderComments(task.comments || []);
@@ -389,41 +436,40 @@
 
         function renderComments(comments) {
             const box = document.getElementById('task-comments');
-            box.innerHTML = comments.length ? '' : '<p class="text-center text-[10px] text-slate-600 py-4">لا توجد ردود بعد...</p>';
+            box.innerHTML = '';
             comments.forEach(c => {
                 const isMe = c.user === currentUser.email;
                 if(c.user === 'system') {
-                    box.innerHTML += `<div class="flex justify-center"><span class="bg-dark-900 text-[9px] px-3 py-1 rounded-full text-slate-500 border border-white/5">${c.text}</span></div>`;
+                    box.innerHTML += `<div class="flex justify-center"><span class="bg-dark-900 text-[10px] px-4 py-1.5 rounded-full text-slate-500 border border-white/5 font-bold">${c.text}</span></div>`;
                 } else {
                     box.innerHTML += `
-                        <div class="flex gap-3 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in">
-                            <img src="${DEFAULT_PHOTO + encodeURIComponent(c.name)}" class="w-8 h-8 rounded-lg shrink-0">
-                            <div class="max-w-[85%]">
-                                <div class="bg-dark-900 border border-white/5 p-3 rounded-2xl ${isMe?'rounded-tl-none':'rounded-tr-none'}">
-                                    <p class="text-xs text-slate-200">${c.text}</p>
-                                    ${c.file ? `<div class="mt-2 pt-2 border-t border-white/5"><a href="${c.file}" target="_blank" class="text-[9px] text-primary-500 underline">عرض المرفق</a></div>` : ''}
+                        <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in">
+                            <img src="${DEFAULT_PHOTO + encodeURIComponent(c.name)}" class="w-10 h-10 rounded-xl shrink-0 object-cover border border-white/10 shadow-lg">
+                            <div class="max-w-[80%] flex flex-col ${isMe?'items-end':'items-start'}">
+                                <div class="bg-dark-900 border border-white/5 p-4 rounded-[1.5rem] ${isMe?'rounded-tl-none':'rounded-tr-none'} shadow-sm">
+                                    <p class="text-xs text-slate-200 leading-relaxed">${c.text}</p>
+                                    ${c.file ? `<div class="mt-3 pt-3 border-t border-white/5"><a href="${c.file}" target="_blank" class="text-[10px] font-black text-primary-500 flex items-center gap-2 hover:underline"><i class="fas fa-paperclip"></i> عرض المرفق</a></div>` : ''}
                                 </div>
-                                <p class="text-[8px] text-slate-600 mt-1 ${isMe?'text-left':'text-right'}">${moment(c.time).fromNow()}</p>
+                                <span class="text-[9px] text-slate-600 mt-2 font-black">${c.name} • ${moment(c.time).fromNow()}</span>
                             </div>
                         </div>`;
                 }
             });
-            box.parentElement.scrollTop = box.parentElement.scrollHeight;
         }
 
-        // --- 6. Core Actions ---
+        // --- 4. ACTIONS & CORE LOGIC ---
         async function handleStatusClick(newStatus) {
             if(userProfile.status === newStatus) return;
-            toggleLoader(true, 'جاري التحديث...');
+            const loader = document.getElementById('loader');
+            loader.classList.remove('hidden');
             await setStatus(currentUser.email.toLowerCase(), newStatus, false);
-            toggleLoader(false);
+            loader.classList.add('hidden');
         }
 
         async function setStatus(targetEmail, newStatus, isAuto = false) {
             const userRef = db.collection('users').doc(targetEmail);
             const snapshot = await userRef.get();
             const uData = snapshot.data();
-            
             const now = Date.now();
             let currentIdleBank = uData.idleBank || 0;
             
@@ -446,14 +492,14 @@
             await userRef.update({ status: newStatus, lastChange: timestamp, timeBank: timeBank, isIdle: false, idleSince: null, idleBank: currentIdleBank });
         }
 
-        async function updateStatus(taskId, status) {
+        async function updateTaskStep(taskId, status) {
             const userRef = db.collection('users').doc(currentUser.email);
             let tasks = [...userProfile.tasks];
             const idx = tasks.findIndex(t => t.id == taskId);
             if(idx > -1) {
                 tasks[idx].status = status;
                 tasks[idx].comments = tasks[idx].comments || [];
-                tasks[idx].comments.push({ user: 'system', text: `تغيرت الحالة إلى: ${status}`, time: Date.now() });
+                tasks[idx].comments.push({ user: 'system', text: `قام الموظف بتغيير الحالة إلى: ${status}`, time: Date.now() });
                 await userRef.update({ tasks });
             }
         }
@@ -476,7 +522,7 @@
             const idx = tasks.findIndex(t => t.id == taskId);
             if(idx > -1) {
                 tasks[idx].status = 'review';
-                tasks[idx].reviewer = reviewer;
+                tasks[idx].reviewerEmail = reviewer;
                 tasks[idx].comments.push({ user: 'system', text: `أرسل المهمة للمراجعة عند: ${reviewer}`, time: Date.now() });
                 await userRef.update({ tasks });
                 closeModal('modal-qa');
@@ -488,12 +534,14 @@
             e.preventDefault();
             const input = document.getElementById('comment-input');
             const txt = input.value.trim();
-            if(!txt && !attachedFile) return;
+            if(!txt && !attachedFileObj) return;
+
+            const btn = document.getElementById('comment-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
             let fileUrl = null;
-            if(attachedFile) {
-                fileUrl = await uploadFileToStorage(attachedFile, 'tasks/comments');
-            }
+            if(attachedFileObj) { fileUrl = await uploadFileToStorage(attachedFileObj, 'tasks/comments'); }
 
             const userRef = db.collection('users').doc(currentUser.email);
             let tasks = [...userProfile.tasks];
@@ -503,12 +551,19 @@
                 tasks[idx].comments.push({ user: currentUser.email, name: userProfile.name, text: txt, file: fileUrl, time: Date.now() });
                 await userRef.update({ tasks });
                 input.value = '';
-                attachedFile = null;
+                attachedFileObj = null;
                 document.getElementById('file-preview').classList.add('hidden');
             }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
         }
 
-        // --- 7. Additional Helpers ---
+        // --- 5. HELPERS & UTILS ---
+        async function uploadFileToStorage(file, path) {
+            const ref = storage.ref().child(`${path}/${Date.now()}_${file.name}`);
+            await ref.put(file);
+            return await ref.getDownloadURL();
+        }
+
         function updateTimersUI() {
             const now = Date.now();
             document.querySelectorAll('.stat-timer').forEach(t => { 
@@ -522,6 +577,7 @@
         }
 
         function formatDurationLong(ms) {
+            if(ms < 0) ms = 0;
             const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
             const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0');
             const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
@@ -534,9 +590,7 @@
             ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
                 document.addEventListener(evt, () => {
                     lastActionTime = Date.now();
-                    if(userProfile?.isIdle) {
-                        db.collection('users').doc(currentUser.email).update({ isIdle: false, idleSince: null });
-                    }
+                    if(userProfile?.isIdle) { db.collection('users').doc(currentUser.email).update({ isIdle: false, idleSince: null }); }
                 }, true);
             });
             setInterval(() => {
@@ -550,68 +604,95 @@
         function changeTaskTab(mode, btn) {
             historyMode = mode;
             renderTasks();
-            document.querySelectorAll('.task-tab-btn').forEach(b => b.className = "task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg text-slate-500");
-            btn.className = "task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg bg-dark-800 text-white shadow-sm";
-        }
-
-        function updateChatSelect() {
-            const sel = document.getElementById('chat-select');
-            const currentVal = sel.value;
-            sel.innerHTML = '<option value="" disabled selected>💬 اختر زميل لمحادثة خاصة...</option>';
-            allUsers.forEach(u => {
-                if(u.email !== currentUser.email) sel.innerHTML += `<option value="${u.email}|${u.name}">${u.name} - ${u.title || 'موظف'}</option>`;
-            });
-            sel.value = currentVal;
-        }
-
-        function startChat(sel) {
-            const [email, name] = sel.value.split('|');
-            openPrivateChat(email, name);
-            sel.value = "";
+            document.querySelectorAll('.task-tab-btn').forEach(b => b.className = "task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg text-slate-500 transition");
+            btn.className = "task-tab-btn flex-1 py-2 text-[11px] font-black rounded-lg bg-dark-800 text-white shadow-lg";
         }
 
         function handleFileSelect(input) {
             if(input.files && input.files[0]) {
-                attachedFile = input.files[0];
-                document.getElementById('file-preview').innerText = "📎 جاهز للرفع: " + attachedFile.name;
+                attachedFileObj = input.files[0];
+                document.getElementById('file-preview').innerText = "📎 جاهز للرفع: " + attachedFileObj.name;
                 document.getElementById('file-preview').classList.remove('hidden');
             }
         }
 
-        function toggleLoader(show, text = "") {
-            document.getElementById('loader').classList.toggle('hidden', !show);
-            if(text) document.querySelector('#loader h2').innerText = text;
+        async function viewLogs(email) {
+            openModal('modal-logs');
+            const container = document.getElementById('logs-timeline');
+            const loader = document.getElementById('logs-loader');
+            container.innerHTML = ''; loader.classList.remove('hidden');
+
+            const start = new Date(); start.setHours(0,0,0,0);
+            const snap = await db.collection('logs').where('user', '==', email).where('end_time', '>=', start).orderBy('end_time', 'desc').get();
+            
+            loader.classList.add('hidden');
+            if(snap.empty) { container.innerHTML = '<p class="text-center text-xs text-slate-600">لا توجد حركات مسجلة لليوم</p>'; return; }
+
+            snap.forEach(doc => {
+                const log = doc.data();
+                container.innerHTML += `
+                    <div class="relative pb-2">
+                        <div class="absolute -right-[27px] top-1 w-3 h-3 rounded-full bg-primary-500 border-2 border-dark-900"></div>
+                        <div class="bg-white/5 p-3 rounded-2xl border border-white/5">
+                            <p class="text-[10px] font-black text-primary-500 mb-1">${moment(log.end_time.toDate()).format('hh:mm A')}</p>
+                            <p class="text-xs font-bold text-slate-200">تحول من <span class="text-slate-500">${log.from_status}</span> إلى <span class="text-green-500">${log.to_status}</span></p>
+                        </div>
+                    </div>`;
+            });
         }
+
+        function toggleUsersDropdown() { document.getElementById('users-dropdown').classList.toggle('hidden'); document.getElementById('users-dropdown').classList.toggle('active'); }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function toggleChat() { document.getElementById('chat-window').classList.toggle('hidden'); document.getElementById('chat-badge').classList.add('hidden'); document.getElementById('emp-chat-badge').classList.add('hidden'); makeDraggable(document.getElementById('chat-window')); }
 
         async function logout() {
             if(!confirm("هل أنت متأكد من تسجيل الخروج؟")) return;
-            toggleLoader(true, "جاري تسجيل الخروج...");
             await setStatus(currentUser.email, 'Offline', true);
-            await notifyTelegramOnLogout(userProfile.name);
             auth.signOut().then(() => window.location.replace('index.html'));
         }
 
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function openImagePreview(src) { document.getElementById('preview-target').src = src; document.getElementById('img-preview-modal').classList.remove('hidden'); }
+        // --- CHAT LOGIC ---
+        function initGlobalChat() {
+            db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s=>{
+                const t=document.getElementById("chat-messages"); 
+                let isNew = false;
+                s.docChanges().forEach(change => { if(change.type === "added") isNew = true; });
+                t.innerHTML="";
+                s.forEach(d=>{ 
+                    const m=d.data(); const isMe=m.user===currentUser.email;
+                    t.innerHTML += `<div class="flex ${isMe?'justify-end':'justify-start'} mb-2"><div class="max-w-[80%] ${isMe?'bg-primary-600 text-white rounded-tl-xl':'bg-dark-800 text-slate-200 rounded-tr-xl'} p-3 rounded-b-xl text-[11px] font-bold shadow-sm">${!isMe?`<p class="text-[9px] text-primary-400 mb-1">${m.name}</p>`:''}${m.text}</div></div>`;
+                });
+                t.scrollTop = t.scrollHeight;
+                if(isNew && document.getElementById("chat-window").classList.contains("hidden")) { document.getElementById("chat-badge").classList.remove("hidden"); }
+            });
+        }
 
-        // --- 8. Private Chat Window Manager ---
+        async function sendMessage(e) {
+            e.preventDefault();
+            const i = document.getElementById("chat-input");
+            if(!i.value.trim()) return;
+            await db.collection("messages").add({ text: i.value.trim(), user: currentUser.email, name: userProfile.name, time: firebase.firestore.FieldValue.serverTimestamp() });
+            i.value = "";
+        }
+
         function openPrivateChat(email, name) {
+            toggleUsersDropdown();
             const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
             if(document.getElementById(`chat-win-${chatId}`)) return;
 
             const win = document.createElement('div');
             win.id = `chat-win-${chatId}`;
-            win.className = "chat-window fixed bottom-4 left-4 w-72 h-96 bg-dark-900 border border-white/10 rounded-2xl shadow-2xl flex flex-col z-[100] animate-fade-in";
+            win.className = "chat-window fixed bottom-10 left-10 w-72 h-[450px] bg-dark-900 border border-white/10 rounded-[2rem] shadow-2xl flex flex-col animate-fade-in";
             win.innerHTML = `
-                <div class="p-3 border-b border-white/5 bg-dark-950 flex justify-between items-center chat-header cursor-move rounded-t-2xl">
-                    <span class="text-[10px] font-black uppercase text-primary-500 tracking-widest">${name}</span>
-                    <button onclick="this.parentElement.parentElement.remove()" class="text-slate-500 hover:text-white"><i class="fas fa-times text-xs"></i></button>
+                <div class="p-4 border-b border-white/5 bg-dark-950 flex justify-between items-center chat-header rounded-t-[2rem]">
+                    <div class="flex items-center gap-2"><img src="${DEFAULT_PHOTO+name}" class="w-6 h-6 rounded-lg"><span class="text-[10px] font-black text-primary-500 uppercase tracking-widest">${name}</span></div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-slate-500 hover:text-white transition"><i class="fas fa-times text-xs"></i></button>
                 </div>
-                <div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar text-[11px]"></div>
-                <form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-2 border-t border-white/5 flex gap-2">
-                    <input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border-none rounded-lg px-3 py-1.5 text-xs text-white" placeholder="اكتب..." autocomplete="off">
-                    <button class="bg-primary-600 px-3 rounded-lg"><i class="fas fa-paper-plane text-[10px]"></i></button>
+                <div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar text-[11px]"></div>
+                <form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-3 border-t border-white/5 flex gap-2">
+                    <input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border-none rounded-xl px-3 py-2 text-xs text-white" placeholder="اكتب..." autocomplete="off">
+                    <button class="bg-primary-600 px-3 rounded-xl"><i class="fas fa-paper-plane text-[10px]"></i></button>
                 </form>
             `;
             document.getElementById('private-chats-container').appendChild(win);
@@ -623,11 +704,7 @@
             e.preventDefault();
             const input = document.getElementById(`input-${chatId}`);
             if(!input.value.trim()) return;
-            await db.collection('private_messages').add({
-                sender: currentUser.email.toLowerCase(), receiver: email.toLowerCase(),
-                text: input.value.trim(), time: firebase.firestore.FieldValue.serverTimestamp(),
-                name: userProfile.name
-            });
+            await db.collection('private_messages').add({ sender: currentUser.email.toLowerCase(), receiver: email.toLowerCase(), text: input.value.trim(), time: firebase.firestore.FieldValue.serverTimestamp(), name: userProfile.name });
             input.value = '';
         }
 
@@ -641,9 +718,8 @@
                     const isThem = m.sender === email.toLowerCase();
                     const isRecMe = m.receiver === currentUser.email.toLowerCase();
                     const isRecThem = m.receiver === email.toLowerCase();
-
                     if((isMe && isRecThem) || (isThem && isRecMe)) {
-                        container.innerHTML += `<div class="flex ${isMe?'justify-end':'justify-start'}"><span class="px-3 py-1.5 rounded-xl ${isMe?'bg-primary-600 text-white rounded-br-none':'bg-dark-800 text-slate-300 rounded-bl-none'}">${m.text}</span></div>`;
+                        container.innerHTML += `<div class="flex ${isMe?'justify-end':'justify-start'}"><span class="px-3 py-2 rounded-2xl font-bold ${isMe?'bg-primary-600 text-white rounded-tl-none':'bg-dark-800 text-slate-300 rounded-tr-none'}">${m.text}</span></div>`;
                     }
                 });
                 container.scrollTop = container.scrollHeight;
@@ -652,12 +728,11 @@
         
         function makeDraggable(el) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            el.querySelector('.chat-header').onmousedown = dragMouseDown;
-            function dragMouseDown(e) { e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY; document.onmouseup = closeDragElement; document.onmousemove = elementDrag; }
-            function elementDrag(e) { e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY; el.style.top = (el.offsetTop - pos2) + "px"; el.style.left = (el.offsetLeft - pos1) + "px"; }
-            function closeDragElement() { document.onmouseup = null; document.onmousemove = null; }
+            const header = el.querySelector('.chat-header');
+            if(header) {
+                header.onmousedown = (e) => { e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY; document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; }; document.onmousemove = (e) => { e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY; el.style.top = (el.offsetTop - pos2) + "px"; el.style.left = (el.offsetLeft - pos1) + "px"; }; };
+            }
         }
-        
     </script>
 </body>
 </html>
