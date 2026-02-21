@@ -224,6 +224,16 @@
                 <input type="hidden" id="fl-id">
                 <div><label class="block text-[9px] font-black text-slate-500 mb-1">اسم الفريلانسر</label><input type="text" id="fl-name" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-3 font-bold text-slate-400 cursor-not-allowed" readonly></div>
                 <div><label class="block text-[9px] font-black text-primary-500 mb-1">قيمة التعاقد الكلية (ج.م)</label><input type="number" id="fl-total" class="w-full bg-dark-950 text-white border border-primary-500/30 focus:border-primary-500 outline-none rounded-xl px-4 py-3 font-black text-lg transition" value="0"></div>
+                <div class="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                        <label class="block text-[9px] font-black text-slate-500 mb-1">رقم الموبايل</label>
+                        <input type="text" id="fl-phone" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-primary-500">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-black text-primary-500 mb-1">Telegram Chat ID</label>
+                        <input type="text" id="fl-telegram" class="w-full bg-dark-950 border border-primary-500/20 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-primary-500">
+                    </div>
+                </div>
                 <button type="submit" class="w-full bg-primary-600 hover:bg-primary-500 text-white font-black py-3 rounded-xl shadow-lg transition text-xs mt-2">تحديث الرصيد</button>
             </form>
         </div>
@@ -800,6 +810,9 @@
             document.getElementById('fl-name').value = f.name;
             document.getElementById('fl-total').value = f.fl_total_credit || 0;
             document.getElementById('modal-freelancer').classList.remove('hidden');
+            // السطرين الجدد لعرض البيانات
+            document.getElementById('fl-phone').value = f.phone_number || "";
+            document.getElementById('fl-telegram').value = f.telegram_id || "";
         }
         function closeFreelancerModal() { document.getElementById('modal-freelancer').classList.add('hidden'); }
 
@@ -807,7 +820,18 @@
             e.preventDefault();
             const id = document.getElementById('fl-id').value;
             const totalCredit = parseFloat(document.getElementById('fl-total').value) || 0;
-            await db.collection("users").doc(id).update({ fl_total_credit: totalCredit });
+            
+            // جلب القيم الجديدة من الحقول
+            const phone = document.getElementById('fl-phone').value;
+            const telegramId = document.getElementById('fl-telegram').value;
+        
+            // حفظ البيانات في الفايربيس
+            await db.collection("users").doc(id).update({ 
+                fl_total_credit: totalCredit,
+                phone_number: phone,
+                telegram_id: telegramId
+            });
+            
             closeFreelancerModal();
         }
 
@@ -1339,4 +1363,5 @@
     </script>
 </body>
 </html>
+
 
