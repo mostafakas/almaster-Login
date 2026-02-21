@@ -31,6 +31,9 @@
     </script>
 
     <style>
+        /* الحل الجذري لمنع تداخل الشاشات */
+        .hidden { display: none !important; }
+
         body { font-family: 'Cairo', sans-serif; background-color: #0b1120; color: #f1f5f9; text-align: right; overflow: hidden; display: flex; height: 100vh; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -48,10 +51,8 @@
         .modal-animate { animation: modalIn 0.3s ease-out; }
         @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Select Wrapper Style */
-        .select-wrapper { position: relative; }
-        .select-wrapper::after { content: '\f107'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 12px; pointer-events: none; }
-        
+        .print-template { display: none; position: absolute; top: 0; left: 0; z-index: -50; background: white; color: #000; direction: rtl; text-align: right; }
+
         .toggle-checkbox:checked { right: 0; border-color: #10b981; }
         .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
         .toggle-checkbox { right: 0; z-index: 1; border-color: #334155; transition: all 0.3s; }
@@ -63,7 +64,7 @@
     <div id="payroll-loader" class="fixed inset-0 z-[500] bg-dark-950 flex flex-col items-center justify-center text-white transition-opacity duration-500">
         <div class="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p class="font-black tracking-[0.4em] text-xs text-primary-500 uppercase animate-pulse">ALMASTER FINANCE CORE</p>
-        <p class="text-[9px] text-slate-500 mt-2 tracking-widest">جاري تأمين وتحميل البيانات...</p>
+        <p class="text-[9px] text-slate-500 mt-2 tracking-widest">تأمين وتحميل البيانات...</p>
     </div>
 
     <aside class="w-[280px] bg-dark-950 flex flex-col h-full shrink-0 z-40 shadow-[5px_0_25px_rgba(0,0,0,0.5)]">
@@ -75,8 +76,9 @@
 
         <div class="p-5 border-b border-white/5 shrink-0 bg-dark-900/10">
             <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 block"><i class="fas fa-calendar-alt mr-1"></i> الفترة المالية الحالية</label>
-            <div class="select-wrapper">
+            <div class="relative">
                 <select id="month-picker" onchange="changeMonth()" class="w-full bg-dark-900 border border-white/10 hover:border-primary-500/50 rounded-xl px-4 py-3 text-xs font-black text-white outline-none cursor-pointer appearance-none transition-all shadow-inner"></select>
+                <i class="fas fa-chevron-down absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] pointer-events-none"></i>
             </div>
         </div>
 
@@ -87,7 +89,7 @@
                 <i class="fas fa-chart-pie w-5 text-center text-slate-500"></i> الداشبورد والإحصائيات
             </button>
             <button onclick="switchFinanceView('employees')" id="tab-employees" class="nav-tab w-full flex items-center gap-4 px-6 py-3.5 text-[11px] font-black text-slate-400 hover:bg-dark-900 hover:text-white border-r-4 border-transparent text-right">
-                <i class="fas fa-users w-5 text-center text-slate-500"></i> رواتب الموظفين
+                <i class="fas fa-users w-5 text-center text-slate-500"></i> رواتب الموظفين الأساسيين
             </button>
             <button onclick="switchFinanceView('freelancers')" id="tab-freelancers" class="nav-tab w-full flex items-center gap-4 px-6 py-3.5 text-[11px] font-black text-slate-400 hover:bg-dark-900 hover:text-white border-r-4 border-transparent text-right">
                 <i class="fas fa-laptop-code w-5 text-center text-slate-500"></i> حسابات المستقلين
@@ -96,7 +98,7 @@
                 <i class="fas fa-file-invoice-dollar w-5 text-center text-slate-500"></i> النثريات والمصروفات
             </button>
             <button onclick="switchFinanceView('vault')" id="tab-vault" class="nav-tab w-full flex items-center gap-4 px-6 py-3.5 text-[11px] font-black text-slate-400 hover:bg-dark-900 hover:text-white border-r-4 border-transparent text-right">
-                <i class="fas fa-vault w-5 text-center text-slate-500"></i> الخزينة المركزية
+                <i class="fas fa-vault w-5 text-center text-slate-500"></i> الخزينة ودفتر الأستاذ
             </button>
         </div>
 
@@ -109,7 +111,7 @@
 
     <div class="flex-1 flex flex-col relative overflow-hidden bg-dark-900">
         
-        <header class="h-16 border-b border-white/5 bg-dark-950/90 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-30">
+        <header class="h-16 border-b border-white/5 bg-dark-950/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-30">
             <div class="flex items-center gap-4">
                 <div class="w-10 h-10 rounded-xl bg-dark-800 border border-white/5 flex items-center justify-center text-slate-400 shadow-inner">
                     <i class="fas fa-shield-alt text-lg"></i>
@@ -141,7 +143,7 @@
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6 shrink-0">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6 shrink-0">
                     <div class="p-4 rounded-2xl shadow-sm text-white stat-card relative overflow-hidden group">
                         <div class="absolute -right-4 -top-4 w-12 h-12 bg-primary-500/10 rounded-full blur-xl"></div>
                         <p class="text-[8px] font-bold text-primary-500 uppercase mb-1">الرصيد الافتتاحي (الخزنة)</p>
@@ -183,13 +185,13 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-[350px]">
                     <div class="bg-dark-950 border border-white/5 rounded-[2rem] p-5 shadow-sm flex flex-col items-center justify-center">
-                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest w-full text-right mb-4"><i class="fas fa-chart-pie mr-2"></i> توزيع المصروفات التشغيلية</h4>
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest w-full text-right mb-4"><i class="fas fa-chart-pie mr-2"></i> توزيع المصروفات</h4>
                         <div class="relative w-full max-w-[220px] aspect-square">
                             <canvas id="expenseChart"></canvas>
                         </div>
                     </div>
                     <div class="lg:col-span-2 bg-dark-950 border border-white/5 rounded-[2rem] p-5 shadow-sm flex flex-col">
-                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest w-full text-right mb-4"><i class="fas fa-chart-bar mr-2"></i> حركة التدفق النقدي (الإيداع مقابل المنصرف)</h4>
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest w-full text-right mb-4"><i class="fas fa-chart-bar mr-2"></i> التدفق النقدي (إيداع/منصرف)</h4>
                         <div class="relative w-full flex-1 min-h-[220px]">
                             <canvas id="cashFlowChart"></canvas>
                         </div>
@@ -203,7 +205,7 @@
                         <h4 class="font-black text-white text-sm"><i class="fas fa-users text-primary-500 mr-2"></i> رواتب الموظفين الأساسيين</h4>
                         <div class="relative">
                             <i class="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-[10px]"></i>
-                            <input type="text" id="search-emp" oninput="renderPayroll()" placeholder="بحث باسم الموظف..." class="bg-dark-900 border border-white/10 text-white rounded-xl pr-10 pl-4 py-2.5 text-xs w-64 focus:border-primary-500 outline-none transition shadow-inner">
+                            <input type="text" id="search-emp" oninput="renderPayroll()" placeholder="بحث باسم الموظف..." class="bg-dark-900 border border-white/10 text-white rounded-xl pr-10 pl-4 py-2 text-xs w-64 focus:border-primary-500 outline-none transition shadow-inner">
                         </div>
                     </div>
                     <div class="flex-1 overflow-auto custom-scrollbar relative">
@@ -680,7 +682,7 @@
             startClock();
             initMonthPicker();
             initCharts();
-            switchFinanceView('dashboard'); // Start on Dashboard
+            switchFinanceView('dashboard'); 
         }
 
         function startClock() {
@@ -727,11 +729,11 @@
         function checkLoader() {
             if(dataLoadedFlags.users && dataLoadedFlags.finance) {
                 document.getElementById('payroll-loader').classList.add('hidden');
-                if(!systemLoadedOnce) { notifyAdmin("🔐 تم فتح لوحة الإدارة المالية."); systemLoadedOnce = true; }
+                if(!systemLoadedOnce) { notifyAdmin("🔐 تم فتح لوحة الإدارة المالية بنجاح."); systemLoadedOnce = true; }
             }
         }
 
-        // --- 4. NAVIGATION LOGIC ---
+        // --- 4. TABS & NAVIGATION ---
         function switchFinanceView(viewName) {
             ['dashboard', 'employees', 'freelancers', 'expenses', 'vault'].forEach(v => {
                 document.getElementById(`view-${v}`).classList.add('hidden');
@@ -739,12 +741,13 @@
             });
             document.getElementById(`view-${viewName}`).classList.remove('hidden');
             document.getElementById(`tab-${viewName}`).classList.add('active');
-            updateStats(); // Refresh data for the active view
+            updateStats(); 
         }
 
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 
-        // --- 5. DATA CALCULATION & CHARTS ---
+        // --- 5. CALCULATION & CHARTS ---
         function updateStats() {
             let baseT = 0, bonusT = 0, incenT = 0, deductT = 0, paidS = 0, apprvS = 0, waitS = 0;
             let totalFlPaid = 0, totalFlHolding = 0;
@@ -770,7 +773,7 @@
             const deposits = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0), 0);
             const currentLiquid = vaultCap + deposits - totalOut;
 
-            // Update All Original Dashboard Cards
+            // Updating all 9 elements
             if(document.getElementById('vault-balance')) document.getElementById('vault-balance').innerText = vaultCap.toLocaleString();
             if(document.getElementById('remaining-vault')) document.getElementById('remaining-vault').innerText = currentLiquid.toLocaleString();
             if(document.getElementById('total-spent')) document.getElementById('total-spent').innerText = totalOut.toLocaleString();
@@ -781,52 +784,26 @@
             if(document.getElementById('stat-fl-paid')) document.getElementById('stat-fl-paid').innerText = totalFlPaid.toLocaleString();
             if(document.getElementById('stat-fl-holding')) document.getElementById('stat-fl-holding').innerText = totalFlHolding.toLocaleString();
             
-            // Update Vault Specific Tab Cards
             if(document.getElementById('vault-v-open')) document.getElementById('vault-v-open').innerText = vaultCap.toLocaleString();
             if(document.getElementById('vault-v-in')) document.getElementById('vault-v-in').innerText = deposits.toLocaleString();
             if(document.getElementById('vault-v-out')) document.getElementById('vault-v-out').innerText = totalOut.toLocaleString();
             if(document.getElementById('vault-v-final')) document.getElementById('vault-v-final').innerText = currentLiquid.toLocaleString();
 
-            // Update Charts
-            if(expenseChartInstance) {
-                expenseChartInstance.data.datasets[0].data = [paidS, totalFlPaid, pureExpenses];
-                expenseChartInstance.update();
-            }
-            if(cashFlowChartInstance) {
-                cashFlowChartInstance.data.datasets[0].data = [deposits, totalOut];
-                cashFlowChartInstance.update();
-            }
+            if(expenseChartInstance) { expenseChartInstance.data.datasets[0].data = [paidS, totalFlPaid, pureExpenses]; expenseChartInstance.update(); }
+            if(cashFlowChartInstance) { cashFlowChartInstance.data.datasets[0].data = [deposits, totalOut]; cashFlowChartInstance.update(); }
 
-            // Re-render Tables & Logs
-            renderPayroll(); 
-            renderFreelancers();
-            renderGeneralExpenses();
-            renderEmployeeLogs();
-            renderFreelancerLogs();
-            renderVaultLedger();
+            renderPayroll(); renderFreelancers(); renderGeneralExpenses(); renderEmployeeLogs(); renderFreelancerLogs(); renderVaultLedger();
         }
 
         function initCharts() {
             Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Cairo';
             const ctxExp = document.getElementById('expenseChart');
-            if(ctxExp) {
-                expenseChartInstance = new Chart(ctxExp, {
-                    type: 'doughnut',
-                    data: { labels: ['رواتب', 'مستقلين', 'نثريات'], datasets: [{ data: [0,0,0], backgroundColor: ['#3b82f6', '#8b5cf6', '#f97316'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom' } } }
-                });
-            }
+            if(ctxExp) expenseChartInstance = new Chart(ctxExp, { type: 'doughnut', data: { labels: ['رواتب', 'مستقلين', 'نثريات'], datasets: [{ data: [0,0,0], backgroundColor: ['#3b82f6', '#8b5cf6', '#f97316'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom' } } } });
             const ctxCash = document.getElementById('cashFlowChart');
-            if(ctxCash) {
-                cashFlowChartInstance = new Chart(ctxCash, {
-                    type: 'bar',
-                    data: { labels: ['إجمالي الإيداعات', 'إجمالي المنصرف'], datasets: [{ label: 'السيولة', data: [0,0], backgroundColor: ['#10b981', '#ef4444'], borderRadius: 8 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
-                });
-            }
+            if(ctxCash) cashFlowChartInstance = new Chart(ctxCash, { type: 'bar', data: { labels: ['إجمالي الإيداعات', 'إجمالي المنصرف'], datasets: [{ label: 'السيولة', data: [0,0], backgroundColor: ['#10b981', '#ef4444'], borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } } });
         }
 
-        // --- 6. RENDER VIEWS ---
+        // --- 6. RENDER SPLIT VIEWS ---
         function renderPayroll() {
             const tbody = document.getElementById('payroll-body'); if(!tbody) return;
             const search = (document.getElementById('search-emp').value || "").toLowerCase();
@@ -839,19 +816,18 @@
                 const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
                 const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum - advSum;
                 
-                // RESTORED ALL 4 ORIGINAL BUTTONS
                 tbody.innerHTML += `
-                    <tr class="bg-dark-900 hover:bg-dark-800 transition-all">
-                        <td class="p-4 font-black text-white flex items-center gap-3"><img src="${u.photo||DEFAULT_PHOTO+u.name}" class="w-8 h-8 rounded-lg object-cover border border-white/10"><div><p class="text-xs">${u.name}</p><p class="text-[8px] text-primary-500 uppercase mt-0.5">${u.title||'---'}</p></div></td>
-                        <td class="p-4 font-bold text-slate-400">${(u.salary_base||0)}</td>
-                        <td class="p-4 text-green-500 font-bold">+${(m.bonus||0)}</td>
-                        <td class="p-4 text-primary-500 font-bold">+${(m.incentive||0)}</td>
-                        <td class="p-4 text-orange-500 font-bold">-${advSum}</td>
-                        <td class="p-4 text-red-500 font-bold">-${dSum}</td>
-                        <td class="p-4 font-black bg-dark-950 text-center text-white border-x border-white/5">${net.toLocaleString()}</td>
-                        <td class="p-4 text-center"><div class="flex -space-x-2 justify-center">${(m.receipts || []).slice(0,3).map(r => `<img src="${r}" class="w-6 h-6 rounded-full border border-dark-900 cursor-pointer hover:scale-125 transition" onclick="window.open('${r}')">`).join('') || '--'}</div></td>
-                        <td class="p-4 text-center">${renderStatusBadge(m.status, u.id)}</td>
-                        <td class="p-4 text-center">
+                    <tr class="bg-dark-900 hover:bg-dark-800 transition-all border-b border-white/5">
+                        <td class="p-3 font-black text-white flex items-center gap-3"><img src="${u.photo||DEFAULT_PHOTO+u.name}" class="w-8 h-8 rounded-lg object-cover border border-white/10"><div><p class="text-xs">${u.name}</p><p class="text-[8px] text-primary-500 uppercase mt-0.5">${u.title||'---'}</p></div></td>
+                        <td class="p-3 font-bold text-slate-400">${(u.salary_base||0)}</td>
+                        <td class="p-3 text-green-500 font-bold">+${(m.bonus||0)}</td>
+                        <td class="p-3 text-primary-500 font-bold">+${(m.incentive||0)}</td>
+                        <td class="p-3 text-orange-500 font-bold">-${advSum}</td>
+                        <td class="p-3 text-red-500 font-bold">-${dSum}</td>
+                        <td class="p-3 font-black bg-dark-950 text-center text-white border-x border-white/5">${net.toLocaleString()}</td>
+                        <td class="p-3 text-center"><div class="flex -space-x-2 justify-center">${(m.receipts || []).slice(0,3).map(r => `<img src="${r}" class="w-6 h-6 rounded-full border border-dark-900 cursor-pointer hover:scale-125 transition" onclick="window.open('${r}')">`).join('') || '--'}</div></td>
+                        <td class="p-3 text-center">${renderStatusBadge(m.status, u.id)}</td>
+                        <td class="p-3 text-center">
                             <div class="flex gap-1 justify-center">
                                 <button onclick="openFinanceModal('${u.id}')" class="w-7 h-7 rounded-lg btn-glass text-primary-400 hover:text-white" title="تعديل الراتب والبيانات"><i class="fas fa-pen-nib text-[9px]"></i></button>
                                 <button onclick="openEmpAdvanceModal('${u.id}')" class="w-7 h-7 rounded-lg btn-glass text-orange-400 hover:text-white" title="صرف سلفة"><i class="fas fa-hand-holding-usd text-[9px]"></i></button>
@@ -871,21 +847,20 @@
                 const remaining = totalCredit - totalPaid - totalDeducted;
                 const statusBadge = (remaining <= 0 && totalCredit > 0) ? '<span class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-[9px] font-black border border-emerald-500/20">خالص</span>' : '<span class="bg-primary-500/20 text-primary-400 px-3 py-1 rounded-lg text-[9px] font-black border border-primary-500/20">جاري العمل</span>';
                 
-                // RESTORED ALL 4 ORIGINAL BUTTONS
                 tbody.innerHTML += `
                     <tr class="bg-dark-900 hover:bg-dark-800 transition-all border-b border-white/5">
-                        <td class="p-4 font-black text-white flex items-center gap-3"><img src="${f.photo||DEFAULT_PHOTO+f.name}" class="w-8 h-8 rounded-lg object-cover"><span class="text-xs">${f.name}</span></td>
-                        <td class="p-4 font-bold text-slate-400 text-xs">${f.title || '---'}</td>
-                        <td class="p-4 font-bold text-primary-500">${totalCredit.toLocaleString()}</td>
-                        <td class="p-4 font-bold text-emerald-500">${totalPaid.toLocaleString()}</td>
-                        <td class="p-4 font-bold text-red-500">${totalDeducted.toLocaleString()}</td>
-                        <td class="p-4 font-black bg-dark-950 text-white text-center border-x border-white/5">${remaining.toLocaleString()}</td>
-                        <td class="p-4 text-center">${statusBadge}</td>
-                        <td class="p-4 text-center">
+                        <td class="p-3 font-black text-white flex items-center gap-3"><img src="${f.photo||DEFAULT_PHOTO+f.name}" class="w-8 h-8 rounded-lg object-cover"><span class="text-xs">${f.name}</span></td>
+                        <td class="p-3 font-bold text-slate-400 text-xs">${f.title || '---'}</td>
+                        <td class="p-3 font-bold text-primary-500">${totalCredit.toLocaleString()}</td>
+                        <td class="p-3 font-bold text-emerald-500">${totalPaid.toLocaleString()}</td>
+                        <td class="p-3 font-bold text-red-500">${totalDeducted.toLocaleString()}</td>
+                        <td class="p-3 font-black bg-dark-950 text-white text-center border-x border-white/5">${remaining.toLocaleString()}</td>
+                        <td class="p-3 text-center">${statusBadge}</td>
+                        <td class="p-3 text-center">
                             <div class="flex gap-1 justify-center">
                                 <button onclick="openFreelancerModal('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-slate-400 hover:text-white" title="تحديد قيمة التعاقد"><i class="fas fa-edit text-[9px]"></i></button>
                                 <button onclick="openPayModal('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-emerald-400 hover:text-white" title="صرف دفعة"><i class="fas fa-hand-holding-usd text-[9px]"></i></button>
-                                <button onclick="openFlDeductModal('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-red-400 hover:text-white" title="خصم مالي"><i class="fas fa-minus-circle text-[9px]"></i></button>
+                                <button onclick="openFlDeductModal('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-orange-400 hover:text-white" title="خصم مالي"><i class="fas fa-minus-circle text-[9px]"></i></button>
                                 <button onclick="generateFreelancerReport('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-purple-400 hover:text-white" title="تقرير الحساب"><i class="fas fa-file-invoice-dollar text-[9px]"></i></button>
                             </div>
                         </td>
@@ -931,20 +906,20 @@
         function renderVaultLedger() {
             const tbody = document.getElementById('vault-ledger-body'); if(!tbody) return; tbody.innerHTML = '';
             let ledger = [];
-            (monthData.vault_logs || []).forEach(d => { ledger.push({ date: d.date, type: 'إيداع نقدي', title: d.note, in: parseFloat(d.amount), out: 0, sortDate: new Date(d.date) }); });
+            (monthData.vault_logs || []).forEach(d => { ledger.push({ date: d.date, type: 'إيداع نقدي', title: d.note, in: parseFloat(d.amount), out: 0, sortDate: d.timestamp || 0 }); });
             (monthData.expenses || []).forEach(e => {
                 if(e.type !== 'fl_deduction') { 
-                    ledger.push({ date: e.date, type: 'منصرف', title: e.title, in: 0, out: parseFloat(e.amount), sortDate: new Date(e.date) });
+                    ledger.push({ date: e.date, type: 'منصرف', title: e.title, in: 0, out: parseFloat(e.amount), sortDate: e.timestamp || 0 });
                 }
             });
             ledger.sort((a,b) => b.sortDate - a.sortDate);
 
             ledger.forEach(l => {
-                tbody.innerHTML += `<tr class="hover:bg-dark-800 transition"><td class="p-4 text-[10px] text-slate-500 font-mono">${l.date}</td><td class="p-4 text-[10px] text-primary-500">${l.type}</td><td class="p-4 text-[11px] text-white">${l.title}</td><td class="p-4 text-emerald-500 text-center font-black">${l.in > 0 ? l.in : '-'}</td><td class="p-4 text-red-500 text-center font-black">${l.out > 0 ? l.out : '-'}</td></tr>`;
+                tbody.innerHTML += `<tr class="hover:bg-dark-800 transition border-b border-white/5"><td class="p-4 text-[10px] text-slate-500 font-mono">${l.date}</td><td class="p-4 text-[10px] text-primary-500">${l.type}</td><td class="p-4 text-[11px] text-white">${l.title}</td><td class="p-4 text-emerald-500 text-center font-black">${l.in > 0 ? l.in : '-'}</td><td class="p-4 text-red-500 text-center font-black">${l.out > 0 ? l.out : '-'}</td></tr>`;
             });
         }
 
-        // --- 7. TELEGRAM, DELETE REVERT & MODAL ACTIONS ---
+        // --- 7. TELEGRAM, DELETE REVERT & MODALS ---
         async function notifyAdmin(t){ try{await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:ADMIN_CHAT_ID,text:t,parse_mode:'Markdown'})});}catch(e){} }
         async function notifyUser(c,t,m=false){ if(!c||m)return; try{await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:c,text:t,parse_mode:'Markdown'})});}catch(e){} }
 
@@ -996,7 +971,7 @@
             }
         }
 
-        /* --- Modal Handlers: Employees --- */
+        // --- Modals: Employees ---
         function openFinanceModal(email) { 
             const u=allUsers.find(x=>x.id===email); const m=(u.monthly_finance&&u.monthly_finance[currentSelectedMonth])||{}; empTempReceipts=[]; document.getElementById('receipts-preview-list').innerHTML='';
             document.getElementById('fin-email').value=email; document.getElementById('fin-salary').value=u.salary_base||0; document.getElementById('fin-telegram-id').value=u.telegram_id||""; document.getElementById('fin-title').value=u.title||""; document.getElementById('fin-phone').value=u.phone_number||""; document.getElementById('fin-dept').value=u.department||""; document.getElementById('fin-bank').value=u.bank_account||""; document.getElementById('fin-instapay').value=u.instapay||""; document.getElementById('fin-bonus').value=m.bonus||0; document.getElementById('fin-incentive').value=m.incentive||0; document.getElementById('fin-notify-toggle').checked = !u.mute_notifications;
@@ -1016,7 +991,7 @@
         async function confirmEmpAdvance() {
             const email = document.getElementById('adv-emp-email').value, amount = parseFloat(document.getElementById('adv-amount').value), reason = document.getElementById('adv-reason').value;
             if(!amount) return; const u = allUsers.find(x => x.id === email); let currentExps = [...(monthData.expenses || [])];
-            currentExps.push({ title: `سلفة للموظف: ${u.name} (${reason})`, amount: amount, date: new Date().toISOString().split('T')[0], type: 'emp_advance', emp_email: email });
+            currentExps.push({ title: `سلفة للموظف: ${u.name} (${reason})`, amount: amount, date: new Date().toISOString().split('T')[0], type: 'emp_advance', emp_email: email, timestamp: Date.now() });
             await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
             notifyUser(u.telegram_id, `💸 *سلفة*\nتم صرف: *${amount} ج.م*`, u.mute_notifications); notifyAdmin(`💸 صرف سلفة لـ ${u.name}\nالقيمة: ${amount}`); closeModal('modal-emp-advance');
         }
@@ -1024,7 +999,6 @@
         function openEmpDeductModal(email) {
             const u = allUsers.find(x => x.id === email); if(!u) return;
             document.getElementById('deduct-modal-emp-email').value = email; document.getElementById('deduct-modal-emp-name').innerText = `للموظف: ${u.name}`; document.getElementById('new-emp-deduct-amount').value = ''; document.getElementById('new-emp-deduct-reason').value = '';
-            
             const listDiv = document.getElementById('current-emp-deductions-list'); listDiv.innerHTML = '';
             const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
             if(!m.deductions || m.deductions.length === 0) listDiv.innerHTML = '<p class="text-[9px] text-slate-500 text-center">لا توجد خصومات.</p>';
@@ -1038,7 +1012,7 @@
             notifyUser(u.telegram_id, `⚠️ *خصم*\nتم تسجيل خصم بقيمة: *${amount} ج.م*\nالسبب: ${reason}`, u.mute_notifications); notifyAdmin(`⚠️ تم خصم ${amount} من ${u.name}`); closeModal('modal-emp-deduct');
         }
 
-        /* --- Modal Handlers: Freelancers --- */
+        // --- Modals: Freelancers ---
         function openFreelancerModal(id) { const f = allUsers.find(x => x.id === id); if(!f) return; document.getElementById('fl-id').value = id; document.getElementById('fl-name').value = f.name; document.getElementById('fl-total').value = f.fl_total_credit || 0; document.getElementById('fl-phone').value = f.phone_number || ""; document.getElementById('fl-telegram').value = f.telegram_id || ""; openModal('modal-freelancer'); }
         async function saveFreelancerData(e) { e.preventDefault(); const id = document.getElementById('fl-id').value; await db.collection("users").doc(id).update({ fl_total_credit: parseFloat(document.getElementById('fl-total').value)||0, phone_number: document.getElementById('fl-phone').value, telegram_id: document.getElementById('fl-telegram').value }); closeModal('modal-freelancer'); }
 
@@ -1046,7 +1020,7 @@
         async function confirmFlPayment() {
             const id = document.getElementById('pay-fl-id').value, amount = parseFloat(document.getElementById('pay-fl-amount').value);
             if(!amount) return; const fl = allUsers.find(f => f.id === id); let currentExps = [...(monthData.expenses || [])];
-            currentExps.push({ title: `دفعة فريلانسر: ${fl.name}`, amount: amount, date: new Date().toISOString().split('T')[0], type: 'freelancer', fl_id: id });
+            currentExps.push({ title: `دفعة فريلانسر: ${fl.name}`, amount: amount, date: new Date().toISOString().split('T')[0], type: 'freelancer', fl_id: id, timestamp: Date.now() });
             await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
             await db.collection("users").doc(id).update({ fl_total_paid: (fl.fl_total_paid||0)+amount });
             notifyUser(fl.telegram_id, `💸 *إشعار صرف*\nتم تحويل: *${amount} ج.م* لحسابك.`); notifyAdmin(`💸 صرف فريلانسر: ${fl.name} (${amount})`); closeModal('modal-fl-pay');
@@ -1056,29 +1030,29 @@
         async function confirmFlDeduction() {
             const id = document.getElementById('deduct-fl-id').value, amount = parseFloat(document.getElementById('deduct-fl-amount').value), reason = document.getElementById('deduct-fl-reason').value || "خصم";
             if(!amount) return; const fl = allUsers.find(f => f.id === id); let currentExps = [...(monthData.expenses || [])];
-            currentExps.push({ title: `خصم من فريلانسر: ${fl.name} (${reason})`, amount: 0, deduction_val: amount, date: new Date().toISOString().split('T')[0], type: 'fl_deduction', fl_id: id });
+            currentExps.push({ title: `خصم من فريلانسر: ${fl.name} (${reason})`, amount: 0, deduction_val: amount, date: new Date().toISOString().split('T')[0], type: 'fl_deduction', fl_id: id, timestamp: Date.now() });
             await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
             await db.collection("users").doc(id).update({ fl_total_deducted: (fl.fl_total_deducted||0)+amount });
             notifyUser(fl.telegram_id, `⚠️ *إشعار خصم*\nتم خصم: *${amount} ج.م*\nالسبب: ${reason}`); notifyAdmin(`⚠️ خصم فريلانسر: ${fl.name} (${amount})`); closeModal('modal-fl-deduct');
         }
 
-        /* --- Modal Handlers: Vault & Expenses --- */
+        // --- Modals: Vault & Expenses ---
         function openVaultModal(){document.getElementById('vault-amount-input').value=''; document.getElementById('vault-note-input').value=''; openModal('modal-vault');}
         async function saveVaultTransaction(){
             const amt=parseFloat(document.getElementById('vault-amount-input').value), note=document.getElementById('vault-note-input').value||"إيداع نقدي"; if(isNaN(amt)||amt<=0)return; 
-            const newLogs=[...(monthData.vault_logs||[]),{amount:amt,note,date:new Date().toLocaleString('ar-EG')}]; 
+            const newLogs=[...(monthData.vault_logs||[]),{amount:amt,note,date:new Date().toLocaleString('ar-EG'), timestamp: Date.now()}]; 
             await db.collection("financial_months").doc(currentSelectedMonth).set({vault:(parseFloat(monthData.vault)||0)+amt,vault_logs:newLogs},{merge:true}); notifyAdmin(`🏦 *إيداع خزنة*\nالمبلغ: ${amt}\nالبيان: ${note}`); closeModal('modal-vault');
         }
 
         function openExpenseModal(){document.getElementById('exp-modal-title').innerText="تسجيل مصروف تشغيل"; document.getElementById('edit-expense-idx').value=""; document.getElementById('exp-title').value=""; document.getElementById('exp-amount').value=""; document.getElementById('exp-date').valueAsDate=new Date(); openModal('modal-expense');}
         async function saveExpense(){
             const t=document.getElementById('exp-title').value, a=parseFloat(document.getElementById('exp-amount').value), d=document.getElementById('exp-date').value, idx=document.getElementById('edit-expense-idx').value; if(!t||isNaN(a))return; 
-            let newExps=[...(monthData.expenses||[])]; const item={title:t,amount:a,date:d,type:'general'}; if(idx==="")newExps.push(item); else newExps[parseInt(idx)]=item; 
+            let newExps=[...(monthData.expenses||[])]; const item={title:t,amount:a,date:d,type:'general', timestamp: Date.now()}; if(idx==="")newExps.push(item); else newExps[parseInt(idx)]=item; 
             await db.collection("financial_months").doc(currentSelectedMonth).set({expenses:newExps},{merge:true}); notifyAdmin(`🧾 *نثرية جديدة*\nالبيان: ${t}\nالمبلغ: ${a}`); closeModal('modal-expense');
         }
         function editExpense(idx){const e=monthData.expenses[idx]; document.getElementById('exp-modal-title').innerText="تعديل مصروف تشغيل"; document.getElementById('edit-expense-idx').value=idx; document.getElementById('exp-title').value=e.title; document.getElementById('exp-amount').value=e.amount; document.getElementById('exp-date').value=e.date; openModal('modal-expense');}
 
-        // --- 8. REPORTS (Exact Original Implementation) ---
+        // --- 8. REPORTS (Original Templates Preserved) ---
         async function generateMonthlyReportImage() {
             const loader = document.getElementById('payroll-loader'); loader.classList.remove('hidden');
             const template = document.getElementById('report-image-template'); template.style.display = 'block'; void template.offsetHeight; 
@@ -1130,15 +1104,12 @@
             const template = document.getElementById('vault-report-template'); template.style.display = 'block'; void template.offsetHeight; 
             document.getElementById('vault-rep-month').innerText = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
             
-            // Re-render ledger specifically for print to remove colors/classes from HTML
             const tbody = document.getElementById('vault-rep-body'); tbody.innerHTML = '';
             let ledger = [];
-            (monthData.vault_logs || []).forEach(d => { ledger.push({ date: d.date, type: 'إيداع نقدي', title: d.note, in: parseFloat(d.amount), out: 0, sortDate: new Date(d.date) }); });
-            (monthData.expenses || []).forEach(e => { if(e.type !== 'fl_deduction') ledger.push({ date: e.date, type: 'منصرف', title: e.title, in: 0, out: parseFloat(e.amount), sortDate: new Date(e.date) }); });
+            (monthData.vault_logs || []).forEach(d => { ledger.push({ date: d.date, type: 'إيداع نقدي', title: d.note, in: parseFloat(d.amount), out: 0, sortDate: d.timestamp || 0 }); });
+            (monthData.expenses || []).forEach(e => { if(e.type !== 'fl_deduction') ledger.push({ date: e.date, type: 'منصرف', title: e.title, in: 0, out: parseFloat(e.amount), sortDate: e.timestamp || 0 }); });
             ledger.sort((a,b) => b.sortDate - a.sortDate);
-            ledger.forEach(l => {
-                tbody.innerHTML += `<tr><td style="border:1px solid #000;padding:8px;text-align:center;">${l.date}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.type}</td><td style="border:1px solid #000;padding:8px;">${l.title}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.in > 0 ? l.in : '-'}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.out > 0 ? l.out : '-'}</td></tr>`;
-            });
+            ledger.forEach(l => { tbody.innerHTML += `<tr><td style="border:1px solid #000;padding:8px;text-align:center;">${l.date}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.type}</td><td style="border:1px solid #000;padding:8px;">${l.title}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.in > 0 ? l.in : '-'}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.out > 0 ? l.out : '-'}</td></tr>`; });
             
             document.getElementById('vault-rep-final').innerText = document.getElementById('vault-v-final').innerText;
             await new Promise(r => setTimeout(r, 500));
