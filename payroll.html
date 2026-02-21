@@ -16,6 +16,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -31,23 +32,26 @@
 
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #0b1120; color: #f1f5f9; text-align: right; overflow: hidden; display: flex; height: 100vh; }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         
-        .stat-card { transition: all 0.3s; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.05); }
+        .stat-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.05); }
         .stat-card:hover { transform: translateY(-3px); border-color: #0ea5e9; background: rgba(30, 41, 59, 0.8); box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.1); }
         
         .btn-glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px); transition: all 0.3s; }
         .btn-glass:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
         
-        .nav-tab { transition: all 0.3s; }
-        .nav-tab.active { background: #0ea5e9; color: white; border-color: #0284c7; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3); }
+        .nav-tab { transition: all 0.3s; position: relative; overflow: hidden; }
+        .nav-tab.active { background: linear-gradient(90deg, rgba(14,165,233,0.15) 0%, transparent 100%); color: #0ea5e9; border-right: 4px solid #0ea5e9; }
+        .nav-tab.active i { color: #0ea5e9; }
         
         .modal-animate { animation: modalIn 0.3s ease-out; }
         @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        .print-template { display: none; position: absolute; top: 0; left: 0; z-index: -50; background: white; color: #000; direction: rtl; text-align: right; }
-
+        /* Select Wrapper Style */
+        .select-wrapper { position: relative; }
+        .select-wrapper::after { content: '\f107'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 12px; pointer-events: none; }
+        
         .toggle-checkbox:checked { right: 0; border-color: #10b981; }
         .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
         .toggle-checkbox { right: 0; z-index: 1; border-color: #334155; transition: all 0.3s; }
@@ -56,152 +60,169 @@
 </head>
 <body class="selection:bg-primary-500/30">
 
-    <div id="payroll-loader" class="fixed inset-0 z-[300] bg-dark-950 flex flex-col items-center justify-center text-white transition-opacity duration-500">
+    <div id="payroll-loader" class="fixed inset-0 z-[500] bg-dark-950 flex flex-col items-center justify-center text-white transition-opacity duration-500">
         <div class="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p class="font-black tracking-[0.4em] text-xs text-primary-500 uppercase animate-pulse">ALMASTER FINANCE CORE</p>
-        <p class="text-[9px] text-slate-500 mt-2 tracking-widest">تأمين وتحميل البيانات...</p>
+        <p class="text-[9px] text-slate-500 mt-2 tracking-widest">جاري تأمين وتحميل البيانات...</p>
     </div>
 
-    <aside class="w-[280px] bg-dark-950 border-l border-white/5 flex flex-col h-full shrink-0 z-50 shadow-2xl">
-        <div class="p-6 border-b border-white/5 bg-dark-900/50 flex flex-col items-center text-center shrink-0">
+    <aside class="w-[280px] bg-dark-950 flex flex-col h-full shrink-0 z-40 shadow-[5px_0_25px_rgba(0,0,0,0.5)]">
+        <div class="p-6 border-b border-white/5 bg-dark-900/30 flex flex-col items-center text-center shrink-0">
             <img src="MASTER_LOGO_WHPNG.png" class="h-10 w-auto object-contain mb-3" onerror="this.src='https://via.placeholder.com/150x50?text=ALMASTER'">
-            <h1 class="text-sm font-black text-white tracking-widest">ALMASTER FINANCE</h1>
+            <h1 class="text-sm font-black text-white tracking-widest leading-tight">ALMASTER FINANCE</h1>
             <p class="text-[8px] text-primary-500 font-bold uppercase tracking-widest mt-1">نظام الإدارة المالية</p>
         </div>
 
-        <div class="p-5 border-b border-white/5 shrink-0">
+        <div class="p-5 border-b border-white/5 shrink-0 bg-dark-900/10">
             <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 block"><i class="fas fa-calendar-alt mr-1"></i> الفترة المالية الحالية</label>
-            <div class="bg-dark-900 border border-white/5 rounded-xl px-3 py-2 flex items-center justify-between">
-                <select id="month-picker" onchange="changeMonth()" class="bg-transparent text-white text-xs font-bold outline-none cursor-pointer w-full appearance-none"></select>
-                <i class="fas fa-chevron-down text-slate-500 text-[10px]"></i>
+            <div class="select-wrapper">
+                <select id="month-picker" onchange="changeMonth()" class="w-full bg-dark-900 border border-white/10 hover:border-primary-500/50 rounded-xl px-4 py-3 text-xs font-black text-white outline-none cursor-pointer appearance-none transition-all shadow-inner"></select>
             </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
-            <p class="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-3 px-2">لوحات التحكم</p>
+        <div class="flex-1 overflow-y-auto custom-scrollbar py-4 space-y-1">
+            <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 px-6">لوحات التحكم والمتابعة</p>
             
-            <button onclick="switchFinanceView('dashboard')" id="tab-dashboard" class="nav-tab active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black text-slate-400 hover:bg-dark-900 hover:text-white border border-transparent">
-                <i class="fas fa-chart-pie w-5 text-center"></i> الداشبورد والإحصائيات
+            <button onclick="switchFinanceView('dashboard')" id="tab-dashboard" class="nav-tab active w-full flex items-center gap-4 px-6 py-3.5 text-[11px] font-black text-slate-400 hover:bg-dark-900 hover:text-white border-r-4 border-transparent text-right">
+                <i class="fas fa-chart-pie w-5 text-center text-slate-500"></i> الداشبورد والإحصائيات
             </button>
-            <button onclick="switchFinanceView('employees')" id="tab-employees" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black text-slate-400 hover:bg-dark-900 hover:text-white border border-transparent">
-                <i class="fas fa-users w-5 text-center"></i> رواتب الموظفين
+            <button onclick="switchFinanceView('employees')" id="tab-employees" class="nav-tab w-full flex items-center gap-4 px-6 py-3.5 text-[11px] font-black text-slate-400 hover:bg-dark-900 hover:text-white border-r-4 border-transparent text-right">
+                <i class="fas fa-users w-5 text-center text-slate-500"></i> رواتب الموظفين
             </button>
-            <button onclick="switchFinanceView('freelancers')" id="tab-freelancers" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black text-slate-400 hover:bg-dark-900 hover:text-white border border-transparent">
-                <i class="fas fa-laptop-code w-5 text-center"></i> حسابات المستقلين
+            <button onclick="switchFinanceView('freelancers')" id="tab-freelancers" class="nav-tab w-full flex items-center gap-4 px-6 py-3.5 text-[11px] font-black text-slate-400 hover:bg-dark-900 hover:text-white border-r-4 border-transparent text-right">
+                <i class="fas fa-laptop-code w-5 text-center text-slate-500"></i> حسابات المستقلين
             </button>
-            <button onclick="switchFinanceView('expenses')" id="tab-expenses" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black text-slate-400 hover:bg-dark-900 hover:text-white border border-transparent">
-                <i class="fas fa-file-invoice-dollar w-5 text-center"></i> النثريات والمصروفات
+            <button onclick="switchFinanceView('expenses')" id="tab-expenses" class="nav-tab w-full flex items-center gap-4 px-6 py-3.5 text-[11px] font-black text-slate-400 hover:bg-dark-900 hover:text-white border-r-4 border-transparent text-right">
+                <i class="fas fa-file-invoice-dollar w-5 text-center text-slate-500"></i> النثريات والمصروفات
             </button>
-            <button onclick="switchFinanceView('vault')" id="tab-vault" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black text-slate-400 hover:bg-dark-900 hover:text-white border border-transparent">
-                <i class="fas fa-vault w-5 text-center"></i> الخزينة ودفتر الأستاذ
+            <button onclick="switchFinanceView('vault')" id="tab-vault" class="nav-tab w-full flex items-center gap-4 px-6 py-3.5 text-[11px] font-black text-slate-400 hover:bg-dark-900 hover:text-white border-r-4 border-transparent text-right">
+                <i class="fas fa-vault w-5 text-center text-slate-500"></i> الخزينة المركزية
             </button>
         </div>
 
         <div class="p-4 border-t border-white/5 bg-dark-950 shrink-0 space-y-3">
-            <button onclick="generateMonthlyReportImage()" class="w-full bg-primary-600/10 text-primary-500 border border-primary-500/20 hover:bg-primary-600 hover:text-white py-3 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 transition active:scale-95">
-                <i class="fas fa-print"></i> التقرير المالي الشامل
+            <button onclick="generateMonthlyReportImage()" class="w-full bg-gradient-to-r from-primary-600 to-primary-500 text-white py-3.5 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 shadow-lg shadow-primary-500/20 hover:scale-[1.02] transition-transform">
+                <i class="fas fa-file-pdf"></i> استخراج التقرير الشهري
             </button>
         </div>
     </aside>
 
-    <div class="flex-1 flex flex-col relative overflow-hidden bg-dark-900/50">
+    <div class="flex-1 flex flex-col relative overflow-hidden bg-dark-900">
         
-        <header class="h-16 border-b border-white/5 bg-dark-950/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-40">
+        <header class="h-16 border-b border-white/5 bg-dark-950/90 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-30">
             <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-xl bg-dark-800 border border-white/5 flex items-center justify-center text-slate-400">
-                    <i class="fas fa-shield-alt"></i>
+                <div class="w-10 h-10 rounded-xl bg-dark-800 border border-white/5 flex items-center justify-center text-slate-400 shadow-inner">
+                    <i class="fas fa-shield-alt text-lg"></i>
                 </div>
                 <div>
-                    <h2 class="text-xs font-black text-white">المركز المالي مشفر</h2>
+                    <h2 class="text-xs font-black text-white">المركز المالي محمي</h2>
                     <p class="text-[8px] text-green-500 font-bold uppercase tracking-widest mt-0.5"><i class="fas fa-lock text-[7px] mr-1"></i> End-to-End Encrypted</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="text-left leading-none mr-4">
+            <div class="flex items-center gap-6">
+                <div class="text-center leading-none">
                     <div id="header-time" class="text-xl font-black font-mono text-white tracking-widest">00:00:00</div>
-                    <div id="header-date" class="text-[9px] font-bold text-slate-500">...</div>
+                    <div id="header-date" class="text-[9px] font-bold text-slate-500 mt-1">...</div>
                 </div>
-                <button onclick="window.location.href='index.html'" class="px-5 py-2.5 bg-dark-800 text-slate-300 hover:bg-white hover:text-dark-950 rounded-xl font-black text-[10px] transition-all flex items-center gap-2 shadow-lg">
+                <div class="w-[1px] h-8 bg-white/10 mx-2"></div>
+                <button onclick="window.location.href='index.html'" class="px-5 py-2.5 bg-dark-800 border border-white/5 text-slate-300 hover:bg-white hover:text-dark-950 rounded-xl font-black text-[10px] transition-all flex items-center gap-2 shadow-md">
                     العودة لـ Workspace <i class="fas fa-external-link-alt"></i>
                 </button>
             </div>
         </header>
 
-        <main class="flex-1 relative overflow-hidden">
+        <main class="flex-1 relative overflow-hidden p-6 max-w-[2000px] w-full mx-auto">
             
             <div id="view-dashboard" class="absolute inset-0 flex flex-col p-6 overflow-y-auto custom-scrollbar transition-opacity duration-300">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-black text-white">الملخص المالي والتحليلات</h2>
-                    <p class="text-xs text-slate-500 font-bold mt-1">نظرة عامة على أداء الشركة للفترة المحددة</p>
+                <div class="mb-6 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-black text-white">لوحة القيادة المالية</h2>
+                        <p class="text-xs text-slate-500 font-bold mt-1">إحصائيات كاملة وحية للفترة المحددة</p>
+                    </div>
                 </div>
                 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 shrink-0">
-                    <div class="p-5 rounded-3xl shadow-sm text-white stat-card bg-gradient-to-br from-green-600/10 to-transparent border-green-500/20">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-[10px] font-black text-green-500 uppercase">السيولة المتاحة</p>
-                            <i class="fas fa-wallet text-green-500/50"></i>
-                        </div>
-                        <h3 id="dash-remaining-vault" class="text-2xl font-black leading-none text-green-400">0</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6 shrink-0">
+                    <div class="p-4 rounded-2xl shadow-sm text-white stat-card relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-12 h-12 bg-primary-500/10 rounded-full blur-xl"></div>
+                        <p class="text-[8px] font-bold text-primary-500 uppercase mb-1">الرصيد الافتتاحي (الخزنة)</p>
+                        <h3 id="vault-balance" class="text-xl font-black leading-none">0</h3>
                     </div>
-                    <div class="p-5 rounded-3xl shadow-sm text-white stat-card border-red-500/20">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-[10px] font-black text-red-500 uppercase">إجمالي المنصرف كلياً</p>
-                            <i class="fas fa-arrow-trend-down text-red-500/50"></i>
-                        </div>
-                        <h3 id="dash-total-spent" class="text-2xl font-black leading-none">0</h3>
+                    <div class="p-4 rounded-2xl shadow-sm stat-card border-green-500/20 bg-green-500/5">
+                        <p class="text-[8px] font-bold text-green-500 uppercase mb-1">السيولة الحالية (المتاحة)</p>
+                        <h3 id="remaining-vault" class="text-xl font-black text-green-400 leading-none">0</h3>
                     </div>
-                    <div class="p-5 rounded-3xl shadow-sm text-white stat-card border-blue-500/20">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-[10px] font-black text-blue-500 uppercase">الرواتب المحولة</p>
-                            <i class="fas fa-users text-blue-500/50"></i>
-                        </div>
-                        <h3 id="dash-paid-salaries" class="text-2xl font-black leading-none">0</h3>
+                    <div class="p-4 rounded-2xl shadow-sm stat-card border-red-500/20 bg-red-500/5">
+                        <p class="text-[8px] font-bold text-red-400 uppercase mb-1">إجمالي المنصرف كلياً</p>
+                        <h3 id="total-spent" class="text-xl font-black text-red-400 leading-none">0</h3>
                     </div>
-                    <div class="p-5 rounded-3xl shadow-sm text-white stat-card border-orange-500/20">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-[10px] font-black text-orange-500 uppercase">نثريات ومصروفات</p>
-                            <i class="fas fa-receipt text-orange-500/50"></i>
-                        </div>
-                        <h3 id="dash-total-expenses" class="text-2xl font-black leading-none">0</h3>
+                    <div class="p-4 rounded-2xl shadow-sm stat-card">
+                        <p class="text-[8px] font-bold text-emerald-500 uppercase mb-1">الرواتب المحولة</p>
+                        <h3 id="total-paid-salaries-sum" class="text-xl font-black text-white leading-none">0</h3>
+                    </div>
+                    <div class="p-4 rounded-2xl shadow-sm stat-card">
+                        <p class="text-[8px] font-bold text-blue-500 uppercase mb-1">رواتب معتمدة (Hold)</p>
+                        <h3 id="pending-approved-total" class="text-xl font-black text-white leading-none">0</h3>
+                    </div>
+                    <div class="p-4 rounded-2xl shadow-sm stat-card">
+                        <p class="text-[8px] font-bold text-orange-500 uppercase mb-1">رواتب تحت الاعتماد</p>
+                        <h3 id="pending-waiting-total" class="text-xl font-black text-white leading-none">0</h3>
+                    </div>
+                    <div class="p-4 rounded-2xl shadow-sm stat-card border-orange-500/10">
+                        <p class="text-[8px] font-bold text-orange-400 uppercase mb-1">إجمالي النثريات</p>
+                        <h3 id="total-expenses" class="text-xl font-black text-white leading-none">0</h3>
+                    </div>
+                    <div class="p-4 rounded-2xl shadow-sm stat-card bg-purple-900/10 border-purple-500/20">
+                        <p class="text-[8px] font-bold text-purple-400 uppercase mb-1">مدفوعات مستقلين</p>
+                        <h3 id="stat-fl-paid" class="text-xl font-black text-white leading-none">0</h3>
+                    </div>
+                    <div class="p-4 rounded-2xl shadow-sm stat-card bg-indigo-900/10 border-indigo-500/20">
+                        <p class="text-[8px] font-bold text-indigo-400 uppercase mb-1">متبقي مستقلين (Hold)</p>
+                        <h3 id="stat-fl-holding" class="text-xl font-black text-white leading-none">0</h3>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[400px]">
-                    <div class="bg-dark-950 border border-white/5 rounded-[2rem] p-6 shadow-sm flex flex-col items-center justify-center">
-                        <h4 class="text-xs font-black text-slate-400 uppercase w-full text-right mb-4">توزيع المصروفات (%)</h4>
-                        <div class="relative w-full max-w-[250px] aspect-square">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-[350px]">
+                    <div class="bg-dark-950 border border-white/5 rounded-[2rem] p-5 shadow-sm flex flex-col items-center justify-center">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest w-full text-right mb-4"><i class="fas fa-chart-pie mr-2"></i> توزيع المصروفات التشغيلية</h4>
+                        <div class="relative w-full max-w-[220px] aspect-square">
                             <canvas id="expenseChart"></canvas>
                         </div>
                     </div>
-                    <div class="lg:col-span-2 bg-dark-950 border border-white/5 rounded-[2rem] p-6 shadow-sm flex flex-col">
-                        <h4 class="text-xs font-black text-slate-400 uppercase w-full text-right mb-4">حركة التدفق النقدي (Cash Flow)</h4>
-                        <div class="relative w-full flex-1 min-h-[250px]">
+                    <div class="lg:col-span-2 bg-dark-950 border border-white/5 rounded-[2rem] p-5 shadow-sm flex flex-col">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest w-full text-right mb-4"><i class="fas fa-chart-bar mr-2"></i> حركة التدفق النقدي (الإيداع مقابل المنصرف)</h4>
+                        <div class="relative w-full flex-1 min-h-[220px]">
                             <canvas id="cashFlowChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="view-employees" class="absolute inset-0 hidden flex gap-6 p-6 h-full transition-opacity duration-300">
+            <div id="view-employees" class="absolute inset-0 hidden flex gap-4 p-6 h-full transition-opacity duration-300">
                 <div class="flex-[3] bg-dark-950 rounded-[2rem] shadow-sm border border-white/5 flex flex-col overflow-hidden">
                     <div class="p-5 border-b border-white/5 bg-dark-900/50 flex justify-between items-center shrink-0">
                         <h4 class="font-black text-white text-sm"><i class="fas fa-users text-primary-500 mr-2"></i> رواتب الموظفين الأساسيين</h4>
-                        <input type="text" id="search-emp" oninput="renderPayroll()" placeholder="بحث باسم الموظف..." class="bg-dark-950 border border-white/10 text-white rounded-xl px-4 py-2 text-xs w-64 focus:border-primary-500 outline-none transition">
+                        <div class="relative">
+                            <i class="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-[10px]"></i>
+                            <input type="text" id="search-emp" oninput="renderPayroll()" placeholder="بحث باسم الموظف..." class="bg-dark-900 border border-white/10 text-white rounded-xl pr-10 pl-4 py-2.5 text-xs w-64 focus:border-primary-500 outline-none transition shadow-inner">
+                        </div>
                     </div>
-                    <div class="flex-1 overflow-auto custom-scrollbar p-2 relative">
-                        <table class="w-full text-right border-separate border-spacing-y-2 whitespace-nowrap">
-                            <thead>
-                                <tr class="text-slate-500 text-[9px] font-black uppercase tracking-widest">
-                                    <th class="p-3 sticky top-0 bg-dark-950 z-20">الموظف</th>
-                                    <th class="p-3 sticky top-0 bg-dark-950 z-20">الأساسي</th>
-                                    <th class="p-3 text-green-500 sticky top-0 bg-dark-950 z-20">مكافآت</th>
-                                    <th class="p-3 text-red-500 sticky top-0 bg-dark-950 z-20">استقطاع</th>
-                                    <th class="p-3 text-white bg-dark-900 sticky top-0 z-20 text-center">الصافي</th>
-                                    <th class="p-3 text-center sticky top-0 bg-dark-950 z-20">الحالة</th>
-                                    <th class="p-3 text-center sticky top-0 bg-dark-950 z-20">الإجراءات</th>
+                    <div class="flex-1 overflow-auto custom-scrollbar relative">
+                        <table class="w-full text-right whitespace-nowrap">
+                            <thead class="bg-dark-900 text-slate-500 text-[9px] font-black uppercase tracking-widest sticky top-0 z-20 shadow-sm">
+                                <tr>
+                                    <th class="p-4">الموظف</th>
+                                    <th class="p-4">الأساسي</th>
+                                    <th class="p-4 text-green-500">مكافآت</th>
+                                    <th class="p-4 text-primary-500">حوافز</th>
+                                    <th class="p-4 text-orange-500">سلف</th>
+                                    <th class="p-4 text-red-500">خصومات</th>
+                                    <th class="p-4 text-white text-center bg-dark-800">الصافي</th>
+                                    <th class="p-4 text-center">الوصولات</th>
+                                    <th class="p-4 text-center">الحالة</th>
+                                    <th class="p-4 text-center">الإجراءات</th>
                                 </tr>
                             </thead>
-                            <tbody id="payroll-body"></tbody>
+                            <tbody id="payroll-body" class="divide-y divide-white/5"></tbody>
                         </table>
                     </div>
                 </div>
@@ -214,95 +235,78 @@
                 </div>
             </div>
 
-            <div id="view-freelancers" class="absolute inset-0 hidden flex gap-6 p-6 h-full transition-opacity duration-300">
+            <div id="view-freelancers" class="absolute inset-0 hidden flex gap-4 p-6 h-full transition-opacity duration-300">
                 <div class="flex-[3] bg-dark-950 rounded-[2rem] shadow-sm border border-white/5 flex flex-col overflow-hidden">
                     <div class="p-5 border-b border-white/5 bg-dark-900/50 flex justify-between items-center shrink-0">
-                        <h4 class="font-black text-white text-sm"><i class="fas fa-laptop-code text-purple-500 mr-2"></i> حسابات المستقلين (Freelancers)</h4>
+                        <h4 class="font-black text-white text-sm"><i class="fas fa-laptop-code text-purple-500 mr-2"></i> إدارة حسابات المستقلين</h4>
                     </div>
-                    <div class="flex-1 overflow-auto custom-scrollbar p-2 relative">
-                        <table class="w-full text-right border-separate border-spacing-y-2 whitespace-nowrap">
-                            <thead>
-                                <tr class="text-slate-500 text-[9px] font-black uppercase tracking-widest">
-                                    <th class="p-3 sticky top-0 bg-dark-950 z-20">الفريلانسر</th>
-                                    <th class="p-3 sticky top-0 bg-dark-950 z-20">إجمالي التعاقد</th>
-                                    <th class="p-3 text-emerald-500 sticky top-0 bg-dark-950 z-20">منصرف</th>
-                                    <th class="p-3 text-red-500 sticky top-0 bg-dark-950 z-20">خصم</th>
-                                    <th class="p-3 text-white bg-dark-900 sticky top-0 z-20 text-center">المتبقي له</th>
-                                    <th class="p-3 text-center sticky top-0 bg-dark-950 z-20">الإجراءات</th>
+                    <div class="flex-1 overflow-auto custom-scrollbar relative">
+                        <table class="w-full text-right whitespace-nowrap">
+                            <thead class="bg-dark-900 text-slate-500 text-[9px] font-black uppercase tracking-widest sticky top-0 z-20 shadow-sm">
+                                <tr>
+                                    <th class="p-4">الفريلانسر</th>
+                                    <th class="p-4">التخصص</th>
+                                    <th class="p-4 text-primary-500">إجمالي التعاقد</th>
+                                    <th class="p-4 text-emerald-500">المنصرف</th>
+                                    <th class="p-4 text-red-500">الخصومات</th>
+                                    <th class="p-4 text-white text-center bg-dark-800">المتبقي له</th>
+                                    <th class="p-4 text-center">الحالة</th>
+                                    <th class="p-4 text-center">الإجراءات</th>
                                 </tr>
                             </thead>
-                            <tbody id="freelancer-body"></tbody>
+                            <tbody id="freelancer-body" class="divide-y divide-white/5"></tbody>
                         </table>
                     </div>
                 </div>
                 <div class="flex-[1] bg-dark-950 rounded-[2rem] shadow-sm border border-white/5 flex flex-col overflow-hidden">
                     <div class="p-5 border-b border-white/5 bg-dark-900/50 shrink-0">
-                        <h4 class="font-black text-white text-xs"><i class="fas fa-list-ul text-emerald-500 mr-2"></i> سجل الدفعات للمستقلين</h4>
-                        <p class="text-[8px] text-slate-500 mt-1">يمكنك حذف الحركة لاستردادها للخزنة</p>
+                        <h4 class="font-black text-white text-xs"><i class="fas fa-list-ul text-emerald-500 mr-2"></i> حركات المستقلين</h4>
+                        <p class="text-[8px] text-slate-500 mt-1">حذف الحركة من هنا يستردها للرصيد</p>
                     </div>
                     <div id="fl-logs-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"></div>
                 </div>
             </div>
 
             <div id="view-expenses" class="absolute inset-0 hidden flex flex-col p-6 h-full transition-opacity duration-300">
-                <div class="bg-dark-950 rounded-[2rem] shadow-sm border border-white/5 flex flex-col h-full overflow-hidden max-w-4xl mx-auto w-full">
+                <div class="bg-dark-950 rounded-[2rem] shadow-sm border border-white/5 flex flex-col h-full overflow-hidden max-w-5xl mx-auto w-full">
                     <div class="p-6 border-b border-white/5 bg-dark-900/50 flex justify-between items-center shrink-0">
                         <div>
                             <h4 class="font-black text-white text-lg"><i class="fas fa-file-invoice-dollar text-red-500 mr-2"></i> النثريات والمصروفات العامة</h4>
-                            <p class="text-[10px] text-slate-500 mt-1">فواتير، ضيافة، مشتريات (لا تشمل السلف أو رواتب الفريلانسرز)</p>
+                            <p class="text-[10px] text-slate-500 mt-1">سجل مخصص لمصروفات التشغيل بعيداً عن الرواتب</p>
                         </div>
-                        <button onclick="openExpenseModal()" class="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black text-xs transition shadow-lg shadow-red-500/20">
-                            <i class="fas fa-plus ml-2"></i> إضافة مصروف جديد
+                        <button onclick="openExpenseModal()" class="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black text-xs transition shadow-lg shadow-red-500/20 flex items-center gap-2">
+                            <i class="fas fa-plus"></i> تسجيل مصروف جديد
                         </button>
                     </div>
-                    <div id="general-expenses-list" class="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-4 content-start"></div>
+                    <div id="general-expenses-list" class="flex-1 overflow-y-auto p-6 custom-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 content-start"></div>
                 </div>
             </div>
 
             <div id="view-vault" class="absolute inset-0 hidden flex flex-col p-6 h-full transition-opacity duration-300">
-                <div class="grid grid-cols-4 gap-4 mb-6 shrink-0">
-                    <div class="col-span-4 flex justify-between items-center mb-2">
-                        <h2 class="text-2xl font-black text-white">الخزينة المركزية (Vault Ledger)</h2>
+                <div class="bg-dark-950 rounded-[2rem] shadow-sm border border-white/5 flex flex-col h-full overflow-hidden">
+                    <div class="p-6 border-b border-white/5 bg-dark-900/50 flex justify-between items-center shrink-0">
+                        <div>
+                            <h4 class="font-black text-white text-lg"><i class="fas fa-vault text-primary-500 mr-2"></i> دفتر الأستاذ - الخزينة المركزية</h4>
+                            <p class="text-[10px] text-slate-500 mt-1">تتبع مسار كل حركة مالية تمت داخل النظام بالتسلسل الزمني</p>
+                        </div>
                         <div class="flex gap-3">
-                            <button onclick="openVaultModal()" class="px-6 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-black text-xs transition shadow-lg shadow-primary-500/20">
-                                <i class="fas fa-plus-circle ml-2"></i> إيداع نقدي
+                            <button onclick="openVaultModal()" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-black text-[10px] transition flex items-center gap-2 shadow-lg shadow-primary-500/20">
+                                <i class="fas fa-arrow-down"></i> إيداع نقدي
                             </button>
-                            <button onclick="generateVaultReport()" class="px-6 py-2.5 bg-dark-800 border border-white/10 hover:bg-white hover:text-dark-950 text-white rounded-xl font-black text-xs transition shadow-lg">
-                                <i class="fas fa-print ml-2"></i> كشف حساب الخزينة
+                            <button onclick="generateVaultReport()" class="px-5 py-2.5 bg-dark-800 border border-white/10 hover:bg-white hover:text-dark-950 text-white rounded-xl font-black text-[10px] transition flex items-center gap-2 shadow-sm">
+                                <i class="fas fa-print"></i> كشف حساب الخزينة
                             </button>
                         </div>
-                    </div>
-                    <div class="bg-dark-950 border border-white/5 p-5 rounded-2xl">
-                        <p class="text-[10px] font-black text-slate-500 uppercase mb-1">الرصيد الافتتاحي للشهر</p>
-                        <h3 id="vault-v-open" class="text-xl font-black text-white">0</h3>
-                    </div>
-                    <div class="bg-dark-950 border border-white/5 p-5 rounded-2xl">
-                        <p class="text-[10px] font-black text-emerald-500 uppercase mb-1">إجمالي الإيداعات (+)</p>
-                        <h3 id="vault-v-in" class="text-xl font-black text-emerald-400">0</h3>
-                    </div>
-                    <div class="bg-dark-950 border border-white/5 p-5 rounded-2xl">
-                        <p class="text-[10px] font-black text-red-500 uppercase mb-1">إجمالي المنصرف (-)</p>
-                        <h3 id="vault-v-out" class="text-xl font-black text-red-400">0</h3>
-                    </div>
-                    <div class="bg-dark-900 border-2 border-primary-500/30 p-5 rounded-2xl shadow-[0_0_20px_rgba(14,165,233,0.1)]">
-                        <p class="text-[10px] font-black text-primary-500 uppercase mb-1">السيولة الحالية (الصافي)</p>
-                        <h3 id="vault-v-final" class="text-2xl font-black text-primary-400">0</h3>
-                    </div>
-                </div>
-
-                <div class="flex-1 bg-dark-950 rounded-[2rem] shadow-sm border border-white/5 flex flex-col overflow-hidden">
-                    <div class="p-4 border-b border-white/5 bg-dark-900/50 shrink-0">
-                        <h4 class="font-black text-white text-xs"><i class="fas fa-book text-slate-400 mr-2"></i> دفتر الأستاذ العام (التسلسل الزمني لجميع الحركات)</h4>
                     </div>
                     <div class="flex-1 overflow-auto custom-scrollbar relative">
                         <table class="w-full text-right whitespace-nowrap text-sm">
                             <thead class="bg-dark-900 text-slate-500 text-[10px] font-black uppercase tracking-widest sticky top-0 z-20 shadow-sm">
                                 <tr>
-                                    <th class="p-4 w-32">التاريخ والوقت</th>
-                                    <th class="p-4">نوع الحركة</th>
+                                    <th class="p-4 w-40">التاريخ والوقت</th>
+                                    <th class="p-4 w-32">نوع الحركة</th>
                                     <th class="p-4">البيان / التفاصيل</th>
-                                    <th class="p-4 text-center">دائن (+)</th>
-                                    <th class="p-4 text-center">مدين (-)</th>
+                                    <th class="p-4 text-center w-32 text-emerald-500">دائن (+)</th>
+                                    <th class="p-4 text-center w-32 text-red-500">مدين (-)</th>
                                 </tr>
                             </thead>
                             <tbody id="vault-ledger-body" class="divide-y divide-white/5 font-bold text-slate-300">
@@ -315,71 +319,65 @@
         </main>
     </div>
 
-    <div id="modal-freelancer" class="fixed inset-0 z-[400] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-dark-900 w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-white/5 modal-animate">
-            <div class="p-5 border-b border-white/5 bg-dark-950 flex justify-between items-center text-right">
+    <div id="modal-freelancer" class="fixed inset-0 z-[600] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-dark-900 w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-white/5 modal-animate text-right">
+            <div class="p-5 border-b border-white/5 bg-dark-950 flex justify-between items-center">
                 <h3 class="text-lg font-black text-white">إعدادات الفريلانسر</h3>
-                <button onclick="closeModal('modal-freelancer')" class="text-slate-500 hover:text-white transition w-8 h-8 flex items-center justify-center btn-glass rounded-lg"><i class="fas fa-times"></i></button>
+                <button onclick="closeModal('modal-freelancer')" class="text-slate-500 hover:text-white w-8 h-8 flex items-center justify-center btn-glass rounded-lg"><i class="fas fa-times"></i></button>
             </div>
-            <form onsubmit="saveFreelancerData(event)" class="p-6 space-y-4 text-right">
+            <form onsubmit="saveFreelancerData(event)" class="p-6 space-y-4">
                 <input type="hidden" id="fl-id">
                 <div><label class="block text-[9px] font-black text-slate-500 mb-1">الاسم</label><input type="text" id="fl-name" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-3 font-bold text-slate-400 cursor-not-allowed" readonly></div>
                 <div><label class="block text-[9px] font-black text-primary-500 mb-1">قيمة التعاقد الكلية (ج.م)</label><input type="number" id="fl-total" class="w-full bg-dark-950 text-white border border-primary-500/30 focus:border-primary-500 outline-none rounded-xl px-4 py-3 font-black text-lg transition" value="0"></div>
-                
                 <div class="grid grid-cols-2 gap-3 mt-3">
-                    <div>
-                        <label class="block text-[9px] font-black text-slate-500 mb-1">رقم الموبايل</label>
-                        <input type="text" id="fl-phone" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-primary-500">
-                    </div>
-                    <div>
-                        <label class="block text-[9px] font-black text-primary-500 mb-1">Telegram Chat ID</label>
-                        <input type="text" id="fl-telegram" class="w-full bg-dark-950 border border-primary-500/20 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-primary-500">
-                    </div>
+                    <div><label class="block text-[9px] font-black text-slate-500 mb-1">رقم الموبايل</label><input type="text" id="fl-phone" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-primary-500"></div>
+                    <div><label class="block text-[9px] font-black text-primary-500 mb-1">Telegram Chat ID</label><input type="text" id="fl-telegram" class="w-full bg-dark-950 border border-primary-500/20 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-primary-500"></div>
                 </div>
-
-                <button type="submit" class="w-full bg-primary-600 hover:bg-primary-500 text-white font-black py-3 rounded-xl shadow-lg transition text-xs mt-2">حفظ البيانات</button>
+                <button type="submit" class="w-full bg-primary-600 hover:bg-primary-500 text-white font-black py-3 rounded-xl shadow-lg transition text-xs mt-2">حفظ وتحديث</button>
             </form>
         </div>
     </div>
 
-    <div id="modal-fl-pay" class="fixed inset-0 z-[400] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="modal-fl-pay" class="fixed inset-0 z-[600] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-dark-900 w-full max-w-sm rounded-[2rem] shadow-2xl p-6 text-right modal-animate border border-white/5">
             <h3 class="text-lg font-black mb-1 text-white">صرف دفعة فريلانسر</h3>
             <p class="text-[10px] text-slate-400 mb-4 font-bold" id="pay-fl-name">للفريلانسر: ...</p>
             <input type="hidden" id="pay-fl-id">
-            <div class="bg-primary-500/10 p-3 rounded-xl mb-4 border border-primary-500/20">
-                <p class="text-[9px] font-bold text-primary-400">المتبقي له حالياً</p>
-                <h2 class="text-lg font-black text-primary-500 mt-1" id="pay-fl-remaining">0</h2>
+            <div class="bg-primary-500/10 p-4 rounded-xl mb-5 border border-primary-500/20 text-center">
+                <p class="text-[9px] font-bold text-primary-400 uppercase tracking-widest">المتبقي له حالياً</p>
+                <h2 class="text-2xl font-black text-primary-500 mt-1" id="pay-fl-remaining">0</h2>
             </div>
-            <label class="block text-[9px] font-black text-slate-500 mb-1">مبلغ الدفعة</label>
-            <input type="number" id="pay-fl-amount" class="w-full bg-dark-950 text-emerald-500 border border-emerald-500/20 focus:border-emerald-500 rounded-xl px-4 py-2.5 font-black text-sm mb-3 outline-none" placeholder="0.00">
-            <button onclick="confirmFlPayment()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl shadow-lg mb-2 text-xs transition">تأكيد الصرف وإرسال إشعار</button>
-            <button onclick="closeModal('modal-fl-pay')" class="w-full bg-dark-800 text-slate-400 hover:text-white font-bold py-3 rounded-xl text-xs transition">إلغاء</button>
+            <label class="block text-[9px] font-black text-slate-500 mb-1">مبلغ الدفعة المنصرفة</label>
+            <input type="number" id="pay-fl-amount" class="w-full bg-dark-950 text-emerald-500 border border-emerald-500/30 focus:border-emerald-500 rounded-xl px-4 py-3 font-black text-lg mb-5 outline-none text-center" placeholder="0">
+            <div class="flex gap-2">
+                <button onclick="confirmFlPayment()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl shadow-lg text-xs transition">تأكيد الصرف</button>
+                <button onclick="closeModal('modal-fl-pay')" class="px-5 bg-dark-800 text-slate-400 hover:text-white font-bold py-3 rounded-xl text-xs transition">إلغاء</button>
+            </div>
         </div>
     </div>
 
-    <div id="modal-fl-deduct" class="fixed inset-0 z-[400] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="modal-fl-deduct" class="fixed inset-0 z-[600] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-dark-900 w-full max-w-sm rounded-[2rem] shadow-2xl p-6 text-right modal-animate border border-white/5">
             <h3 class="text-lg font-black mb-1 text-red-500">تسجيل خصم مالي</h3>
             <p class="text-[10px] text-slate-400 mb-4 font-bold" id="deduct-fl-name">للفريلانسر: ...</p>
             <input type="hidden" id="deduct-fl-id">
             <label class="block text-[9px] font-black text-slate-500 mb-1">مبلغ الخصم</label>
-            <input type="number" id="deduct-fl-amount" class="w-full bg-dark-950 text-red-500 border border-red-500/20 focus:border-red-500 rounded-xl px-4 py-2.5 font-black text-sm mb-3 outline-none" placeholder="0.00">
-            <label class="block text-[9px] font-black text-slate-500 mb-1">سبب الخصم</label>
-            <input type="text" id="deduct-fl-reason" class="w-full bg-dark-950 text-white border border-white/5 focus:border-slate-500 rounded-xl px-4 py-2.5 font-bold text-xs mb-4 outline-none" placeholder="السبب...">
-            <button onclick="confirmFlDeduction()" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl shadow-lg mb-2 text-xs transition">تأكيد الخصم والإشعار</button>
-            <button onclick="closeModal('modal-fl-deduct')" class="w-full bg-dark-800 text-slate-400 hover:text-white font-bold py-3 rounded-xl text-xs transition">إلغاء</button>
+            <input type="number" id="deduct-fl-amount" class="w-full bg-dark-950 text-red-500 border border-red-500/30 focus:border-red-500 rounded-xl px-4 py-3 font-black text-lg mb-3 outline-none text-center" placeholder="0">
+            <label class="block text-[9px] font-black text-slate-500 mb-1">سبب الخصم (يرسل في الإشعار)</label>
+            <input type="text" id="deduct-fl-reason" class="w-full bg-dark-950 text-white border border-white/5 focus:border-slate-500 rounded-xl px-4 py-3 font-bold text-xs mb-5 outline-none" placeholder="السبب...">
+            <div class="flex gap-2">
+                <button onclick="confirmFlDeduction()" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl shadow-lg text-xs transition">تأكيد الخصم</button>
+                <button onclick="closeModal('modal-fl-deduct')" class="px-5 bg-dark-800 text-slate-400 hover:text-white font-bold py-3 rounded-xl text-xs transition">إلغاء</button>
+            </div>
         </div>
     </div>
 
-    <div id="modal-finance" class="fixed inset-0 z-[400] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="modal-finance" class="fixed inset-0 z-[600] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-dark-900 w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden border border-white/5 modal-animate">
             <div class="p-6 border-b border-white/5 bg-dark-950 flex justify-between items-center shrink-0">
                 <div class="flex items-center gap-4">
                     <div class="bg-primary-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-primary-500"><i class="fas fa-user-gear text-lg"></i></div>
-                    <div>
-                        <h3 class="text-lg font-black text-white">الملف المالي للموظف</h3>
-                    </div>
+                    <div><h3 class="text-lg font-black text-white">الملف المالي وتفاصيل الراتب</h3></div>
                 </div>
                 <button onclick="closeModal('modal-finance')" class="w-10 h-10 rounded-xl btn-glass text-slate-400 hover:text-white transition flex items-center justify-center"><i class="fas fa-times"></i></button>
             </div>
@@ -388,7 +386,7 @@
                 <div class="bg-dark-950 border border-white/5 p-4 rounded-xl flex justify-between items-center">
                     <div>
                         <h4 class="text-xs font-black text-primary-500">تفعيل الإشعارات</h4>
-                        <p class="text-[9px] text-slate-400 font-bold mt-1">السماح بإرسال إشعارات التليجرام</p>
+                        <p class="text-[9px] text-slate-400 font-bold mt-1">السماح بإرسال إشعارات التليجرام الآلية</p>
                     </div>
                     <div class="relative inline-block w-10 mr-2 align-middle select-none">
                         <input type="checkbox" id="fin-notify-toggle" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
@@ -396,89 +394,103 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div><label class="block text-[9px] font-bold text-slate-500 mb-1 px-1">المسمى الوظيفي</label><input type="text" id="fin-title" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-white text-xs font-bold outline-none focus:border-primary-500"></div>
-                    <div><label class="block text-[9px] font-bold text-slate-500 mb-1 px-1">القسم</label><input type="text" id="fin-dept" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-white text-xs font-bold outline-none focus:border-primary-500"></div>
-                    <div><label class="block text-[9px] font-bold text-slate-500 mb-1 px-1">رقم الموبايل</label><input type="text" id="fin-phone" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-white text-xs font-bold outline-none focus:border-primary-500"></div>
-                    <div><label class="block text-[9px] font-bold text-primary-500 mb-1 px-1">Telegram Chat ID</label><input type="text" id="fin-telegram-id" class="w-full bg-dark-950 border border-primary-500/20 rounded-xl px-4 py-2 text-white text-xs font-bold outline-none focus:border-primary-500"></div>
-                    <div><label class="block text-[9px] font-bold text-slate-500 mb-1 px-1">رقم الحساب البنكي</label><input type="text" id="fin-bank" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-2 text-white text-xs font-bold outline-none focus:border-primary-500"></div>
-                    <div><label class="block text-[9px] font-bold text-pink-500 mb-1 px-1">حساب Instapay</label><input type="text" id="fin-instapay" class="w-full bg-dark-950 border border-pink-500/20 rounded-xl px-4 py-2 text-white text-xs font-bold outline-none focus:border-pink-500" dir="ltr"></div>
+                    <div><label class="block text-[9px] font-bold text-slate-500 mb-1 px-1">المسمى الوظيفي</label><input type="text" id="fin-title" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-2.5 text-white text-xs font-bold outline-none focus:border-primary-500"></div>
+                    <div><label class="block text-[9px] font-bold text-slate-500 mb-1 px-1">القسم</label><input type="text" id="fin-dept" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-2.5 text-white text-xs font-bold outline-none focus:border-primary-500"></div>
+                    <div><label class="block text-[9px] font-bold text-slate-500 mb-1 px-1">رقم الموبايل</label><input type="text" id="fin-phone" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-2.5 text-white text-xs font-bold outline-none focus:border-primary-500"></div>
+                    <div><label class="block text-[9px] font-bold text-primary-500 mb-1 px-1">Telegram Chat ID</label><input type="text" id="fin-telegram-id" class="w-full bg-dark-950 border border-primary-500/30 rounded-xl px-4 py-2.5 text-white text-xs font-bold outline-none focus:border-primary-500"></div>
+                    <div><label class="block text-[9px] font-bold text-slate-500 mb-1 px-1">رقم الحساب البنكي</label><input type="text" id="fin-bank" class="w-full bg-dark-950 border border-white/5 rounded-xl px-4 py-2.5 text-white text-xs font-bold outline-none focus:border-primary-500"></div>
+                    <div><label class="block text-[9px] font-bold text-pink-500 mb-1 px-1">حساب Instapay</label><input type="text" id="fin-instapay" class="w-full bg-dark-950 border border-pink-500/30 rounded-xl px-4 py-2.5 text-white text-xs font-bold outline-none focus:border-pink-500" dir="ltr"></div>
                 </div>
                 <div class="grid grid-cols-3 gap-3 border-t border-white/5 pt-4">
-                    <div><label class="block text-[9px] font-black text-slate-400 mb-1 px-1 text-center">الراتب الأساسي</label><input type="number" id="fin-salary" step="0.01" class="w-full bg-dark-950 p-2.5 rounded-xl text-center text-white text-sm font-black outline-none border border-white/5 focus:border-primary-500"></div>
-                    <div><label class="block text-[9px] font-black text-green-500 mb-1 px-1 text-center">مكافآت (+)</label><input type="number" id="fin-bonus" step="0.01" class="w-full bg-dark-950 p-2.5 rounded-xl text-center text-green-500 text-sm font-black outline-none border border-green-500/20 focus:border-green-500"></div>
-                    <div><label class="block text-[9px] font-black text-primary-500 mb-1 px-1 text-center">حوافز إضافية (+)</label><input type="number" id="fin-incentive" step="0.01" class="w-full bg-dark-950 p-2.5 rounded-xl text-center text-primary-500 text-sm font-black outline-none border border-primary-500/20 focus:border-primary-500"></div>
+                    <div><label class="block text-[9px] font-black text-slate-400 mb-1 px-1 text-center">الراتب الأساسي</label><input type="number" id="fin-salary" step="0.01" class="w-full bg-dark-950 p-3 rounded-xl text-center text-white text-sm font-black outline-none border border-white/5 focus:border-primary-500"></div>
+                    <div><label class="block text-[9px] font-black text-green-500 mb-1 px-1 text-center">مكافآت (+)</label><input type="number" id="fin-bonus" step="0.01" class="w-full bg-dark-950 p-3 rounded-xl text-center text-green-500 text-sm font-black outline-none border border-green-500/30 focus:border-green-500"></div>
+                    <div><label class="block text-[9px] font-black text-primary-500 mb-1 px-1 text-center">حوافز إضافية (+)</label><input type="number" id="fin-incentive" step="0.01" class="w-full bg-dark-950 p-3 rounded-xl text-center text-primary-500 text-sm font-black outline-none border border-primary-500/30 focus:border-primary-500"></div>
                 </div>
                 <div class="border-t border-white/5 pt-4">
-                    <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 mb-2">وصولات التحويل والدفع</h4>
+                    <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 mb-2">وصولات التحويل لهذا الشهر</h4>
                     <div class="flex items-center gap-3">
                         <input type="file" id="fin-receipt-multi" accept="image/*" multiple class="hidden" onchange="addMultipleReceipts(this)">
-                        <button type="button" onclick="document.getElementById('fin-receipt-multi').click()" class="bg-dark-800 text-white px-5 py-2.5 rounded-xl text-[10px] font-black shadow-sm border border-white/5 hover:bg-dark-700 transition"><i class="fas fa-cloud-upload-alt mr-2"></i> رفع وصولات</button>
+                        <button type="button" onclick="document.getElementById('fin-receipt-multi').click()" class="bg-dark-800 text-white px-5 py-3 rounded-xl text-[10px] font-black shadow-sm border border-white/5 hover:bg-dark-700 transition"><i class="fas fa-cloud-upload-alt mr-2"></i> إرفاق صور</button>
                         <div id="receipts-preview-list" class="flex gap-2 flex-wrap"></div>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-primary-600 hover:bg-primary-500 transition text-white font-black py-4 rounded-xl shadow-lg text-sm mt-2">حفظ البيانات الأساسية</button>
+                <button type="submit" class="w-full bg-primary-600 hover:bg-primary-500 transition text-white font-black py-4 rounded-xl shadow-lg text-sm mt-2">حفظ التعديلات</button>
             </form>
         </div>
     </div>
 
-    <div id="modal-emp-advance" class="fixed inset-0 z-[400] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="modal-emp-advance" class="fixed inset-0 z-[600] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-dark-900 w-full max-w-sm rounded-[2rem] shadow-2xl p-6 text-right modal-animate border border-white/5">
-            <h3 class="text-lg font-black mb-1 text-orange-500">صرف سلفة لموظف</h3>
+            <h3 class="text-lg font-black mb-1 text-orange-500">صرف سلفة للموظف</h3>
             <p class="text-[10px] text-slate-400 mb-4 font-bold" id="adv-emp-name">للموظف: ...</p>
             <input type="hidden" id="adv-emp-email">
-            <label class="block text-[9px] font-black text-slate-500 mb-1">مبلغ السلفة</label>
-            <input type="number" id="adv-amount" class="w-full bg-dark-950 text-orange-500 border border-orange-500/20 focus:border-orange-500 rounded-xl px-4 py-2.5 font-black text-sm mb-3 outline-none" placeholder="0.00">
+            <label class="block text-[9px] font-black text-slate-500 mb-1">مبلغ السلفة (سيخصم من الخزينة والراتب)</label>
+            <input type="number" id="adv-amount" class="w-full bg-dark-950 text-orange-500 border border-orange-500/30 focus:border-orange-500 rounded-xl px-4 py-3 font-black text-lg mb-3 outline-none text-center" placeholder="0">
             <label class="block text-[9px] font-black text-slate-500 mb-1">البيان</label>
-            <input type="text" id="adv-reason" class="w-full bg-dark-950 text-white border border-white/5 focus:border-slate-500 rounded-xl px-4 py-2.5 font-bold text-xs mb-4 outline-none" value="سلفة نقدية">
-            <button onclick="confirmEmpAdvance()" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-black py-3 rounded-xl shadow-lg mb-2 text-xs transition">تأكيد الصرف</button>
-            <button onclick="closeModal('modal-emp-advance')" class="w-full bg-dark-800 text-slate-400 hover:text-white font-bold py-3 rounded-xl text-xs transition">إلغاء</button>
+            <input type="text" id="adv-reason" class="w-full bg-dark-950 text-white border border-white/5 focus:border-slate-500 rounded-xl px-4 py-3 font-bold text-xs mb-5 outline-none" value="سلفة نقدية">
+            <div class="flex gap-2">
+                <button onclick="confirmEmpAdvance()" class="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-black py-3 rounded-xl shadow-lg text-xs transition">تأكيد الصرف</button>
+                <button onclick="closeModal('modal-emp-advance')" class="px-5 bg-dark-800 text-slate-400 hover:text-white font-bold py-3 rounded-xl text-xs transition">إلغاء</button>
+            </div>
         </div>
     </div>
 
-    <div id="modal-emp-deduct" class="fixed inset-0 z-[400] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="modal-emp-deduct" class="fixed inset-0 z-[600] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-dark-900 w-full max-w-md rounded-[2rem] shadow-2xl p-6 text-right modal-animate border border-white/5">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-black text-red-500">خصم لموظف</h3>
+                <h3 class="text-lg font-black text-red-500">تسجيل خصم إداري</h3>
                 <button onclick="closeModal('modal-emp-deduct')" class="text-slate-500 hover:text-white w-8 h-8 flex items-center justify-center btn-glass rounded-lg"><i class="fas fa-times"></i></button>
             </div>
             <p class="text-[10px] text-slate-400 mb-4 font-bold" id="deduct-modal-emp-name">للموظف: ...</p>
             <input type="hidden" id="deduct-modal-emp-email">
-            <div class="border-t border-white/5 pt-4 mb-4">
-                <input type="number" id="new-emp-deduct-amount" class="w-full bg-dark-950 text-red-500 border border-red-500/20 focus:border-red-500 rounded-xl px-4 py-2.5 font-black text-sm mb-2 outline-none" placeholder="مبلغ الخصم...">
-                <input type="text" id="new-emp-deduct-reason" class="w-full bg-dark-950 text-white border border-white/5 focus:border-slate-500 rounded-xl px-4 py-2.5 font-bold text-xs mb-4 outline-none" placeholder="السبب...">
-                <button onclick="addNewEmpDeduction()" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl shadow-lg transition text-xs">تأكيد الخصم</button>
+            <div class="bg-dark-950 rounded-xl p-3 mb-5 max-h-32 overflow-y-auto custom-scrollbar border border-white/5">
+                <h4 class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">الخصومات المسجلة هذا الشهر:</h4>
+                <div id="current-emp-deductions-list" class="space-y-2"></div>
+            </div>
+            <div class="border-t border-white/5 pt-4">
+                <label class="block text-[9px] font-black text-slate-500 mb-1">مبلغ الخصم الجديد</label>
+                <input type="number" id="new-emp-deduct-amount" class="w-full bg-dark-950 text-red-500 border border-red-500/30 focus:border-red-500 rounded-xl px-4 py-3 font-black text-lg mb-3 outline-none text-center" placeholder="0">
+                <label class="block text-[9px] font-black text-slate-500 mb-1">السبب (يُرسل في الإشعار)</label>
+                <input type="text" id="new-emp-deduct-reason" class="w-full bg-dark-950 text-white border border-white/5 focus:border-slate-500 rounded-xl px-4 py-3 font-bold text-xs mb-4 outline-none" placeholder="السبب...">
+                <button onclick="addNewEmpDeduction()" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl shadow-lg transition text-xs">تأكيد وتفعيل الخصم</button>
             </div>
         </div>
     </div>
 
-    <div id="modal-vault" class="fixed inset-0 z-[400] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="modal-vault" class="fixed inset-0 z-[600] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-dark-900 w-full max-w-sm rounded-[2rem] shadow-2xl p-6 text-right modal-animate border border-white/5">
-            <h3 class="text-lg font-black mb-4 text-white">إيداع مبالغ للخزنة</h3>
-            <input type="number" id="vault-amount-input" placeholder="0.00" class="w-full bg-dark-950 text-primary-500 border border-primary-500/20 focus:border-primary-500 rounded-xl px-4 py-4 font-black text-xl text-center outline-none transition mb-3">
-            <input type="text" id="vault-note-input" placeholder="ملحوظة الإيداع" class="w-full bg-dark-950 text-white border border-white/5 focus:border-slate-500 rounded-xl px-4 py-3 text-xs font-bold outline-none transition mb-6">
+            <h3 class="text-lg font-black mb-4 text-emerald-500">إيداع مبالغ للخزنة</h3>
+            <label class="block text-[9px] font-black text-slate-500 mb-1">المبلغ المودع</label>
+            <input type="number" id="vault-amount-input" class="w-full bg-dark-950 text-emerald-500 border border-emerald-500/30 focus:border-emerald-500 rounded-xl px-4 py-4 font-black text-2xl text-center outline-none transition mb-3" placeholder="0">
+            <label class="block text-[9px] font-black text-slate-500 mb-1">مصدر الإيداع / البيان</label>
+            <input type="text" id="vault-note-input" class="w-full bg-dark-950 text-white border border-white/5 focus:border-slate-500 rounded-xl px-4 py-3 text-xs font-bold outline-none transition mb-6" placeholder="مثال: من المالك، دفعة عميل...">
             <div class="flex gap-2">
-                <button onclick="saveVaultTransaction()" class="flex-1 bg-primary-600 hover:bg-primary-500 text-white font-black py-3 rounded-xl shadow-lg transition text-sm">تأكيد الإيداع</button>
+                <button onclick="saveVaultTransaction()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl shadow-lg transition text-sm">تأكيد الإيداع</button>
                 <button onclick="closeModal('modal-vault')" class="px-5 bg-dark-800 text-slate-400 hover:text-white rounded-xl font-bold transition text-xs">إلغاء</button>
             </div>
         </div>
     </div>
 
-    <div id="modal-expense" class="fixed inset-0 z-[400] hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="modal-expense" class="fixed inset-0 z-[600] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-dark-900 w-full max-w-sm rounded-[2rem] p-6 shadow-2xl modal-animate border border-white/5 text-right">
-            <h3 id="exp-modal-title" class="text-lg font-black mb-5 text-red-500">إضافة مصروف</h3>
+            <h3 id="exp-modal-title" class="text-lg font-black mb-5 text-red-500">تسجيل مصروف تشغيل</h3>
             <input type="hidden" id="edit-expense-idx">
-            <input type="text" id="exp-title" placeholder="بيان المصروف" class="w-full bg-dark-950 text-white border border-white/5 focus:border-slate-500 rounded-xl px-4 py-3 text-xs font-bold outline-none transition mb-3">
-            <input type="number" id="exp-amount" placeholder="القيمة" class="w-full bg-dark-950 text-red-500 border border-red-500/20 focus:border-red-500 rounded-xl px-4 py-3 text-sm font-black outline-none transition mb-3">
+            <label class="block text-[9px] font-black text-slate-500 mb-1">البيان (فيم صرفت؟)</label>
+            <input type="text" id="exp-title" placeholder="مثال: فواتير إنترنت" class="w-full bg-dark-950 text-white border border-white/5 focus:border-slate-500 rounded-xl px-4 py-3 text-xs font-bold outline-none transition mb-3">
+            <label class="block text-[9px] font-black text-slate-500 mb-1">المبلغ المخصوم من الخزنة</label>
+            <input type="number" id="exp-amount" placeholder="0" class="w-full bg-dark-950 text-red-500 border border-red-500/30 focus:border-red-500 rounded-xl px-4 py-3 text-lg font-black outline-none transition mb-3 text-center">
+            <label class="block text-[9px] font-black text-slate-500 mb-1">تاريخ الصرف</label>
             <input type="date" id="exp-date" class="w-full bg-dark-950 text-slate-300 border border-white/5 focus:border-slate-500 rounded-xl px-4 py-3 text-xs font-bold outline-none transition mb-6">
             <div class="flex gap-2">
-                <button onclick="saveExpense()" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl shadow-lg transition text-sm">حفظ المصروف</button>
+                <button onclick="saveExpense()" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl shadow-lg transition text-sm">حفظ وخصم</button>
                 <button onclick="closeModal('modal-expense')" class="px-5 bg-dark-800 text-slate-400 hover:text-white rounded-xl font-bold transition text-xs">إلغاء</button>
             </div>
         </div>
     </div>
 
+
     <div id="report-image-template" class="print-template" style="width: 1240px; min-height: 1754px; padding: 80px;">
-        <div style="border: 2px solid #000; padding: 40px; min-height: 1594px; display: flex; flex-direction: column;">
+        <div class="official-border" style="border: 2px solid #000; padding: 40px; min-height: 1594px; display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #000; padding-bottom: 20px;">
                 <div style="text-align: right;">
                     <h1 style="font-size: 32px; font-weight: 900; margin: 0;">Monthly Financial Report</h1>
@@ -489,11 +501,28 @@
                     <p style="font-size: 16px; font-weight: 900;">عن شهر: <span id="rep-month-label"></span></p>
                 </div>
             </div>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 18px;">
-                <tr style="background: #f2f2f2;"><th style="border: 1px solid #000; padding: 12px;">البيان</th><th style="border: 1px solid #000; padding: 12px;">القيمة</th></tr>
-                <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي الإيداعات</td><td id="rep-v-in" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
-                <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي المنصرف (رواتب، نثريات، مستقلين)</td><td id="rep-v-out" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
-                <tr style="font-weight: 900; background: #f2f2f2;"><td style="border: 1px solid #000; padding: 10px;">السيولة المتبقية</td><td id="rep-v-final" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+            <h3 style="margin-top: 40px; font-size: 20px; border-bottom: 1px solid #000; padding-bottom: 5px;">أولاً: ملخص حركة الخزينة</h3>
+            <table class="table-official" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                <tr style="background: #f2f2f2;"><th style="border: 1px solid #000; padding: 12px;">البيان</th><th style="border: 1px solid #000; padding: 12px;">القيمة (ج.م)</th></tr>
+                <tr><td style="border: 1px solid #000; padding: 10px;">الرصيد الافتتاحي</td><td id="rep-v-open" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي المقبوضات (الإيداعات)</td><td id="rep-v-in" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي المدفوعات (رواتب، نثريات، سلف، فريلانسر)</td><td id="rep-v-out" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                <tr style="font-weight: 900; background: #f2f2f2;"><td style="border: 1px solid #000; padding: 10px;">الرصيد الختامي (السيولة الحالية)</td><td id="rep-v-final" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+            </table>
+            <h3 style="margin-top: 40px; font-size: 20px; border-bottom: 1px solid #000; padding-bottom: 5px;">ثانياً: تفاصيل الرواتب</h3>
+            <table class="table-official" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                <tr style="background: #f2f2f2;"><th style="border: 1px solid #000; padding: 12px;">البند</th><th style="border: 1px solid #000; padding: 12px;">الإجمالي (ج.م)</th></tr>
+                <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي الرواتب الأساسية</td><td id="rep-base" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي المكافآت</td><td id="rep-bonus" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي الحوافز</td><td id="rep-incen" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                <tr><td style="border: 1px solid #000; padding: 10px;">إجمالي الخصومات</td><td id="rep-deduct" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+                <tr style="font-weight: 900; background: #f2f2f2;"><td style="border: 1px solid #000; padding: 10px;">صافي الرواتب المدفوعة</td><td id="rep-paid-sal" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
+            </table>
+            <h3 style="margin-top: 40px; font-size: 20px; border-bottom: 1px solid #000; padding-bottom: 5px;">ثالثاً: كشف المنصرف العام والسلف والخصومات</h3>
+            <table class="table-official" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                <thead style="background: #f2f2f2;"><tr><th style="border: 1px solid #000; padding: 10px;">البيان</th><th style="border: 1px solid #000; padding: 10px;">التاريخ</th><th style="border: 1px solid #000; padding: 10px;">المبلغ / الإجراء</th></tr></thead>
+                <tbody id="rep-exp-body"></tbody>
+                <tr style="font-weight: 900;"><td colspan="2" style="border: 1px solid #000; padding: 10px;">إجمالي المدفوع فعلياً في هذا الكشف</td><td id="rep-total-exp" style="border: 1px solid #000; padding: 10px; text-align: center;"></td></tr>
             </table>
             <div style="margin-top: auto; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; text-align: center; padding-top: 60px;">
                 <div><p style="font-weight: 900; margin-bottom: 60px;">إعداد / المحاسب</p><p>...........................</p></div>
@@ -503,10 +532,107 @@
         </div>
     </div>
 
+    <div id="slip-image-template" class="print-template" style="width: 1080px; min-height: 1350px; padding: 80px;">
+        <div class="official-border" style="border: 4px double #000; padding: 60px; min-height: 1230px; display: flex; flex-direction: column;">
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 40px;">
+                <h1 style="font-size: 30px; font-weight: 900; margin: 0;">بيان راتب شهري (Payslip)</h1>
+                <p style="font-size: 20px; font-weight: bold; margin-top: 10px;">شركة الماستر تكنولوجي - ALMASTER TECHNOLOGY</p>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 20px; margin-bottom: 40px; border: 1px solid #000; padding: 25px;">
+                <div><span style="font-weight: 900;">الموظف:</span> <span id="s-name"></span></div>
+                <div><span style="font-weight: 900;">الوظيفة:</span> <span id="s-title"></span></div>
+                <div><span style="font-weight: 900;">القسم:</span> <span id="s-dept"></span></div>
+                <div><span style="font-weight: 900;">رقم الموبايل:</span> <span id="s-phone"></span></div>
+                <div><span style="font-weight: 900;">عن شهر:</span> <span id="s-month"></span></div>
+            </div>
+            <table class="table-official" style="width: 100%; border-collapse: collapse; font-size: 18px;">
+                <tr style="background: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 15px; width: 35%;">المستحقات (Earnings)</th>
+                    <th style="border: 1px solid #000; padding: 15px; width: 15%;">القيمة</th>
+                    <th style="border: 1px solid #000; padding: 15px; width: 35%;">الخصومات والسلف (Deductions)</th>
+                    <th style="border: 1px solid #000; padding: 15px; width: 15%;">القيمة</th>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 12px;">الراتب الأساسي</td>
+                    <td id="s-base" style="border: 1px solid #000; padding: 12px; text-align: center;"></td>
+                    <td id="s-ded-list" colspan="2" rowspan="3" style="border: 1px solid #000; vertical-align: top; font-size: 16px; padding: 10px; line-height: 1.6;"></td>
+                </tr>
+                <tr><td style="border: 1px solid #000; padding: 12px;">مكافآت شهرية</td><td id="s-bonus" style="border: 1px solid #000; padding: 12px; text-align: center;"></td></tr>
+                <tr><td style="border: 1px solid #000; padding: 12px;">حوافز أداء</td><td id="s-incen" style="border: 1px solid #000; padding: 12px; text-align: center;"></td></tr>
+                <tr style="font-weight: 900; background: #f2f2f2;">
+                    <td style="border: 1px solid #000; padding: 12px;">إجمالي المستحقات</td>
+                    <td id="s-total-plus" style="border: 1px solid #000; padding: 12px; text-align: center;"></td>
+                    <td style="border: 1px solid #000; padding: 12px;">إجمالي الاستقطاعات</td>
+                    <td id="s-total-minus" style="border: 1px solid #000; padding: 12px; text-align: center;"></td>
+                </tr>
+            </table>
+            <div style="margin-top: 50px; border: 4px solid #000; padding: 30px; text-align: center;">
+                <p style="font-size: 24px; font-weight: 900; margin-bottom: 5px;">صافي الراتب المستحق (Net Salary)</p>
+                <h2 id="s-net" style="font-size: 32px; font-weight: 900; margin: 0;"></h2>
+            </div>
+            <div style="margin-top: auto; display: flex; justify-content: space-between; text-align: center; padding-top: 40px;">
+                <div style="flex: 1;"><p style="font-weight: 900; margin-bottom: 60px;">توقيع الموظف</p><p>...........................</p></div>
+                <div style="flex: 1;">
+                    <p style="font-weight: 900; margin-bottom: 60px;">اعتماد الإدارة المالية</p>
+                    <div style="width: 100px; height: 100px; border: 2px solid #000; margin: auto; display:flex; align-items:center; justify-content:center; border-radius:50%; transform: rotate(-10deg);">
+                        <span style="font-size:14px; font-weight:bold;">ALMASTER<br>CONFIRMED</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="fl-report-template" class="print-template" style="width: 1080px; min-height: 1350px; padding: 80px;">
+        <div class="official-border" style="border: 4px double #000; padding: 60px; min-height: 1230px; display: flex; flex-direction: column;">
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 40px;">
+                <h1 style="font-size: 30px; font-weight: 900; margin: 0;">بيان مستحقات مستقل (Freelancer Statement)</h1>
+                <p style="font-size: 20px; font-weight: bold; margin-top: 10px;">شركة الماستر تكنولوجي - ALMASTER TECHNOLOGY</p>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; font-size: 20px; margin-bottom: 40px; border: 1px solid #000; padding: 25px;">
+                <div><span style="font-weight: 900;">الاسم:</span> <span id="fl-rep-name"></span></div>
+                <div><span style="font-weight: 900;">التخصص:</span> <span id="fl-rep-title"></span></div>
+                <div><span style="font-weight: 900;">تاريخ الإصدار:</span> <span id="fl-rep-date"></span></div>
+            </div>
+            <h3 style="font-size: 22px; margin-bottom: 15px; font-weight: 900;">أولاً: ملخص الرصيد</h3>
+            <table class="table-official" style="width: 100%; border-collapse: collapse; font-size: 18px; margin-bottom: 40px;">
+                <tr style="background: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 15px;">إجمالي التعاقد</th>
+                    <th style="border: 1px solid #000; padding: 15px;">إجمالي المدفوع</th>
+                    <th style="border: 1px solid #000; padding: 15px;">إجمالي الخصومات</th>
+                    <th style="border: 1px solid #000; padding: 15px; background: #e2e8f0;">الرصيد المتبقي</th>
+                </tr>
+                <tr style="font-weight: bold; text-align: center;">
+                    <td id="fl-rep-credit" style="border: 1px solid #000; padding: 15px;"></td>
+                    <td id="fl-rep-paid" style="border: 1px solid #000; padding: 15px; color: green;"></td>
+                    <td id="fl-rep-deducted" style="border: 1px solid #000; padding: 15px; color: red;"></td>
+                    <td id="fl-rep-remaining" style="border: 1px solid #000; padding: 15px; background: #f8fafc; font-size: 24px;"></td>
+                </tr>
+            </table>
+            <h3 style="font-size: 22px; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 20px; font-weight: 900;">ثانياً: تفاصيل الحركات المالية (هذا الشهر)</h3>
+            <table class="table-official" style="width: 100%; border-collapse: collapse; font-size: 16px;">
+                <tr style="background: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 12px; width: 20%;">التاريخ</th>
+                    <th style="border: 1px solid #000; padding: 12px; width: 60%;">البيان</th>
+                    <th style="border: 1px solid #000; padding: 12px; width: 20%;">القيمة (ج.م)</th>
+                </tr>
+                <tbody id="fl-rep-logs-body"></tbody>
+            </table>
+            <div style="margin-top: auto; display: flex; justify-content: space-between; text-align: center; padding-top: 40px;">
+                <div style="flex: 1;"><p style="font-weight: 900; margin-bottom: 60px;">توقيع المستقل</p><p>...........................</p></div>
+                <div style="flex: 1;">
+                    <p style="font-weight: 900; margin-bottom: 60px;">اعتماد الإدارة المالية</p>
+                    <div style="width: 100px; height: 100px; border: 2px solid #000; margin: auto; display:flex; align-items:center; justify-content:center; border-radius:50%; transform: rotate(-10deg);">
+                        <span style="font-size:14px; font-weight:bold;">ALMASTER<br>CONFIRMED</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="vault-report-template" class="print-template" style="width: 1240px; min-height: 1754px; padding: 80px;">
-        <div style="border: 2px solid #000; padding: 40px; min-height: 1594px; display: flex; flex-direction: column;">
+        <div class="official-border" style="border: 2px solid #000; padding: 40px; min-height: 1594px; display: flex; flex-direction: column;">
             <div style="text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 20px;">
-                <h1 style="font-size: 32px; font-weight: 900; margin: 0;">كشف حساب الخزينة (Vault Ledger)</h1>
+                <h1 style="font-size: 32px; font-weight: 900; margin: 0;">كشف حساب الخزينة المركزية (Vault Ledger)</h1>
                 <p style="font-size: 18px; margin-top: 5px; font-weight: bold;">عن شهر: <span id="vault-rep-month"></span></p>
             </div>
             <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
@@ -515,29 +641,16 @@
                 </thead>
                 <tbody id="vault-rep-body"></tbody>
             </table>
-            <div style="margin-top: 30px; font-size: 20px; font-weight: bold; border: 2px solid #000; padding: 15px;">
-                إجمالي السيولة المتاحة: <span id="vault-rep-final"></span> ج.م
+            <div style="margin-top: 30px; font-size: 20px; font-weight: bold; border: 2px solid #000; padding: 15px; text-align: center; background: #f2f2f2;">
+                إجمالي السيولة المتاحة بنهاية الكشف: <span id="vault-rep-final"></span> ج.م
+            </div>
+            <div style="margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center; padding-top: 60px;">
+                <div><p style="font-weight: 900; margin-bottom: 60px;">المراجع المالي</p><p>...........................</p></div>
+                <div><p style="font-weight: 900; margin-bottom: 60px;">المدير العام</p><div style="width: 100px; height: 100px; border: 1px solid #000; margin: auto; display:flex; align-items:center; justify-content:center; border-radius:50%; transform: rotate(-10deg);"><span style="font-size:14px; font-weight:bold;">ALMASTER<br>CONFIRMED</span></div></div>
             </div>
         </div>
     </div>
-    
-    <div id="slip-image-template" class="print-template" style="width: 1080px; min-height: 1350px; padding: 80px;">
-        <div style="border: 4px double #000; padding: 60px; min-height: 1230px; display: flex; flex-direction: column;">
-            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 40px;"><h1 style="font-size: 30px; font-weight: 900; margin: 0;">بيان راتب شهري (Payslip)</h1></div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 20px; margin-bottom: 40px; border: 1px solid #000; padding: 25px;">
-                <div><span style="font-weight: 900;">الموظف:</span> <span id="s-name"></span></div>
-                <div><span style="font-weight: 900;">الوظيفة:</span> <span id="s-title"></span></div>
-                <div><span style="font-weight: 900;">عن شهر:</span> <span id="s-month"></span></div>
-            </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 18px;">
-                <tr style="background: #f2f2f2;"><th style="border: 1px solid #000; padding: 15px;">المستحقات</th><th style="border: 1px solid #000; padding: 15px;">القيمة</th><th style="border: 1px solid #000; padding: 15px;">الاستقطاعات</th><th style="border: 1px solid #000; padding: 15px;">القيمة</th></tr>
-                <tr><td style="border: 1px solid #000; padding: 12px;">أساسي</td><td id="s-base" style="border: 1px solid #000; padding: 12px; text-align: center;"></td><td id="s-ded-list" colspan="2" rowspan="3" style="border: 1px solid #000; vertical-align: top; padding: 10px;"></td></tr>
-                <tr><td style="border: 1px solid #000; padding: 12px;">مكافآت</td><td id="s-bonus" style="border: 1px solid #000; padding: 12px; text-align: center;"></td></tr>
-                <tr><td style="border: 1px solid #000; padding: 12px;">حوافز</td><td id="s-incen" style="border: 1px solid #000; padding: 12px; text-align: center;"></td></tr>
-            </table>
-            <div style="margin-top: 50px; border: 4px solid #000; padding: 30px; text-align: center;"><p style="font-size: 24px; font-weight: 900;">الصافي المستحق</p><h2 id="s-net" style="font-size: 32px; font-weight: 900; margin: 0;"></h2></div>
-        </div>
-    </div>
+
 
     <script>
         // --- 1. FIREBASE CONFIG ---
@@ -567,7 +680,7 @@
             startClock();
             initMonthPicker();
             initCharts();
-            switchFinanceView('dashboard'); // Default view
+            switchFinanceView('dashboard'); // Start on Dashboard
         }
 
         function startClock() {
@@ -622,10 +735,10 @@
         function switchFinanceView(viewName) {
             ['dashboard', 'employees', 'freelancers', 'expenses', 'vault'].forEach(v => {
                 document.getElementById(`view-${v}`).classList.add('hidden');
-                document.getElementById(`tab-${v}`).classList.remove('active', 'bg-dark-900', 'text-white');
+                document.getElementById(`tab-${v}`).classList.remove('active');
             });
             document.getElementById(`view-${viewName}`).classList.remove('hidden');
-            document.getElementById(`tab-${viewName}`).classList.add('active', 'bg-dark-900', 'text-white');
+            document.getElementById(`tab-${viewName}`).classList.add('active');
             updateStats(); // Refresh data for the active view
         }
 
@@ -652,18 +765,23 @@
             });
             
             const pureExpenses = allExps.filter(e => e.type !== 'freelancer' && e.type !== 'fl_deduction' && e.type !== 'emp_advance').reduce((s, e)=>s+(parseFloat(e.amount)||0), 0);
-            const totalOut = paidS + pureExpenses + totalFlPaid; // Approximate total spent
+            const totalOut = paidS + pureExpenses + totalFlPaid; 
             const vaultCap = parseFloat(monthData.vault) || 0;
             const deposits = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0), 0);
             const currentLiquid = vaultCap + deposits - totalOut;
 
-            // Update Dashboard Cards
-            if(document.getElementById('dash-remaining-vault')) document.getElementById('dash-remaining-vault').innerText = currentLiquid.toLocaleString();
-            if(document.getElementById('dash-total-spent')) document.getElementById('dash-total-spent').innerText = totalOut.toLocaleString();
-            if(document.getElementById('dash-paid-salaries')) document.getElementById('dash-paid-salaries').innerText = paidS.toLocaleString();
-            if(document.getElementById('dash-total-expenses')) document.getElementById('dash-total-expenses').innerText = pureExpenses.toLocaleString();
+            // Update All Original Dashboard Cards
+            if(document.getElementById('vault-balance')) document.getElementById('vault-balance').innerText = vaultCap.toLocaleString();
+            if(document.getElementById('remaining-vault')) document.getElementById('remaining-vault').innerText = currentLiquid.toLocaleString();
+            if(document.getElementById('total-spent')) document.getElementById('total-spent').innerText = totalOut.toLocaleString();
+            if(document.getElementById('total-paid-salaries-sum')) document.getElementById('total-paid-salaries-sum').innerText = paidS.toLocaleString();
+            if(document.getElementById('pending-approved-total')) document.getElementById('pending-approved-total').innerText = apprvS.toLocaleString();
+            if(document.getElementById('pending-waiting-total')) document.getElementById('pending-waiting-total').innerText = waitS.toLocaleString();
+            if(document.getElementById('total-expenses')) document.getElementById('total-expenses').innerText = pureExpenses.toLocaleString();
+            if(document.getElementById('stat-fl-paid')) document.getElementById('stat-fl-paid').innerText = totalFlPaid.toLocaleString();
+            if(document.getElementById('stat-fl-holding')) document.getElementById('stat-fl-holding').innerText = totalFlHolding.toLocaleString();
             
-            // Update Vault Summary Cards
+            // Update Vault Specific Tab Cards
             if(document.getElementById('vault-v-open')) document.getElementById('vault-v-open').innerText = vaultCap.toLocaleString();
             if(document.getElementById('vault-v-in')) document.getElementById('vault-v-in').innerText = deposits.toLocaleString();
             if(document.getElementById('vault-v-out')) document.getElementById('vault-v-out').innerText = totalOut.toLocaleString();
@@ -679,7 +797,7 @@
                 cashFlowChartInstance.update();
             }
 
-            // Render Views
+            // Re-render Tables & Logs
             renderPayroll(); 
             renderFreelancers();
             renderGeneralExpenses();
@@ -689,9 +807,7 @@
         }
 
         function initCharts() {
-            Chart.defaults.color = '#94a3b8';
-            Chart.defaults.font.family = 'Cairo';
-            
+            Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Cairo';
             const ctxExp = document.getElementById('expenseChart');
             if(ctxExp) {
                 expenseChartInstance = new Chart(ctxExp, {
@@ -704,13 +820,13 @@
             if(ctxCash) {
                 cashFlowChartInstance = new Chart(ctxCash, {
                     type: 'bar',
-                    data: { labels: ['إجمالي الدخل', 'إجمالي المنصرف'], datasets: [{ label: 'السيولة', data: [0,0], backgroundColor: ['#10b981', '#ef4444'], borderRadius: 8 }] },
+                    data: { labels: ['إجمالي الإيداعات', 'إجمالي المنصرف'], datasets: [{ label: 'السيولة', data: [0,0], backgroundColor: ['#10b981', '#ef4444'], borderRadius: 8 }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
                 });
             }
         }
 
-        // --- 6. RENDER SPLIT VIEWS ---
+        // --- 6. RENDER VIEWS ---
         function renderPayroll() {
             const tbody = document.getElementById('payroll-body'); if(!tbody) return;
             const search = (document.getElementById('search-emp').value || "").toLowerCase();
@@ -723,19 +839,24 @@
                 const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
                 const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum - advSum;
                 
+                // RESTORED ALL 4 ORIGINAL BUTTONS
                 tbody.innerHTML += `
-                    <tr class="bg-dark-900 hover:bg-dark-800 transition-all border-b border-white/5">
-                        <td class="p-3 rounded-r-xl font-black text-white flex items-center gap-3"><img src="${u.photo||DEFAULT_PHOTO+u.name}" class="w-8 h-8 rounded-lg object-cover"><div><p class="text-xs">${u.name}</p><p class="text-[8px] text-primary-500 uppercase">${u.title||'---'}</p></div></td>
-                        <td class="p-3 font-bold text-slate-400">${(u.salary_base||0)}</td>
-                        <td class="p-3 text-green-500 font-bold">+${(m.bonus||0)}</td>
-                        <td class="p-3 text-red-500 font-bold">-${dSum + advSum}</td>
-                        <td class="p-3 font-black bg-dark-950 text-center text-white border-x border-white/5">${net.toLocaleString()}</td>
-                        <td class="p-3 text-center">${renderStatusBadge(m.status, u.id)}</td>
-                        <td class="p-3 text-center rounded-l-xl">
+                    <tr class="bg-dark-900 hover:bg-dark-800 transition-all">
+                        <td class="p-4 font-black text-white flex items-center gap-3"><img src="${u.photo||DEFAULT_PHOTO+u.name}" class="w-8 h-8 rounded-lg object-cover border border-white/10"><div><p class="text-xs">${u.name}</p><p class="text-[8px] text-primary-500 uppercase mt-0.5">${u.title||'---'}</p></div></td>
+                        <td class="p-4 font-bold text-slate-400">${(u.salary_base||0)}</td>
+                        <td class="p-4 text-green-500 font-bold">+${(m.bonus||0)}</td>
+                        <td class="p-4 text-primary-500 font-bold">+${(m.incentive||0)}</td>
+                        <td class="p-4 text-orange-500 font-bold">-${advSum}</td>
+                        <td class="p-4 text-red-500 font-bold">-${dSum}</td>
+                        <td class="p-4 font-black bg-dark-950 text-center text-white border-x border-white/5">${net.toLocaleString()}</td>
+                        <td class="p-4 text-center"><div class="flex -space-x-2 justify-center">${(m.receipts || []).slice(0,3).map(r => `<img src="${r}" class="w-6 h-6 rounded-full border border-dark-900 cursor-pointer hover:scale-125 transition" onclick="window.open('${r}')">`).join('') || '--'}</div></td>
+                        <td class="p-4 text-center">${renderStatusBadge(m.status, u.id)}</td>
+                        <td class="p-4 text-center">
                             <div class="flex gap-1 justify-center">
-                                <button onclick="openFinanceModal('${u.id}')" class="w-7 h-7 rounded-lg btn-glass text-primary-400 hover:text-white" title="تعديل"><i class="fas fa-pen-nib text-[9px]"></i></button>
-                                <button onclick="openEmpAdvanceModal('${u.id}')" class="w-7 h-7 rounded-lg btn-glass text-orange-400 hover:text-white" title="سلفة"><i class="fas fa-hand-holding-usd text-[9px]"></i></button>
-                                <button onclick="openEmpDeductModal('${u.id}')" class="w-7 h-7 rounded-lg btn-glass text-red-400 hover:text-white" title="خصم"><i class="fas fa-minus-circle text-[9px]"></i></button>
+                                <button onclick="openFinanceModal('${u.id}')" class="w-7 h-7 rounded-lg btn-glass text-primary-400 hover:text-white" title="تعديل الراتب والبيانات"><i class="fas fa-pen-nib text-[9px]"></i></button>
+                                <button onclick="openEmpAdvanceModal('${u.id}')" class="w-7 h-7 rounded-lg btn-glass text-orange-400 hover:text-white" title="صرف سلفة"><i class="fas fa-hand-holding-usd text-[9px]"></i></button>
+                                <button onclick="openEmpDeductModal('${u.id}')" class="w-7 h-7 rounded-lg btn-glass text-red-400 hover:text-white" title="تسجيل خصم"><i class="fas fa-minus-circle text-[9px]"></i></button>
+                                <button onclick="generateSlipImage('${u.id}')" class="w-7 h-7 rounded-lg btn-glass text-emerald-400 hover:text-white" title="بيان الراتب"><i class="fas fa-file-invoice text-[9px]"></i></button>
                             </div>
                         </td>
                     </tr>`;
@@ -748,40 +869,42 @@
             allUsers.filter(u => u.contract === 'freelancer').forEach(f => {
                 const totalPaid = f.fl_total_paid || 0, totalDeducted = f.fl_total_deducted || 0, totalCredit = f.fl_total_credit || 0;
                 const remaining = totalCredit - totalPaid - totalDeducted;
+                const statusBadge = (remaining <= 0 && totalCredit > 0) ? '<span class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-[9px] font-black border border-emerald-500/20">خالص</span>' : '<span class="bg-primary-500/20 text-primary-400 px-3 py-1 rounded-lg text-[9px] font-black border border-primary-500/20">جاري العمل</span>';
+                
+                // RESTORED ALL 4 ORIGINAL BUTTONS
                 tbody.innerHTML += `
                     <tr class="bg-dark-900 hover:bg-dark-800 transition-all border-b border-white/5">
-                        <td class="p-3 rounded-r-xl font-black text-white flex items-center gap-3"><img src="${f.photo||DEFAULT_PHOTO+f.name}" class="w-8 h-8 rounded-lg object-cover"><span class="text-xs">${f.name}</span></td>
-                        <td class="p-3 font-bold text-primary-500">${totalCredit.toLocaleString()}</td>
-                        <td class="p-3 font-bold text-emerald-500">${totalPaid.toLocaleString()}</td>
-                        <td class="p-3 font-bold text-red-500">${totalDeducted.toLocaleString()}</td>
-                        <td class="p-3 font-black bg-dark-950 text-white text-center border-x border-white/5">${remaining.toLocaleString()}</td>
-                        <td class="p-3 text-center rounded-l-xl">
+                        <td class="p-4 font-black text-white flex items-center gap-3"><img src="${f.photo||DEFAULT_PHOTO+f.name}" class="w-8 h-8 rounded-lg object-cover"><span class="text-xs">${f.name}</span></td>
+                        <td class="p-4 font-bold text-slate-400 text-xs">${f.title || '---'}</td>
+                        <td class="p-4 font-bold text-primary-500">${totalCredit.toLocaleString()}</td>
+                        <td class="p-4 font-bold text-emerald-500">${totalPaid.toLocaleString()}</td>
+                        <td class="p-4 font-bold text-red-500">${totalDeducted.toLocaleString()}</td>
+                        <td class="p-4 font-black bg-dark-950 text-white text-center border-x border-white/5">${remaining.toLocaleString()}</td>
+                        <td class="p-4 text-center">${statusBadge}</td>
+                        <td class="p-4 text-center">
                             <div class="flex gap-1 justify-center">
-                                <button onclick="openFreelancerModal('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-slate-400 hover:text-white" title="إعدادات"><i class="fas fa-cog text-[9px]"></i></button>
-                                <button onclick="openPayModal('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-emerald-400 hover:text-white" title="صرف"><i class="fas fa-hand-holding-usd text-[9px]"></i></button>
-                                <button onclick="openFlDeductModal('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-orange-400 hover:text-white" title="خصم"><i class="fas fa-minus-circle text-[9px]"></i></button>
+                                <button onclick="openFreelancerModal('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-slate-400 hover:text-white" title="تحديد قيمة التعاقد"><i class="fas fa-edit text-[9px]"></i></button>
+                                <button onclick="openPayModal('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-emerald-400 hover:text-white" title="صرف دفعة"><i class="fas fa-hand-holding-usd text-[9px]"></i></button>
+                                <button onclick="openFlDeductModal('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-red-400 hover:text-white" title="خصم مالي"><i class="fas fa-minus-circle text-[9px]"></i></button>
+                                <button onclick="generateFreelancerReport('${f.id}')" class="w-7 h-7 rounded-lg btn-glass text-purple-400 hover:text-white" title="تقرير الحساب"><i class="fas fa-file-invoice-dollar text-[9px]"></i></button>
                             </div>
                         </td>
                     </tr>`;
             });
         }
 
-        // --- SPLIT LOGS RENDERING ---
         function renderEmployeeLogs() {
             const list = document.getElementById('emp-logs-list'); if(!list) return; list.innerHTML = '';
             const allExps = monthData.expenses || [];
-            
-            // 1. Advances (from expenses)
             allExps.forEach((e, i) => {
                 if(e.type === 'emp_advance') {
-                    list.innerHTML += `<div class="bg-dark-900 p-3 rounded-xl border border-white/5 mb-2"><div class="flex justify-between items-start mb-1"><span class="text-[10px] font-black text-orange-500">${e.title}</span><span class="text-xs font-black text-white">${e.amount}</span></div><div class="flex justify-between items-center"><span class="text-[8px] text-slate-500">${e.date}</span><button onclick="deleteExpense(${i})" class="text-slate-600 hover:text-red-500 transition"><i class="fas fa-trash text-[9px]"></i></button></div></div>`;
+                    list.innerHTML += `<div class="bg-dark-900 p-3 rounded-xl border border-white/5 mb-2"><div class="flex justify-between items-start mb-1"><span class="text-[10px] font-black text-orange-500">${e.title}</span><span class="text-xs font-black text-white">${e.amount}</span></div><div class="flex justify-between items-center"><span class="text-[8px] text-slate-500">${e.date}</span><button onclick="deleteExpense(${i})" class="text-slate-600 hover:text-red-500 transition" title="إلغاء واسترداد"><i class="fas fa-trash text-[10px]"></i></button></div></div>`;
                 }
             });
-            // 2. Deductions (from users doc) - Informative only, deleted from the modal.
             allUsers.forEach(u => {
                 const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
-                (m.deductions||[]).forEach(d => {
-                    list.innerHTML += `<div class="bg-dark-900 p-3 rounded-xl border border-white/5 mb-2 opacity-70"><div class="flex justify-between items-start mb-1"><span class="text-[10px] font-black text-red-500">خصم: ${u.name} (${d.reason})</span><span class="text-xs font-black text-white">${d.amount}</span></div><div class="text-[8px] text-slate-500">مسجل بالملف المالي</div></div>`;
+                (m.deductions||[]).forEach((d, idx) => {
+                    list.innerHTML += `<div class="bg-dark-900 p-3 rounded-xl border border-white/5 mb-2"><div class="flex justify-between items-start mb-1"><span class="text-[10px] font-black text-red-500">خصم: ${u.name} (${d.reason})</span><span class="text-xs font-black text-white">${d.amount}</span></div><div class="flex justify-between items-center text-[8px] text-slate-500"><span>مسجل بالملف المالي</span><button onclick="removeEmpDeduction('${u.id}', ${idx})" class="text-slate-600 hover:text-red-500" title="إلغاء الخصم"><i class="fas fa-trash text-[10px]"></i></button></div></div>`;
                 });
             });
         }
@@ -790,11 +913,8 @@
             const list = document.getElementById('fl-logs-list'); if(!list) return; list.innerHTML = '';
             (monthData.expenses || []).forEach((e, i) => {
                 if(e.type === 'freelancer' || e.type === 'fl_deduction') {
-                    const isPay = e.type === 'freelancer';
-                    const color = isPay ? 'emerald' : 'red';
-                    const val = isPay ? e.amount : e.deduction_val;
-                    const rec = e.receipt ? `<a href="${e.receipt}" target="_blank" class="text-blue-400 underline text-[8px] ml-2">الوصل</a>` : '';
-                    list.innerHTML += `<div class="bg-dark-900 p-3 rounded-xl border border-white/5 mb-2 border-r-2 border-r-${color}-500"><div class="flex justify-between items-start mb-1"><span class="text-[10px] font-black text-${color}-500">${e.title}</span><span class="text-xs font-black text-white">${val}</span></div><div class="flex justify-between items-center"><span class="text-[8px] text-slate-500">${e.date} ${rec}</span><button onclick="deleteExpense(${i})" class="text-slate-600 hover:text-red-500 transition"><i class="fas fa-trash text-[9px]"></i></button></div></div>`;
+                    const isPay = e.type === 'freelancer'; const color = isPay ? 'emerald' : 'red'; const val = isPay ? e.amount : e.deduction_val;
+                    list.innerHTML += `<div class="bg-dark-900 p-3 rounded-xl border border-white/5 mb-2 border-r-2 border-r-${color}-500"><div class="flex justify-between items-start mb-1"><span class="text-[10px] font-black text-${color}-500">${e.title}</span><span class="text-xs font-black text-white">${val}</span></div><div class="flex justify-between items-center"><span class="text-[8px] text-slate-500">${e.date}</span><button onclick="deleteExpense(${i})" class="text-slate-600 hover:text-red-500 transition" title="إلغاء الحركة وتعديل الرصيد"><i class="fas fa-trash text-[10px]"></i></button></div></div>`;
                 }
             });
         }
@@ -803,7 +923,7 @@
             const list = document.getElementById('general-expenses-list'); if(!list) return; list.innerHTML = '';
             (monthData.expenses || []).forEach((e, i) => {
                 if(!e.type || e.type === 'general') {
-                    list.innerHTML += `<div class="bg-dark-950 p-4 rounded-2xl border border-white/5 hover:border-red-500/50 transition"><div class="flex justify-between mb-2"><span class="text-xs font-black text-white">${e.title}</span><span class="text-sm font-black text-red-500">${e.amount}</span></div><div class="flex justify-between items-center border-t border-white/5 pt-2 mt-2"><span class="text-[9px] text-slate-500">${e.date}</span><div><button onclick="editExpense(${i})" class="text-slate-400 hover:text-primary-500 ml-2"><i class="fas fa-pen"></i></button><button onclick="deleteExpense(${i})" class="text-slate-400 hover:text-red-500"><i class="fas fa-trash"></i></button></div></div></div>`;
+                    list.innerHTML += `<div class="bg-dark-950 p-5 rounded-2xl border border-white/5 hover:border-red-500/50 transition shadow-sm"><div class="flex justify-between mb-2"><span class="text-xs font-black text-white">${e.title}</span><span class="text-sm font-black text-red-500">${e.amount} ج.م</span></div><div class="flex justify-between items-center border-t border-white/5 pt-3 mt-3"><span class="text-[9px] text-slate-500"><i class="fas fa-calendar-day mr-1"></i> ${e.date}</span><div><button onclick="editExpense(${i})" class="w-7 h-7 rounded-lg btn-glass text-slate-400 hover:text-primary-500 ml-1"><i class="fas fa-pen text-[10px]"></i></button><button onclick="deleteExpense(${i})" class="w-7 h-7 rounded-lg btn-glass text-slate-400 hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button></div></div></div>`;
                 }
             });
         }
@@ -811,29 +931,25 @@
         function renderVaultLedger() {
             const tbody = document.getElementById('vault-ledger-body'); if(!tbody) return; tbody.innerHTML = '';
             let ledger = [];
-            // Add Deposits
-            (monthData.vault_logs || []).forEach(d => { ledger.push({ date: d.date, type: 'إيداع', title: d.note, in: parseFloat(d.amount), out: 0, sortDate: new Date(d.date) }); });
-            // Add Withdrawals (All Expenses)
+            (monthData.vault_logs || []).forEach(d => { ledger.push({ date: d.date, type: 'إيداع نقدي', title: d.note, in: parseFloat(d.amount), out: 0, sortDate: new Date(d.date) }); });
             (monthData.expenses || []).forEach(e => {
-                if(e.type !== 'fl_deduction') { // skip virtual deductions
+                if(e.type !== 'fl_deduction') { 
                     ledger.push({ date: e.date, type: 'منصرف', title: e.title, in: 0, out: parseFloat(e.amount), sortDate: new Date(e.date) });
                 }
             });
-            // Sort by Date DESC
             ledger.sort((a,b) => b.sortDate - a.sortDate);
 
             ledger.forEach(l => {
-                const color = l.in > 0 ? 'text-emerald-500' : 'text-red-500';
-                tbody.innerHTML += `<tr class="hover:bg-dark-800 transition"><td class="p-4 text-[9px] text-slate-500">${l.date}</td><td class="p-4 text-[10px] text-primary-500">${l.type}</td><td class="p-4 text-[11px] text-white">${l.title}</td><td class="p-4 text-emerald-500 text-center">${l.in > 0 ? l.in : '-'}</td><td class="p-4 text-red-500 text-center">${l.out > 0 ? l.out : '-'}</td></tr>`;
+                tbody.innerHTML += `<tr class="hover:bg-dark-800 transition"><td class="p-4 text-[10px] text-slate-500 font-mono">${l.date}</td><td class="p-4 text-[10px] text-primary-500">${l.type}</td><td class="p-4 text-[11px] text-white">${l.title}</td><td class="p-4 text-emerald-500 text-center font-black">${l.in > 0 ? l.in : '-'}</td><td class="p-4 text-red-500 text-center font-black">${l.out > 0 ? l.out : '-'}</td></tr>`;
             });
         }
 
-        // --- 7. TELEGRAM, DELETE REVERT & MODAL ACTIONS (Preserved perfectly) ---
+        // --- 7. TELEGRAM, DELETE REVERT & MODAL ACTIONS ---
         async function notifyAdmin(t){ try{await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:ADMIN_CHAT_ID,text:t,parse_mode:'Markdown'})});}catch(e){} }
         async function notifyUser(c,t,m=false){ if(!c||m)return; try{await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:c,text:t,parse_mode:'Markdown'})});}catch(e){} }
 
         async function deleteExpense(i){
-            if(confirm("حذف هذا السجل؟ (سيؤدي هذا إلى استرداد المبلغ وتعديل حسابات الموظف أو الفريلانسر تلقائياً)")){
+            if(confirm("حذف هذا السجل نهائياً؟ (سيتم استرداد القيمة في الخزينة وحسابات الموظف تلقائياً)")){
                 let n=[...monthData.expenses]; const removedItem = n[i];
                 try {
                     if (removedItem.type === 'freelancer' && removedItem.fl_id) {
@@ -849,10 +965,21 @@
             }
         }
 
+        async function removeEmpDeduction(email, index) {
+            if(confirm("هل أنت متأكد من إلغاء هذا الخصم للموظف؟")) {
+                const u = allUsers.find(x => x.id === email); const mFin = u.monthly_finance;
+                const removedDeduction = mFin[currentSelectedMonth].deductions[index];
+                mFin[currentSelectedMonth].deductions.splice(index, 1);
+                await db.collection("users").doc(email).update({ monthly_finance: mFin });
+                notifyUser(u.telegram_id, `🎉 *إشعار برفع خصم*\nتم رفع وإلغاء الخصم المقدر بـ: *${removedDeduction.amount} ج.م*\nالسبب الملغى: ${removedDeduction.reason}`, u.mute_notifications);
+                notifyAdmin(`🎉 تم إزالة خصم للموظف: *${u.name}*\nبقيمة: ${removedDeduction.amount} ج.م`);
+            }
+        }
+
         function renderStatusBadge(s, email) {
             const c = { 'pending': 'bg-orange-500/20 text-orange-400', 'approved': 'bg-primary-500/20 text-primary-400', 'paid': 'bg-green-500/20 text-green-400' }[s || 'pending'];
             const t = { 'pending': 'انتظار', 'approved': 'معتمد', 'paid': 'تم التحويل' }[s || 'pending'];
-            return `<div class="group relative inline-block"><button class="px-3 py-1 rounded-lg text-[9px] font-black ${c} border border-white/5">${t}</button><div class="hidden group-hover:flex absolute right-0 top-[80%] bg-dark-900 shadow-2xl rounded-xl border border-white/10 p-1.5 z-50 flex-col w-24"><button onclick="updatePaymentStatus('${email}', 'pending')" class="p-2 hover:bg-dark-800 text-right text-[9px] font-bold text-slate-300 rounded-lg">انتظار</button><button onclick="updatePaymentStatus('${email}', 'approved')" class="p-2 hover:bg-dark-800 text-right text-[9px] font-bold text-primary-400 rounded-lg">اعتماد (Hold)</button><button onclick="updatePaymentStatus('${email}', 'paid')" class="p-2 hover:bg-dark-800 text-right text-[9px] font-black text-green-400 rounded-lg">تحويل ✅</button></div></div>`;
+            return `<div class="group relative inline-block"><button class="px-3 py-1 rounded-lg text-[9px] font-black ${c} border border-white/5 w-20">${t}</button><div class="hidden group-hover:flex absolute right-0 top-[80%] bg-dark-900 shadow-2xl rounded-xl border border-white/10 p-1.5 z-50 flex-col w-28"><button onclick="updatePaymentStatus('${email}', 'pending')" class="p-2 hover:bg-dark-800 text-right text-[9px] font-bold text-slate-300 rounded-lg">انتظار</button><button onclick="updatePaymentStatus('${email}', 'approved')" class="p-2 hover:bg-dark-800 text-right text-[9px] font-bold text-primary-400 rounded-lg">اعتماد (Hold)</button><button onclick="updatePaymentStatus('${email}', 'paid')" class="p-2 hover:bg-dark-800 text-right text-[9px] font-black text-green-400 rounded-lg">تحويل وصرف ✅</button></div></div>`;
         }
 
         async function updatePaymentStatus(email, status) {
@@ -862,119 +989,138 @@
             if (status === 'paid') {
                  const monthLabel = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
                  const base = parseFloat(u.salary_base)||0, bonus = parseFloat(m[currentSelectedMonth].bonus)||0, incen = parseFloat(m[currentSelectedMonth].incentive)||0;
-                 let deductionsSum = 0; if (m[currentSelectedMonth].deductions) m[currentSelectedMonth].deductions.forEach(d => { deductionsSum += (parseFloat(d.amount)||0); });
+                 let dSum = 0; if (m[currentSelectedMonth].deductions) m[currentSelectedMonth].deductions.forEach(d => { dSum += (parseFloat(d.amount)||0); });
                  const advSum = (monthData.expenses||[]).filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
-                 const net = base + bonus + incentive - deductionsSum - advSum;
-                 notifyUser(u.telegram_id, `🔔 *إشعار مالي*\nتم تحويل راتب ${monthLabel} بصافي: *${net} ج.م*`, u.mute_notifications);
+                 const net = base + bonus + incen - dSum - advSum;
+                 notifyUser(u.telegram_id, `🔔 *إشعار تحويل راتب*\nتم تحويل راتب ${monthLabel} بصافي: *${net} ج.م*`, u.mute_notifications);
             }
         }
 
-        function openFreelancerModal(id) {
-            const f = allUsers.find(x => x.id === id); if(!f) return;
-            document.getElementById('fl-id').value = id; document.getElementById('fl-name').value = f.name;
-            document.getElementById('fl-total').value = f.fl_total_credit || 0;
-            document.getElementById('fl-phone').value = f.phone_number || ""; document.getElementById('fl-telegram').value = f.telegram_id || "";
-            openModal('modal-freelancer');
-        }
-        async function saveFreelancerData(e) {
-            e.preventDefault(); const id = document.getElementById('fl-id').value;
-            await db.collection("users").doc(id).update({ fl_total_credit: parseFloat(document.getElementById('fl-total').value)||0, phone_number: document.getElementById('fl-phone').value, telegram_id: document.getElementById('fl-telegram').value });
-            closeModal('modal-freelancer');
-        }
-
-        function openPayModal(id) {
-            const f = allUsers.find(x => x.id === id); if(!f) return;
-            document.getElementById('pay-fl-id').value = id; document.getElementById('pay-fl-name').innerText = `للفريلانسر: ${f.name}`;
-            document.getElementById('pay-fl-remaining').innerText = ((f.fl_total_credit||0)-(f.fl_total_paid||0)-(f.fl_total_deducted||0)).toLocaleString();
-            document.getElementById('pay-fl-amount').value = ''; openModal('modal-fl-pay');
-        }
-        async function confirmFlPayment() {
-            const id = document.getElementById('pay-fl-id').value, amount = parseFloat(document.getElementById('pay-fl-amount').value);
-            if(!amount) return; const fl = allUsers.find(f => f.id === id);
-            let currentExps = [...(monthData.expenses || [])];
-            currentExps.push({ title: `دفعة: ${fl.name}`, amount: amount, date: new Date().toISOString().split('T')[0], type: 'freelancer', fl_id: id });
-            await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
-            await db.collection("users").doc(id).update({ fl_total_paid: (fl.fl_total_paid||0)+amount });
-            notifyUser(fl.telegram_id, `💸 *إشعار صرف*\nتم تحويل: *${amount} ج.م* لحسابك.`);
-            closeModal('modal-fl-pay');
-        }
-
-        function openFlDeductModal(id) {
-            const f = allUsers.find(x => x.id === id); if(!f) return;
-            document.getElementById('deduct-fl-id').value = id; document.getElementById('deduct-fl-name').innerText = `للفريلانسر: ${f.name}`;
-            document.getElementById('deduct-fl-amount').value = ''; document.getElementById('deduct-fl-reason').value = '';
-            openModal('modal-fl-deduct');
-        }
-        async function confirmFlDeduction() {
-            const id = document.getElementById('deduct-fl-id').value, amount = parseFloat(document.getElementById('deduct-fl-amount').value), reason = document.getElementById('deduct-fl-reason').value;
-            if(!amount) return; const fl = allUsers.find(f => f.id === id);
-            let currentExps = [...(monthData.expenses || [])];
-            currentExps.push({ title: `خصم: ${fl.name} (${reason})`, amount: 0, deduction_val: amount, date: new Date().toISOString().split('T')[0], type: 'fl_deduction', fl_id: id });
-            await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
-            await db.collection("users").doc(id).update({ fl_total_deducted: (fl.fl_total_deducted||0)+amount });
-            notifyUser(fl.telegram_id, `⚠️ *إشعار خصم*\nتم خصم: *${amount} ج.م*\nالسبب: ${reason}`);
-            closeModal('modal-fl-deduct');
-        }
-
+        /* --- Modal Handlers: Employees --- */
         function openFinanceModal(email) { 
-            const u=allUsers.find(x=>x.id===email); const m=(u.monthly_finance&&u.monthly_finance[currentSelectedMonth])||{}; 
+            const u=allUsers.find(x=>x.id===email); const m=(u.monthly_finance&&u.monthly_finance[currentSelectedMonth])||{}; empTempReceipts=[]; document.getElementById('receipts-preview-list').innerHTML='';
             document.getElementById('fin-email').value=email; document.getElementById('fin-salary').value=u.salary_base||0; document.getElementById('fin-telegram-id').value=u.telegram_id||""; document.getElementById('fin-title').value=u.title||""; document.getElementById('fin-phone').value=u.phone_number||""; document.getElementById('fin-dept').value=u.department||""; document.getElementById('fin-bank').value=u.bank_account||""; document.getElementById('fin-instapay').value=u.instapay||""; document.getElementById('fin-bonus').value=m.bonus||0; document.getElementById('fin-incentive').value=m.incentive||0; document.getElementById('fin-notify-toggle').checked = !u.mute_notifications;
-            openModal('modal-finance'); 
+            (m.receipts||[]).forEach(r => { document.getElementById('receipts-preview-list').innerHTML += `<img src="${r}" class="w-8 h-8 rounded-lg object-cover border border-white/10">`; }); openModal('modal-finance'); 
         }
+        function addMultipleReceipts(input) { const list = document.getElementById('receipts-preview-list'); Array.from(input.files).forEach(f => { const reader = new FileReader(); reader.onload = e => { empTempReceipts.push(e.target.result); list.innerHTML += `<img src="${e.target.result}" class="w-8 h-8 rounded-lg object-cover border border-white/10">`; }; reader.readAsDataURL(f); }); }
         async function saveFinanceData(e) { 
             e.preventDefault(); const email = document.getElementById('fin-email').value, u = allUsers.find(x => x.id === email), mFin = u.monthly_finance || {}; 
             if(!mFin[currentSelectedMonth]) mFin[currentSelectedMonth] = { status: 'pending', deductions: [] }; 
             mFin[currentSelectedMonth].bonus = parseFloat(document.getElementById('fin-bonus').value) || 0; mFin[currentSelectedMonth].incentive = parseFloat(document.getElementById('fin-incentive').value) || 0; 
+            if(empTempReceipts.length > 0) mFin[currentSelectedMonth].receipts = [...(mFin[currentSelectedMonth].receipts || []), ...empTempReceipts];
             await db.collection("users").doc(email).update({ salary_base: parseFloat(document.getElementById('fin-salary').value)||0, title: document.getElementById('fin-title').value, phone_number: document.getElementById('fin-phone').value, department: document.getElementById('fin-dept').value, bank_account: document.getElementById('fin-bank').value, telegram_id: document.getElementById('fin-telegram-id').value, instapay: document.getElementById('fin-instapay').value, monthly_finance: mFin, mute_notifications: !document.getElementById('fin-notify-toggle').checked }); 
             closeModal('modal-finance'); 
         }
 
-        function openEmpAdvanceModal(email) {
-            const u = allUsers.find(x => x.id === email); if(!u) return;
-            document.getElementById('adv-emp-email').value = email; document.getElementById('adv-emp-name').innerText = `للموظف: ${u.name}`; document.getElementById('adv-amount').value = ''; openModal('modal-emp-advance');
-        }
+        function openEmpAdvanceModal(email) { const u = allUsers.find(x => x.id === email); if(!u) return; document.getElementById('adv-emp-email').value = email; document.getElementById('adv-emp-name').innerText = `للموظف: ${u.name}`; document.getElementById('adv-amount').value = ''; document.getElementById('adv-reason').value = 'سلفة نقدية'; openModal('modal-emp-advance'); }
         async function confirmEmpAdvance() {
             const email = document.getElementById('adv-emp-email').value, amount = parseFloat(document.getElementById('adv-amount').value), reason = document.getElementById('adv-reason').value;
             if(!amount) return; const u = allUsers.find(x => x.id === email); let currentExps = [...(monthData.expenses || [])];
-            currentExps.push({ title: `سلفة: ${u.name} (${reason})`, amount: amount, date: new Date().toISOString().split('T')[0], type: 'emp_advance', emp_email: email });
+            currentExps.push({ title: `سلفة للموظف: ${u.name} (${reason})`, amount: amount, date: new Date().toISOString().split('T')[0], type: 'emp_advance', emp_email: email });
             await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
-            notifyUser(u.telegram_id, `💸 *سلفة*\nتم صرف: *${amount} ج.م*`, u.mute_notifications); closeModal('modal-emp-advance');
+            notifyUser(u.telegram_id, `💸 *سلفة*\nتم صرف: *${amount} ج.م*`, u.mute_notifications); notifyAdmin(`💸 صرف سلفة لـ ${u.name}\nالقيمة: ${amount}`); closeModal('modal-emp-advance');
         }
 
         function openEmpDeductModal(email) {
             const u = allUsers.find(x => x.id === email); if(!u) return;
             document.getElementById('deduct-modal-emp-email').value = email; document.getElementById('deduct-modal-emp-name').innerText = `للموظف: ${u.name}`; document.getElementById('new-emp-deduct-amount').value = ''; document.getElementById('new-emp-deduct-reason').value = '';
+            
+            const listDiv = document.getElementById('current-emp-deductions-list'); listDiv.innerHTML = '';
+            const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
+            if(!m.deductions || m.deductions.length === 0) listDiv.innerHTML = '<p class="text-[9px] text-slate-500 text-center">لا توجد خصومات.</p>';
+            else m.deductions.forEach((d, idx) => { listDiv.innerHTML += `<div class="flex justify-between bg-dark-900 p-2 rounded-lg border border-white/5 mb-1"><span class="text-[10px] text-red-500">${d.amount} - ${d.reason}</span></div>`; });
             openModal('modal-emp-deduct');
         }
         async function addNewEmpDeduction() {
-            const email = document.getElementById('deduct-modal-emp-email').value, u = allUsers.find(x => x.id === email), amount = parseFloat(document.getElementById('new-emp-deduct-amount').value), reason = document.getElementById('new-emp-deduct-reason').value;
+            const email = document.getElementById('deduct-modal-emp-email').value, u = allUsers.find(x => x.id === email), amount = parseFloat(document.getElementById('new-emp-deduct-amount').value), reason = document.getElementById('new-emp-deduct-reason').value || "خصم إداري";
             if(!amount) return; const mFin = u.monthly_finance || {}; if(!mFin[currentSelectedMonth]) mFin[currentSelectedMonth] = { status: 'pending', deductions: [] }; if(!mFin[currentSelectedMonth].deductions) mFin[currentSelectedMonth].deductions = [];
             mFin[currentSelectedMonth].deductions.push({ amount, reason }); await db.collection("users").doc(email).update({ monthly_finance: mFin });
-            notifyUser(u.telegram_id, `⚠️ *خصم*\nبقيمة: *${amount} ج.م*\nالسبب: ${reason}`, u.mute_notifications); closeModal('modal-emp-deduct');
+            notifyUser(u.telegram_id, `⚠️ *خصم*\nتم تسجيل خصم بقيمة: *${amount} ج.م*\nالسبب: ${reason}`, u.mute_notifications); notifyAdmin(`⚠️ تم خصم ${amount} من ${u.name}`); closeModal('modal-emp-deduct');
         }
 
-        function openVaultModal(){document.getElementById('vault-amount-input').value=''; openModal('modal-vault');}
+        /* --- Modal Handlers: Freelancers --- */
+        function openFreelancerModal(id) { const f = allUsers.find(x => x.id === id); if(!f) return; document.getElementById('fl-id').value = id; document.getElementById('fl-name').value = f.name; document.getElementById('fl-total').value = f.fl_total_credit || 0; document.getElementById('fl-phone').value = f.phone_number || ""; document.getElementById('fl-telegram').value = f.telegram_id || ""; openModal('modal-freelancer'); }
+        async function saveFreelancerData(e) { e.preventDefault(); const id = document.getElementById('fl-id').value; await db.collection("users").doc(id).update({ fl_total_credit: parseFloat(document.getElementById('fl-total').value)||0, phone_number: document.getElementById('fl-phone').value, telegram_id: document.getElementById('fl-telegram').value }); closeModal('modal-freelancer'); }
+
+        function openPayModal(id) { const f = allUsers.find(x => x.id === id); if(!f) return; document.getElementById('pay-fl-id').value = id; document.getElementById('pay-fl-name').innerText = `للفريلانسر: ${f.name}`; document.getElementById('pay-fl-remaining').innerText = ((f.fl_total_credit||0)-(f.fl_total_paid||0)-(f.fl_total_deducted||0)).toLocaleString(); document.getElementById('pay-fl-amount').value = ''; openModal('modal-fl-pay'); }
+        async function confirmFlPayment() {
+            const id = document.getElementById('pay-fl-id').value, amount = parseFloat(document.getElementById('pay-fl-amount').value);
+            if(!amount) return; const fl = allUsers.find(f => f.id === id); let currentExps = [...(monthData.expenses || [])];
+            currentExps.push({ title: `دفعة فريلانسر: ${fl.name}`, amount: amount, date: new Date().toISOString().split('T')[0], type: 'freelancer', fl_id: id });
+            await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
+            await db.collection("users").doc(id).update({ fl_total_paid: (fl.fl_total_paid||0)+amount });
+            notifyUser(fl.telegram_id, `💸 *إشعار صرف*\nتم تحويل: *${amount} ج.م* لحسابك.`); notifyAdmin(`💸 صرف فريلانسر: ${fl.name} (${amount})`); closeModal('modal-fl-pay');
+        }
+
+        function openFlDeductModal(id) { const f = allUsers.find(x => x.id === id); if(!f) return; document.getElementById('deduct-fl-id').value = id; document.getElementById('deduct-fl-name').innerText = `للفريلانسر: ${f.name}`; document.getElementById('deduct-fl-amount').value = ''; document.getElementById('deduct-fl-reason').value = ''; openModal('modal-fl-deduct'); }
+        async function confirmFlDeduction() {
+            const id = document.getElementById('deduct-fl-id').value, amount = parseFloat(document.getElementById('deduct-fl-amount').value), reason = document.getElementById('deduct-fl-reason').value || "خصم";
+            if(!amount) return; const fl = allUsers.find(f => f.id === id); let currentExps = [...(monthData.expenses || [])];
+            currentExps.push({ title: `خصم من فريلانسر: ${fl.name} (${reason})`, amount: 0, deduction_val: amount, date: new Date().toISOString().split('T')[0], type: 'fl_deduction', fl_id: id });
+            await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
+            await db.collection("users").doc(id).update({ fl_total_deducted: (fl.fl_total_deducted||0)+amount });
+            notifyUser(fl.telegram_id, `⚠️ *إشعار خصم*\nتم خصم: *${amount} ج.م*\nالسبب: ${reason}`); notifyAdmin(`⚠️ خصم فريلانسر: ${fl.name} (${amount})`); closeModal('modal-fl-deduct');
+        }
+
+        /* --- Modal Handlers: Vault & Expenses --- */
+        function openVaultModal(){document.getElementById('vault-amount-input').value=''; document.getElementById('vault-note-input').value=''; openModal('modal-vault');}
         async function saveVaultTransaction(){
-            const amt=parseFloat(document.getElementById('vault-amount-input').value), note=document.getElementById('vault-note-input').value||"إيداع"; if(isNaN(amt))return; 
+            const amt=parseFloat(document.getElementById('vault-amount-input').value), note=document.getElementById('vault-note-input').value||"إيداع نقدي"; if(isNaN(amt)||amt<=0)return; 
             const newLogs=[...(monthData.vault_logs||[]),{amount:amt,note,date:new Date().toLocaleString('ar-EG')}]; 
-            await db.collection("financial_months").doc(currentSelectedMonth).set({vault:(parseFloat(monthData.vault)||0)+amt,vault_logs:newLogs},{merge:true}); closeModal('modal-vault');
+            await db.collection("financial_months").doc(currentSelectedMonth).set({vault:(parseFloat(monthData.vault)||0)+amt,vault_logs:newLogs},{merge:true}); notifyAdmin(`🏦 *إيداع خزنة*\nالمبلغ: ${amt}\nالبيان: ${note}`); closeModal('modal-vault');
         }
 
-        function openExpenseModal(){document.getElementById('exp-modal-title').innerText="إضافة مصروف"; document.getElementById('edit-expense-idx').value=""; document.getElementById('exp-title').value=""; document.getElementById('exp-amount').value=""; document.getElementById('exp-date').valueAsDate=new Date(); openModal('modal-expense');}
+        function openExpenseModal(){document.getElementById('exp-modal-title').innerText="تسجيل مصروف تشغيل"; document.getElementById('edit-expense-idx').value=""; document.getElementById('exp-title').value=""; document.getElementById('exp-amount').value=""; document.getElementById('exp-date').valueAsDate=new Date(); openModal('modal-expense');}
         async function saveExpense(){
             const t=document.getElementById('exp-title').value, a=parseFloat(document.getElementById('exp-amount').value), d=document.getElementById('exp-date').value, idx=document.getElementById('edit-expense-idx').value; if(!t||isNaN(a))return; 
             let newExps=[...(monthData.expenses||[])]; const item={title:t,amount:a,date:d,type:'general'}; if(idx==="")newExps.push(item); else newExps[parseInt(idx)]=item; 
-            await db.collection("financial_months").doc(currentSelectedMonth).set({expenses:newExps},{merge:true}); closeModal('modal-expense');
+            await db.collection("financial_months").doc(currentSelectedMonth).set({expenses:newExps},{merge:true}); notifyAdmin(`🧾 *نثرية جديدة*\nالبيان: ${t}\nالمبلغ: ${a}`); closeModal('modal-expense');
         }
-        function editExpense(idx){const e=monthData.expenses[idx]; document.getElementById('exp-modal-title').innerText="تعديل مصروف"; document.getElementById('edit-expense-idx').value=idx; document.getElementById('exp-title').value=e.title; document.getElementById('exp-amount').value=e.amount; document.getElementById('exp-date').value=e.date; openModal('modal-expense');}
+        function editExpense(idx){const e=monthData.expenses[idx]; document.getElementById('exp-modal-title').innerText="تعديل مصروف تشغيل"; document.getElementById('edit-expense-idx').value=idx; document.getElementById('exp-title').value=e.title; document.getElementById('exp-amount').value=e.amount; document.getElementById('exp-date').value=e.date; openModal('modal-expense');}
 
-        // --- 8. REPORTS (HTML2CANVAS) ---
-        async function generateMonthlyReportImage() { /* code retained exactly, calls element #report-image-template */
+        // --- 8. REPORTS (Exact Original Implementation) ---
+        async function generateMonthlyReportImage() {
             const loader = document.getElementById('payroll-loader'); loader.classList.remove('hidden');
             const template = document.getElementById('report-image-template'); template.style.display = 'block'; void template.offsetHeight; 
+            
             document.getElementById('rep-gen-date').innerText = new Date().toLocaleDateString('ar-EG');
             document.getElementById('rep-month-label').innerText = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
-            /* Update values inside template based on current UI logic... */
+            
+            let bT=0, boT=0, iT=0, dT=0, paidS=0; const allExps = monthData.expenses || [];
+            allUsers.forEach(u => {
+                if(u.contract === 'freelancer') return;
+                const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
+                const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount)||0), 0);
+                const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
+                const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum - advSum;
+                bT += (parseFloat(u.salary_base)||0); boT += (parseFloat(m.bonus)||0); iT += (parseFloat(m.incentive)||0); dT += dSum;
+                if(m.status === 'paid') paidS += net;
+            });
+            
+            const expT = allExps.filter(e => e.type !== 'fl_deduction').reduce((s, e)=>s+(parseFloat(e.amount)||0), 0); 
+            const vCap = parseFloat(monthData.vault)||0; const deps = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0), 0);
+            const totalOut = paidS + expT;
+
+            document.getElementById('rep-v-open').innerText = vCap.toLocaleString();
+            document.getElementById('rep-v-in').innerText = deps.toLocaleString();
+            document.getElementById('rep-v-out').innerText = totalOut.toLocaleString();
+            document.getElementById('rep-v-final').innerText = (vCap + deps - totalOut).toLocaleString();
+            document.getElementById('rep-base').innerText = bT.toLocaleString();
+            document.getElementById('rep-bonus').innerText = boT.toLocaleString();
+            document.getElementById('rep-incen').innerText = iT.toLocaleString();
+            document.getElementById('rep-deduct').innerText = dT.toLocaleString();
+            document.getElementById('rep-paid-sal').innerText = paidS.toLocaleString(); 
+
+            const tbody = document.getElementById('rep-exp-body'); tbody.innerHTML = '';
+            allExps.forEach(e => {
+                let label = e.title; let amtDisplay = e.amount.toLocaleString();
+                if(e.type === 'freelancer') { label = `<span style="font-weight:bold">${e.title}</span>`; } 
+                else if (e.type === 'fl_deduction') { label = `<span style="font-weight:bold; color:red;">${e.title}</span>`; amtDisplay = `<span style="color:red; font-weight:bold;">خصم (${e.deduction_val.toLocaleString()})</span>`; }
+                else if (e.type === 'emp_advance') { label = `<span style="font-weight:bold; color:orange;">${e.title}</span>`; }
+                tbody.innerHTML += `<tr><td style="border:1px solid #000;padding:8px;">${label}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${e.date}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${amtDisplay}</td></tr>`;
+            });
+            document.getElementById('rep-total-exp').innerText = expT.toLocaleString();
+
             await new Promise(r => setTimeout(r, 500));
             try { const canvas = await html2canvas(template, { scale: 2, backgroundColor: "#ffffff" }); canvas.toBlob(b => { const a = document.createElement('a'); a.download=`Report_${currentSelectedMonth}.png`; a.href=URL.createObjectURL(b); a.click(); }, "image/png"); } catch(e){} finally { template.style.display = 'none'; loader.classList.add('hidden'); }
         }
@@ -983,12 +1129,66 @@
             const loader = document.getElementById('payroll-loader'); loader.classList.remove('hidden');
             const template = document.getElementById('vault-report-template'); template.style.display = 'block'; void template.offsetHeight; 
             document.getElementById('vault-rep-month').innerText = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
-            document.getElementById('vault-rep-body').innerHTML = document.getElementById('vault-ledger-body').innerHTML; // clone table
+            
+            // Re-render ledger specifically for print to remove colors/classes from HTML
+            const tbody = document.getElementById('vault-rep-body'); tbody.innerHTML = '';
+            let ledger = [];
+            (monthData.vault_logs || []).forEach(d => { ledger.push({ date: d.date, type: 'إيداع نقدي', title: d.note, in: parseFloat(d.amount), out: 0, sortDate: new Date(d.date) }); });
+            (monthData.expenses || []).forEach(e => { if(e.type !== 'fl_deduction') ledger.push({ date: e.date, type: 'منصرف', title: e.title, in: 0, out: parseFloat(e.amount), sortDate: new Date(e.date) }); });
+            ledger.sort((a,b) => b.sortDate - a.sortDate);
+            ledger.forEach(l => {
+                tbody.innerHTML += `<tr><td style="border:1px solid #000;padding:8px;text-align:center;">${l.date}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.type}</td><td style="border:1px solid #000;padding:8px;">${l.title}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.in > 0 ? l.in : '-'}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.out > 0 ? l.out : '-'}</td></tr>`;
+            });
+            
             document.getElementById('vault-rep-final').innerText = document.getElementById('vault-v-final').innerText;
             await new Promise(r => setTimeout(r, 500));
             try { const canvas = await html2canvas(template, { scale: 2, backgroundColor: "#ffffff" }); canvas.toBlob(b => { const a = document.createElement('a'); a.download=`Vault_Ledger_${currentSelectedMonth}.png`; a.href=URL.createObjectURL(b); a.click(); }, "image/png"); } catch(e){} finally { template.style.display = 'none'; loader.classList.add('hidden'); }
         }
-        
+
+        async function generateSlipImage(email) {
+            const loader = document.getElementById('payroll-loader'); loader.classList.remove('hidden');
+            const slipTemplate = document.getElementById('slip-image-template'); slipTemplate.style.display = 'block'; void slipTemplate.offsetHeight;    
+            const u = allUsers.find(x => x.id === email); const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {}; const allExps = monthData.expenses || [];
+            
+            document.getElementById('s-month').innerText = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
+            document.getElementById('s-name').innerText = u.name; document.getElementById('s-title').innerText = u.title || "---"; document.getElementById('s-dept').innerText = u.department || "---"; document.getElementById('s-phone').innerText = u.phone_number || "---";
+            
+            const base = parseFloat(u.salary_base)||0, bonus = parseFloat(m.bonus)||0, incen = parseFloat(m.incentive)||0; let dSum = 0; 
+            const dList = document.getElementById('s-ded-list'); dList.innerHTML = '';
+            (m.deductions || []).forEach(d => { dSum += parseFloat(d.amount); dList.innerHTML += `<div>• خصم: ${d.reason} (${d.amount})</div>`; });
+            const empAdvances = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === email); let advSum = 0;
+            empAdvances.forEach(a => { advSum += parseFloat(a.amount); dList.innerHTML += `<div>• سلفة نقدية: ${a.date} (${a.amount})</div>`; });
+            
+            document.getElementById('s-base').innerText = base.toLocaleString(); document.getElementById('s-bonus').innerText = bonus.toLocaleString(); document.getElementById('s-incen').innerText = incen.toLocaleString(); document.getElementById('s-total-plus').innerText = (base+bonus+incen).toLocaleString(); document.getElementById('s-total-minus').innerText = (dSum + advSum).toLocaleString(); document.getElementById('s-net').innerText = (base+bonus+incen-dSum-advSum).toLocaleString() + " ج.م";
+            await new Promise(r => setTimeout(r, 500));
+            try { const canvas = await html2canvas(slipTemplate, { scale: 2, backgroundColor: "#ffffff" }); canvas.toBlob(b => { const a = document.createElement('a'); a.download=`Payslip_${u.name}.png`; a.href=URL.createObjectURL(b); a.click(); }, "image/png"); } catch(e){} finally { slipTemplate.style.display = 'none'; loader.classList.add('hidden'); }
+        }
+
+        async function generateFreelancerReport(email) {
+            const loader = document.getElementById('payroll-loader'); loader.classList.remove('hidden');
+            const flTemplate = document.getElementById('fl-report-template'); flTemplate.style.display = 'block'; void flTemplate.offsetHeight; 
+            const f = allUsers.find(x => x.id === email); const allExps = monthData.expenses || [];
+            
+            document.getElementById('fl-rep-name').innerText = f.name; document.getElementById('fl-rep-title').innerText = f.title || "---"; document.getElementById('fl-rep-date').innerText = new Date().toLocaleDateString('ar-EG');
+            const credit = parseFloat(f.fl_total_credit) || 0, paid = parseFloat(f.fl_total_paid) || 0, deducted = parseFloat(f.fl_total_deducted) || 0, remaining = credit - paid - deducted;
+            document.getElementById('fl-rep-credit').innerText = credit.toLocaleString(); document.getElementById('fl-rep-paid').innerText = paid.toLocaleString(); document.getElementById('fl-rep-deducted').innerText = deducted.toLocaleString(); document.getElementById('fl-rep-remaining').innerText = remaining.toLocaleString() + " ج.م";
+            
+            const tbody = document.getElementById('fl-rep-logs-body'); tbody.innerHTML = '';
+            const flLogs = allExps.filter(e => e.fl_id === email);
+            if(flLogs.length === 0) tbody.innerHTML = `<tr><td colspan="3" style="border: 1px solid #000; padding: 15px; text-align: center; font-weight: bold;">لا توجد حركات مالية مسجلة في هذا الشهر</td></tr>`;
+            else {
+                flLogs.forEach(log => {
+                    let amountStr = '', titleStr = log.title;
+                    if(log.type === 'freelancer') amountStr = `<span style="color: green; font-weight: 900; direction: ltr; display: inline-block;">+ ${parseFloat(log.amount).toLocaleString()}</span>`;
+                    else if (log.type === 'fl_deduction') amountStr = `<span style="color: red; font-weight: 900; direction: ltr; display: inline-block;">- ${parseFloat(log.deduction_val).toLocaleString()}</span>`;
+                    tbody.innerHTML += `<tr><td style="border: 1px solid #000; padding: 12px; text-align: center; font-weight: bold;">${log.date}</td><td style="border: 1px solid #000; padding: 12px;">${titleStr}</td><td style="border: 1px solid #000; padding: 12px; text-align: center;">${amountStr}</td></tr>`;
+                });
+            }
+            await new Promise(r => setTimeout(r, 500));
+            try { const canvas = await html2canvas(flTemplate, { scale: 2, backgroundColor: "#ffffff" }); canvas.toBlob(b => { const a = document.createElement('a'); a.download=`Freelancer_${f.name}.png`; a.href=URL.createObjectURL(b); a.click(); }, "image/png"); } catch(e){} finally { flTemplate.style.display = 'none'; loader.classList.add('hidden'); }
+        }
+
+        window.addEventListener('keydown', e => { if(e.key==='Escape'){ closeModal('modal-finance'); closeModal('modal-vault'); closeModal('modal-expense'); closeModal('modal-freelancer'); closeModal('modal-fl-pay'); closeModal('modal-fl-deduct'); closeModal('modal-emp-advance'); closeModal('modal-emp-deduct'); } });
     </script>
 </body>
 </html>
