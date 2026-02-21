@@ -349,6 +349,15 @@
 
         // --- 4. UI RENDERERS ---
         function updateProfileUI(data) {
+            // 1. تصفير العدادات تلقائياً إذا بدأ يوم جديد
+            const lastDate = data.lastChange ? moment(getMillis(data.lastChange)).format('YYYY-MM-DD') : '';
+            const today = moment().format('YYYY-MM-DD');
+            if (lastDate !== today) {
+                data.timeBank = { 'Online': 0, 'Break': 0, 'Meeting': 0 };
+                data.idleBank = 0;
+            }
+
+            // 2. تحديث بيانات المستخدم
             document.getElementById('user-name').innerText = data.name;
             document.getElementById('user-role').innerText = data.title || (data.role === 'leader' ? 'Team Lead' : 'Specialist');
             document.getElementById('user-img').src = data.photo || DEFAULT_PHOTO + data.name;
@@ -357,27 +366,38 @@
             const tb = data.timeBank || {};
             const safeStart = getMillis(data.lastChange);
 
-            // Update Raw Data for Timers
+            // 3. تحديث العدادات
             const map = { 'Online': 'timer-online', 'Break': 'timer-break', 'Meeting': 'timer-meeting' };
             Object.keys(map).forEach(key => {
                 const el = document.getElementById(map[key]);
-                el.dataset.val = tb[key] || 0;
-                el.dataset.active = status === key;
-                el.dataset.start = safeStart;
+                if(el) {
+                    el.dataset.val = tb[key] || 0;
+                    el.dataset.active = status === key;
+                    el.dataset.start = safeStart;
+                }
             });
             
             const idleEl = document.getElementById('timer-idle');
-            idleEl.dataset.val = data.idleBank || 0; idleEl.dataset.isidle = data.isIdle; idleEl.dataset.start = getMillis(data.idleSince);
+            if(idleEl) {
+                idleEl.dataset.val = data.idleBank || 0; 
+                idleEl.dataset.isidle = data.isIdle; 
+                idleEl.dataset.start = getMillis(data.idleSince);
+            }
 
-            // 🟢 Visual Status Cards Update 🟢
+            // 4. تحديث الألوان وكروت الحالة
             ['Online', 'Break', 'Meeting'].forEach(s => {
                 const card = document.getElementById('card-' + s);
-                card.classList.remove('active-Online', 'active-Break', 'active-Meeting');
-                if(s === status) card.classList.add('active-' + s);
+                if(card) {
+                    card.classList.remove('active-Online', 'active-Break', 'active-Meeting');
+                    if(s === status) card.classList.add('active-' + s);
+                }
             });
+
             if(document.getElementById('user-status-dot')) {
                 document.getElementById('user-status-dot').className = `absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-dark-950 ${status==='Online'?'bg-green-500':status==='Break'?'bg-orange-500':'bg-blue-500'}`;
             }
+        } // <- هذا هو القوس الذي كان مفقوداً وتسبب في توقف السيستم!
+        
         function renderTaskList() {
             const container = document.getElementById('task-list');
             container.innerHTML = '';
@@ -614,5 +634,6 @@
     </script>
 </body>
 </html>
+
 
 
