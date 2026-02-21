@@ -934,19 +934,10 @@
                 const email = document.getElementById('u-email').value.toLowerCase().trim();
                 const pass = document.getElementById('u-password') ? document.getElementById('u-password').value : '';
                 
-                // جلب الرابط القديم (لو موجود)
+                // الحل البديل: جلب الصورة كنص مشفر (Base64) من الحقل المخفي مباشرة
                 let finalPhotoUrl = document.getElementById('user-photo-b64').value;
-                const photoInput = document.getElementById('user-photo-upload');
         
-                // 1. رفع الصورة كـ (ملف حقيقي) وليس كنص Base64 لتجنب خطأ الـ CORS
-                if (photoInput && photoInput.files && photoInput.files[0]) {
-                    const file = photoInput.files[0];
-                    const storageRef = storage.ref().child(`profiles/${Date.now()}_${email.replace(/[@.]/g, '_')}.jpg`);
-                    await storageRef.put(file); // استخدام put بدلاً من putString
-                    finalPhotoUrl = await storageRef.getDownloadURL();
-                }
-        
-                // 2. تجميع البيانات
+                // تجميع البيانات
                 const userData = {
                     name: document.getElementById('u-name').value,
                     title: document.getElementById('u-title') ? document.getElementById('u-title').value : '',
@@ -963,12 +954,12 @@
                     }
                 };
         
-                // التأكد من حفظ الرابط السليم فقط (لا يحفظ Base64 أبداً في الداتا بيز)
-                if (finalPhotoUrl && finalPhotoUrl.startsWith('http')) {
+                // إضافة الصورة للبيانات (نصياً بدلاً من رابط Storage)
+                if (finalPhotoUrl && finalPhotoUrl.trim() !== '') {
                     userData.photo = finalPhotoUrl;
                 }
         
-                // 3. الحفظ في قاعدة البيانات
+                // الحفظ في قاعدة البيانات
                 if (mode === 'new') {
                     await secondaryAuth.createUserWithEmailAndPassword(email, pass);
                     await secondaryAuth.signOut();
@@ -1118,6 +1109,7 @@
     </script>
 </body>
 </html>
+
 
 
 
