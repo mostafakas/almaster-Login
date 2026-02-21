@@ -282,17 +282,42 @@
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 
         // --- 2. AUTH & INIT ---
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
-                if(doc.exists) {
-                    userProfile = doc.data();
-                    if (userProfile.role === 'admin') { window.location.replace('admin.html'); return; }
-                    initWorkspace();
-                } else { auth.signOut(); }
-            } else { window.location.replace('index.html'); }
-        });
+        // --- 2. AUTH & INIT ---
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = user;
+                    const docRef = db.collection('users').doc(user.email.toLowerCase());
+                    const doc = await docRef.get();
+                    
+                    if(doc.exists) {
+                        userProfile = doc.data();
+                        if (userProfile.role === 'admin') { window.location.replace('admin.html'); return; }
+                        
+                        // --- بداية التعديل: تصفير حقيقي وبدء العداد أوتوماتيكياً ---
+                        const lastDate = userProfile.lastChange ? moment(getMillis(userProfile.lastChange)).format('YYYY-MM-DD') : '';
+                        const today = moment().format('YYYY-MM-DD');
+                        
+                        // 1. تصفير العدادات في قاعدة البيانات مع بداية اليوم الجديد
+                        if (lastDate !== today && lastDate !== '') {
+                            await docRef.update({
+                                timeBank: { 'Online': 0, 'Break': 0, 'Meeting': 0, 'Offline': 0 },
+                                idleBank: 0,
+                                lastChange: firebase.firestore.FieldValue.serverTimestamp(),
+                                status: 'Offline'
+                            });
+                            userProfile.status = 'Offline'; 
+                        }
+    
+                        // 2. تفعيل حالة "متصل" (Online) أوتوماتيكياً فور تسجيل الدخول
+                        if (userProfile.status !== 'Online') {
+                            await setStatus(user.email.toLowerCase(), 'Online', true);
+                        }
+                        // --- نهاية التعديل ---
+    
+                        initWorkspace();
+                    } else { auth.signOut(); }
+                } else { window.location.replace('index.html'); }
+            });
 
         function initWorkspace() {
             startClock(); // السطر الجديد مكان المحذوف
@@ -635,6 +660,7 @@
     </script>
 </body>
 </html>
+
 
 
 
