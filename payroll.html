@@ -1150,9 +1150,39 @@
         async function saveExpense(){const t=document.getElementById('exp-title').value, a=parseFloat(document.getElementById('exp-amount').value), d=document.getElementById('exp-date').value, idx=document.getElementById('edit-expense-idx').value; if(!t||isNaN(a))return; let newExps=[...(monthData.expenses||[])]; const item={title:t,amount:a,date:d,type:'general'}; if(idx==="")newExps.push(item); else newExps[parseInt(idx)]=item; await db.collection("financial_months").doc(currentSelectedMonth).set({expenses:newExps},{merge:true}); closeExpenseModal();}
         
         async function deleteExpense(i){
-            if(confirm("حذف هذا السجل؟ (إذا كان هذا السجل عبارة عن دفعة فريلانسر أو سلفة موظف، سيؤدي هذا إلى استرداد المبلغ للخزينة وتعديل الحسابات تلقائياً)")){
+            if(confirm("حذف هذا السجل؟ (سيؤدي هذا إلى استرداد المبلغ وتعديل حسابات الموظف أو الفريلانسر تلقائياً)")){
                 let n=[...monthData.expenses]; 
                 const removedItem = n[i];
+                
+                // --- بداية التعديل: التراجع عن الأرقام في حساب الفريلانسر ---
+                try {
+                    if (removedItem.type === 'freelancer' && removedItem.fl_id) {
+                        // في حالة حذف "دفعة منصرفة"
+                        const userRef = db.collection('users').doc(removedItem.fl_id);
+                        const uDoc = await userRef.get();
+                        if (uDoc.exists) {
+                            const currentPaid = uDoc.data().fl_total_paid || 0;
+                            // نطرح المبلغ اللي اتحذف من إجمالي المدفوعات (ونمنع الرقم ينزل تحت الصفر)
+                            await userRef.update({ fl_total_paid: Math.max(0, currentPaid - removedItem.amount) });
+                        }
+                    } 
+                    else if (removedItem.type === 'fl_deduction' && removedItem.fl_id) {
+                        // في حالة حذف "خصم مسجل"
+                        const userRef = db.collection('users').doc(removedItem.fl_id);
+                        const uDoc = await userRef.get();
+                        if (uDoc.exists) {
+                            const currentDeducted = uDoc.data().fl_total_deducted || 0;
+                            // نطرح مبلغ الخصم اللي اتحذف من إجمالي الخصومات
+                            await userRef.update({ fl_total_deducted: Math.max(0, currentDeducted - removedItem.deduction_val) });
+                        }
+                    }
+                    // سلف الموظفين (emp_advance) تتعدل تلقائياً من العرض بمجرد مسحها من القائمة
+                } catch (error) {
+                    console.error("Error reverting user stats:", error);
+                }
+                // --- نهاية التعديل ---
+
+                // حذف السجل نهائياً من القائمة
                 n.splice(i,1); 
                 await db.collection("financial_months").doc(currentSelectedMonth).set({expenses:n},{merge:true});
                 notifyAdmin(`🗑 تم حذف سجل مالي (استرداد لخزينة): \n${removedItem.title}`);
@@ -1363,5 +1393,6 @@
     </script>
 </body>
 </html>
+
 
 
