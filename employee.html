@@ -595,18 +595,52 @@
             listenToPrivateChat(email, chatId);
         }
 
-        async function sendPrivateMsg(e, email, chatId) { e.preventDefault(); const inp = document.getElementById(`input-${chatId}`); if(!inp.value.trim()) return; await db.collection('private_messages').add({ sender: currentUser.email.toLowerCase(), receiver: email.toLowerCase(), text: inp.value.trim(), time: firebase.firestore.FieldValue.serverTimestamp(), name: userProfile.name }); inp.value = ''; }
+        async function sendPrivateMsg(e, email, chatId) {
+            e.preventDefault();
+        
+            const inp = document.getElementById(`input-${chatId}`);
+            if (!inp.value.trim()) return;
+        
+            const sender = currentUser.email.toLowerCase();
+            const receiver = email.toLowerCase();
+        
+            await db.collection('private_messages').add({
+                sender: sender,
+                receiver: receiver,
+                participants: [sender, receiver],
+                text: inp.value.trim(),
+                time: firebase.firestore.FieldValue.serverTimestamp(),
+                name: userProfile.name
+            });
+        
+            inp.value = '';
+        }
         function listenToPrivateChat(email, chatId) {
             const box = document.getElementById(`msgs-${chatId}`);
-            db.collection('private_messages').orderBy('time', 'asc').onSnapshot(snap => {
+        
+            db.collection('private_messages')
+            .where('participants', 'array-contains', currentUser.email.toLowerCase())
+            .orderBy('time', 'asc')
+            .onSnapshot(snap => {
+        
                 box.innerHTML = '';
+        
                 snap.docs.forEach(doc => {
                     const m = doc.data();
-                    if((m.sender === currentUser.email.toLowerCase() && m.receiver === email.toLowerCase()) || (m.sender === email.toLowerCase() && m.receiver === currentUser.email.toLowerCase())) {
+        
+                    if (
+                        (m.sender === currentUser.email.toLowerCase() && m.receiver === email.toLowerCase()) ||
+                        (m.sender === email.toLowerCase() && m.receiver === currentUser.email.toLowerCase())
+                    ) {
                         const isMe = m.sender === currentUser.email.toLowerCase();
-                        box.innerHTML += `<div class="chat-bubble ${isMe?'bubble-me':'bubble-them'}">${m.text}</div>`;
+                        box.innerHTML += `
+                            <div class="chat-bubble ${isMe?'bubble-me':'bubble-them'}">
+                                ${m.text}
+                            </div>
+                        `;
                     }
                 });
+        
                 box.scrollTop = box.scrollHeight;
             });
         }
@@ -650,7 +684,16 @@
         // --- 8. UTILS ---
         function changeTaskTab(mode, btn) { historyMode = mode; renderTaskList(); document.querySelectorAll('.task-tab-btn').forEach(b => b.className = "task-tab-btn flex-1 py-2 text-[10px] font-black rounded-md text-slate-600"); btn.className = "task-tab-btn flex-1 py-2 text-[10px] font-black rounded-md bg-dark-800 text-white shadow-xl"; }
         function toggleUsersDropdown() { document.getElementById('users-dropdown').classList.toggle('hidden'); document.getElementById('users-dropdown').classList.toggle('active'); }
-        function toggleChat() { document.getElementById('chat-window').classList.toggle('hidden'); document.getElementById('chat-badge').classList.add('hidden'); }
+            function toggleChat() {
+                const chat = document.getElementById("chat-window");
+                const badge = document.getElementById("chat-badge");
+            
+                chat.classList.toggle("hidden");
+            
+                if (!chat.classList.contains("hidden")) {
+                    badge.classList.add("hidden");
+                }
+            }
         async function updateTaskStep(id, s) { const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == id); if(idx > -1) { tasks[idx].status = s; tasks[idx].comments = tasks[idx].comments || []; tasks[idx].comments.push({ user: 'system', text: `Changed Status to: ${s}`, time: Date.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); } }
         function openQAModal(id) { document.getElementById('review-task-id').value = id; const sel = document.getElementById('qa-manager-select'); sel.innerHTML = ''; allUsersData.filter(u => ['admin', 'supervisor', 'leader'].includes(u.role)).forEach(m => sel.innerHTML += `<option value="${m.email}">${m.name} (${m.role})</option>`); openModal('modal-qa'); }
         async function confirmQA() { const id = document.getElementById('review-task-id').value; const rev = document.getElementById('qa-manager-select').value; const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == id); if(idx > -1) { tasks[idx].status = 'review'; tasks[idx].reviewerEmail = rev; tasks[idx].comments.push({ user: 'system', text: `Sent to: ${rev} for review`, time: Date.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); closeModal('modal-qa'); } }
@@ -660,6 +703,7 @@
     </script>
 </body>
 </html>
+
 
 
 
