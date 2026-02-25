@@ -742,7 +742,23 @@
             });
         }
 
-        function requestScreenshot(email) { alert("تم إرسال أمر سحب لقطة شاشة للموظف: " + email); }
+        async function requestScreenshot(targetEmail) {
+            if(!confirm(`هل تريد طلب لقطة شاشة فورية من ${targetEmail}؟`)) return;
+            
+            try {
+                await db.collection('screenshot_requests').add({
+                    target_email: targetEmail.toLowerCase().trim(),
+                    requested_by: currentUser.email,
+                    admin_name: userProfile.name,
+                    status: 'pending', // حالة الطلب: قيد الانتظار
+                    time: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("✅ تم إرسال الطلب بنجاح.. في انتظار استجابة الموظف.");
+            } catch (e) {
+                console.error(e);
+                alert("❌ فشل إرسال الطلب.");
+            }
+        }    
         function viewHistory(email) { alert("سيتم برمجة السجل في التحديث القادم الخاص بالتقارير للموظف: " + email); }
 
         // --- VIEW 2: TASKS ---
@@ -1183,6 +1199,7 @@
     </script>
 </body>
 </html>
+
 
 
 
