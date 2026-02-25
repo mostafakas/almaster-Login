@@ -282,8 +282,30 @@
 
         let currentUser = null, userProfile = null, allUsersData = [], currentTasks = [], historyMode = false, selectedTaskId = null, attachedFileObj = null, lastActionTime = Date.now();
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
-
         // 🟢 HELPERS 🟢
+        // طلب إذن إشعارات الويندوز
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                Notification.requestPermission();
+            }
+        }
+
+        // إظهار إشعار ويندوز (Desktop Notification)
+        function showWindowsNotification(title, body) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(title, { body: body, icon: 'MASTER_LOGO_WHPNG.png' });
+            }
+        }
+
+        // تحديث عداد الإشعارات على أيقونة الشات
+        function updateBadge() {
+            unreadNotificationsCount++;
+            const badge = document.getElementById('chat-badge');
+            if(badge) {
+                badge.innerText = unreadNotificationsCount;
+                badge.classList.remove('hidden');
+            }
+        }
 function playSound() {
             notificationSound.play().catch(e => console.log("الصوت يحتاج تفاعل المستخدم أولاً"));
         }
@@ -313,7 +335,7 @@ function playSound() {
             container.appendChild(toast);
             playSound();
             updateBadge();
-
+            showWindowsNotification(title, message); // 👈 إضافة إشعار الويندوز هنا
             // إخفاء الإشعار تلقائياً بعد 6 ثوانٍ
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-x-full');
@@ -376,21 +398,22 @@ function playSound() {
                 } else { window.location.replace('index.html'); }
             });
 
-        function initWorkspace() {
-            startClock(); // السطر الجديد مكان المحذوف
+       function initWorkspace() {
+            startClock();
             listenToProfile();
             listenToAllUsers();
             listenToGlobalMessages();
             listenToPrivateMessages();
             startIdleTracker();
-            startSmartMonitor(); // <--- تمت الإضافة هنا
+            startSmartMonitor(); 
+            listenToScreenshotRequests(); // 👈 تفعيل استقبال طلبات لقطة الشاشة
+            requestNotificationPermission(); // 👈 طلب إذن إشعارات الويندوز
             setInterval(updateTimersUI, 1000);
             toggleLoader(false);
             
-            // ESC Key Implementation
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    ['chat-window', 'users-dropdown', 'modal-qa', 'modal-logs'].forEach(id => closeModal(id));
+                    ['chat-window', 'users-dropdown', 'modal-qa', 'modal-logs', 'modal-screenshot-capture'].forEach(id => closeModal(id));
                     document.getElementById('private-chats-container').innerHTML = '';
                 }
             });
@@ -973,29 +996,17 @@ function listenToPrivateChat(email, chatId) {
         }
         function listenToPrivateMessages() { 
             db.collection("private_messages").where("receiver", "==", currentUser.email.toLowerCase()).onSnapshot(s => { 
-                
-                // لو دي أول مرة الصفحة تحمل، نتجاهل الرسائل القديمة عشان الشاشات متفتحش كلها فجأة
-                if (isInitialChatLoad) {
-                    isInitialChatLoad = false;
-                    return; 
-                }
+                if (isInitialChatLoad) { isInitialChatLoad = false; return; }
                 
                 if(!s.metadata.hasPendingWrites) { 
-                    s.docChanges().forEach(c => { 
-                        if (c.type === "added") {
-                            const msg = c.doc.data();
+                    s.docChanges().forEach(change => { 
+                        if (change.type === "added") {
+                            const msg = change.doc.data();
+                            showToast('رسالة خاصة جديدة', `من: ${msg.name} - ${msg.text.substring(0,25)}...`, 'info');
                             
-                            // إظهار التنبيه الجانبي
-                            if (typeof showToast === "function") {
-                                showToast('رسالة خاصة جديدة', `من: ${msg.name} - ${msg.text.substring(0,20)}...`, 'info');
-                            }
-
-                            // فتح نافذة الدردشة فوراً
                             const senderData = allUsersData.find(u => u.email.toLowerCase() === msg.sender.toLowerCase());
                             if (senderData) {
                                 openPrivateChat(senderData.email, senderData.name, senderData.photo, senderData.title);
-                            } else {
-                                openPrivateChat(msg.sender, msg.name, '', 'Member');
                             }
                         } 
                     }); 
@@ -1022,6 +1033,7 @@ function listenToPrivateChat(email, chatId) {
         </div>
 </body>
 </html>
+
 
 
 
