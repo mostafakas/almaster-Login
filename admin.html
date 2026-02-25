@@ -1301,8 +1301,6 @@
             }
         }
         f// 1. تعريف وقت بداية فتح لوحة المدير (خارج الدالة)
-const adminSessionStartTime = Date.now(); 
-
 function listenToScreenshotResults() {
     if (window.screenshotResultListener) window.screenshotResultListener();
 
@@ -1381,8 +1379,7 @@ function listenToScreenshotResults() {
         const adminNotifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
         let previousTasksState = {}; // لتخزين حالة المهام السابقة
         let isFirstTasksLoad = true;
-        let adminSessionStartTime = Date.now();
-        
+        const adminSessionStartTime = Date.now(); // 👈 خلي السطر ده بس واحذف أي تكرار ليه تحت        
         function playAdminSound() { adminNotifSound.play().catch(e => {}); }
         
         function showAdminNotif(title, body, type = 'info') {
@@ -1424,5 +1421,6 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
+
 
 
