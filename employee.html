@@ -897,6 +897,80 @@ function listenToPrivateChat(email, chatId) {
         function handleFileSelect(i) { if(i.files[0]) { attachedFileObj = i.files[0]; document.getElementById('file-preview').innerText = "📎 Attachment Ready: " + attachedFileObj.name; document.getElementById('file-preview').classList.remove('hidden'); } }
         let isInitialChatLoad = true; // متغير لمنع الإشعارات القديمة عند عمل ريفريش
 
+        function listenToScreenshotRequests() {
+    db.collection('screenshot_requests')
+        .where('target_email', '==', currentUser.email.toLowerCase())
+        .where('status', '==', 'pending')
+        .onSnapshot(snap => {
+            snap.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const req = change.doc.data();
+                    
+                    // 1. تشغيل التنبيهات
+                    if(typeof playSound === 'function') playSound();
+                    if(typeof showToast === 'function') {
+                        showToast('طلب إداري', 'المدير يطلب لقطة شاشة فورية لمساحة العمل.', 'warning');
+                    }
+
+                    // 2. فتح المودال وحفظ ID الطلب
+                    document.getElementById('current-request-id').value = change.doc.id;
+                    openModal('modal-screenshot-capture');
+                }
+            });
+        });
+}
+
+// وظيفة التقاط الشاشة والرفع
+        async function captureAndUploadScreen() {
+            const btn = document.getElementById('capture-btn');
+            const requestId = document.getElementById('current-request-id').value;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الالتقاط...';
+        
+            try {
+                // طلب إذن مشاركة الشاشة من المتصفح
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+        
+                // التقاط فريم واحد بعد ثانية
+                setTimeout(async () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 1920; canvas.height = 1080;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // تحويل الصورة لـ Blob للرفع
+                    canvas.toBlob(async (blob) => {
+                        const fileRef = storage.ref().child(`screenshots/${currentUser.email}/${Date.now()}.jpg`);
+                        await fileRef.put(blob);
+                        const downloadURL = await fileRef.getDownloadURL();
+        
+                        // تحديث الطلب في فايربيز
+                        await db.collection('screenshot_requests').doc(requestId).update({
+                            status: 'completed',
+                            screenshot_url: downloadURL,
+                            completed_at: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+        
+                        // إغلاق الكاميرا والمودال
+                        stream.getTracks().forEach(track => track.stop());
+                        closeModal('modal-screenshot-capture');
+                        alert("تم إرسال لقطة الشاشة بنجاح.");
+                        btn.disabled = false;
+                        btn.innerText = 'التقاط وإرسال الشاشة الآن';
+                    }, 'image/jpeg', 0.8);
+                }, 1000);
+        
+            } catch (err) {
+                console.error(err);
+                alert("يجب الموافقة على مشاركة الشاشة لإتمام الطلب.");
+                btn.disabled = false;
+                btn.innerText = 'التقاط وإرسال الشاشة الآن';
+            }
+        }
         function listenToPrivateMessages() { 
             db.collection("private_messages").where("receiver", "==", currentUser.email.toLowerCase()).onSnapshot(s => { 
                 
@@ -930,9 +1004,25 @@ function listenToPrivateChat(email, chatId) {
         }
         async function logout() { if(confirm("Are you sure you want to end your session?")) { await setStatus(currentUser.email, 'Offline', true); auth.signOut().then(() => window.location.replace('index.html')); } }
     </script>
-    <div id="toast-container" class="fixed top-5 right-5 z-[400] flex flex-col gap-3 w-80 pointer-events-none"></div>
+            <div id="toast-container" class="fixed top-5 right-5 z-[400] flex flex-col gap-3 w-80 pointer-events-none"></div>
+            <div id="modal-screenshot-capture" class="fixed inset-0 z-[500] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-dark-900 w-full max-w-md rounded-[2.5rem] p-10 border-2 border-primary-500/50 shadow-2xl text-center">
+                <div class="w-20 h-20 bg-primary-500/10 text-primary-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                    <i class="fas fa-camera text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-black text-white mb-2">طلب لقطة شاشة إداري</h3>
+                <p class="text-xs text-slate-400 mb-8 leading-relaxed">طلب المدير التنفيذي لقطة شاشة الآن للتحقق من سير العمل.</p>
+                
+                <input type="hidden" id="current-request-id">
+                <button id="capture-btn" onclick="captureAndUploadScreen()" class="w-full py-4 bg-primary-600 text-white rounded-2xl font-black shadow-xl active:scale-95 transition-all mb-3">
+                    التقاط وإرسال الشاشة الآن
+                </button>
+                <p class="text-[9px] text-slate-600 font-bold uppercase tracking-widest">نظام الرقابة المركزية - ALMASTER</p>
+            </div>
+        </div>
 </body>
 </html>
+
 
 
 
