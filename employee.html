@@ -945,87 +945,81 @@ function listenToPrivateChat(email, chatId) {
 
 // وظيفة التقاط الشاشة والرفع
         async function captureAndUploadScreen() {
-            const btn = document.getElementById('capture-btn');
-            const requestId = document.getElementById('current-request-id').value;
-            
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> جاري التحضير...';
+    const btn = document.getElementById('capture-btn');
+    const requestId = document.getElementById('current-request-id').value;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-bolt fa-spin ml-2"></i> جاري الاقتناص...';
+
+    try {
+        // 1. طلب البث (بمجرد ما الموظف يختار الشاشة، العملية بتبدأ فوراً)
+        const stream = await navigator.mediaDevices.getDisplayMedia({ 
+            video: { displaySurface: "monitor" }, // تحفيز اختيار الشاشة كاملة
+            audio: false 
+        });
+
+        // 2. إنشاء عنصر فيديو "مخفي" لمعالجة اللقطة بسرعة
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.muted = true;
         
-            try {
-                console.log("1. طلب إذن مشاركة الشاشة...");
-                const stream = await navigator.mediaDevices.getDisplayMedia({ 
-                    video: { cursor: "always" }, 
-                    audio: false 
-                });
-
-                btn.innerHTML = '<i class="fas fa-camera fa-spin"></i> جاري الالتقاط...';
-
-                const video = document.createElement('video');
-                video.srcObject = stream;
-
-                // انتظر حتى يتم تحميل بيانات الفيديو ومعرفة أبعاده
-                await new Promise((resolve) => {
-                    video.onloadedmetadata = () => {
-                        video.play();
-                        resolve();
-                    };
-                });
-
-                console.log("2. تم تشغيل الستريم، أبعاد الفيديو:", video.videoWidth, "x", video.videoHeight);
-
-                // تأخير بسيط جداً لضمان ثبات الصورة
-                await new Promise(r => setTimeout(r, 500));
-
+        // بمجرد تشغيل الفيديو (وده بيحصل في أجزاء من الثانية بعد الاختيار)
+        video.onloadedmetadata = () => {
+            video.play();
+            
+            // انتظر 300 مللي ثانية فقط لضمان وضوح الصورة
+            setTimeout(async () => {
                 const canvas = document.createElement('canvas');
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 const ctx = canvas.getContext('2d');
+                
+                // رسم اللقطة
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
-                console.log("3. تم رسم الصورة، جاري تحويلها لملف...");
+                // إيقاف البث فوراً (عشان علامة مشاركة الشاشة تختفي عند الموظف)
+                stream.getTracks().forEach(track => track.stop());
 
+                // 3. تحويل اللقطة ورفعها في الخلفية
                 canvas.toBlob(async (blob) => {
-                    if (!blob) {
-                        throw new Error("فشل في تحويل الصورة لـ Blob");
-                    }
-
+                    btn.innerHTML = '<i class="fas fa-cloud-upload-alt fa-spin ml-2"></i> جاري الإرسال...';
+                    
+                    const fileName = `screenshots/${currentUser.email}/${Date.now()}.jpg`;
+                    const fileRef = storage.ref().child(fileName);
+                    
                     try {
-                        console.log("4. جاري الرفع إلى Storage...");
-                        const fileName = `screenshots/${currentUser.email}/${Date.now()}.jpg`;
-                        const fileRef = storage.ref().child(fileName);
-                        
                         await fileRef.put(blob);
-                        const downloadURL = await fileRef.getDownloadURL();
-                        console.log("5. تم الرفع بنجاح، الرابط:", downloadURL);
+                        const url = await fileRef.getDownloadURL();
 
-                        // تحديث الطلب في فايربيز
+                        // تحديث الطلب في قاعدة البيانات
                         await db.collection('screenshot_requests').doc(requestId).update({
                             status: 'completed',
-                            screenshot_url: downloadURL,
+                            screenshot_url: url,
                             completed_at: firebase.firestore.FieldValue.serverTimestamp()
                         });
 
-                        // إغلاق الكاميرا والمودال
-                        stream.getTracks().forEach(track => track.stop());
+                        // إغلاق المودال والنجاح
                         closeModal('modal-screenshot-capture');
-                        showToast('نجاح', 'تم إرسال لقطة الشاشة بنجاح للإدارة.', 'success');
-                        
-                    } catch (uploadErr) {
-                        console.error("خطأ في الرفع:", uploadErr);
-                        alert("حدث خطأ أثناء رفع الصورة: " + uploadErr.message);
+                        showToast('نجاح', 'تم إرسال اللقطة بنجاح للإدارة.', 'success');
+                    } catch (err) {
+                        console.error("رفع الصورة فشل:", err);
+                        alert("حدث خطأ أثناء الرفع، تأكد من الإنترنت.");
                     } finally {
                         btn.disabled = false;
                         btn.innerText = 'التقاط وإرسال الشاشة الآن';
                     }
-                }, 'image/jpeg', 0.8);
+                }, 'image/jpeg', 0.6); // ضغط الصورة لـ 60% لسرعة الرفع
 
-            } catch (err) {
-                console.error("خطأ عام في العملية:", err);
-                alert("يجب الموافقة على مشاركة الشاشة واختيار نافذة لإتمام الطلب.");
-                btn.disabled = false;
-                btn.innerText = 'التقاط وإرسال الشاشة الآن';
-            }
-        }
+            }, 300); 
+        };
+
+    } catch (err) {
+        console.error("فشل الالتقاط:", err);
+        btn.disabled = false;
+        btn.innerText = 'التقاط وإرسال الشاشة الآن';
+        alert("تم إلغاء الطلب أو فشل الوصول للشاشة.");
+    }
+}
         function listenToPrivateMessages() { 
             db.collection("private_messages").where("receiver", "==", currentUser.email.toLowerCase()).onSnapshot(s => { 
                 if (isInitialChatLoad) { isInitialChatLoad = false; return; }
@@ -1065,6 +1059,7 @@ function listenToPrivateChat(email, chatId) {
         </div>
 </body>
 </html>
+
 
 
 
