@@ -719,7 +719,12 @@ function listenToProfile() {
             const idx = tasks.findIndex(t => t.id == selectedTaskId);
             if(idx > -1) {
                 tasks[idx].comments = tasks[idx].comments || [];
-                tasks[idx].comments.push({ user: currentUser.email, name: userProfile.name, text: inp.value.trim(), file: url, time: Date.now() });
+            tasks[idx].comments.push({ 
+                user: currentUser.email, 
+                name: userProfile.name, 
+                text: inp.value.trim(), 
+                time: Date.now() // تأكد من وجود هذا السطر
+            });
                 await db.collection('users').doc(currentUser.email).update({ tasks });
                 inp.value = ''; attachedFileObj = null; document.getElementById('file-preview').classList.add('hidden');
             }
@@ -1139,6 +1144,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
