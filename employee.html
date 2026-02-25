@@ -734,34 +734,42 @@ function playSound() {
         }
         function listenToPrivateChat(email, chatId) {
             const box = document.getElementById(`msgs-${chatId}`);
-        
+            
+            // شلنا الـ orderBy عشان نتجنب مشكلة الـ Index في فايربيز
             db.collection('private_messages')
             .where('participants', 'array-contains', currentUser.email.toLowerCase())
-            .orderBy('time', 'asc')
             .onSnapshot(snap => {
-        
                 box.innerHTML = '';
-        
-                snap.docs.forEach(doc => {
-                    const m = doc.data();
-        
+                
+                // 1. تحويل البيانات لمصفوفة وترتيبها برمجياً حسب الوقت
+                let messages = [];
+                snap.docs.forEach(doc => messages.push(doc.data()));
+                
+                messages.sort((a, b) => {
+                    let timeA = a.time ? (a.time.toMillis ? a.time.toMillis() : a.time) : 0;
+                    let timeB = b.time ? (b.time.toMillis ? b.time.toMillis() : b.time) : 0;
+                    return timeA - timeB;
+                });
+
+                // 2. عرض الرسائل بعد الترتيب
+                messages.forEach(m => {
                     if (
                         (m.sender === currentUser.email.toLowerCase() && m.receiver === email.toLowerCase()) ||
                         (m.sender === email.toLowerCase() && m.receiver === currentUser.email.toLowerCase())
                     ) {
                         const isMe = m.sender === currentUser.email.toLowerCase();
                         box.innerHTML += `
-                            <div class="chat-bubble ${isMe?'bubble-me':'bubble-them'}">
+                            <div class="chat-bubble ${isMe ? 'bubble-me' : 'bubble-them shadow-md'}">
                                 ${m.text}
                             </div>
                         `;
                     }
                 });
-        
+                
+                // النزول لأسفل الشات تلقائياً
                 box.scrollTop = box.scrollHeight;
             });
         }
-
         // --- 7. HISTORY & TIMERS ---
         async function openLogsModal() {
             const container = document.getElementById('logs-timeline'); container.innerHTML = '';
@@ -821,7 +829,22 @@ function playSound() {
                     s.docChanges().forEach(c => { 
                         if (c.type === "added") {
                             const msg = c.doc.data();
-                            showToast('رسالة خاصة جديدة', `من: ${msg.name} - ${msg.text.substring(0,20)}...`, 'info');
+                            
+                            // 1. إظهار الإشعار الصوتي والمرئي
+                            if (typeof showToast === "function") {
+                                showToast('رسالة خاصة جديدة', `من: ${msg.name} - ${msg.text.substring(0,20)}...`, 'info');
+                            }
+
+                            // 2. البحث عن بيانات المرسل لفتح الشات بالصورة والاسم الصحيحين
+                            const senderData = allUsersData.find(u => u.email.toLowerCase() === msg.sender.toLowerCase());
+                            
+                            if (senderData) {
+                                // فتح نافذة الدردشة تلقائياً للمستلم
+                                openPrivateChat(senderData.email, senderData.name, senderData.photo, senderData.title);
+                            } else {
+                                // كإجراء احتياطي لو البيانات مش محملة
+                                openPrivateChat(msg.sender, msg.name, '', 'Member');
+                            }
                         } 
                     }); 
                 } 
@@ -832,6 +855,7 @@ function playSound() {
     <div id="toast-container" class="fixed top-5 right-5 z-[400] flex flex-col gap-3 w-80 pointer-events-none"></div>
 </body>
 </html>
+
 
 
 
