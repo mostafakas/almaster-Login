@@ -700,99 +700,117 @@ function playSound() {
             i.value = "";
         }
 
-        function openPrivateChat(email, name, photo, title) {
-            closeModal('users-dropdown');
-            const chatId = [currentUser.email.toLowerCase(), email.toLowerCase()].sort().join("_").replace(/[@.]/g, "_");
-            if(document.getElementById(`chat-win-${chatId}`)) return;
-            const win = document.createElement('div');
-            win.id = `chat-win-${chatId}`;
-            win.className = "chat-window fixed bottom-8 left-8 w-[320px] h-[480px] bg-dark-900 border border-white/10 rounded-[2.5rem] shadow-2xl animate-fade-in flex flex-col";
-            win.innerHTML = `<div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center chat-header cursor-move shrink-0 rounded-t-[2.5rem]"><div class="flex items-center gap-3"><img src="${photo||DEFAULT_PHOTO+name}" class="w-8 h-8 rounded-xl object-cover"><div class="text-right"><p class="text-[11px] font-black text-white">${name}</p><p class="text-[8px] text-primary-500 font-bold uppercase">${title||'Specialist'}</p></div></div><button onclick="this.parentElement.parentElement.remove()" class="text-slate-600 hover:text-white"><i class="fas fa-times"></i></button></div><div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar bg-dark-950/20"></div><form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-3 bg-dark-900 border-t border-white/5 flex gap-2 rounded-b-[2.5rem]"><input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2.5 text-[11px] text-white outline-none focus:border-primary-500" placeholder="Chat with ${name}..." autocomplete="off"><button class="bg-primary-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane text-xs"></i></button></form>`;
-            document.getElementById('private-chats-container').appendChild(win);
-            listenToPrivateChat(email, chatId);
-        }
+      function openPrivateChat(email, name, photo, title) {
+    closeModal('users-dropdown');
+    // توحيد الـ ID دائماً ليكون نفس الشكل عند الطرفين
+    const emails = [currentUser.email.toLowerCase().trim(), email.toLowerCase().trim()].sort();
+    const chatId = emails.join("_").replace(/[@.]/g, "_");
 
-        async function sendPrivateMsg(e, email, chatId) {
-            e.preventDefault();
-            const inp = document.getElementById(`input-${chatId}`);
-            if (!inp.value.trim()) return;
+    if (document.getElementById(`chat-win-${chatId}`)) return;
 
-            const sender = currentUser.email.toLowerCase();
-            const receiver = email.toLowerCase();
-            const messageText = inp.value.trim();
-            inp.value = ''; // مسح الحقل فوراً لتجربة سريعة
+    const win = document.createElement('div');
+    win.id = `chat-win-${chatId}`;
+    win.className = "chat-window fixed bottom-8 left-8 w-[320px] h-[480px] bg-dark-900 border border-white/10 rounded-[2.5rem] shadow-2xl animate-fade-in flex flex-col z-[100]";
+    
+    win.innerHTML = `
+        <div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center shrink-0 rounded-t-[2.5rem]">
+            <div class="flex items-center gap-3">
+                <img src="${photo || DEFAULT_PHOTO + name}" class="w-8 h-8 rounded-xl object-cover">
+                <div class="text-right">
+                    <p class="text-[11px] font-black text-white">${name}</p>
+                    <p class="text-[8px] text-primary-500 font-bold uppercase">${title || 'Member'}</p>
+                </div>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-slate-600 hover:text-white"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="msgs-${chatId}" class="flex-1 overflow-y-auto p-4 flex flex-col custom-scrollbar bg-dark-950/20"></div>
+        <form onsubmit="sendPrivateMsg(event, '${email}', '${chatId}')" class="p-3 bg-dark-900 border-t border-white/5 flex gap-2 rounded-b-[2.5rem]">
+            <input type="text" id="input-${chatId}" class="flex-1 bg-dark-950 border border-white/5 rounded-xl px-4 py-2.5 text-[11px] text-white outline-none focus:border-primary-500" placeholder="Type message..." autocomplete="off">
+            <button class="bg-primary-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane text-xs"></i></button>
+        </form>`;
+    
+    document.getElementById('private-chats-container').appendChild(win);
+    listenToPrivateChat(email, chatId);
+}
 
-            try {
-                await db.collection('private_messages').add({
-                    sender: sender,
-                    receiver: receiver,
-                    participants: [sender, receiver], // المصفوفة اللي بنبحث بيها
-                    text: messageText,
-                    time: firebase.firestore.FieldValue.serverTimestamp(),
-                    name: userProfile.name
-                });
-            } catch (err) {
-                console.error("فشل الإرسال:", err);
-                alert("تعذر إرسال الرسالة، تأكد من اتصال الإنترنت وقواعد الأمان.");
-            }
-        }
-        function listenToPrivateChat(email, chatId) {
-            const box = document.getElementById(`msgs-${chatId}`);
-            if (!box) return;
+        // 1. دالة إرسال الرسالة (تأكيد خزن البيانات بشكل موحد)
+async function sendPrivateMsg(e, email, chatId) {
+    e.preventDefault();
+    const inp = document.getElementById(`input-${chatId}`);
+    if (!inp.value.trim()) return;
 
-            // إيقاف أي استماع قديم
-            if (window[`chatListener_${chatId}`]) window[`chatListener_${chatId}`]();
+    const sender = currentUser.email.toLowerCase().trim();
+    const receiver = email.toLowerCase().trim();
+    const text = inp.value.trim();
+    inp.value = ''; 
 
-            // الاستماع لكل الرسائل الخاصة اللي أنا طرف فيها
-            window[`chatListener_${chatId}`] = db.collection('private_messages')
-            .where('participants', 'array-contains', currentUser.email.toLowerCase())
-            .onSnapshot(snap => {
-                const currentBox = document.getElementById(`msgs-${chatId}`);
-                if (!currentBox) return;
+    try {
+        await db.collection('private_messages').add({
+            sender: sender,
+            receiver: receiver,
+            participants: [sender, receiver], // المصفوفة الأساسية للبحث
+            text: text,
+            time: firebase.firestore.FieldValue.serverTimestamp(),
+            name: userProfile.name
+        });
+        console.log("✅ تم إرسال الرسالة بنجاح");
+    } catch (err) {
+        console.error("❌ فشل الإرسال:", err);
+    }
+}
 
-                currentBox.innerHTML = '';
-                let messages = [];
+// 2. دالة الاستماع للرسائل (حل مشكلة عدم الظهور)
+function listenToPrivateChat(email, chatId) {
+    const box = document.getElementById(`msgs-${chatId}`);
+    if (!box) {
+        console.error(`❌ لم يتم العثور على حاوية الرسائل: msgs-${chatId}`);
+        return;
+    }
 
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    // تأكيد إضافي في الكود إن الرسالة تخص الشخصين دول فعلاً
-                    const participants = data.participants || [];
-                    if (participants.includes(email.toLowerCase())) {
-                        messages.push(data);
-                    }
-                });
+    if (window[`chatListener_${chatId}`]) window[`chatListener_${chatId}`]();
 
-                // ترتيب الرسائل حسب الوقت
-                messages.sort((a, b) => {
-                    let tA = a.time ? (a.time.toMillis ? a.time.toMillis() : a.time) : 0;
-                    let tB = b.time ? (b.time.toMillis ? b.time.toMillis() : b.time) : 0;
-                    return tA - tB;
-                });
+    console.log(`📡 بدء الاستماع للشات بين ${currentUser.email} و ${email}`);
 
-                if (messages.length === 0) {
-                    currentBox.innerHTML = '<div class="text-center py-10 text-[10px] text-slate-600 uppercase font-black tracking-widest opacity-40">لا توجد رسائل سابقة</div>';
-                }
+    window[`chatListener_${chatId}`] = db.collection('private_messages')
+        .where('participants', 'array-contains', currentUser.email.toLowerCase().trim())
+        .onSnapshot(snap => {
+            console.log(`📩 تحديث جديد! عدد الرسائل المستلمة من السيرفر: ${snap.size}`);
+            
+            box.innerHTML = '';
+            let messages = [];
 
-                messages.forEach(m => {
-                    const isMe = m.sender.toLowerCase() === currentUser.email.toLowerCase();
-                    const timeStr = m.time ? moment(m.time.toMillis ? m.time.toMillis() : m.time).format('h:mm A') : '...';
-                    
-                    currentBox.innerHTML += `
-                        <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in mb-4">
-                            <div class="chat-bubble ${isMe ? 'bubble-me' : 'bubble-them shadow-lg'}">
-                                <p class="text-[12px] leading-relaxed">${m.text}</p>
-                                <span class="text-[7px] opacity-60 mt-1 block font-bold">${timeStr}</span>
-                            </div>
-                        </div>`;
-                });
-                currentBox.scrollTop = currentBox.scrollHeight;
-            }, err => {
-                console.error("خطأ في جلب الرسائل:", err);
-                if(err.message.includes('permissions')) {
-                    currentBox.innerHTML = '<div class="text-center p-5 text-red-500 text-[10px]">خطأ في الصلاحيات - يرجى تحديث القواعد</div>';
+            snap.forEach(doc => {
+                const data = doc.data();
+                // فلترة الرسائل لتخص الشخصين فقط
+                if (data.participants.includes(email.toLowerCase().trim())) {
+                    messages.push(data);
                 }
             });
-        }
+
+            // ترتيب زمني
+            messages.sort((a, b) => (a.time?.toMillis?.() || 0) - (b.time?.toMillis?.() || 0));
+
+            if (messages.length === 0) {
+                box.innerHTML = '<div class="text-center py-10 text-[9px] opacity-30 font-black italic">No Messages Yet</div>';
+            }
+
+            messages.forEach(m => {
+                const isMe = m.sender.toLowerCase() === currentUser.email.toLowerCase().trim();
+                const time = m.time ? moment(m.time.toMillis()).format('h:mm A') : '...';
+                
+                box.innerHTML += `
+                    <div class="flex gap-3 ${isMe ? 'flex-row-reverse' : ''} mb-4 animate-fade-in">
+                        <div class="chat-bubble ${isMe ? 'bubble-me' : 'bubble-them shadow-md'}">
+                            <p class="text-[12px] leading-relaxed">${m.text}</p>
+                            <span class="text-[7px] opacity-50 block mt-1 font-bold text-right">${time}</span>
+                        </div>
+                    </div>`;
+            });
+            box.scrollTop = box.scrollHeight;
+        }, err => {
+            console.error("❌ خطأ Firestore في الشات:", err);
+        });
+}
         // --- 7. HISTORY & TIMERS ---
         async function openLogsModal() {
             const container = document.getElementById('logs-timeline'); container.innerHTML = '';
@@ -884,6 +902,7 @@ function playSound() {
     <div id="toast-container" class="fixed top-5 right-5 z-[400] flex flex-col gap-3 w-80 pointer-events-none"></div>
 </body>
 </html>
+
 
 
 
