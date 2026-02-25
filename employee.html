@@ -920,24 +920,37 @@ function listenToPrivateChat(email, chatId) {
         function handleFileSelect(i) { if(i.files[0]) { attachedFileObj = i.files[0]; document.getElementById('file-preview').innerText = "📎 Attachment Ready: " + attachedFileObj.name; document.getElementById('file-preview').classList.remove('hidden'); } }
         let isInitialChatLoad = true; // متغير لمنع الإشعارات القديمة عند عمل ريفريش
 
-        function listenToScreenshotRequests() {
+        // 1. تعريف وقت بداية فتح الصفحة
+const sessionStartTime = Date.now(); 
+
+function listenToScreenshotRequests() {
+    console.log("📡 مراقب لقطات الشاشة نشط.. يتجاهل الطلبات القديمة.");
+    
     db.collection('screenshot_requests')
-        .where('target_email', '==', currentUser.email.toLowerCase())
+        .where('target_email', '==', currentUser.email.toLowerCase().trim())
         .where('status', '==', 'pending')
         .onSnapshot(snap => {
             snap.docChanges().forEach(change => {
                 if (change.type === "added") {
-                    const req = change.doc.data();
+                    const reqData = change.doc.data();
                     
-                    // 1. تشغيل التنبيهات
-                    if(typeof playSound === 'function') playSound();
-                    if(typeof showToast === 'function') {
-                        showToast('طلب إداري', 'المدير يطلب لقطة شاشة فورية لمساحة العمل.', 'warning');
-                    }
+                    // تحويل وقت الطلب من السيرفر إلى مللي ثانية
+                    const requestTime = reqData.time ? reqData.time.toMillis() : Date.now();
 
-                    // 2. فتح المودال وحفظ ID الطلب
-                    document.getElementById('current-request-id').value = change.doc.id;
-                    openModal('modal-screenshot-capture');
+                    // 2. أهم سطر: لا تفتح المودال إلا لو الطلب مبعوث "بعد" ما الموظف فتح الصفحة
+                    if (requestTime > sessionStartTime) {
+                        
+                        // حفظ ID الطلب الحالي
+                        document.getElementById('current-request-id').value = change.doc.id;
+                        
+                        // تشغيل الإشعارات (صوت + توست + ويندوز)
+                        showToast('طلب إداري عاجل', 'يطلب المدير لقطة شاشة الآن لمساحة العمل.', 'warning');
+                        
+                        // فتح المودال
+                        openModal('modal-screenshot-capture');
+                    } else {
+                        console.log("تجاهل طلب قديم من قاعدة البيانات.");
+                    }
                 }
             });
         });
@@ -1038,6 +1051,7 @@ function listenToPrivateChat(email, chatId) {
         </div>
 </body>
 </html>
+
 
 
 
