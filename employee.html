@@ -183,9 +183,17 @@
 
             <div id="task-detail-pane" class="flex-1 bg-dark-950 flex flex-col relative h-full overflow-hidden border-r border-white/5">
                 
-                <div id="task-empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-900 h-full">
-                    <img src="MASTER_LOGO_WHPNG.png" class="h-20 opacity-[0.03] mb-8 grayscale">
-                    <p class="font-black text-[10px] uppercase tracking-[0.5em] text-slate-800">Select an active task to start</p>
+                <div id="task-empty-state" class="flex-1 flex flex-col items-center justify-center h-full bg-dark-950">
+                    <div class="relative group cursor-default">
+                        <div class="absolute inset-0 bg-primary-500/20 blur-[100px] rounded-full group-hover:bg-primary-500/30 transition-all duration-700"></div>
+                        
+                        <img src="MASTER_LOGO_WHPNG.png" class="h-32 opacity-[0.07] grayscale contrast-125 transition-all duration-700 group-hover:opacity-20 group-hover:scale-110 group-hover:grayscale-0 relative z-10">
+                    </div>
+                    
+                    <div class="mt-8 text-center relative z-10">
+                        <h3 class="font-black text-[11px] uppercase tracking-[0.6em] text-slate-800 mb-2">Workspace Dashboard</h3>
+                        <p class="text-[9px] font-bold text-slate-500/40 uppercase tracking-widest animate-pulse">Select an active assignment to begin</p>
+                    </div>
                 </div>
 
                 <div id="task-content" class="hidden flex flex-col h-full overflow-hidden animate-fade-in">
@@ -594,21 +602,6 @@ function playSound() {
         } // <- هذا هو القوس الذي كان مفقوداً وتسبب في توقف السيستم!
         
         function renderTaskList() {
-            const container = document.getElementById('task-list');
-            container.innerHTML = '';
-            const filtered = currentTasks.filter(t => historyMode ? t.archived : !t.archived);
-            filtered.sort((a,b) => b.id - a.id);
-
-            filtered.forEach(t => {
-                const card = document.createElement('div');
-                card.className = `task-card p-5 rounded-[1.5rem] cursor-pointer ${selectedTaskId == t.id ? 'active' : ''}`;
-                card.onclick = () => { selectedTaskId = t.id; renderTaskList(); renderTaskDetail(t); };
-                
-                let icon = t.status === 'done' ? '<i class="fas fa-check-circle text-green-500"></i>' : (t.status === 'review' ? '<i class="fas fa-eye text-purple-500"></i>' : '<i class="far fa-circle text-slate-700"></i>');
-                card.innerHTML = `<div class="flex justify-between items-start mb-2"><h4 class="font-bold text-[13px] truncate w-44 text-slate-300">${t.title}</h4>${icon}</div><div class="flex justify-between items-center"><span class="text-[9px] font-bold text-slate-600 uppercase tracking-tighter">${moment(t.id).fromNow()}</span>${t.projectId ? `<span class="bg-indigo-500/10 text-indigo-400 text-[7px] px-1.5 py-0.5 rounded font-black border border-indigo-500/10">ERP</span>` : ''}</div>`;
-                container.appendChild(card);
-            });
-        }
 
         function renderTaskDetail(task) {
             document.getElementById('task-empty-state').classList.add('hidden');
@@ -921,8 +914,14 @@ function listenToPrivateChat(email, chatId) {
         }
 
         // --- 8. UTILS ---
-        function changeTaskTab(mode, btn) { historyMode = mode; renderTaskList(); document.querySelectorAll('.task-tab-btn').forEach(b => b.className = "task-tab-btn flex-1 py-2 text-[10px] font-black rounded-md text-slate-600"); btn.className = "task-tab-btn flex-1 py-2 text-[10px] font-black rounded-md bg-dark-800 text-white shadow-xl"; }
-        function toggleUsersDropdown() { document.getElementById('users-dropdown').classList.toggle('hidden'); document.getElementById('users-dropdown').classList.toggle('active'); }
+            function changeTaskTab(mode, btn) { 
+                    historyMode = mode; 
+                    resetTaskDetailView(); // 👈 تصفير الشاشة فوراً عند التبديل بين الحالي والأرشيف
+                    renderTaskList(); 
+                    document.querySelectorAll('.task-tab-btn').forEach(b => b.className = "task-tab-btn flex-1 py-2 text-[10px] font-black rounded-md text-slate-600"); 
+                    btn.className = "task-tab-btn flex-1 py-2 text-[10px] font-black rounded-md bg-dark-800 text-white shadow-xl"; 
+                }  
+            function toggleUsersDropdown() { document.getElementById('users-dropdown').classList.toggle('hidden'); document.getElementById('users-dropdown').classList.toggle('active'); }
             function toggleChat() {
                 const chat = document.getElementById("chat-window");
                 const badge = document.getElementById("chat-badge");
@@ -1092,6 +1091,11 @@ function listenToScreenshotRequests() {
             }); 
         }
         async function logout() { if(confirm("Are you sure you want to end your session?")) { await setStatus(currentUser.email, 'Offline', true); auth.signOut().then(() => window.location.replace('index.html')); } }
+        function resetTaskDetailView() {
+    selectedTaskId = null; // تصفير المعرف المختار
+    document.getElementById('task-empty-state').classList.remove('hidden');
+    document.getElementById('task-content').classList.add('hidden');
+}
     </script>
             <div id="toast-container" class="fixed top-5 right-5 z-[400] flex flex-col gap-3 w-80 pointer-events-none"></div>
             <div id="modal-screenshot-capture" class="fixed inset-0 z-[500] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
@@ -1111,6 +1115,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
