@@ -602,7 +602,23 @@ function playSound() {
         } // <- هذا هو القوس الذي كان مفقوداً وتسبب في توقف السيستم!
         
         function renderTaskList() {
+            const container = document.getElementById('task-list');
+            container.innerHTML = '';
+            const filtered = currentTasks.filter(t => historyMode ? t.archived : !t.archived);
+            filtered.sort((a,b) => b.id - a.id);
 
+            const isSelectedStillVisible = filtered.some(t => t.id == selectedTaskId);
+            if (!isSelectedStillVisible) resetTaskDetailView();
+
+            filtered.forEach(t => {
+                const card = document.createElement('div');
+                card.className = `task-card p-5 rounded-[1.5rem] cursor-pointer ${selectedTaskId == t.id ? 'active' : ''}`;
+                card.onclick = () => { selectedTaskId = t.id; renderTaskList(); renderTaskDetail(t); };
+                let icon = t.status === 'done' ? '<i class="fas fa-check-circle text-green-500"></i>' : (t.status === 'review' ? '<i class="fas fa-eye text-purple-500"></i>' : '<i class="far fa-circle text-slate-700"></i>');
+                card.innerHTML = `<div class="flex justify-between items-start mb-2"><h4 class="font-bold text-[13px] truncate w-44 text-slate-300">${t.title}</h4>${icon}</div><div class="flex justify-between items-center"><span class="text-[9px] font-bold text-slate-600 uppercase tracking-tighter">${moment(t.id).fromNow()}</span></div>`;
+                container.appendChild(card);
+            });
+        }
         function renderTaskDetail(task) {
             document.getElementById('task-empty-state').classList.add('hidden');
             document.getElementById('task-content').classList.remove('hidden');
@@ -1115,6 +1131,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
