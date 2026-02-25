@@ -480,41 +480,49 @@ function playSound() {
 
             }, 60000); // الفحص يتم كل دقيقة (60000 مللي ثانية)
         }
-        let lastTasksState = {}; // لتخزين حالات المهام ومقارنتها
+        // تأكد أن هذا المتغير موجود في أعلى السكريبت (خارج الدالة)
+let isInitialTasksLoad = true; 
 
-        function listenToProfile() {
-            db.collection('users').doc(currentUser.email.toLowerCase()).onSnapshot(doc => {
-                if(!doc.exists) return;
-                const data = doc.data();
-                userProfile = data;
-                updateProfileUI(data);
-                
-                const newTasks = data.tasks || [];
-        
-                // 1. اكتشاف المهام الجديدة تماماً
-                if (newTasks.length > currentTasks.length && currentTasks.length > 0) {
-                    const latestTask = newTasks[newTasks.length - 1];
-                    showToast('مهمة جديدة 📋', `تم إسناد مهمة: ${latestTask.title}`, 'success');
-                    if(typeof showWindowsNotification === 'function') showWindowsNotification('مهمة جديدة', latestTask.title);
-                }
-        
-                // 2. اكتشاف المهام المسترجعة للعمل (Re-assigned)
-                newTasks.forEach(task => {
-                    const oldTask = currentTasks.find(t => t.id === task.id);
-                    if (oldTask && oldTask.status === 'review' && task.status === 'working') {
-                        showToast('تحديث مهمة ⚠️', `أعيدت المهمة "${task.title}" للعمل عليها مجدداً`, 'warning');
-                        if(typeof showWindowsNotification === 'function') showWindowsNotification('إعادة عمل', `يرجى مراجعة ملاحظات المدير على المهمة: ${task.title}`);
-                    }
-                });
-        
-                currentTasks = newTasks;
-                renderTaskList();
-                if(selectedTaskId) {
-                    const t = currentTasks.find(x => x.id == selectedTaskId);
-                    if(t) renderTaskDetail(t);
+function listenToProfile() {
+    db.collection('users').doc(currentUser.email.toLowerCase()).onSnapshot(doc => {
+        if(!doc.exists) return;
+        const data = doc.data();
+        const newTasks = data.tasks || [];
+
+        // 🟢 منطق الإشعارات 🟢
+        if (!isInitialTasksLoad) {
+            // 1. اكتشاف المهام الجديدة (حتى لو كانت أول مهمة للموظف)
+            if (newTasks.length > currentTasks.length) {
+                const addedTask = newTasks[newTasks.length - 1]; // أحدث مهمة مضافة
+                // إظهار التوست (اللي بيشغل الصوت وإشعار الويندوز تلقائياً)
+                showToast('مهمة جديدة 📋', `تم إسناد مهمة إليك: ${addedTask.title}`, 'success');
+            }
+
+            // 2. اكتشاف المهام المسترجعة (من مراجعة إلى قيد التنفيذ)
+            newTasks.forEach(task => {
+                const oldTaskVersion = currentTasks.find(t => t.id === task.id);
+                if (oldTaskVersion && oldTaskVersion.status === 'review' && task.status === 'working') {
+                    showToast('تحديث مهمة ⚠️', `أعاد المدير المهمة "${task.title}" للعمل عليها مجدداً`, 'warning');
                 }
             });
         }
+
+        // تحديث البيانات المحلية بعد فحص الإشعارات
+        isInitialTasksLoad = false;
+        userProfile = data; 
+        currentTasks = [...newTasks]; // أخذ نسخة جديدة من المهام للمقارنة المرة القادمة
+        
+        updateProfileUI(data); 
+        renderTaskList();
+        
+        if(selectedTaskId) { 
+            const t = currentTasks.find(x => x.id == selectedTaskId); 
+            if(t) renderTaskDetail(t); 
+        }
+    }, err => {
+        console.error("خطأ في مراقب الملف الشخصي:", err);
+    });
+}
         function startClock() {
             const update = () => {
                 const now = moment();
@@ -1131,6 +1139,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
