@@ -792,8 +792,17 @@
                 
                 // تسجيل الإجراء
                 await db.collection('logs').add({
-                    user: targetEmail, name: uData.name, from_status: oldStatus, to_status: newStatus,
-                    start_time: uData.lastChange || ts, end_time: ts, duration_ms: duration, auto: false, adminForced: true
+                    user: targetEmail, 
+                    name: uData.name, 
+                    from_status: oldStatus, 
+                    to_status: newStatus,
+                    start_time: uData.lastChange || ts, 
+                    end_time: ts, 
+                    duration_ms: duration, 
+                    auto: false, 
+                    adminForced: true,
+                    performedBy: userProfile.name, // 👈 اسم المدير الحالي
+                    performedByEmail: currentUser.email // 👈 بريد المدير
                 });
 
                 await userRef.update({ status: newStatus, isIdle: false, lastChange: ts, timeBank: tb });
@@ -833,6 +842,7 @@
     
     if (!container) return;
 
+    // حالة التحميل
     container.innerHTML = `<tr><td colspan="7" class="py-20 text-center"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-primary-500 mx-auto mb-4"></div>جاري إعداد التقرير التفصيلي...</td></tr>`;
     openModal('modal-logs');
 
@@ -868,7 +878,7 @@
             if(l.from_status === 'Online') totalOnline += (l.duration_ms || 0);
             if(l.from_status === 'Break') totalBreak += (l.duration_ms || 0);
 
-            // تنسيق ألوان الحالات
+            // 1. تنسيق ألوان الحالات (Badge)
             const getStatusBadge = (s) => {
                 const map = { 
                     'Online': 'text-green-500 bg-green-500/10', 
@@ -877,21 +887,50 @@
                     'Idle': 'text-red-500 bg-red-500/10',
                     'Offline': 'text-slate-500 bg-white/5'
                 };
-                return `<span class="px-3 py-1 rounded-lg ${map[s] || 'bg-slate-800'} text-[10px] uppercase font-black">${s}</span>`;
+                return `<span class="px-3 py-1 rounded-lg ${map[s] || 'bg-slate-800'} text-[10px] uppercase font-black border border-white/5">${s}</span>`;
             };
+
+            // 2. منطق تحديد "نوع الإجراء" والفاعل
+            let performedByHTML = '';
+            if (l.adminForced) {
+                performedByHTML = `
+                    <div class="flex flex-col items-start border-r-2 border-red-500 pr-3">
+                        <span class="text-red-400 text-[10px] font-black uppercase">👤 إجراء إداري</span>
+                        <span class="text-[8px] text-slate-500 font-bold mt-0.5">بواسطة: ${l.performedBy || 'المدير'}</span>
+                    </div>`;
+            } else if (l.auto) {
+                performedByHTML = `
+                    <div class="flex flex-col items-start border-r-2 border-blue-500 pr-3">
+                        <span class="text-blue-400 text-[10px] font-black uppercase">⚙️ نظام تلقائي</span>
+                        <span class="text-[8px] text-slate-500 font-bold mt-0.5">تفعيل وضع الخمول</span>
+                    </div>`;
+            } else {
+                performedByHTML = `
+                    <div class="flex flex-col items-start border-r-2 border-green-500 pr-3">
+                        <span class="text-green-400 text-[10px] font-black uppercase">📱 الموظف</span>
+                        <span class="text-[8px] text-slate-500 font-bold mt-0.5">تغيير يدوي من الجهاز</span>
+                    </div>`;
+            }
 
             container.innerHTML += `
                 <tr class="hover:bg-white/[0.02] transition-colors group">
                     <td class="p-5 text-slate-600 font-mono text-[10px]">${count++}</td>
                     <td class="p-5">${getStatusBadge(l.from_status)}</td>
-                    <td class="p-5"><i class="fas fa-arrow-left ml-4 text-slate-700 text-[10px]"></i> ${getStatusBadge(l.to_status)}</td>
-                    <td class="p-5 text-center font-mono text-slate-500">${dateStr}</td>
-                    <td class="p-5 text-center font-mono text-white">${timeStr}</td>
-                    <td class="p-5 text-center">
-                        <span class="text-primary-500 font-black font-mono bg-primary-500/5 px-3 py-1 rounded-lg border border-primary-500/10">${duration}</span>
+                    <td class="p-5">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-arrow-left text-slate-700 text-[10px]"></i>
+                            ${getStatusBadge(l.to_status)}
+                        </div>
                     </td>
-                    <td class="p-5 text-[9px]">
-                        <span class="opacity-40">${l.auto ? '⚙️ نظام تلقائي' : '👤 إجراء يدوي'}</span>
+                    <td class="p-5 text-center font-mono text-slate-500 text-[10px]">${dateStr}</td>
+                    <td class="p-5 text-center font-mono text-white text-[10px]">${timeStr}</td>
+                    <td class="p-5 text-center">
+                        <span class="text-primary-500 font-black font-mono bg-primary-500/5 px-3 py-1 rounded-lg border border-primary-500/10 text-[11px]">
+                            ${duration}
+                        </span>
+                    </td>
+                    <td class="p-5">
+                        ${performedByHTML}
                     </td>
                 </tr>`;
         });
@@ -899,19 +938,19 @@
         // ملء الفوتر بالإحصائيات
         footer.innerHTML = `
             <div class="text-center">
-                <p class="text-[9px] text-slate-500 uppercase font-black mb-1">إجمالي العمل الفعلي</p>
+                <p class="text-[9px] text-slate-500 uppercase font-black mb-1 tracking-widest">إجمالي العمل الفعلي</p>
                 <p class="text-xl font-black text-green-500 font-mono">${formatDuration(totalOnline)}</p>
             </div>
             <div class="w-[1px] h-10 bg-white/5"></div>
             <div class="text-center">
-                <p class="text-[9px] text-slate-500 uppercase font-black mb-1">إجمالي وقت الاستراحة</p>
+                <p class="text-[9px] text-slate-500 uppercase font-black mb-1 tracking-widest">إجمالي وقت الاستراحة</p>
                 <p class="text-xl font-black text-orange-500 font-mono">${formatDuration(totalBreak)}</p>
             </div>
         `;
 
     } catch (err) {
-        console.error(err);
-        container.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-red-500">حدث خطأ أثناء تحميل التقرير.</td></tr>`;
+        console.error("Error generating report:", err);
+        container.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-red-500 font-black">❌ حدث خطأ أثناء إعداد التقرير: ${err.message}</td></tr>`;
     }
 }
         // --- VIEW 2: TASKS ---
@@ -1609,6 +1648,7 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
+
 
 
 
