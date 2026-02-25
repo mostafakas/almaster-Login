@@ -137,8 +137,13 @@
                             <span class="text-[11px] font-black text-slate-300">💬 محادثة خاصة</span>
                             <i class="fas fa-chevron-up text-[9px] text-slate-600"></i>
                         </button>
-                        <div id="users-dropdown" class="absolute bottom-full left-0 right-0 mb-3 bg-dark-900 border border-white/10 rounded-[1.5rem] shadow-2xl max-h-64 overflow-y-auto custom-scrollbar z-[60] hidden">
-                            <div id="users-list-content" class="p-2 space-y-1"></div>
+                        <div class="p-3 border-b border-white/5">
+                            <input type="text" id="user-search-input" oninput="renderPrivateUsersList()" 
+                                   class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-2 text-[10px] text-white outline-none focus:border-primary-500 placeholder:text-slate-600" 
+                                   placeholder="بحث عن موظف بالاسم...">
+                        </div>
+                        <div id="users-list-content" class="p-2 space-y-1"></div>
+                        <div id="users-list-content" class="p-2 space-y-1"></div>
                         </div>
                     </div>
 
@@ -659,18 +664,39 @@ function playSound() {
 
         // --- 6. CHAT SYSTEMS ---
         function renderPrivateUsersList() {
-            const box = document.getElementById('users-list-content');
-            box.innerHTML = '';
-            allUsersData.filter(u => u.email !== currentUser.email).forEach(u => {
-                const s = u.status || 'Offline';
-                const pulseColor = s === 'Online' ? 'bg-green-500' : s === 'Break' ? 'bg-orange-500' : 'bg-slate-700';
-                box.innerHTML += `
-                    <div onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}', '${u.title}')" class="flex items-center gap-4 p-3 rounded-2xl hover:bg-dark-950 transition cursor-pointer group">
-                        <div class="relative"><img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-10 h-10 rounded-xl object-cover border border-white/10"><span class="absolute -bottom-1 -right-1 pulse-dot ${pulseColor} border-2 border-dark-900"></span></div>
-                        <div class="flex-1 text-right overflow-hidden"><p class="text-xs font-black text-slate-200 truncate group-hover:text-primary-500">${u.name}</p><p class="text-[8px] font-bold text-slate-600 uppercase tracking-widest">${u.title || 'Member'}</p></div>
-                    </div>`;
-            });
-        }
+    const box = document.getElementById('users-list-content');
+    const searchInput = document.getElementById('user-search-input');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    
+    box.innerHTML = '';
+    
+    const statusPriority = { 'Online': 1, 'Meeting': 2, 'Break': 3, 'Offline': 4 };
+
+    const sortedUsers = [...allUsersData]
+        .filter(u => u.email !== currentUser.email)
+        .filter(u => u.name.toLowerCase().includes(searchTerm)) // الفلترة حسب البحث
+        .sort((a, b) => {
+            const priorityA = a.isIdle ? 1.5 : (statusPriority[a.status] || 4);
+            const priorityB = b.isIdle ? 1.5 : (statusPriority[b.status] || 4);
+            return priorityA - priorityB;
+        });
+
+    if (sortedUsers.length === 0) {
+        box.innerHTML = '<p class="text-center py-4 text-[9px] text-slate-600">لا يوجد نتائج...</p>';
+        return;
+    }
+
+    sortedUsers.forEach(u => {
+        const s = u.status || 'Offline';
+        const pulseColor = u.isIdle ? 'bg-red-500' : (s === 'Online' ? 'bg-green-500' : s === 'Break' ? 'bg-orange-500' : 'bg-slate-700');
+        
+        box.innerHTML += `
+            <div onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}', '${u.title}')" class="flex items-center gap-4 p-3 rounded-2xl hover:bg-dark-950 transition cursor-pointer group">
+                <div class="relative"><img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-10 h-10 rounded-xl object-cover border border-white/10"><span class="absolute -bottom-1 -right-1 pulse-dot ${pulseColor} border-2 border-dark-900"></span></div>
+                <div class="flex-1 text-right overflow-hidden"><p class="text-xs font-black text-slate-200 truncate group-hover:text-primary-500">${u.name}</p><p class="text-[8px] font-bold text-slate-600 uppercase tracking-widest">${u.title || 'Member'}</p></div>
+            </div>`;
+    });
+}
 
         function listenToGlobalMessages() {
             db.collection("messages").orderBy("time","asc").limitToLast(50).onSnapshot(s => {
@@ -902,6 +928,7 @@ function listenToPrivateChat(email, chatId) {
     <div id="toast-container" class="fixed top-5 right-5 z-[400] flex flex-col gap-3 w-80 pointer-events-none"></div>
 </body>
 </html>
+
 
 
 
