@@ -714,81 +714,83 @@ function playSound() {
 
         async function sendPrivateMsg(e, email, chatId) {
             e.preventDefault();
-        
             const inp = document.getElementById(`input-${chatId}`);
             if (!inp.value.trim()) return;
-        
+
             const sender = currentUser.email.toLowerCase();
             const receiver = email.toLowerCase();
-        
-            await db.collection('private_messages').add({
-                sender: sender,
-                receiver: receiver,
-                participants: [sender, receiver],
-                text: inp.value.trim(),
-                time: firebase.firestore.FieldValue.serverTimestamp(),
-                name: userProfile.name
-            });
-        
-            inp.value = '';
+            const messageText = inp.value.trim();
+            inp.value = ''; // مسح الحقل فوراً لتجربة سريعة
+
+            try {
+                await db.collection('private_messages').add({
+                    sender: sender,
+                    receiver: receiver,
+                    participants: [sender, receiver], // المصفوفة اللي بنبحث بيها
+                    text: messageText,
+                    time: firebase.firestore.FieldValue.serverTimestamp(),
+                    name: userProfile.name
+                });
+            } catch (err) {
+                console.error("فشل الإرسال:", err);
+                alert("تعذر إرسال الرسالة، تأكد من اتصال الإنترنت وقواعد الأمان.");
+            }
         }
         function listenToPrivateChat(email, chatId) {
-            // إيقاف أي استماع قديم لنفس الشات لمنع تكرار العمليات في الخلفية
-            if (window[`chatListener_${chatId}`]) {
-                window[`chatListener_${chatId}`](); 
-            }
+            const box = document.getElementById(`msgs-${chatId}`);
+            if (!box) return;
 
+            // إيقاف أي استماع قديم
+            if (window[`chatListener_${chatId}`]) window[`chatListener_${chatId}`]();
+
+            // الاستماع لكل الرسائل الخاصة اللي أنا طرف فيها
             window[`chatListener_${chatId}`] = db.collection('private_messages')
             .where('participants', 'array-contains', currentUser.email.toLowerCase())
             .onSnapshot(snap => {
-                // بنجيب النافذة من جوه الـ onSnapshot عشان نضمن إنها النافذة الحالية المفتوحة
-                const box = document.getElementById(`msgs-${chatId}`);
-                
-                // لو النافذة اتقفلت، نوقف الاستماع عشان نوفر موارد الجهاز
-                if (!box) {
-                    window[`chatListener_${chatId}`]();
-                    delete window[`chatListener_${chatId}`];
-                    return;
-                }
+                const currentBox = document.getElementById(`msgs-${chatId}`);
+                if (!currentBox) return;
 
-                box.innerHTML = '';
+                currentBox.innerHTML = '';
                 let messages = [];
-                snap.docs.forEach(doc => messages.push(doc.data()));
-                
-                // ترتيب الرسائل بناءً على الوقت بدقة
-                messages.sort((a, b) => {
-                    let timeA = a.time ? (typeof a.time.toMillis === 'function' ? a.time.toMillis() : Date.now()) : Date.now();
-                    let timeB = b.time ? (typeof b.time.toMillis === 'function' ? b.time.toMillis() : Date.now()) : Date.now();
-                    return timeA - timeB;
-                });
 
-                // رسم فقاعات الشات
-                messages.forEach(m => {
-                    const senderStr = m.sender ? m.sender.toLowerCase() : "";
-                    const receiverStr = m.receiver ? m.receiver.toLowerCase() : "";
-                    const myEmail = currentUser.email.toLowerCase();
-                    const otherEmail = email.toLowerCase();
-
-                    if (
-                        (senderStr === myEmail && receiverStr === otherEmail) ||
-                        (senderStr === otherEmail && receiverStr === myEmail)
-                    ) {
-                        const isMe = senderStr === myEmail;
-                        const timeDisplay = m.time ? moment(m.time.toMillis ? m.time.toMillis() : Date.now()).format('h:mm A') : 'الآن';
-                        
-                        box.innerHTML += `
-                            <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in group w-full mb-3">
-                                <div class="chat-bubble ${isMe ? 'bubble-me' : 'bubble-them shadow-md'} max-w-[85%]">
-                                    <p class="whitespace-pre-wrap text-[11px] leading-relaxed">${m.text}</p>
-                                    <span class="text-[7px] text-${isMe ? 'white/70' : 'slate-500'} mt-1 block font-bold">${timeDisplay}</span>
-                                </div>
-                            </div>
-                        `;
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    // تأكيد إضافي في الكود إن الرسالة تخص الشخصين دول فعلاً
+                    const participants = data.participants || [];
+                    if (participants.includes(email.toLowerCase())) {
+                        messages.push(data);
                     }
                 });
-                
-                // النزول لآخر رسالة تلقائياً
-                box.scrollTop = box.scrollHeight;
+
+                // ترتيب الرسائل حسب الوقت
+                messages.sort((a, b) => {
+                    let tA = a.time ? (a.time.toMillis ? a.time.toMillis() : a.time) : 0;
+                    let tB = b.time ? (b.time.toMillis ? b.time.toMillis() : b.time) : 0;
+                    return tA - tB;
+                });
+
+                if (messages.length === 0) {
+                    currentBox.innerHTML = '<div class="text-center py-10 text-[10px] text-slate-600 uppercase font-black tracking-widest opacity-40">لا توجد رسائل سابقة</div>';
+                }
+
+                messages.forEach(m => {
+                    const isMe = m.sender.toLowerCase() === currentUser.email.toLowerCase();
+                    const timeStr = m.time ? moment(m.time.toMillis ? m.time.toMillis() : m.time).format('h:mm A') : '...';
+                    
+                    currentBox.innerHTML += `
+                        <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in mb-4">
+                            <div class="chat-bubble ${isMe ? 'bubble-me' : 'bubble-them shadow-lg'}">
+                                <p class="text-[12px] leading-relaxed">${m.text}</p>
+                                <span class="text-[7px] opacity-60 mt-1 block font-bold">${timeStr}</span>
+                            </div>
+                        </div>`;
+                });
+                currentBox.scrollTop = currentBox.scrollHeight;
+            }, err => {
+                console.error("خطأ في جلب الرسائل:", err);
+                if(err.message.includes('permissions')) {
+                    currentBox.innerHTML = '<div class="text-center p-5 text-red-500 text-[10px]">خطأ في الصلاحيات - يرجى تحديث القواعد</div>';
+                }
             });
         }
         // --- 7. HISTORY & TIMERS ---
@@ -882,6 +884,7 @@ function playSound() {
     <div id="toast-container" class="fixed top-5 right-5 z-[400] flex flex-col gap-3 w-80 pointer-events-none"></div>
 </body>
 </html>
+
 
 
 
