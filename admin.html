@@ -782,11 +782,24 @@
 
         // --- VIEW 2: TASKS ---
         function renderGlobalTasks() {
-            const cols = { todo: document.getElementById('kanban-todo'), inprogress: document.getElementById('kanban-inprogress'), done: document.getElementById('kanban-done') };
+            const cols = { 
+                todo: document.getElementById('kanban-todo'), 
+                inprogress: document.getElementById('kanban-inprogress'), 
+                done: document.getElementById('kanban-done') 
+            };
             for(let k in cols) if(cols[k]) cols[k].innerHTML = '';
             
             let allTasks = [];
-            allUsersData.forEach(u => { if(u.tasks) { u.tasks.forEach(t => { if(!t.archived) allTasks.push({...t, ownerName: u.name, ownerEmail: u.email, ownerPhoto: u.photo}); }); } });
+            allUsersData.forEach(u => { 
+                if(u.tasks) { 
+                    u.tasks.forEach(t => { 
+                        // التعديل هنا: السماح للمهام بالظهور في لوحة المدير حتى لو كانت مؤرشفة 
+                        // طالما أننا نريد رؤيتها في عمود المكتملة
+                        allTasks.push({...t, ownerName: u.name, ownerEmail: u.email, ownerPhoto: u.photo}); 
+                    }); 
+                } 
+            }); 
+            
             allTasks.sort((a,b) => b.id - a.id);
 
             let counts = { todo: 0, inprogress: 0, done: 0 };
@@ -794,14 +807,23 @@
             allTasks.forEach(task => {
                 let colKey = task.status === 'started' ? 'todo' : (task.status === 'done' ? 'done' : 'inprogress');
                 counts[colKey]++;
+                
                 if(cols[colKey]) {
+                    // تحديد لون أيقونة الحالة
+                    const statusIcon = task.status === 'done' ? 
+                        '<i class="fas fa-check-double text-green-500 text-[10px]"></i>' : 
+                        (task.status === 'review' ? '<i class="fas fa-eye text-purple-500 animate-pulse text-[10px]"></i>' : '');
+
                     cols[colKey].innerHTML += `
-                        <div onclick="openAdminTaskDetail('${task.id}', '${task.ownerEmail}')" class="task-kanban-card p-4 rounded-2xl cursor-pointer shadow-lg">
-                            <div class="flex justify-between items-start mb-3"><h4 class="font-black text-[11px] text-white leading-tight pr-2">${task.title}</h4>${task.status==='review'?'<i class="fas fa-eye text-purple-500 animate-pulse text-[10px]"></i>':''}</div>
+                        <div onclick="openAdminTaskDetail('${task.id}', '${task.ownerEmail}')" class="task-kanban-card p-4 rounded-2xl cursor-pointer shadow-lg mb-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <h4 class="font-black text-[11px] text-white leading-tight pr-2">${task.title}</h4>
+                                ${statusIcon}
+                            </div>
                             <div class="flex items-center gap-2 mt-auto pt-3 border-t border-white/5">
-                                <img src="${task.ownerPhoto || DEFAULT_PHOTO+task.ownerName}" class="w-5 h-5 rounded-md object-cover">
+                                <img src="${task.ownerPhoto || DEFAULT_PHOTO+task.ownerName}" class="w-5 h-5 rounded-md object-cover border border-white/10">
                                 <span class="text-[9px] font-bold text-slate-400 truncate">${task.ownerName}</span>
-                                <span class="mr-auto text-[7px] bg-primary-500/10 text-primary-500 px-1.5 py-0.5 rounded font-black">${task.projectName || 'عام'}</span>
+                                <span class="mr-auto text-[7px] bg-primary-500/10 text-primary-500 px-1.5 py-0.5 rounded font-black border border-primary-500/10">${task.projectName || 'عام'}</span>
                             </div>
                         </div>`;
                 }
@@ -811,7 +833,6 @@
             document.getElementById('k-prog-count').innerText = counts.inprogress;
             document.getElementById('k-done-count').innerText = counts.done;
         }
-
         // إسناد المهام من السوبرفايزر
         function openAddTaskModal() {
             document.getElementById('new-task-title').value = '';
@@ -1339,6 +1360,7 @@
 
 </body>
 </html>
+
 
 
 
