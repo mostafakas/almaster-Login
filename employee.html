@@ -257,7 +257,13 @@
     </div>
 
     <script>
-        // --- 1. CORE CONFIG & GLOBALS ---
+                // --- 1. CORE CONFIG & GLOBALS ---// إضافة متغيرات نظام الإشعارات
+        const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // يمكنك تغيير الرابط بصوتك المفضل
+        let unreadNotificationsCount = 0;
+        let previousTasksCount = 0;
+        let userStatusesCache = {}; // لمراقبة تغيرات حالة المستخدمين
+        let notifiedAlerts = new Set(); // لمنع تكرار الإشعار لنفس الحدث
+        
         const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -268,7 +274,48 @@
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
 
         // 🟢 HELPERS 🟢
-        const playNotification = () => { console.log("New Message Received!"); /* يمكنك لاحقاً إضافة ملف صوتي هنا */ };
+function playSound() {
+            notificationSound.play().catch(e => console.log("الصوت يحتاج تفاعل المستخدم أولاً"));
+        }
+
+        function showToast(title, message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            // تحديد ألوان الإشعار حسب نوعه
+            const colors = {
+                info: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
+                warning: 'border-orange-500/30 bg-orange-500/10 text-orange-400',
+                danger: 'border-red-500/30 bg-red-500/10 text-red-400',
+                success: 'border-green-500/30 bg-green-500/10 text-green-400'
+            };
+
+            toast.className = `p-4 rounded-2xl border ${colors[type]} backdrop-blur-xl shadow-2xl animate-fade-in flex items-start gap-3 pointer-events-auto transition-all duration-300 transform translate-x-0`;
+            
+            toast.innerHTML = `
+                <div class="flex-1">
+                    <h4 class="font-black text-[12px] uppercase mb-1">${title}</h4>
+                    <p class="text-[10px] text-slate-300 leading-relaxed">${message}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button>
+            `;
+            
+            container.appendChild(toast);
+            playSound();
+            updateBadge();
+
+            // إخفاء الإشعار تلقائياً بعد 6 ثوانٍ
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 6000);
+        }
+
+        function updateBadge() {
+            unreadNotificationsCount++;
+            // تحديث رقم البادج في الأيقونة التي تريدها (مثال: أيقونة الإشعارات إذا أضفتها لاحقاً)
+            console.log("Unread Alerts: ", unreadNotificationsCount);
+        }
         const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : v) : Date.now();
         const formatDuration = (ms) => {
             if(ms < 0) ms = 0;
@@ -326,6 +373,7 @@
             listenToGlobalMessages();
             listenToPrivateMessages();
             startIdleTracker();
+            startSmartMonitor(); // <--- تمت الإضافة هنا
             setInterval(updateTimersUI, 1000);
             toggleLoader(false);
             
@@ -339,12 +387,67 @@
         }
 
         // --- 3. DATABASE LISTENERS ---
+        function startSmartMonitor() {
+            setInterval(() => {
+                if(!userProfile) return;
+                const now = Date.now();
+                const ONE_HOUR = 60 * 60 * 1000;
+                
+                // 1. فحص المهام التي تجاوزت 24 ساعة ولم تنته
+                if(userProfile.tasks) {
+                    userProfile.tasks.forEach(task => {
+                        if(task.status !== 'done' && (now - task.id) > (24 * ONE_HOUR)) {
+                            const alertId = `24h_${task.id}`;
+                            if(!notifiedAlerts.has(alertId)) {
+                                showToast('تنبيه تأخير!', `المهمة "${task.title}" متأخرة وتجاوزت 24 ساعة.`, 'warning');
+                                notifiedAlerts.add(alertId);
+                            }
+                        }
+                        
+                        // 2. فحص مهام الـ QA المتأخرة (نفترض التأخير بعد ساعتين من تغيير الحالة لـ review)
+                        if(task.status === 'review' && (now - task.id) > (2 * ONE_HOUR)) { // يمكنك حفظ وقت الـ QA الفعلي بدلاً من task.id لاحقاً
+                             const qaAlertId = `qa_${task.id}`;
+                             if(!notifiedAlerts.has(qaAlertId)) {
+                                showToast('تأخير مراجعة', `المهمة "${task.title}" تنتظر المراجعة لفترة طويلة.`, 'danger');
+                                notifiedAlerts.add(qaAlertId);
+                             }
+                        }
+                    });
+                }
+
+                // 3. فحص تجاوز وقت الـ Break (نفترض الحد الأقصى 45 دقيقة)
+                const BREAK_LIMIT = 45 * 60 * 1000; 
+                if(userProfile.status === 'Break') {
+                    const currentBreak = (userProfile.timeBank['Break'] || 0) + (now - getMillis(userProfile.lastChange));
+                    if(currentBreak > BREAK_LIMIT && !notifiedAlerts.has('break_limit')) {
+                        showToast('تجاوز وقت الراحة', 'لقد تجاوزت الحد المسموح للـ Break، يرجى العودة للعمل.', 'danger');
+                        notifiedAlerts.add('break_limit');
+                    }
+                } else {
+                    notifiedAlerts.delete('break_limit'); // إعادة الضبط عند تغيير الحالة
+                }
+
+                // 4. فحص الـ Idle Limit يتم التعامل معه في startIdleTracker بالفعل، يمكننا إضافة إشعار له
+                if(userProfile.isIdle && !notifiedAlerts.has('idle_alert')) {
+                    showToast('تنبيه خمول', 'تم تسجيل حسابك في وضع الخمول لعدم وجود نشاط.', 'warning');
+                    notifiedAlerts.add('idle_alert');
+                } else if (!userProfile.isIdle) {
+                    notifiedAlerts.delete('idle_alert');
+                }
+
+            }, 60000); // الفحص يتم كل دقيقة (60000 مللي ثانية)
+        }
         function listenToProfile() {
             db.collection('users').doc(currentUser.email.toLowerCase()).onSnapshot(doc => {
                 if(!doc.exists) return;
                 userProfile = doc.data();
                 updateProfileUI(userProfile);
                 currentTasks = userProfile.tasks || [];
+                // التحقق من المهام الجديدة
+                if (currentTasks.length > previousTasksCount && previousTasksCount > 0) {
+                    showToast('مهمة جديدة', 'تم إسناد مهمة جديدة إليك للتو.', 'success');
+                }
+                previousTasksCount = currentTasks.length;
                 renderTaskList();
                 if(selectedTaskId) {
                     const t = currentTasks.find(x => x.id == selectedTaskId);
@@ -369,10 +472,24 @@
         function listenToAllUsers() {
             db.collection('users').onSnapshot(snap => {
                 allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
+                
+                // فحص تغيرات حالة المستخدمين
+                allUsersData.forEach(u => {
+                    if (u.email !== currentUser.email) {
+                        const oldStatus = userStatusesCache[u.email];
+                        const newStatus = u.status || 'Offline';
+                        
+                        if (oldStatus && oldStatus !== newStatus && newStatus === 'Online') {
+                            // إشعار فقط عند دخول شخص متصل لتجنب الإزعاج
+                            showToast('تحديث حالة', `${u.name} أصبح متصلاً الآن.`, 'success');
+                        }
+                        userStatusesCache[u.email] = newStatus;
+                    }
+                });
+
                 renderPrivateUsersList();
             });
         }
-
         // --- 4. UI RENDERERS ---
         function updateProfileUI(data) {
             // 1. تصفير العدادات تلقائياً إذا بدأ يوم جديد
@@ -698,11 +815,24 @@
         function openQAModal(id) { document.getElementById('review-task-id').value = id; const sel = document.getElementById('qa-manager-select'); sel.innerHTML = ''; allUsersData.filter(u => ['admin', 'supervisor', 'leader'].includes(u.role)).forEach(m => sel.innerHTML += `<option value="${m.email}">${m.name} (${m.role})</option>`); openModal('modal-qa'); }
         async function confirmQA() { const id = document.getElementById('review-task-id').value; const rev = document.getElementById('qa-manager-select').value; const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == id); if(idx > -1) { tasks[idx].status = 'review'; tasks[idx].reviewerEmail = rev; tasks[idx].comments.push({ user: 'system', text: `Sent to: ${rev} for review`, time: Date.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); closeModal('modal-qa'); } }
         function handleFileSelect(i) { if(i.files[0]) { attachedFileObj = i.files[0]; document.getElementById('file-preview').innerText = "📎 Attachment Ready: " + attachedFileObj.name; document.getElementById('file-preview').classList.remove('hidden'); } }
-        function listenToPrivateMessages() { db.collection("private_messages").where("receiver", "==", currentUser.email.toLowerCase()).onSnapshot(s => { if(!s.metadata.hasPendingWrites) { s.docChanges().forEach(c => { if (c.type === "added") playNotification(); }); } }); }
+        function listenToPrivateMessages() { 
+            db.collection("private_messages").where("receiver", "==", currentUser.email.toLowerCase()).onSnapshot(s => { 
+                if(!s.metadata.hasPendingWrites) { 
+                    s.docChanges().forEach(c => { 
+                        if (c.type === "added") {
+                            const msg = c.doc.data();
+                            showToast('رسالة خاصة جديدة', `من: ${msg.name} - ${msg.text.substring(0,20)}...`, 'info');
+                        } 
+                    }); 
+                } 
+            }); 
+        }
         async function logout() { if(confirm("Are you sure you want to end your session?")) { await setStatus(currentUser.email, 'Offline', true); auth.signOut().then(() => window.location.replace('index.html')); } }
     </script>
+    <div id="toast-container" class="fixed top-5 right-5 z-[400] flex flex-col gap-3 w-80 pointer-events-none"></div>
 </body>
 </html>
+
 
 
 
