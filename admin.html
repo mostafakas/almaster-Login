@@ -511,7 +511,7 @@
             document.getElementById('admin-img').src = userProfile.photo || DEFAULT_PHOTO + 'Admin';
             
             quill = new Quill('#editor-container', { theme: 'snow', modules: { toolbar: [['bold', 'italic'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link']] } });
-            
+            listenToScreenshotResults(); // 👈 أضف هذا السطر هنا ليعمل الاستقبال
             listenToAllUsers();
             listenToProjects();
             listenToGlobalMessages();
@@ -1152,6 +1152,36 @@
                 console.error("خطأ في الإرسال من الإدارة:", err);
             }
         }
+        function listenToScreenshotResults() {
+    // الاستماع فقط للطلبات التي اكتملت في آخر 5 دقائق لتجنب عرض صور قديمة
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60000);
+    
+    db.collection('screenshot_requests')
+        .where('requested_by', '==', currentUser.email)
+        .where('status', '==', 'completed')
+        .onSnapshot(snap => {
+            snap.docChanges().forEach(change => {
+                if (change.type === "added" || change.type === "modified") {
+                    const data = change.doc.data();
+                    
+                    // إذا لم نقم بعرض هذه الصورة من قبل
+                    if (data.status === 'completed' && !window[`viewed_${change.doc.id}`]) {
+                        window[`viewed_${change.doc.id}`] = true; // علامة لعدم التكرار
+
+                        // 1. تحديث البيانات في المودال
+                        document.getElementById('screenshot-display').src = data.screenshot_url;
+                        document.getElementById('screenshot-download-link').href = data.screenshot_url;
+                        document.getElementById('screenshot-info').innerText = `الموظف: ${data.target_email} | التوقيت: ${moment(data.completed_at?.toDate()).format('hh:mm:ss A')}`;
+                        
+                        // 2. إظهار المودال وتشغيل صوت تنبيه وصول الصورة
+                        openModal('modal-view-screenshot');
+                        if(typeof playSound === 'function') playSound();
+                        showToast('وصلت اللقطة', `تم استلام لقطة الشاشة من ${data.target_email}`, 'success');
+                    }
+                }
+            });
+        });
+}
 
         function listenToPrivateChat(email, chatId) {
             const box = document.getElementById(`msgs-${chatId}`);
@@ -1196,9 +1226,30 @@
         }
 
         async function logout() { if(confirm("هل أنت متأكد من تسجيل الخروج وإغلاق لوحة التحكم؟")) { await auth.signOut(); window.location.replace('index.html'); } }
-    </script>
+   </script>
+    <div id="modal-view-screenshot" class="fixed inset-0 z-[600] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="bg-dark-900 w-full max-w-4xl rounded-[3rem] border border-primary-500/30 overflow-hidden shadow-2xl flex flex-col">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center bg-dark-950">
+            <div>
+                <h3 class="text-xl font-black text-white">لقطة شاشة مباشرة</h3>
+                <p id="screenshot-info" class="text-[10px] text-primary-500 font-bold uppercase tracking-widest"></p>
+            </div>
+            <button onclick="closeModal('modal-view-screenshot')" class="w-12 h-12 rounded-2xl btn-glass text-white"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="flex-1 bg-black flex items-center justify-center overflow-hidden">
+            <img id="screenshot-display" src="" class="max-w-full max-h-[70vh] object-contain">
+        </div>
+        <div class="p-6 bg-dark-950 border-t border-white/5 text-center">
+            <a id="screenshot-download-link" href="" target="_blank" class="px-8 py-3 bg-primary-600 text-white rounded-xl font-black text-xs shadow-lg inline-block">
+                <i class="fas fa-download ml-2"></i> تحميل الصورة بجودة عالية
+            </a>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
+
 
 
 
