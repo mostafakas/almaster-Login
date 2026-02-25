@@ -932,53 +932,67 @@
         }
 
         function openAdminTaskDetail(taskId, ownerEmail) {
-            const user = allUsersData.find(u => u.email === ownerEmail);
-            if(!user || !user.tasks) return;
-            const task = user.tasks.find(t => t.id == taskId);
-            if(!task) return;
+    // جلب أحدث بيانات للموظف من الكاش المحلي
+    const user = allUsersData.find(u => u.email === ownerEmail);
+    if(!user || !user.tasks) return;
+    
+    // العثور على التاسك المطلوب
+    const task = user.tasks.find(t => t.id == taskId);
+    if(!task) return;
 
-            document.getElementById('m-hidden-id').value = task.id; 
-            document.getElementById('m-hidden-owner').value = ownerEmail;
-            document.getElementById('m-task-title').innerText = task.title;
-            document.getElementById('m-task-desc').innerHTML = task.desc;
-            document.getElementById('m-task-date').innerText = moment(task.id).format('D MMM YYYY');
-            document.getElementById('m-task-owner').innerText = user.name;
-            document.getElementById('m-task-project').innerText = task.projectName || 'مهمة عامة';
+    // ملء البيانات الأساسية
+    document.getElementById('m-hidden-id').value = task.id; 
+    document.getElementById('m-hidden-owner').value = ownerEmail;
+    document.getElementById('m-task-title').innerText = task.title;
+    document.getElementById('m-task-desc').innerHTML = task.desc;
+    document.getElementById('m-task-date').innerText = moment(task.id).format('D MMM YYYY');
+    document.getElementById('m-task-owner').innerText = user.name;
+    document.getElementById('m-task-project').innerText = task.projectName || 'مهمة عامة';
 
-            // --- إضافة التحكم في الأزرار ---
-            const actionBox = document.getElementById('admin-task-actions');
-            actionBox.innerHTML = '';
+    // تحديث الأزرار (اعتماد / إعادة)
+    const actionBox = document.getElementById('admin-task-actions');
+    actionBox.innerHTML = '';
+    if (task.status === 'review') {
+        actionBox.innerHTML = `
+            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'done', true)" class="flex-1 py-3 bg-green-600 text-white font-black rounded-xl text-xs">اعتماد الإنجاز ✅</button>
+            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'working', false)" class="flex-1 py-3 bg-orange-600 text-white font-black rounded-xl text-xs">إعادة للعمل ⚠️</button>`;
+    }
 
-            if (task.status === 'review') {
-                // الموظف أرسلها للمراجعة -> المدير لديه خياران
-                actionBox.innerHTML = `
-                    <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'done', true)" 
-                            class="flex-1 py-3 bg-green-600 text-white font-black rounded-xl shadow-lg hover:bg-green-500 transition-all text-xs">
-                        <i class="fas fa-check-double ml-1"></i> اعتماد وإرسال للأرشيف
-                    </button>
-                    <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'working', false)" 
-                            class="flex-1 py-3 bg-orange-600 text-white font-black rounded-xl shadow-lg hover:bg-orange-500 transition-all text-xs">
-                        <i class="fas fa-undo ml-1"></i> إعادة للموظف لتعديلها
-                    </button>
-                `;
-            } else if (task.status === 'done') {
-                actionBox.innerHTML = `<span class="bg-green-500/10 text-green-500 px-4 py-2 rounded-lg text-[10px] font-black border border-green-500/20">هذه المهمة مكتملة ومؤرشفة ✅</span>`;
+    // 🟢 عرض الشات (التعليقات) 🟢
+    const box = document.getElementById('m-task-comments');
+    box.innerHTML = ''; // مسح القديم
+
+    const comments = task.comments || [];
+    if (comments.length === 0) {
+        box.innerHTML = '<p class="text-center py-4 text-[10px] text-slate-600 italic">لا توجد مناقشات بعد</p>';
+    } else {
+        comments.forEach(c => {
+            if(c.user === 'system') {
+                box.innerHTML += `<div class="flex justify-center my-2"><span class="bg-dark-900 text-[9px] px-4 py-1 rounded-full text-slate-500 border border-white/5 font-bold uppercase">${c.text}</span></div>`;
             } else {
-                actionBox.innerHTML = `<span class="text-slate-500 text-[10px] font-bold">المهمة لا تزال قيد التنفيذ عند الموظف ⏳</span>`;
+                const isMe = c.user === currentUser.email;
+                const uInfo = allUsersData.find(x => x.email === c.user);
+                const photo = uInfo?.photo || DEFAULT_PHOTO + encodeURIComponent(c.name);
+                
+                box.innerHTML += `
+                    <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''}">
+                        <img src="${photo}" class="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0">
+                        <div class="p-4 rounded-2xl border border-white/5 flex-1 ${isMe ? 'bg-primary-600/20 rounded-tr-none' : 'bg-dark-950 rounded-tl-none'}">
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-[10px] font-black text-primary-500">${c.name}</p>
+                                <span class="text-[8px] text-slate-600">${moment(c.time).format('hh:mm A')}</span>
+                            </div>
+                            <p class="text-xs text-slate-300 leading-relaxed">${c.text}</p>
+                        </div>
+                    </div>`;
             }
-
-            // عرض التعليقات
-            const box = document.getElementById('m-task-comments'); box.innerHTML = '';
-            (task.comments||[]).forEach(c => {
-                const isSys = c.user === 'system';
-                if(isSys) box.innerHTML += `<div class="flex justify-center"><span class="bg-dark-900 text-[9px] px-4 py-1 rounded-full text-slate-500 border border-white/5 font-bold">${c.text}</span></div>`;
-                else {
-                    const u = allUsersData.find(x => x.email === c.user); const photo = u?.photo || DEFAULT_PHOTO+c.name;
-                    box.innerHTML += `<div class="flex gap-4"><img src="${photo}" class="w-8 h-8 rounded-lg object-cover"><div class="bg-dark-950 p-4 rounded-2xl border border-white/5 rounded-tr-none flex-1"><p class="text-[10px] font-black text-primary-500 mb-1">${c.name} <span class="text-[8px] text-slate-600 font-normal ml-2">${moment(c.time).format('h:mm A')}</span></p><p class="text-xs text-slate-300 leading-relaxed">${c.text}</p>${c.file ? `<a href="${c.file}" target="_blank" class="text-[9px] text-blue-400 mt-2 inline-block"><i class="fas fa-paperclip"></i> عرض الملف</a>` : ''}</div></div>`;
-                }
-            });
-            openModal('modal-task-detail');
-        }
+        });
+    }
+    
+    openModal('modal-task-detail');
+    // التمرير لآخر رسالة في الشات
+    setTimeout(() => { box.parentElement.scrollTop = box.parentElement.scrollHeight; }, 200);
+}
 
         async function adminDeleteTask() {
             if(!confirm("⚠️ تحذير: هل أنت متأكد من حذف هذه المهمة من النظام نهائياً؟")) return;
@@ -1286,8 +1300,10 @@
                 console.error("خطأ في الإرسال من الإدارة:", err);
             }
         }
-        function listenToScreenshotResults() {
-    // التأكد من أن الدالة لا تتكرر
+        f// 1. تعريف وقت بداية فتح لوحة المدير (خارج الدالة)
+const adminSessionStartTime = Date.now(); 
+
+function listenToScreenshotResults() {
     if (window.screenshotResultListener) window.screenshotResultListener();
 
     window.screenshotResultListener = db.collection('screenshot_requests')
@@ -1298,34 +1314,26 @@
                 if (change.type === "added" || change.type === "modified") {
                     const data = change.doc.data();
                     
-                    // منع تكرار العرض لنفس الطلب
-                    if (!window[`processed_${change.doc.id}`]) {
-                        window[`processed_${change.doc.id}`] = true;
+                    // تحويل وقت اكتمال اللقطة لملي ثانية
+                    const completedAt = data.completed_at ? data.completed_at.toMillis() : 0;
+
+                    // 2. الشرط السحري: لا تظهر الصورة إلا لو اكتملت "بعد" فتح الأدمن للصفحة
+                    if (completedAt > adminSessionStartTime && !window[`viewed_${change.doc.id}`]) {
+                        window[`viewed_${change.doc.id}`] = true;
 
                         const imgDisplay = document.getElementById('screenshot-display');
-                        const downloadLink = document.getElementById('screenshot-download-link');
-                        const infoText = document.getElementById('screenshot-info');
-
-                        if (imgDisplay && data.image_data) {
-                            imgDisplay.src = data.image_data;
-                            if (downloadLink) downloadLink.href = data.image_data;
-                            
-                            if (infoText) {
-                                const timeStr = data.completed_at ? moment(data.completed_at.toDate()).format('hh:mm:ss A') : 'الآن';
-                                infoText.innerText = `الموظف: ${data.target_email} | التوقيت: ${timeStr}`;
-                            }
-                            
-                            openModal('modal-view-screenshot');
-                            if (typeof playSound === 'function') playSound();
-                        }
+                        imgDisplay.src = data.image_data; 
+                        document.getElementById('screenshot-download-link').href = data.image_data;
+                        document.getElementById('screenshot-info').innerText = 
+                            `الموظف: ${data.target_email} | التوقيت: ${moment(completedAt).format('hh:mm:ss A')}`;
+                        
+                        openModal('modal-view-screenshot');
+                        if(typeof playAdminSound === 'function') playAdminSound();
                     }
                 }
             });
-        }, err => {
-            console.error("Error in screenshot listener:", err);
         });
 }
-
         function listenToPrivateChat(email, chatId) {
             const box = document.getElementById(`msgs-${chatId}`);
             if (!box) return;
@@ -1415,3 +1423,4 @@
 
 </body>
 </html>
+
