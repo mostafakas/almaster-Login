@@ -526,6 +526,9 @@
 
         function initAdminConsole() {
             startClock();
+            if ("Notification" in window) Notification.requestPermission(); // طلب إذن الإشعارات
+            listenToScreenshotResults();
+            listenToAllUsers(); // الدالة المعدلة فوق
             document.getElementById('admin-name').innerText = userProfile.name;
             document.getElementById('admin-img').src = userProfile.photo || DEFAULT_PHOTO + 'Admin';
             
@@ -540,15 +543,44 @@
         }
 
         function listenToAllUsers() {
-            db.collection('users').onSnapshot(snap => {
-                allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
-                updateAdminStats();
-                updateSidebarChatDropdown();
-                renderMonitorGrid();
-                renderGlobalTasks();
-                renderUsersTable();
-            });
-        }
+    db.collection('users').onSnapshot(snap => {
+        const newUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
+        
+        newUsersData.forEach(user => {
+            if (user.tasks) {
+                user.tasks.forEach(task => {
+                    const taskId = task.id.toString();
+                    const oldTask = previousTasksState[taskId];
+
+                    // لو دي مش أول مرة الداتا تحمل (عشان ميجيبش إشعارات قديمة)
+                    if (!isFirstTasksLoad) {
+                        
+                        // 🟢 الحالة الأولى: موظف بدأ شغل (تحول من started لـ working)
+                        if (oldTask && oldTask.status === 'started' && task.status === 'working') {
+                            showAdminNotif('تحديث عمل ⚙️', `الموظف ${user.name} بدأ العمل الآن على: ${task.title}`, 'info');
+                        }
+
+                        // 🔵 الحالة الثانية: مهمة وصلت لك للمراجعة (تحول لـ review وأنت المراجع)
+                        if (oldTask && oldTask.status !== 'review' && task.status === 'review' && task.reviewerEmail === currentUser.email.toLowerCase()) {
+                            showAdminNotif('طلب مراجعة 🔍', `قام ${user.name} بإنهاء مهمة ويريد مراجعتك: ${task.title}`, 'success');
+                        }
+                    }
+
+                    // تحديث الحالة المخزنة للمهمة
+                    previousTasksState[taskId] = { status: task.status, reviewerEmail: task.reviewerEmail };
+                });
+            }
+        });
+
+        isFirstTasksLoad = false; // بعد أول تحميل، نسمح بالإشعارات
+        allUsersData = newUsersData;
+        updateAdminStats();
+        updateSidebarChatDropdown();
+        renderMonitorGrid();
+        renderGlobalTasks();
+        renderUsersTable();
+    });
+}
         function listenToProjects() {
             db.collection('projects').onSnapshot(snap => { allProjects = snap.docs.map(d => ({ id: d.id, ...d.data() })); });
         }
@@ -1337,6 +1369,29 @@
         }
 
         async function logout() { if(confirm("هل أنت متأكد من تسجيل الخروج وإغلاق لوحة التحكم؟")) { await auth.signOut(); window.location.replace('index.html'); } }
+        // نظام الإشعارات للأدمن
+        const adminNotifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        let previousTasksState = {}; // لتخزين حالة المهام السابقة
+        let isFirstTasksLoad = true;
+        
+        function playAdminSound() { adminNotifSound.play().catch(e => {}); }
+        
+        function showAdminNotif(title, body, type = 'info') {
+            // 1. إشعار الويندوز
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(title, { body: body, icon: 'MASTER_LOGO_WHPNG.png' });
+            }
+            // 2. إشعار الـ Toast (لو عندك دالة showToast مفعلة)
+            if (typeof showToast === "function") {
+                showToast(title, body, type);
+            } else {
+                alert(title + ": " + body); // حل مؤقت لو مفيش توست
+            }
+            playAdminSound();
+        }
+        
+        // طلب الإذن عند فتح الصفحة
+        if ("Notification" in window) { Notification.requestPermission(); }
    </script>
     <div id="modal-view-screenshot" class="fixed inset-0 z-[600] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="bg-dark-900 w-full max-w-4xl rounded-[3rem] border border-primary-500/30 overflow-hidden shadow-2xl flex flex-col">
@@ -1360,18 +1415,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
