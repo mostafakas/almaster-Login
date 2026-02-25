@@ -413,26 +413,45 @@
     </div>
 
     <div id="modal-task-detail" class="fixed inset-0 z-[400] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4" onclick="closeModal('modal-task-detail')">
-        <div class="bg-dark-900 w-full max-w-4xl rounded-[3rem] p-10 border border-white/5 flex flex-col max-h-[90vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-start mb-6 border-b border-white/5 pb-6 shrink-0">
-                <div>
-                    <span id="m-task-project" class="bg-primary-500/10 text-primary-500 text-[10px] font-black px-4 py-1 rounded-full border border-primary-500/20 mb-3 inline-block">Project</span>
-                    <h2 id="m-task-title" class="text-3xl font-black text-white mb-2">Task Title</h2>
-                    <p class="text-[10px] font-bold text-slate-500">مسندة إلى: <span id="m-task-owner" class="text-primary-400">User</span> | <span id="m-task-date">Date</span></p>
-                </div>
-                <button onclick="closeModal('modal-task-detail')" class="w-10 h-10 rounded-full btn-glass flex items-center justify-center text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+    <div class="bg-dark-900 w-full max-w-4xl rounded-[3rem] p-10 border border-white/5 flex flex-col max-h-[90vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+        
+        <div class="flex justify-between items-start mb-6 border-b border-white/5 pb-6 shrink-0">
+            <div>
+                <span id="m-task-project" class="bg-primary-500/10 text-primary-500 text-[10px] font-black px-4 py-1 rounded-full border border-primary-500/20 mb-3 inline-block uppercase tracking-wider">Project</span>
+                <h2 id="m-task-title" class="text-3xl font-black text-white mb-2 leading-tight">Task Title</h2>
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    مسندة إلى: <span id="m-task-owner" class="text-primary-400">User</span> | 
+                    بتاريخ: <span id="m-task-date" class="text-slate-400">Date</span>
+                </p>
             </div>
-            <div class="flex-1 overflow-y-auto custom-scrollbar pr-4">
-                <div id="m-task-desc" class="text-sm leading-relaxed text-slate-300 bg-dark-950 p-6 rounded-2xl border border-white/5 mb-8 font-cairo"></div>
-                <h4 class="font-black text-xs text-primary-500 mb-4 border-r-2 border-primary-500 pr-3">سجل المناقشات</h4>
-                <div id="m-task-comments" class="flex flex-col gap-4 pb-10"></div>
-            </div>
-            <div class="pt-6 border-t border-white/5 mt-4 shrink-0 flex gap-3">
-                <button onclick="adminDeleteTask()" class="px-8 py-3 bg-red-500/10 text-red-500 font-black rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all text-xs"><i class="fas fa-trash-alt ml-2"></i> حذف المهمة نهائياً</button>
-            </div>
-            <input type="hidden" id="m-hidden-owner"><input type="hidden" id="m-hidden-id">
+            <button onclick="closeModal('modal-task-detail')" class="w-12 h-12 rounded-2xl btn-glass flex items-center justify-center text-slate-400 hover:text-white transition-all">
+                <i class="fas fa-times text-lg"></i>
+            </button>
         </div>
+
+        <div class="flex-1 overflow-y-auto custom-scrollbar pr-4">
+            <div id="m-task-desc" class="text-sm leading-relaxed text-slate-300 bg-dark-950 p-8 rounded-[2rem] border border-white/5 mb-8 font-cairo shadow-inner"></div>
+            
+            <h4 class="font-black text-[10px] uppercase tracking-[0.3em] text-primary-500 mb-6 flex items-center gap-3">
+                <span class="w-8 h-[1px] bg-primary-500/30"></span> سجل المناقشات والنشاط
+            </h4>
+            <div id="m-task-comments" class="flex flex-col gap-5 pb-10"></div>
+        </div>
+
+        <div class="pt-6 border-t border-white/5 mt-4 shrink-0 flex flex-wrap gap-4 items-center justify-between">
+            
+            <div id="admin-task-actions" class="flex flex-1 gap-3">
+                </div>
+
+            <button onclick="adminDeleteTask()" class="px-6 py-3 bg-red-500/5 text-red-500/40 hover:bg-red-500 hover:text-white border border-red-500/10 rounded-xl font-black transition-all text-[10px] flex items-center gap-2">
+                <i class="fas fa-trash-alt text-[9px]"></i> حذف المهمة نهائياً
+            </button>
+        </div>
+
+        <input type="hidden" id="m-hidden-owner">
+        <input type="hidden" id="m-hidden-id">
     </div>
+</div>
 
     <div id="chat-window" class="fixed bottom-20 right-8 w-[380px] h-[550px] bg-dark-900 border border-white/10 rounded-[2.5rem] overflow-hidden hidden flex flex-col shadow-2xl z-[100] animate-fade-in">
         <div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center shrink-0">
@@ -865,13 +884,37 @@
             const task = user.tasks.find(t => t.id == taskId);
             if(!task) return;
 
-            document.getElementById('m-hidden-id').value = task.id; document.getElementById('m-hidden-owner').value = ownerEmail;
+            document.getElementById('m-hidden-id').value = task.id; 
+            document.getElementById('m-hidden-owner').value = ownerEmail;
             document.getElementById('m-task-title').innerText = task.title;
             document.getElementById('m-task-desc').innerHTML = task.desc;
             document.getElementById('m-task-date').innerText = moment(task.id).format('D MMM YYYY');
             document.getElementById('m-task-owner').innerText = user.name;
             document.getElementById('m-task-project').innerText = task.projectName || 'مهمة عامة';
 
+            // --- إضافة التحكم في الأزرار ---
+            const actionBox = document.getElementById('admin-task-actions');
+            actionBox.innerHTML = '';
+
+            if (task.status === 'review') {
+                // الموظف أرسلها للمراجعة -> المدير لديه خياران
+                actionBox.innerHTML = `
+                    <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'done', true)" 
+                            class="flex-1 py-3 bg-green-600 text-white font-black rounded-xl shadow-lg hover:bg-green-500 transition-all text-xs">
+                        <i class="fas fa-check-double ml-1"></i> اعتماد وإرسال للأرشيف
+                    </button>
+                    <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'working', false)" 
+                            class="flex-1 py-3 bg-orange-600 text-white font-black rounded-xl shadow-lg hover:bg-orange-500 transition-all text-xs">
+                        <i class="fas fa-undo ml-1"></i> إعادة للموظف لتعديلها
+                    </button>
+                `;
+            } else if (task.status === 'done') {
+                actionBox.innerHTML = `<span class="bg-green-500/10 text-green-500 px-4 py-2 rounded-lg text-[10px] font-black border border-green-500/20">هذه المهمة مكتملة ومؤرشفة ✅</span>`;
+            } else {
+                actionBox.innerHTML = `<span class="text-slate-500 text-[10px] font-bold">المهمة لا تزال قيد التنفيذ عند الموظف ⏳</span>`;
+            }
+
+            // عرض التعليقات
             const box = document.getElementById('m-task-comments'); box.innerHTML = '';
             (task.comments||[]).forEach(c => {
                 const isSys = c.user === 'system';
@@ -891,6 +934,44 @@
             const doc = await userRef.get(); let tasks = doc.data().tasks || [];
             tasks = tasks.filter(t => t.id != id);
             await userRef.update({ tasks }); closeModal('modal-task-detail'); alert("تم حذف المهمة نهائياً.");
+        }
+        async function adminUpdateTaskStatus(taskOwnerEmail, taskId, newStatus, archive = false) {
+            const confirmMsg = newStatus === 'done' ? 
+                'هل أنت متأكد من اعتماد هذه المهمة كمنتهية ونقلها للأرشيف؟' : 
+                'هل تريد إعادة المهمة للموظف للعمل عليها مرة أخرى؟';
+
+            if(!confirm(confirmMsg)) return;
+
+            try {
+                const userRef = db.collection('users').doc(taskOwnerEmail.toLowerCase().trim());
+                const doc = await userRef.get();
+                if(!doc.exists) return;
+
+                let tasks = doc.data().tasks || [];
+                const idx = tasks.findIndex(t => t.id == taskId);
+
+                if(idx > -1) {
+                    tasks[idx].status = newStatus;
+                    tasks[idx].archived = archive;
+                    
+                    // إضافة تعليق من النظام يوضح من قام بالإجراء
+                    const actionName = newStatus === 'done' ? 'اعتماد الإنجاز' : 'إعادة للعمل';
+                    tasks[idx].comments = tasks[idx].comments || [];
+                    tasks[idx].comments.push({
+                        user: 'system',
+                        text: `قام المدير بـ ${actionName} في ${moment().format('hh:mm A')}`,
+                        time: Date.now()
+                    });
+
+                    await userRef.update({ tasks });
+                    closeModal('modal-task-detail');
+                    // إشعار نجاح للمدير
+                    alert("✅ تم تحديث حالة المهمة بنجاح.");
+                }
+            } catch (e) {
+                console.error("خطأ في تحديث التاسك:", e);
+                alert("❌ فشل في تحديث الحالة، تأكد من اتصال الإنترنت.");
+            }
         }
 
         // --- VIEW 3: USER MANAGEMENT ---
@@ -1258,6 +1339,7 @@
 
 </body>
 </html>
+
 
 
 
