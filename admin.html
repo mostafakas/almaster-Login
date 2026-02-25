@@ -150,8 +150,13 @@
                             <span id="selected-chat-label">اختر موظفاً للمحادثة...</span>
                             <i class="fas fa-chevron-down text-[8px]"></i>
                         </button>
-                        <div id="sidebar-chat-dropdown" class="absolute bottom-full left-0 right-0 mb-2 bg-dark-900 border border-white/10 rounded-2xl shadow-2xl max-h-60 overflow-y-auto hidden z-[100] custom-scrollbar">
-                            <div id="sidebar-chat-users-list" class="p-2 space-y-1">
+                        <div class="p-3 border-b border-white/5 sticky top-0 bg-dark-900 z-10">
+                            <input type="text" id="admin-user-search" oninput="updateSidebarChatDropdown()" 
+                                   class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-2 text-[10px] text-white outline-none focus:border-primary-500 placeholder:text-slate-600" 
+                                   placeholder="ابحث عن موظف...">
+                        </div>
+                        <div id="sidebar-chat-users-list" class="p-2 space-y-1"></div>
+                        <div id="sidebar-chat-users-list" class="p-2 space-y-1">
                                 </div>
                         </div>
                     </div>
@@ -527,25 +532,47 @@
 
         // 1. دالة تحديث قائمة الشات في السايد بار بالصور والتايتل
     function updateSidebarChatDropdown() {
-                const listContainer = document.getElementById('sidebar-chat-users-list');
-                if(!listContainer) return;
-                
-                listContainer.innerHTML = '';
-                allUsersData.forEach(u => {
-                    if(u.email !== currentUser.email) {
-                        listContainer.innerHTML += `
-                            <div onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}', '${u.title || u.role}'); toggleSidebarChatList();" 
-                                 class="flex items-center gap-3 p-2 rounded-xl hover:bg-dark-800 cursor-pointer border-b border-white/5 last:border-0 transition-all group">
-                                <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-8 h-8 rounded-lg object-cover border border-white/10">
-                                <div class="overflow-hidden leading-tight">
-                                    <p class="text-[10px] font-black text-white group-hover:text-primary-500 transition-colors">${u.name}</p>
-                                    <p class="text-[8px] font-bold text-slate-500 uppercase">${u.title || 'موظف'}</p>
-                                </div>
-                            </div>`;
-                    }
-                });
-            }
+    const listContainer = document.getElementById('sidebar-chat-users-list');
+    const searchInput = document.getElementById('admin-user-search');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    
+    if(!listContainer) return;
+    listContainer.innerHTML = '';
 
+    const statusPriority = { 'Online': 1, 'Meeting': 2, 'Break': 3, 'Offline': 4 };
+
+    const sortedUsers = [...allUsersData]
+        .filter(u => u.email !== currentUser.email)
+        .filter(u => u.name.toLowerCase().includes(searchTerm)) // الفلترة حسب البحث
+        .sort((a, b) => {
+            const priorityA = a.isIdle ? 1.5 : (statusPriority[a.status] || 4);
+            const priorityB = b.isIdle ? 1.5 : (statusPriority[b.status] || 4);
+            return priorityA - priorityB;
+        });
+
+    if (sortedUsers.length === 0) {
+        listContainer.innerHTML = '<p class="text-center py-4 text-[9px] text-slate-600">غير موجود</p>';
+        return;
+    }
+
+    sortedUsers.forEach(u => {
+        const s = u.status || 'Offline';
+        const pulseColor = u.isIdle ? 'bg-red-500' : (s === 'Online' ? 'bg-green-500' : s === 'Break' ? 'bg-orange-500' : 'bg-slate-700');
+
+        listContainer.innerHTML += `
+            <div onclick="openPrivateChat('${u.email}', '${u.name}', '${u.photo}', '${u.title || u.role}'); toggleSidebarChatList();" 
+                 class="flex items-center gap-3 p-2 rounded-xl hover:bg-dark-800 cursor-pointer border-b border-white/5 last:border-0 transition-all group">
+                <div class="relative">
+                    <img src="${u.photo || DEFAULT_PHOTO + u.name}" class="w-8 h-8 rounded-lg object-cover border border-white/10">
+                    <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ${pulseColor} border border-dark-900"></span>
+                </div>
+                <div class="overflow-hidden leading-tight text-right">
+                    <p class="text-[10px] font-black text-white group-hover:text-primary-500 transition-colors">${u.name}</p>
+                    <p class="text-[8px] font-bold text-slate-500 uppercase">${u.title || 'موظف'}</p>
+                </div>
+            </div>`;
+    });
+}
         function startChatFromSidebar() {
             const email = document.getElementById('sidebar-user-chat').value;
             if(!email) return;
@@ -1152,6 +1179,7 @@
     </script>
 </body>
 </html>
+
 
 
 
