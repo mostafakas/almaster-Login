@@ -733,40 +733,61 @@ function playSound() {
             inp.value = '';
         }
         function listenToPrivateChat(email, chatId) {
-            const box = document.getElementById(`msgs-${chatId}`);
-            
-            // شلنا الـ orderBy عشان نتجنب مشكلة الـ Index في فايربيز
-            db.collection('private_messages')
+            // إيقاف أي استماع قديم لنفس الشات لمنع تكرار العمليات في الخلفية
+            if (window[`chatListener_${chatId}`]) {
+                window[`chatListener_${chatId}`](); 
+            }
+
+            window[`chatListener_${chatId}`] = db.collection('private_messages')
             .where('participants', 'array-contains', currentUser.email.toLowerCase())
             .onSnapshot(snap => {
-                box.innerHTML = '';
+                // بنجيب النافذة من جوه الـ onSnapshot عشان نضمن إنها النافذة الحالية المفتوحة
+                const box = document.getElementById(`msgs-${chatId}`);
                 
-                // 1. تحويل البيانات لمصفوفة وترتيبها برمجياً حسب الوقت
+                // لو النافذة اتقفلت، نوقف الاستماع عشان نوفر موارد الجهاز
+                if (!box) {
+                    window[`chatListener_${chatId}`]();
+                    delete window[`chatListener_${chatId}`];
+                    return;
+                }
+
+                box.innerHTML = '';
                 let messages = [];
                 snap.docs.forEach(doc => messages.push(doc.data()));
                 
+                // ترتيب الرسائل بناءً على الوقت بدقة
                 messages.sort((a, b) => {
-                    let timeA = a.time ? (a.time.toMillis ? a.time.toMillis() : a.time) : 0;
-                    let timeB = b.time ? (b.time.toMillis ? b.time.toMillis() : b.time) : 0;
+                    let timeA = a.time ? (typeof a.time.toMillis === 'function' ? a.time.toMillis() : Date.now()) : Date.now();
+                    let timeB = b.time ? (typeof b.time.toMillis === 'function' ? b.time.toMillis() : Date.now()) : Date.now();
                     return timeA - timeB;
                 });
 
-                // 2. عرض الرسائل بعد الترتيب
+                // رسم فقاعات الشات
                 messages.forEach(m => {
+                    const senderStr = m.sender ? m.sender.toLowerCase() : "";
+                    const receiverStr = m.receiver ? m.receiver.toLowerCase() : "";
+                    const myEmail = currentUser.email.toLowerCase();
+                    const otherEmail = email.toLowerCase();
+
                     if (
-                        (m.sender === currentUser.email.toLowerCase() && m.receiver === email.toLowerCase()) ||
-                        (m.sender === email.toLowerCase() && m.receiver === currentUser.email.toLowerCase())
+                        (senderStr === myEmail && receiverStr === otherEmail) ||
+                        (senderStr === otherEmail && receiverStr === myEmail)
                     ) {
-                        const isMe = m.sender === currentUser.email.toLowerCase();
+                        const isMe = senderStr === myEmail;
+                        const timeDisplay = m.time ? moment(m.time.toMillis ? m.time.toMillis() : Date.now()).format('h:mm A') : 'الآن';
+                        
                         box.innerHTML += `
-                            <div class="chat-bubble ${isMe ? 'bubble-me' : 'bubble-them shadow-md'}">
-                                ${m.text}
+                            <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''} animate-fade-in group w-full mb-3">
+                                <div class="chat-bubble ${isMe ? 'bubble-me' : 'bubble-them shadow-md'} max-w-[85%]">
+                                    <p class="whitespace-pre-wrap text-[11px] leading-relaxed">${m.text}</p>
+                                    <span class="text-[7px] text-${isMe ? 'white/70' : 'slate-500'} mt-1 block font-bold">${timeDisplay}</span>
+                                </div>
                             </div>
                         `;
                     }
                 });
                 
-                // النزول لأسفل الشات تلقائياً
+                // النزول لآخر رسالة تلقائياً
                 box.scrollTop = box.scrollHeight;
             });
         }
@@ -823,26 +844,32 @@ function playSound() {
         function openQAModal(id) { document.getElementById('review-task-id').value = id; const sel = document.getElementById('qa-manager-select'); sel.innerHTML = ''; allUsersData.filter(u => ['admin', 'supervisor', 'leader'].includes(u.role)).forEach(m => sel.innerHTML += `<option value="${m.email}">${m.name} (${m.role})</option>`); openModal('modal-qa'); }
         async function confirmQA() { const id = document.getElementById('review-task-id').value; const rev = document.getElementById('qa-manager-select').value; const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == id); if(idx > -1) { tasks[idx].status = 'review'; tasks[idx].reviewerEmail = rev; tasks[idx].comments.push({ user: 'system', text: `Sent to: ${rev} for review`, time: Date.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); closeModal('modal-qa'); } }
         function handleFileSelect(i) { if(i.files[0]) { attachedFileObj = i.files[0]; document.getElementById('file-preview').innerText = "📎 Attachment Ready: " + attachedFileObj.name; document.getElementById('file-preview').classList.remove('hidden'); } }
+        let isInitialChatLoad = true; // متغير لمنع الإشعارات القديمة عند عمل ريفريش
+
         function listenToPrivateMessages() { 
             db.collection("private_messages").where("receiver", "==", currentUser.email.toLowerCase()).onSnapshot(s => { 
+                
+                // لو دي أول مرة الصفحة تحمل، نتجاهل الرسائل القديمة عشان الشاشات متفتحش كلها فجأة
+                if (isInitialChatLoad) {
+                    isInitialChatLoad = false;
+                    return; 
+                }
+                
                 if(!s.metadata.hasPendingWrites) { 
                     s.docChanges().forEach(c => { 
                         if (c.type === "added") {
                             const msg = c.doc.data();
                             
-                            // 1. إظهار الإشعار الصوتي والمرئي
+                            // إظهار التنبيه الجانبي
                             if (typeof showToast === "function") {
                                 showToast('رسالة خاصة جديدة', `من: ${msg.name} - ${msg.text.substring(0,20)}...`, 'info');
                             }
 
-                            // 2. البحث عن بيانات المرسل لفتح الشات بالصورة والاسم الصحيحين
+                            // فتح نافذة الدردشة فوراً
                             const senderData = allUsersData.find(u => u.email.toLowerCase() === msg.sender.toLowerCase());
-                            
                             if (senderData) {
-                                // فتح نافذة الدردشة تلقائياً للمستلم
                                 openPrivateChat(senderData.email, senderData.name, senderData.photo, senderData.title);
                             } else {
-                                // كإجراء احتياطي لو البيانات مش محملة
                                 openPrivateChat(msg.sender, msg.name, '', 'Member');
                             }
                         } 
@@ -855,6 +882,7 @@ function playSound() {
     <div id="toast-container" class="fixed top-5 right-5 z-[400] flex flex-col gap-3 w-80 pointer-events-none"></div>
 </body>
 </html>
+
 
 
 
