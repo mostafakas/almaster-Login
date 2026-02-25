@@ -13,7 +13,7 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src=    "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
@@ -1153,7 +1153,10 @@
             }
         }
         function listenToScreenshotResults() {
-    db.collection('screenshot_requests')
+    // التأكد من أن الدالة لا تتكرر
+    if (window.screenshotResultListener) window.screenshotResultListener();
+
+    window.screenshotResultListener = db.collection('screenshot_requests')
         .where('requested_by', '==', currentUser.email)
         .where('status', '==', 'completed')
         .onSnapshot(snap => {
@@ -1161,25 +1164,31 @@
                 if (change.type === "added" || change.type === "modified") {
                     const data = change.doc.data();
                     
-                    if (data.status === 'completed' && !window[`viewed_${change.doc.id}`]) {
-                        window[`viewed_${change.doc.id}`] = true;
+                    // منع تكرار العرض لنفس الطلب
+                    if (!window[`processed_${change.doc.id}`]) {
+                        window[`processed_${change.doc.id}`] = true;
 
-                        // عرض الصورة من حقل الـ image_data (Base64)
                         const imgDisplay = document.getElementById('screenshot-display');
                         const downloadLink = document.getElementById('screenshot-download-link');
-                        
-                        imgDisplay.src = data.image_data; // هنا يوضع النص المشفر
-                        downloadLink.href = data.image_data;
-                        
-                        document.getElementById('screenshot-info').innerText = 
-                            `الموظف: ${data.target_email} | التوقيت: ${moment(data.completed_at?.toDate()).format('hh:mm:ss A')}`;
-                        
-                        openModal('modal-view-screenshot');
-                        if(typeof playSound === 'function') playSound();
-                        showToast('وصلت لقطة الشاشة', `تم استلام تحديث من ${data.target_email}`, 'success');
+                        const infoText = document.getElementById('screenshot-info');
+
+                        if (imgDisplay && data.image_data) {
+                            imgDisplay.src = data.image_data;
+                            if (downloadLink) downloadLink.href = data.image_data;
+                            
+                            if (infoText) {
+                                const timeStr = data.completed_at ? moment(data.completed_at.toDate()).format('hh:mm:ss A') : 'الآن';
+                                infoText.innerText = `الموظف: ${data.target_email} | التوقيت: ${timeStr}`;
+                            }
+                            
+                            openModal('modal-view-screenshot');
+                            if (typeof playSound === 'function') playSound();
+                        }
                     }
                 }
             });
+        }, err => {
+            console.error("Error in screenshot listener:", err);
         });
 }
 
@@ -1249,6 +1258,7 @@
 
 </body>
 </html>
+
 
 
 
