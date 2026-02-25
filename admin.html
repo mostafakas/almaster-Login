@@ -1153,9 +1153,6 @@
             }
         }
         function listenToScreenshotResults() {
-    // الاستماع فقط للطلبات التي اكتملت في آخر 5 دقائق لتجنب عرض صور قديمة
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60000);
-    
     db.collection('screenshot_requests')
         .where('requested_by', '==', currentUser.email)
         .where('status', '==', 'completed')
@@ -1164,19 +1161,22 @@
                 if (change.type === "added" || change.type === "modified") {
                     const data = change.doc.data();
                     
-                    // إذا لم نقم بعرض هذه الصورة من قبل
                     if (data.status === 'completed' && !window[`viewed_${change.doc.id}`]) {
-                        window[`viewed_${change.doc.id}`] = true; // علامة لعدم التكرار
+                        window[`viewed_${change.doc.id}`] = true;
 
-                        // 1. تحديث البيانات في المودال
-                        document.getElementById('screenshot-display').src = data.screenshot_url;
-                        document.getElementById('screenshot-download-link').href = data.screenshot_url;
-                        document.getElementById('screenshot-info').innerText = `الموظف: ${data.target_email} | التوقيت: ${moment(data.completed_at?.toDate()).format('hh:mm:ss A')}`;
+                        // عرض الصورة من حقل الـ image_data (Base64)
+                        const imgDisplay = document.getElementById('screenshot-display');
+                        const downloadLink = document.getElementById('screenshot-download-link');
                         
-                        // 2. إظهار المودال وتشغيل صوت تنبيه وصول الصورة
+                        imgDisplay.src = data.image_data; // هنا يوضع النص المشفر
+                        downloadLink.href = data.image_data;
+                        
+                        document.getElementById('screenshot-info').innerText = 
+                            `الموظف: ${data.target_email} | التوقيت: ${moment(data.completed_at?.toDate()).format('hh:mm:ss A')}`;
+                        
                         openModal('modal-view-screenshot');
                         if(typeof playSound === 'function') playSound();
-                        showToast('وصلت اللقطة', `تم استلام لقطة الشاشة من ${data.target_email}`, 'success');
+                        showToast('وصلت لقطة الشاشة', `تم استلام تحديث من ${data.target_email}`, 'success');
                     }
                 }
             });
@@ -1249,6 +1249,7 @@
 
 </body>
 </html>
+
 
 
 
