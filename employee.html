@@ -253,18 +253,20 @@
         </div>
     </div>
 
-    <div id="modal-qa" class="fixed inset-0 z-[250] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-dark-900 w-full max-w-sm rounded-[2.5rem] p-10 border border-primary-500/20 shadow-2xl animate-fade-in">
-            <h3 class="text-xl font-black text-primary-500 mb-4 text-center tracking-tight uppercase">Quality Review</h3>
-            <p class="text-[11px] text-slate-500 mb-8 text-center leading-relaxed font-bold italic">اختر المشرف المسؤول ليتم اعتماد المهمة ضمن إنتاجية اليوم:</p>
-            <input type="hidden" id="review-task-id">
-            <select id="qa-manager-select" class="form-input font-black mb-8 border-2 border-white/5 bg-dark-950 h-12"></select>
-            <div class="flex gap-2">
-                <button onclick="confirmQA()" class="flex-1 bg-primary-600 py-4 rounded-2xl font-black shadow-xl active:scale-95 transition-all">Submit for Review</button>
-                <button onclick="closeModal('modal-qa')" class="px-6 bg-dark-800 rounded-2xl font-bold text-slate-400">Back</button>
+            <div id="modal-qa" class="fixed inset-0 z-[250] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-dark-900 w-full max-w-md rounded-[3rem] p-8 border border-white/5 shadow-2xl animate-fade-in flex flex-col max-h-[80vh]">
+                <h3 class="text-xl font-black text-primary-500 mb-2 text-center">تقديم للمراجعة</h3>
+                <p class="text-[10px] text-slate-500 mb-6 text-center font-bold">اختر المشرف المسؤول عن مراجعة الجودة:</p>
+                
+                <input type="hidden" id="review-task-id">
+                <div id="qa-managers-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-6 pr-2">
+                    </div>
+        
+                <div class="flex gap-3">
+                    <button onclick="closeModal('modal-qa')" class="flex-1 py-4 bg-dark-800 rounded-2xl font-bold text-slate-400 active:scale-95 transition-all">إلغاء</button>
+                </div>
             </div>
-        </div>
-    </div>
+            </div>
 
     <script>
                 // --- 1. CORE CONFIG & GLOBALS ---// إضافة متغيرات نظام الإشعارات
@@ -470,17 +472,34 @@ function playSound() {
 
             }, 60000); // الفحص يتم كل دقيقة (60000 مللي ثانية)
         }
+        let lastTasksState = {}; // لتخزين حالات المهام ومقارنتها
+
         function listenToProfile() {
             db.collection('users').doc(currentUser.email.toLowerCase()).onSnapshot(doc => {
                 if(!doc.exists) return;
-                userProfile = doc.data();
-                updateProfileUI(userProfile);
-                currentTasks = userProfile.tasks || [];
-                // التحقق من المهام الجديدة
-                if (currentTasks.length > previousTasksCount && previousTasksCount > 0) {
-                    showToast('مهمة جديدة', 'تم إسناد مهمة جديدة إليك للتو.', 'success');
+                const data = doc.data();
+                userProfile = data;
+                updateProfileUI(data);
+                
+                const newTasks = data.tasks || [];
+        
+                // 1. اكتشاف المهام الجديدة تماماً
+                if (newTasks.length > currentTasks.length && currentTasks.length > 0) {
+                    const latestTask = newTasks[newTasks.length - 1];
+                    showToast('مهمة جديدة 📋', `تم إسناد مهمة: ${latestTask.title}`, 'success');
+                    if(typeof showWindowsNotification === 'function') showWindowsNotification('مهمة جديدة', latestTask.title);
                 }
-                previousTasksCount = currentTasks.length;
+        
+                // 2. اكتشاف المهام المسترجعة للعمل (Re-assigned)
+                newTasks.forEach(task => {
+                    const oldTask = currentTasks.find(t => t.id === task.id);
+                    if (oldTask && oldTask.status === 'review' && task.status === 'working') {
+                        showToast('تحديث مهمة ⚠️', `أعيدت المهمة "${task.title}" للعمل عليها مجدداً`, 'warning');
+                        if(typeof showWindowsNotification === 'function') showWindowsNotification('إعادة عمل', `يرجى مراجعة ملاحظات المدير على المهمة: ${task.title}`);
+                    }
+                });
+        
+                currentTasks = newTasks;
                 renderTaskList();
                 if(selectedTaskId) {
                     const t = currentTasks.find(x => x.id == selectedTaskId);
@@ -915,8 +934,49 @@ function listenToPrivateChat(email, chatId) {
                 }
             }
         async function updateTaskStep(id, s) { const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == id); if(idx > -1) { tasks[idx].status = s; tasks[idx].comments = tasks[idx].comments || []; tasks[idx].comments.push({ user: 'system', text: `Changed Status to: ${s}`, time: Date.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); } }
-        function openQAModal(id) { document.getElementById('review-task-id').value = id; const sel = document.getElementById('qa-manager-select'); sel.innerHTML = ''; allUsersData.filter(u => ['admin', 'supervisor', 'leader'].includes(u.role)).forEach(m => sel.innerHTML += `<option value="${m.email}">${m.name} (${m.role})</option>`); openModal('modal-qa'); }
-        async function confirmQA() { const id = document.getElementById('review-task-id').value; const rev = document.getElementById('qa-manager-select').value; const tasks = [...userProfile.tasks]; const idx = tasks.findIndex(t => t.id == id); if(idx > -1) { tasks[idx].status = 'review'; tasks[idx].reviewerEmail = rev; tasks[idx].comments.push({ user: 'system', text: `Sent to: ${rev} for review`, time: Date.now() }); await db.collection('users').doc(currentUser.email).update({ tasks }); closeModal('modal-qa'); } }
+        function openQAModal(id) {
+            document.getElementById('review-task-id').value = id;
+            const listContainer = document.getElementById('qa-managers-list');
+            listContainer.innerHTML = '';
+        
+            // تصفية المديرين والمشرفين فقط
+            const managers = allUsersData.filter(u => ['admin', 'supervisor', 'leader'].includes(u.role));
+        
+            managers.forEach(m => {
+                listContainer.innerHTML += `
+                    <div onclick="confirmQA('${m.email}', '${m.name}')" 
+                         class="flex items-center gap-4 p-3 rounded-2xl bg-dark-950 border border-white/5 hover:border-primary-500 transition-all cursor-pointer group">
+                        <img src="${m.photo || DEFAULT_PHOTO + m.name}" class="w-10 h-10 rounded-xl object-cover border border-white/10">
+                        <div class="flex-1 text-right">
+                            <p class="text-xs font-black text-white group-hover:text-primary-500">${m.name}</p>
+                            <p class="text-[8px] text-slate-500 uppercase font-bold tracking-widest">${m.title || m.role}</p>
+                        </div>
+                        <i class="fas fa-chevron-left text-[10px] text-slate-700 group-hover:text-primary-500"></i>
+                    </div>`;
+            });
+            openModal('modal-qa');
+        }
+        
+        async function confirmQA(managerEmail, managerName) {
+            const id = document.getElementById('review-task-id').value;
+            const tasks = [...userProfile.tasks];
+            const idx = tasks.findIndex(t => t.id == id);
+            
+            if(idx > -1) {
+                tasks[idx].status = 'review';
+                tasks[idx].reviewerEmail = managerEmail;
+                tasks[idx].comments = tasks[idx].comments || [];
+                tasks[idx].comments.push({ 
+                    user: 'system', 
+                    text: `تم إرسال المهمة للمراجعة من قبل: ${managerName}`, 
+                    time: Date.now() 
+                });
+        
+                await db.collection('users').doc(currentUser.email.toLowerCase()).update({ tasks });
+                closeModal('modal-qa');
+                showToast('تم الإرسال', `المهمة الآن قيد المراجعة لدى ${managerName}`, 'success');
+            }
+        }
         function handleFileSelect(i) { if(i.files[0]) { attachedFileObj = i.files[0]; document.getElementById('file-preview').innerText = "📎 Attachment Ready: " + attachedFileObj.name; document.getElementById('file-preview').classList.remove('hidden'); } }
         let isInitialChatLoad = true; // متغير لمنع الإشعارات القديمة عند عمل ريفريش
 
@@ -1051,6 +1111,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
