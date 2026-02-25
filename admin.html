@@ -412,20 +412,7 @@
         </div>
     </div>
 
-        <h4 class="font-black text-[10px] uppercase tracking-[0.3em] text-primary-500 mb-6 flex items-center gap-3">
-                <span class="w-8 h-[1px] bg-primary-500/30"></span> سجل المناقشات والنشاط
-            </h4>
-            <div id="m-task-comments" class="flex flex-col gap-5 pb-4"></div>
-
-            <form onsubmit="handleAdminCommentSubmit(event)" class="mt-4 mb-6 flex gap-2 bg-dark-950 p-2 rounded-2xl border border-white/10 shadow-inner">
-                <input type="text" id="admin-comment-input" 
-                       class="flex-1 bg-transparent border-none focus:ring-0 text-xs text-white px-4 py-2" 
-                       placeholder="اكتب ملاحظاتك أو ردك للموظف..." autocomplete="off">
-                <button type="submit" id="admin-comment-btn" 
-                        class="w-12 h-10 bg-primary-600 rounded-xl hover:bg-primary-500 transition shadow-lg text-white">
-                    <i class="fas fa-paper-plane text-xs"></i>
-                </button>
-            </form>
+    <div id="modal-task-detail" class="fixed inset-0 z-[400] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4" onclick="closeModal('modal-task-detail')">
     <div class="bg-dark-900 w-full max-w-4xl rounded-[3rem] p-10 border border-white/5 flex flex-col max-h-[90vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
         
         <div class="flex justify-between items-start mb-6 border-b border-white/5 pb-6 shrink-0">
@@ -1394,49 +1381,6 @@ function listenToScreenshotResults() {
         let isFirstTasksLoad = true;
         const adminSessionStartTime = Date.now(); // 👈 خلي السطر ده بس واحذف أي تكرار ليه تحت        
         function playAdminSound() { adminNotifSound.play().catch(e => {}); }
-        async function handleAdminCommentSubmit(e) {
-            e.preventDefault();
-            const inp = document.getElementById('admin-comment-input');
-            const taskId = document.getElementById('m-hidden-id').value;
-            const ownerEmail = document.getElementById('m-hidden-owner').value;
-
-            if(!inp.value.trim() || !taskId || !ownerEmail) return;
-
-            const btn = document.getElementById('admin-comment-btn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-
-            try {
-                const userRef = db.collection('users').doc(ownerEmail.toLowerCase().trim());
-                const doc = await userRef.get();
-                if(!doc.exists) return;
-
-                let tasks = doc.data().tasks || [];
-                const idx = tasks.findIndex(t => t.id == taskId);
-
-                if(idx > -1) {
-                    tasks[idx].comments = tasks[idx].comments || [];
-                    tasks[idx].comments.push({
-                        user: currentUser.email,
-                        name: userProfile.name + " (الإدارة)",
-                        text: inp.value.trim(),
-                        time: Date.now()
-                    });
-
-                    await userRef.update({ tasks });
-                    inp.value = ''; // تصفير الحقل
-                    
-                    // تحديث العرض فوراً دون إغلاق المودال
-                    openAdminTaskDetail(taskId, ownerEmail); 
-                }
-            } catch (err) {
-                console.error(err);
-                alert("فشل إرسال التعليق");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-paper-plane text-xs"></i>';
-            }
-        }
         
         function showAdminNotif(title, body, type = 'info') {
             // 1. إشعار الويندوز
@@ -1477,8 +1421,6 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
-
-
 
 
 
