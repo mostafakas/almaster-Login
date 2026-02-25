@@ -949,75 +949,54 @@ function listenToPrivateChat(email, chatId) {
     const requestId = document.getElementById('current-request-id').value;
     
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-bolt fa-spin ml-2"></i> جاري الاقتناص...';
+    btn.innerHTML = '<i class="fas fa-bolt fa-spin ml-2"></i> جاري المعالجة...';
 
     try {
-        // 1. طلب البث (بمجرد ما الموظف يختار الشاشة، العملية بتبدأ فوراً)
-        const stream = await navigator.mediaDevices.getDisplayMedia({ 
-            video: { displaySurface: "monitor" }, // تحفيز اختيار الشاشة كاملة
-            audio: false 
-        });
-
-        // 2. إنشاء عنصر فيديو "مخفي" لمعالجة اللقطة بسرعة
+        // 1. طلب مشاركة الشاشة
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
         const video = document.createElement('video');
         video.srcObject = stream;
-        video.muted = true;
-        
-        // بمجرد تشغيل الفيديو (وده بيحصل في أجزاء من الثانية بعد الاختيار)
+
         video.onloadedmetadata = () => {
             video.play();
             
-            // انتظر 300 مللي ثانية فقط لضمان وضوح الصورة
             setTimeout(async () => {
+                // 2. تصغير أبعاد الصورة لتقليل الحجم (مهم جداً لـ Firestore)
                 const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const ctx = canvas.getContext('2d');
+                const scaleFactor = 0.7; // تصغير الأبعاد بنسبة 30%
+                canvas.width = video.videoWidth * scaleFactor;
+                canvas.height = video.videoHeight * scaleFactor;
                 
-                // رسم اللقطة
+                const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
-                // إيقاف البث فوراً (عشان علامة مشاركة الشاشة تختفي عند الموظف)
+                // إيقاف البث فوراً
                 stream.getTracks().forEach(track => track.stop());
 
-                // 3. تحويل اللقطة ورفعها في الخلفية
-                canvas.toBlob(async (blob) => {
-                    btn.innerHTML = '<i class="fas fa-cloud-upload-alt fa-spin ml-2"></i> جاري الإرسال...';
-                    
-                    const fileName = `screenshots/${currentUser.email}/${Date.now()}.jpg`;
-                    const fileRef = storage.ref().child(fileName);
-                    
-                    try {
-                        await fileRef.put(blob);
-                        const url = await fileRef.getDownloadURL();
+                // 3. تحويل الصورة لنص (Base64) مع ضغط الجودة لـ 40%
+                const base64Image = canvas.toDataURL('image/jpeg', 0.4);
+                
+                btn.innerHTML = '<i class="fas fa-paper-plane fa-spin ml-2"></i> جاري الإرسال...';
 
-                        // تحديث الطلب في قاعدة البيانات
-                        await db.collection('screenshot_requests').doc(requestId).update({
-                            status: 'completed',
-                            screenshot_url: url,
-                            completed_at: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+                // 4. الحفظ مباشرة في Firestore (بدون Storage)
+                await db.collection('screenshot_requests').doc(requestId).update({
+                    status: 'completed',
+                    image_data: base64Image, // النص المشفر للصورة
+                    completed_at: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
-                        // إغلاق المودال والنجاح
-                        closeModal('modal-screenshot-capture');
-                        showToast('نجاح', 'تم إرسال اللقطة بنجاح للإدارة.', 'success');
-                    } catch (err) {
-                        console.error("رفع الصورة فشل:", err);
-                        alert("حدث خطأ أثناء الرفع، تأكد من الإنترنت.");
-                    } finally {
-                        btn.disabled = false;
-                        btn.innerText = 'التقاط وإرسال الشاشة الآن';
-                    }
-                }, 'image/jpeg', 0.6); // ضغط الصورة لـ 60% لسرعة الرفع
+                closeModal('modal-screenshot-capture');
+                showToast('نجاح', 'تم إرسال اللقطة بنجاح للإدارة.', 'success');
+                btn.disabled = false;
+                btn.innerText = 'التقاط وإرسال الشاشة الآن';
 
-            }, 300); 
+            }, 500);
         };
-
     } catch (err) {
-        console.error("فشل الالتقاط:", err);
+        console.error(err);
+        alert("فشل الالتقاط: تأكد من اختيار الشاشة والموافقة.");
         btn.disabled = false;
         btn.innerText = 'التقاط وإرسال الشاشة الآن';
-        alert("تم إلغاء الطلب أو فشل الوصول للشاشة.");
     }
 }
         function listenToPrivateMessages() { 
@@ -1059,6 +1038,7 @@ function listenToPrivateChat(email, chatId) {
         </div>
 </body>
 </html>
+
 
 
 
