@@ -567,34 +567,72 @@
         function listenToAllUsers() {
     db.collection('users').onSnapshot(snap => {
         const newUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
-        
+
         newUsersData.forEach(user => {
+            const email = user.email;
+            // تحديد الحالة الفعلية (مع دمج حالة الخمول)
+            const currentStatus = user.isIdle ? 'Idle' : (user.status || 'Offline');
+            const oldStatus = userStatusesCache[email];
+
+            // منع الإشعارات عند أول تحميل للصفحة
+            if (!isFirstTasksLoad && oldStatus !== undefined && oldStatus !== currentStatus) {
+                
+                let title = `تحديث من: ${user.name}`;
+                let message = '';
+                let type = 'info';
+
+                // 1. اكتشاف تسجيل الدخول (من Offline إلى أي حالة نشطة)
+                if (oldStatus === 'Offline' && currentStatus !== 'Offline') {
+                    message = `قام بتسجيل الدخول للنظام الآن ✅`;
+                    type = 'success';
+                } 
+                // 2. اكتشاف تسجيل الخروج (من أي حالة إلى Offline)
+                else if (currentStatus === 'Offline') {
+                    message = `سجل خروج أو أغلق النظام ❌`;
+                    type = 'danger';
+                }
+                // 3. اكتشاف دخول وضع الخمول (Idle)
+                else if (currentStatus === 'Idle') {
+                    message = `دخل في وضع الخمول (ترك الجهاز) 😴`;
+                    type = 'warning';
+                }
+                // 4. اكتشاف العودة من الخمول
+                else if (oldStatus === 'Idle' && currentStatus === 'Online') {
+                    message = `عاد للنشاط والعمل مجدداً ⚡`;
+                    type = 'success';
+                }
+                // 5. اكتشاف تغيير الحالات اليدوية (Break, Meeting, Online)
+                else {
+                    const statusNames = { 'Online': 'بدء العمل', 'Break': 'استراحة', 'Meeting': 'في اجتماع' };
+                    message = `غير حالته الآن إلى: ${statusNames[currentStatus] || currentStatus}`;
+                }
+
+                // إرسال الإشعار (الويندوز + الصوت + التوست)
+                showAdminNotif(title, message, type);
+            }
+
+            // تحديث الكاش للحالة القادمة
+            userStatusesCache[email] = currentStatus;
+
+            // مراقبة التاسكات (الكود القديم الخاص بك)
             if (user.tasks) {
                 user.tasks.forEach(task => {
                     const taskId = task.id.toString();
                     const oldTask = previousTasksState[taskId];
-
-                    // لو دي مش أول مرة الداتا تحمل (عشان ميجيبش إشعارات قديمة)
-                    if (!isFirstTasksLoad) {
-                        
-                        // 🟢 الحالة الأولى: موظف بدأ شغل (تحول من started لـ working)
-                        if (oldTask && oldTask.status === 'started' && task.status === 'working') {
-                            showAdminNotif('تحديث عمل ⚙️', `الموظف ${user.name} بدأ العمل الآن على: ${task.title}`, 'info');
+                    if (!isFirstTasksLoad && oldTask) {
+                        if (oldTask.status === 'started' && task.status === 'working') {
+                            showAdminNotif('تحديث عمل ⚙️', `${user.name} بدأ العمل على: ${task.title}`, 'info');
                         }
-
-                        // 🔵 الحالة الثانية: مهمة وصلت لك للمراجعة (تحول لـ review وأنت المراجع)
-                        if (oldTask && oldTask.status !== 'review' && task.status === 'review' && task.reviewerEmail === currentUser.email.toLowerCase()) {
-                            showAdminNotif('طلب مراجعة 🔍', `قام ${user.name} بإنهاء مهمة ويريد مراجعتك: ${task.title}`, 'success');
+                        if (oldTask.status !== 'review' && task.status === 'review' && task.reviewerEmail === currentUser.email.toLowerCase()) {
+                            showAdminNotif('طلب مراجعة 🔍', `قام ${user.name} بإنهاء مهمة: ${task.title}`, 'success');
                         }
                     }
-
-                    // تحديث الحالة المخزنة للمهمة
                     previousTasksState[taskId] = { status: task.status, reviewerEmail: task.reviewerEmail };
                 });
             }
         });
 
-        isFirstTasksLoad = false; // بعد أول تحميل، نسمح بالإشعارات
+        isFirstTasksLoad = false;
         allUsersData = newUsersData;
         updateAdminStats();
         updateSidebarChatDropdown();
@@ -1514,6 +1552,10 @@ function listenToScreenshotResults() {
         const adminNotifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
         let previousTasksState = {}; // لتخزين حالة المهام السابقة
         let isFirstTasksLoad = true;
+        let userStatusesCache = {};
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        let allUsersData = [];
         const adminSessionStartTime = Date.now(); // 👈 خلي السطر ده بس واحذف أي تكرار ليه تحت        
         function playAdminSound() { adminNotifSound.play().catch(e => {}); }
         async function handleAdminCommentSubmit(e) {
@@ -1560,22 +1602,39 @@ function listenToScreenshotResults() {
             }
         }
         
-        function showAdminNotif(title, body, type = 'info') {
-            // 1. إشعار الويندوز
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(title, { body: body, icon: 'MASTER_LOGO_WHPNG.png' });
+       function showAdminNotif(title, body, type = 'info') {
+            // 1. تشغيل الصوت فوراً (الجرس)
+            if (typeof playAdminSound === "function") {
+                playAdminSound();
             }
-            // 2. إشعار الـ Toast (لو عندك دالة showToast مفعلة)
+        
+            // 2. إشعار الويندوز (Desktop Notification)
+            if ("Notification" in window && Notification.permission === "granted") {
+                try {
+                    new Notification(title, {
+                        body: body,
+                        icon: 'MASTER_LOGO_WHPNG.png',
+                        tag: 'admin-alert', // لترتيب الإشعارات ومنع تداخلها
+                        silent: true // جعل الإشعار صامت لأننا نشغل صوتنا المخصص
+                    });
+                } catch (err) {
+                    console.error("خطأ في إشعار الويندوز:", err);
+                }
+            }
+        
+            // 3. إشعار التوست الداخلي (Toast)
             if (typeof showToast === "function") {
                 showToast(title, body, type);
             } else {
-                alert(title + ": " + body); // حل مؤقت لو مفيش توست
+                // تم استبدال الـ alert بـ console.log لضمان عدم توقف تحديثات الشاشة
+                console.log(`%c[إشعار]: ${title} - ${body}`, "color: #0ea5e9; font-weight: bold;");
             }
-            playAdminSound();
         }
         
-        // طلب الإذن عند فتح الصفحة
-        if ("Notification" in window) { Notification.requestPermission(); }
+        // طلب الإذن عند فتح الصفحة (تأكد من وجود هذا السطر)
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
    </script>
     <div id="modal-view-screenshot" class="fixed inset-0 z-[600] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="bg-dark-900 w-full max-w-4xl rounded-[3rem] border border-primary-500/30 overflow-hidden shadow-2xl flex flex-col">
@@ -1642,6 +1701,7 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
+
 
 
 
