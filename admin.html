@@ -414,49 +414,101 @@
         </div>
     </div>
 
-<div id="modal-task-detail" class="fixed inset-0 z-[400] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4" onclick="closeModal('modal-task-detail')">
-    <div class="bg-dark-900 w-full max-w-4xl rounded-[3rem] p-10 border border-white/5 flex flex-col max-h-[90vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+<div id="modal-task-detail" class="fixed inset-0 z-[600] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4" onclick="closeModal('modal-task-detail')">
+    <div class="bg-dark-950 w-full max-w-5xl rounded-[3rem] border border-white/10 flex flex-col max-h-[92vh] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] relative" onclick="event.stopPropagation()">
         
-        <div class="flex justify-between items-start mb-6 border-b border-white/5 pb-6 shrink-0">
-            <div>
-                <span id="m-task-project" class="bg-primary-500/10 text-primary-500 text-[10px] font-black px-4 py-1 rounded-full border border-primary-500/20 mb-3 inline-block uppercase tracking-wider">Project</span>
-                <h2 id="m-task-title" class="text-3xl font-black text-white mb-2 leading-tight">Task Title</h2>
-                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    مسندة إلى: <span id="m-task-owner" class="text-primary-400">User</span> | 
-                    بتاريخ: <span id="m-task-date" class="text-slate-400">Date</span>
-                </p>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 blur-[100px] pointer-events-none"></div>
+
+        <div class="p-8 border-b border-white/5 flex justify-between items-start bg-dark-950/50 shrink-0 relative z-10">
+            <div class="flex-1">
+                <div class="flex items-center gap-3 mb-3">
+                    <span id="m-task-project" class="bg-primary-600/10 text-primary-500 text-[10px] font-black px-4 py-1.5 rounded-full border border-primary-500/20 uppercase tracking-widest">General Task</span>
+                    <span id="m-task-date-badge" class="text-[9px] text-slate-500 font-bold"><i class="far fa-calendar-alt ml-1"></i> <span id="m-task-date">--/--/----</span></span>
+                </div>
+                <h2 id="m-task-title" class="text-3xl font-black text-white leading-tight">اسم المهمة يظهر هنا</h2>
             </div>
-            <button onclick="closeModal('modal-task-detail')" class="w-12 h-12 rounded-2xl btn-glass flex items-center justify-center text-slate-400 hover:text-white transition-all">
-                <i class="fas fa-times text-lg"></i>
+            <button onclick="closeModal('modal-task-detail')" class="w-12 h-12 rounded-2xl btn-glass text-slate-400 hover:text-white transition-all flex items-center justify-center">
+                <i class="fas fa-times text-xl"></i>
             </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto custom-scrollbar pr-4">
-            <div id="m-task-desc" class="text-sm leading-relaxed text-slate-300 bg-dark-950 p-8 rounded-[2rem] border border-white/5 mb-8 font-cairo shadow-inner"></div>
-            
-            <h4 class="font-black text-[10px] uppercase tracking-[0.3em] text-primary-500 mb-6 flex items-center gap-3">
-                <span class="w-8 h-[1px] bg-primary-500/30"></span> سجل المناقشات والنشاط
-            </h4>
-            
-            <div id="m-task-comments" class="flex flex-col gap-5 pb-4">
+        <div class="px-8 py-6 bg-dark-900/30 border-b border-white/5 shrink-0 relative z-10">
+            <div class="flex items-center justify-between max-w-3xl mx-auto relative">
+                <div class="flex flex-col items-center gap-2 z-10">
+                    <div class="relative">
+                        <img id="m-owner-img" src="" class="w-14 h-14 rounded-2xl object-cover border-2 border-slate-700 shadow-xl bg-dark-800">
+                        <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-lg flex items-center justify-center border-2 border-dark-950"><i class="fas fa-user-edit text-[8px] text-white"></i></div>
+                    </div>
+                    <div class="text-center">
+                        <p id="m-task-owner" class="text-[11px] font-black text-white">اسم الموظف</p>
+                        <p id="m-owner-title" class="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">المسؤول عن التنفيذ</p>
+                    </div>
                 </div>
 
-            <form onsubmit="handleAdminCommentSubmit(event)" class="mt-4 mb-6 flex gap-2 bg-dark-950 p-2 rounded-2xl border border-white/10 shadow-inner">
-                <input type="text" id="admin-comment-input" 
-                       class="flex-1 bg-transparent border-none focus:ring-0 text-xs text-white px-4 py-2 outline-none placeholder:text-slate-600" 
-                       placeholder="اكتب ملاحظاتك أو ردك للموظف..." autocomplete="off">
-                <button type="submit" id="admin-comment-btn" 
-                        class="w-12 h-10 bg-primary-600 rounded-xl hover:bg-primary-500 transition shadow-lg text-white flex items-center justify-center">
-                    <i class="fas fa-paper-plane text-xs"></i>
-                </button>
-            </form>
+                <div class="flex-1 flex flex-col items-center px-4">
+                    <div class="w-full h-[2px] bg-gradient-to-r from-green-500/20 via-primary-500 to-purple-500/20 rounded-full relative mb-2">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="bg-dark-950 px-4 py-1 rounded-full border border-white/10 shadow-lg">
+                                <i class="fas fa-chevron-left text-primary-500 animate-pulse"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-[7px] font-black text-slate-600 uppercase tracking-[0.3em]">Task Lifecycle</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-2 z-10">
+                    <div class="relative">
+                        <img id="m-reviewer-img" src="" class="w-14 h-14 rounded-2xl object-cover border-2 border-slate-700 shadow-xl bg-dark-800">
+                        <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-purple-600 rounded-lg flex items-center justify-center border-2 border-dark-950"><i class="fas fa-eye text-[8px] text-white"></i></div>
+                    </div>
+                    <div class="text-center">
+                        <p id="m-reviewer-name" class="text-[11px] font-black text-primary-400">اسم المدير</p>
+                        <p id="m-reviewer-title" class="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">مراجعة الجودة والاعتماد</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="pt-6 border-t border-white/5 mt-4 shrink-0 flex flex-wrap gap-4 items-center justify-between">
-            <div id="admin-task-actions" class="flex flex-1 gap-3">
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-8 flex flex-col gap-8 relative z-10">
+            <div class="grid grid-cols-12 gap-8">
+                <div class="col-span-12 lg:col-span-7">
+                    <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                        <i class="fas fa-align-right text-primary-500"></i> تفاصيل وتعليمات المهمة
+                    </h4>
+                    <div id="m-task-desc" class="text-sm leading-relaxed text-slate-300 bg-white/[0.02] p-8 rounded-[2.5rem] border border-white/5 font-cairo shadow-inner min-h-[150px]"></div>
                 </div>
 
-            <button onclick="adminDeleteTask()" class="px-6 py-3 bg-red-500/5 text-red-500/40 hover:bg-red-500 hover:text-white border border-red-500/10 rounded-xl font-black transition-all text-[10px] flex items-center gap-2">
+                <div class="col-span-12 lg:col-span-5">
+                    <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                        <i class="fas fa-paperclip text-primary-500"></i> المستندات الملحقة
+                    </h4>
+                    <div id="m-task-files" class="space-y-3">
+                        </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
+                    <i class="fas fa-comments text-primary-500"></i> سجل المناقشات والنشاط (Internal Chat)
+                </h4>
+                <div id="m-task-comments" class="flex flex-col gap-6 mb-6">
+                    </div>
+
+                <form onsubmit="handleAdminCommentSubmit(event)" class="sticky bottom-0 bg-dark-900/80 backdrop-blur-md p-3 rounded-3xl border border-white/10 flex gap-3 shadow-2xl">
+                    <input type="text" id="admin-comment-input" 
+                           class="flex-1 bg-dark-950 border-none rounded-2xl px-6 py-4 text-xs text-white focus:ring-1 focus:ring-primary-500/50 outline-none placeholder:text-slate-600" 
+                           placeholder="اكتب ردك أو ملاحظاتك الإدارية هنا..." autocomplete="off">
+                    <button type="submit" id="admin-comment-btn" class="w-14 h-14 bg-primary-600 rounded-2xl flex items-center justify-center text-white shadow-lg hover:bg-primary-500 transition-all active:scale-95">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="p-8 bg-dark-950 border-t border-white/5 flex flex-wrap gap-4 items-center justify-between shrink-0 relative z-10">
+            <div id="admin-task-actions" class="flex flex-1 gap-4">
+                </div>
+            <button onclick="adminDeleteTask()" class="px-8 py-3.5 bg-red-500/5 text-red-500/50 hover:bg-red-500 hover:text-white border border-red-500/10 rounded-2xl font-black transition-all text-[10px] flex items-center gap-2 active:scale-95">
                 <i class="fas fa-trash-alt text-[9px]"></i> حذف المهمة نهائياً
             </button>
         </div>
@@ -465,12 +517,6 @@
         <input type="hidden" id="m-hidden-id">
     </div>
 </div>
-
-        <input type="hidden" id="m-hidden-owner">
-        <input type="hidden" id="m-hidden-id">
-    </div>
-</div>
-
     <div id="chat-window" class="fixed bottom-20 right-8 w-[380px] h-[550px] bg-dark-900 border border-white/10 rounded-[2.5rem] overflow-hidden hidden flex flex-col shadow-2xl z-[100] animate-fade-in">
         <div class="p-5 bg-dark-950 border-b border-white/5 flex justify-between items-center shrink-0">
             <h3 class="font-black text-xs text-primary-500 uppercase tracking-widest"><i class="fas fa-bullhorn mr-2"></i> تعميم ودردشة الإدارة</h3>
@@ -1165,59 +1211,77 @@ function openAdminTaskDetail(taskId, ownerEmail) {
     const task = user.tasks.find(t => t.id == taskId);
     if(!task) return;
 
-    // ملء البيانات
+    // 1. ملء البيانات الأساسية
     document.getElementById('m-hidden-id').value = task.id; 
     document.getElementById('m-hidden-owner').value = ownerEmail;
     document.getElementById('m-task-title').innerText = task.title;
     document.getElementById('m-task-desc').innerHTML = task.desc;
-    document.getElementById('m-task-date').innerText = moment(task.id).format('D MMM YYYY');
-    document.getElementById('m-task-owner').innerText = user.name;
+    document.getElementById('m-task-date').innerText = moment(task.id).format('D MMMM YYYY');
     document.getElementById('m-task-project').innerText = task.projectName || 'مهمة عامة';
 
-    // 🟢 التحكم في الأزرار (إدارة الحالات الأربعة) 🟢
-    const actionBtnContainer = document.getElementById('admin-task-actions');
-    actionBtnContainer.innerHTML = ''; // تفريغ الأزرار القديمة
+    // 2. ملء بيانات الموظف (المنفذ)
+    document.getElementById('m-task-owner').innerText = user.name;
+    document.getElementById('m-owner-img').src = user.photo || DEFAULT_PHOTO + encodeURIComponent(user.name);
+    document.getElementById('m-owner-title').innerText = user.title || 'موظف منفذ';
 
+    // 3. ملء بيانات المدير (المراجع)
+    const reviewer = allUsersData.find(x => x.email === task.reviewerEmail);
+    document.getElementById('m-reviewer-name').innerText = reviewer ? reviewer.name : 'انتظار المراجعة';
+    document.getElementById('m-reviewer-img').src = reviewer?.photo || DEFAULT_PHOTO + 'Reviewer';
+    document.getElementById('m-reviewer-title').innerText = reviewer?.title || 'إدارة الجودة';
+
+    // 4. عرض الملفات المرفقة
+    const fileBox = document.getElementById('m-task-files');
+    fileBox.innerHTML = task.file ? `
+        <div class="p-4 bg-primary-600/5 border border-primary-500/20 rounded-2xl flex items-center justify-between group hover:bg-primary-600/10 transition-all">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary-500/20 text-primary-500 flex items-center justify-center"><i class="fas fa-file-pdf"></i></div>
+                <div><p class="text-[11px] font-black text-white">المرفق الرئيسي</p><p class="text-[8px] text-slate-500">مستند المهمة الرسمي</p></div>
+            </div>
+            <a href="${task.file}" target="_blank" class="w-8 h-8 rounded-full bg-dark-800 flex items-center justify-center text-primary-500 hover:bg-primary-600 hover:text-white transition-all shadow-lg"><i class="fas fa-download text-[10px]"></i></a>
+        </div>` : '<p class="text-[10px] text-slate-600 italic px-4 py-8 text-center border-2 border-dashed border-white/5 rounded-3xl">لا توجد ملفات مرفقة لهذه المهمة</p>';
+
+    // 5. الأزرار (إدارة الحالات)
+    const actionBtnContainer = document.getElementById('admin-task-actions');
+    actionBtnContainer.innerHTML = '';
     if (task.status === 'review') {
         actionBtnContainer.innerHTML = `
-            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'done', true)" class="flex-1 py-3 bg-green-600 text-white font-black rounded-xl text-xs">اعتماد الإنجاز ✅</button>
-            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'working', false)" class="flex-1 py-3 bg-orange-600 text-white font-black rounded-xl text-xs">إعادة للعمل ⚠️</button>`;
-    } 
-    else if (task.status === 'done') {
+            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'done', true)" class="flex-1 py-4 bg-green-600 text-white font-black rounded-2xl text-[11px] shadow-lg shadow-green-600/20 hover:scale-[1.02] active:scale-95 transition-all">اعتماد وإغلاق المهمة ✅</button>
+            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'working', false)" class="flex-1 py-4 bg-orange-600 text-white font-black rounded-2xl text-[11px] shadow-lg shadow-orange-600/20 hover:scale-[1.02] active:scale-95 transition-all">إرجاع للموظف لتعديلها ⚠️</button>`;
+    } else if (task.status === 'done') {
         actionBtnContainer.innerHTML = `
-            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'review', false)" class="flex-1 py-3 bg-purple-600 text-white font-black rounded-xl text-xs">إرجاع للمراجعة 🔄</button>
-            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'working', false)" class="flex-1 py-3 bg-blue-600 text-white font-black rounded-xl text-xs">إعادة فتح للتنفيذ ⚙️</button>`;
-    }
-    else if (task.status === 'started') {
-         actionBtnContainer.innerHTML = `<p class="text-[10px] text-slate-500 font-bold italic">في انتظار بدأ الموظف للعمل...</p>`;
+            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'review', false)" class="flex-1 py-4 bg-purple-600 text-white font-black rounded-2xl text-[11px] hover:scale-[1.02] transition-all">إلغاء الاعتماد وإعادة للمراجعة 🔄</button>`;
     }
 
-    // عرض الشات
+    // 6. عرض الشات (تصميم الفقاعات)
     const chatBox = document.getElementById('m-task-comments');
     chatBox.innerHTML = '';
     (task.comments || []).forEach(c => {
         if(c.user === 'system') {
-            chatBox.innerHTML += `<div class="flex justify-center my-2"><span class="bg-dark-900 text-[9px] px-4 py-1 rounded-full text-slate-500 border border-white/5 font-bold uppercase">${c.text}</span></div>`;
+            chatBox.innerHTML += `<div class="flex justify-center my-2"><span class="bg-dark-900/50 text-[8px] px-4 py-1.5 rounded-full text-slate-500 border border-white/5 font-black uppercase tracking-widest">${c.text}</span></div>`;
         } else {
             const isMe = c.user === currentUser.email;
-            const photo = DEFAULT_PHOTO + encodeURIComponent(c.name);
+            const uInfo = allUsersData.find(x => x.email === c.user);
+            const photo = uInfo?.photo || DEFAULT_PHOTO + encodeURIComponent(c.name);
             chatBox.innerHTML += `
-                <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''} mb-4">
-                    <img src="${photo}" class="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0">
-                    <div class="p-3 rounded-2xl border border-white/5 flex-1 ${isMe ? 'bg-primary-600/20' : 'bg-dark-950'}">
-                        <div class="flex justify-between items-center mb-1">
-                            <p class="text-[9px] font-black text-primary-500">${c.name}</p>
-                            <span class="text-[7px] text-slate-600">${moment(c.time).format('hh:mm A')}</span>
+                <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''} group animate-fade-in">
+                    <img src="${photo}" class="w-10 h-10 rounded-xl object-cover border border-white/10 shrink-0 shadow-lg">
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]">
+                        <div class="flex items-center gap-2 mb-1.5 px-1">
+                            <span class="text-[9px] font-black ${isMe ? 'text-primary-500' : 'text-slate-400'} uppercase">${c.name}</span>
                         </div>
-                        <p class="text-xs text-slate-300">${c.text}</p>
+                        <div class="p-4 rounded-3xl border border-white/5 shadow-xl ${isMe ? 'bg-primary-600 text-white rounded-tr-none' : 'bg-dark-800 text-slate-300 rounded-tl-none'}">
+                            <p class="text-xs leading-relaxed font-medium">${c.text}</p>
+                            <span class="text-[7px] ${isMe ? 'text-primary-100' : 'text-slate-500'} block mt-2 font-bold">${moment(c.time).format('hh:mm A')}</span>
+                        </div>
                     </div>
                 </div>`;
         }
     });
 
     openModal('modal-task-detail');
+    setTimeout(() => { chatBox.parentElement.scrollTop = chatBox.parentElement.scrollHeight; }, 300);
 }
-
         async function adminDeleteTask() {
             if(!confirm("⚠️ تحذير: هل أنت متأكد من حذف هذه المهمة من النظام نهائياً؟")) return;
             const id = document.getElementById('m-hidden-id').value; const email = document.getElementById('m-hidden-owner').value;
@@ -1749,6 +1813,7 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
+
 
 
 
