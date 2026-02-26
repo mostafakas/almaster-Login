@@ -988,67 +988,62 @@
     }
 }
         // --- VIEW 2: TASKS ---
-        function renderGlobalTasks() {
-            const cols = { 
-                todo: document.getElementById('kanban-todo'), 
-                working: document.getElementById('kanban-working'),
-                review: document.getElementById('kanban-review'), 
-                done: document.getElementById('kanban-done') 
-            };
-            for(let k in cols) if(cols[k]) cols[k].innerHTML = '';
-            
-            let allTasks = [];
-            allUsersData.forEach(u => { 
-                if(u.tasks) { 
-                    u.tasks.forEach(t => { 
-                        allTasks.push({...t, ownerName: u.name, ownerEmail: u.email, ownerPhoto: u.photo}); 
-                    }); 
-                } 
-            }); 
-            
-            allTasks.sort((a,b) => b.id - a.id);
-            let counts = { todo: 0, working: 0, review: 0, done: 0 };
+        // 2. دالة رسم الكانبان بـ 4 أعمدة (مصححة)
+function renderGlobalTasks() {
+    const cols = { 
+        todo: document.getElementById('kanban-todo'), 
+        working: document.getElementById('kanban-working'),
+        review: document.getElementById('kanban-review'), 
+        done: document.getElementById('kanban-done') 
+    };
+    
+    // تصفير المحتوى
+    Object.values(cols).forEach(c => { if(c) c.innerHTML = ''; });
+    
+    let allTasks = [];
+    allUsersData.forEach(u => { 
+        if(u.tasks) u.tasks.forEach(t => allTasks.push({...t, ownerName: u.name, ownerEmail: u.email, ownerPhoto: u.photo}));
+    }); 
+    
+    allTasks.sort((a,b) => b.id - a.id);
+    let counts = { todo: 0, working: 0, review: 0, done: 0 };
+
+    allTasks.forEach(task => {
+        let colKey = 'todo';
+        if(task.status === 'working') colKey = 'working';
+        else if(task.status === 'review') colKey = 'review';
+        else if(task.status === 'done') colKey = 'done';
         
-            allTasks.forEach(task => {
-                // توزيع الحالات على الـ 4 أعمدة
-                let colKey = 'todo';
-                if(task.status === 'working') colKey = 'working';
-                else if(task.status === 'review') colKey = 'review';
-                else if(task.status === 'done') colKey = 'done';
-                
-                counts[colKey]++;
-                
-                if(cols[colKey]) {
-                    // جلب اسم المدير اللي راجع التاسك (لو موجود)
-                    const reviewer = allUsersData.find(x => x.email === task.reviewerEmail);
-                    const reviewerName = reviewer ? reviewer.name : 'انتظار..';
+        counts[colKey]++;
         
-                    cols[colKey].innerHTML += `
-                        <div onclick="openAdminTaskDetail('${task.id}', '${task.ownerEmail}')" class="task-kanban-card p-4 rounded-2xl cursor-pointer shadow-lg mb-3">
-                            <div class="flex justify-between items-start mb-3">
-                                <h4 class="font-black text-[11px] text-white leading-tight pr-2">${task.title}</h4>
-                            </div>
-                            <div class="space-y-2 pt-3 border-t border-white/5">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-[7px] text-slate-500 uppercase font-black">عمل:</span>
-                                    <img src="${task.ownerPhoto || DEFAULT_PHOTO+task.ownerName}" class="w-4 h-4 rounded-full">
-                                    <span class="text-[9px] font-bold text-slate-300 truncate">${task.ownerName}</span>
-                                </div>
-                                ${(task.status === 'review' || task.status === 'done') ? `
-                                <div class="flex items-center gap-2">
-                                    <span class="text-[7px] text-primary-500 uppercase font-black">مراجعة:</span>
-                                    <span class="text-[9px] font-black text-primary-400">${reviewerName}</span>
-                                </div>` : ''}
-                            </div>
-                        </div>`;
-                }
-            });
-        
-            document.getElementById('k-todo-count').innerText = counts.todo;
-            document.getElementById('k-working-count').innerText = counts.working;
-            document.getElementById('k-review-count').innerText = counts.review;
-            document.getElementById('k-done-count').innerText = counts.done;
+        if(cols[colKey]) {
+            const reviewer = allUsersData.find(x => x.email === task.reviewerEmail);
+            const reviewerName = reviewer ? reviewer.name : 'تلقائي';
+
+            cols[colKey].innerHTML += `
+                <div onclick="openAdminTaskDetail('${task.id}', '${task.ownerEmail}')" class="task-kanban-card p-4 rounded-2xl cursor-pointer shadow-lg mb-3">
+                    <h4 class="font-black text-[11px] text-white leading-tight mb-3">${task.title}</h4>
+                    <div class="space-y-2 pt-3 border-t border-white/5">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[7px] text-slate-500 uppercase font-black">عمل:</span>
+                            <span class="text-[9px] font-bold text-slate-300 truncate">${task.ownerName}</span>
+                        </div>
+                        ${(task.status === 'review' || task.status === 'done') ? `
+                        <div class="flex items-center gap-2">
+                            <span class="text-[7px] text-primary-500 uppercase font-black">راجعها:</span>
+                            <span class="text-[9px] font-black text-primary-400">${reviewerName}</span>
+                        </div>` : ''}
+                    </div>
+                </div>`;
         }
+    });
+
+    // تحديث الأرقام في الهيدر
+    if(document.getElementById('k-todo-count')) document.getElementById('k-todo-count').innerText = counts.todo;
+    if(document.getElementById('k-working-count')) document.getElementById('k-working-count').innerText = counts.working;
+    if(document.getElementById('k-review-count')) document.getElementById('k-review-count').innerText = counts.review;
+    if(document.getElementById('k-done-count')) document.getElementById('k-done-count').innerText = counts.done;
+}
         // إسناد المهام من السوبرفايزر
         function openAddTaskModal() {
             document.getElementById('new-task-title').value = '';
@@ -1115,31 +1110,14 @@
             finally { btn.disabled = false; btn.innerHTML = 'إرسال المهمة'; }
         }
 
-        function openAdminTaskDetail(taskId, ownerEmail) {
-                    // ... داخل دالة openAdminTaskDetail ...
-        const actionBox = document.getElementById('admin-task-actions');
-        actionBox.innerHTML = '';
-        
-        if (task.status === 'review') {
-            actionBox.innerHTML = `
-                <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'done', true)" class="flex-1 py-3 bg-green-600 text-white font-black rounded-xl text-xs">اعتماد الإنجاز ✅</button>
-                <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'working', false)" class="flex-1 py-3 bg-orange-600 text-white font-black rounded-xl text-xs">إعادة للعمل ⚠️</button>`;
-        } 
-        else if (task.status === 'done') {
-            // 🟢 إضافة أزرار الإرجاع للمهام المكتملة
-            actionBox.innerHTML = `
-                <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'review', false)" class="flex-1 py-3 bg-purple-600 text-white font-black rounded-xl text-xs">إرجاع للمراجعة 🔄</button>
-                <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'working', false)" class="flex-1 py-3 bg-orange-600 text-white font-black rounded-xl text-xs">إعادة تنفيذ ⚙️</button>`;
-        }
-    // جلب أحدث بيانات للموظف من الكاش المحلي
+function openAdminTaskDetail(taskId, ownerEmail) {
     const user = allUsersData.find(u => u.email === ownerEmail);
     if(!user || !user.tasks) return;
     
-    // العثور على التاسك المطلوب
     const task = user.tasks.find(t => t.id == taskId);
     if(!task) return;
 
-    // ملء البيانات الأساسية
+    // ملء البيانات
     document.getElementById('m-hidden-id').value = task.id; 
     document.getElementById('m-hidden-owner').value = ownerEmail;
     document.getElementById('m-task-title').innerText = task.title;
@@ -1148,49 +1126,48 @@
     document.getElementById('m-task-owner').innerText = user.name;
     document.getElementById('m-task-project').innerText = task.projectName || 'مهمة عامة';
 
-    // تحديث الأزرار (اعتماد / إعادة)
-    const actionBox = document.getElementById('admin-task-actions');
-    actionBox.innerHTML = '';
+    // 🟢 التحكم في الأزرار (إدارة الحالات الأربعة) 🟢
+    const actionBtnContainer = document.getElementById('admin-task-actions');
+    actionBtnContainer.innerHTML = ''; // تفريغ الأزرار القديمة
+
     if (task.status === 'review') {
-        actionBox.innerHTML = `
+        actionBtnContainer.innerHTML = `
             <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'done', true)" class="flex-1 py-3 bg-green-600 text-white font-black rounded-xl text-xs">اعتماد الإنجاز ✅</button>
             <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'working', false)" class="flex-1 py-3 bg-orange-600 text-white font-black rounded-xl text-xs">إعادة للعمل ⚠️</button>`;
+    } 
+    else if (task.status === 'done') {
+        actionBtnContainer.innerHTML = `
+            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'review', false)" class="flex-1 py-3 bg-purple-600 text-white font-black rounded-xl text-xs">إرجاع للمراجعة 🔄</button>
+            <button onclick="adminUpdateTaskStatus('${ownerEmail}', '${taskId}', 'working', false)" class="flex-1 py-3 bg-blue-600 text-white font-black rounded-xl text-xs">إعادة فتح للتنفيذ ⚙️</button>`;
+    }
+    else if (task.status === 'started') {
+         actionBtnContainer.innerHTML = `<p class="text-[10px] text-slate-500 font-bold italic">في انتظار بدأ الموظف للعمل...</p>`;
     }
 
-    // 🟢 عرض الشات (التعليقات) 🟢
-    const box = document.getElementById('m-task-comments');
-    box.innerHTML = ''; // مسح القديم
-
-    const comments = task.comments || [];
-    if (comments.length === 0) {
-        box.innerHTML = '<p class="text-center py-4 text-[10px] text-slate-600 italic">لا توجد مناقشات بعد</p>';
-    } else {
-        comments.forEach(c => {
-            if(c.user === 'system') {
-                box.innerHTML += `<div class="flex justify-center my-2"><span class="bg-dark-900 text-[9px] px-4 py-1 rounded-full text-slate-500 border border-white/5 font-bold uppercase">${c.text}</span></div>`;
-            } else {
-                const isMe = c.user === currentUser.email;
-                const uInfo = allUsersData.find(x => x.email === c.user);
-                const photo = uInfo?.photo || DEFAULT_PHOTO + encodeURIComponent(c.name);
-                
-                box.innerHTML += `
-                    <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''}">
-                        <img src="${photo}" class="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0">
-                        <div class="p-4 rounded-2xl border border-white/5 flex-1 ${isMe ? 'bg-primary-600/20 rounded-tr-none' : 'bg-dark-950 rounded-tl-none'}">
-                            <div class="flex justify-between items-center mb-1">
-                                <p class="text-[10px] font-black text-primary-500">${c.name}</p>
-                                <span class="text-[8px] text-slate-600">${moment(c.time).format('hh:mm A')}</span>
-                            </div>
-                            <p class="text-xs text-slate-300 leading-relaxed">${c.text}</p>
+    // عرض الشات
+    const chatBox = document.getElementById('m-task-comments');
+    chatBox.innerHTML = '';
+    (task.comments || []).forEach(c => {
+        if(c.user === 'system') {
+            chatBox.innerHTML += `<div class="flex justify-center my-2"><span class="bg-dark-900 text-[9px] px-4 py-1 rounded-full text-slate-500 border border-white/5 font-bold uppercase">${c.text}</span></div>`;
+        } else {
+            const isMe = c.user === currentUser.email;
+            const photo = DEFAULT_PHOTO + encodeURIComponent(c.name);
+            chatBox.innerHTML += `
+                <div class="flex gap-4 ${isMe ? 'flex-row-reverse' : ''} mb-4">
+                    <img src="${photo}" class="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0">
+                    <div class="p-3 rounded-2xl border border-white/5 flex-1 ${isMe ? 'bg-primary-600/20' : 'bg-dark-950'}">
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="text-[9px] font-black text-primary-500">${c.name}</p>
+                            <span class="text-[7px] text-slate-600">${moment(c.time).format('hh:mm A')}</span>
                         </div>
-                    </div>`;
-            }
-        });
-    }
-    
+                        <p class="text-xs text-slate-300">${c.text}</p>
+                    </div>
+                </div>`;
+        }
+    });
+
     openModal('modal-task-detail');
-    // التمرير لآخر رسالة في الشات
-    setTimeout(() => { box.parentElement.scrollTop = box.parentElement.scrollHeight; }, 200);
 }
 
         async function adminDeleteTask() {
@@ -1724,6 +1701,7 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
+
 
 
 
