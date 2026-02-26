@@ -532,88 +532,146 @@
     <div id="private-chats-container" class="fixed bottom-0 right-0 z-[101] flex gap-3 p-3 pointer-events-none"></div>
 
     <script>
-        // --- FIREBASE CONFIG ---
-        const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
-        
-        const db = firebase.firestore(), auth = firebase.auth(), storage = firebase.storage(), secondaryAuth = secondaryApp.auth();
+        // --- 1. FIREBASE CONFIG & INITIALIZATION ---
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", 
+        authDomain: "almaster-b8c18.firebaseapp.com", 
+        projectId: "almaster-b8c18", 
+        storageBucket: "almaster-b8c18.firebasestorage.app", 
+        messagingSenderId: "884142036232", 
+        appId: "1:884142036232:web:eeb6677d988565653a08bd" 
+    };
 
-        let currentUser = null, userProfile = null, allUsersData = [], allProjects = [], currentMonitorFilter = 'all';
-        const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
-        var quill = null;
-
-        // --- GLOBAL HELPERS ---
-        function startClock() {
-            const update = () => {
-                const now = moment();
-                if(document.getElementById('header-time')) document.getElementById('header-time').innerText = now.format('HH:mm:ss');
-                if(document.getElementById('header-date')) document.getElementById('header-date').innerText = now.locale('ar').format('dddd, DD MMMM YYYY');
-            };
-            update(); setInterval(update, 1000);
-        }
-
-        const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : v) : Date.now();
-        function formatDuration(ms) { if(ms < 0) ms = 0; const s = Math.floor((ms/1000)%60).toString().padStart(2,'0'); const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0'); const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0'); return `${h}:${m}:${s}`; }
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        async function uploadFile(file, path) { if (!file) return null; const ref = storage.ref().child(`${path}/${Date.now()}_${file.name}`); await ref.put(file); return await ref.getDownloadURL(); }
-
-        document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        // أضفنا 'modal-logs' لهذه القائمة لضمان انغلاقه
-        ['chat-window', 'modal-user-form', 'modal-task-detail', 'modal-create-task', 'custom-user-options', 'modal-logs', 'modal-view-screenshot'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.classList.add('hidden');
-        });
-        
-        // تنظيف الشاتات الخاصة لو مفتوحة
-        document.getElementById('private-chats-container').innerHTML = '';
+    // التأكد من عدم تكرار التعريف (حماية من الخطأ اللي ظهرلك)
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
-});
+    const secondaryApp = firebase.apps.length > 1 ? firebase.app("Secondary") : firebase.initializeApp(firebaseConfig, "Secondary");
 
-        function switchAdminView(viewName) {
-            ['monitor', 'tasks', 'users'].forEach(v => {
-                document.getElementById(`view-${v}`).classList.add('hidden');
-                document.getElementById(`tab-${v}`).classList.remove('active', 'bg-dark-950', 'shadow-md');
-            });
-            document.getElementById(`view-${viewName}`).classList.remove('hidden');
-            document.getElementById(`tab-${viewName}`).classList.add('active', 'bg-dark-950', 'shadow-md');
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const storage = firebase.storage();
+    const secondaryAuth = secondaryApp.auth();
+
+    // --- 2. GLOBAL STATE (المتغيرات العامة) ---
+    let currentUser = null, userProfile = null, allUsersData = [], allProjects = [];
+    let currentMonitorFilter = 'all';
+    let previousTasksState = {}; 
+    let isFirstTasksLoad = true;
+    let userStatusesCache = {}; // الكاش المطلوب للإشعارات
+    const adminSessionStartTime = Date.now(); // مطلوب للقطات الشاشة والتقارير
+    
+    const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
+    const adminNotifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    var quill = null;
+
+    // --- 3. GLOBAL HELPERS ---
+    function startClock() {
+        const update = () => {
+            const now = moment();
+            if(document.getElementById('header-time')) document.getElementById('header-time').innerText = now.format('HH:mm:ss');
+            if(document.getElementById('header-date')) document.getElementById('header-date').innerText = now.locale('ar').format('dddd, DD MMMM YYYY');
+        };
+        update(); setInterval(update, 1000);
+    }
+
+    function playAdminSound() { adminNotifSound.play().catch(e => {}); }
+    const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : v) : Date.now();
+    function openModal(id) { const el = document.getElementById(id); if(el) el.classList.remove('hidden'); }
+    function closeModal(id) { const el = document.getElementById(id); if(el) el.classList.add('hidden'); }
+    
+    function formatDuration(ms) { 
+        if(!ms || ms < 0) return "00:00:00"; 
+        const s = Math.floor((ms/1000)%60).toString().padStart(2,'0'); 
+        const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0'); 
+        const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0'); 
+        return `${h}:${m}:${s}`; 
+    }
+
+    async function uploadFile(file, path) { if (!file) return null; const ref = storage.ref().child(`${path}/${Date.now()}_${file.name}`); await ref.put(file); return await ref.getDownloadURL(); }
+
+    // مستمع لوحة المفاتيح (Escape) - مُحدث ليشمل كل المودالات
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            ['chat-window', 'modal-user-form', 'modal-task-detail', 'modal-create-task', 'custom-user-options', 'modal-logs', 'modal-view-screenshot'].forEach(id => closeModal(id));
+            const privateContainer = document.getElementById('private-chats-container');
+            if(privateContainer) privateContainer.innerHTML = '';
         }
+    });
 
-        // --- AUTH & BOOT ---
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
+    // دالة التنقل بين التابات - مُحدثة لإجبار الجدول والمهام على الظهور فوراً
+    function switchAdminView(viewName) {
+        ['monitor', 'tasks', 'users'].forEach(v => {
+            const view = document.getElementById(`view-${v}`);
+            const tab = document.getElementById(`tab-${v}`);
+            if(view) view.classList.add('hidden');
+            if(tab) tab.classList.remove('active', 'bg-dark-950', 'shadow-md');
+        });
+
+        const targetView = document.getElementById(`view-${viewName}`);
+        const targetTab = document.getElementById(`tab-${viewName}`);
+        if(targetView) targetView.classList.remove('hidden');
+        if(targetTab) targetTab.classList.add('active', 'bg-dark-950', 'shadow-md');
+
+        // تحديث الرندر فوراً بناءً على التابة
+        if (viewName === 'users') renderUsersTable();
+        if (viewName === 'tasks') renderGlobalTasks();
+        if (viewName === 'monitor') renderMonitorGrid();
+    }
+
+    // --- 4. AUTH & BOOTSTRAP ---
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            currentUser = user;
+            try {
                 const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
                 if(doc.exists) {
                     userProfile = doc.data();
-                    if(userProfile.role !== 'admin') { window.location.replace('employee.html'); return; }
+                    if(userProfile.role !== 'admin') { 
+                        window.location.replace('employee.html'); 
+                        return; 
+                    }
                     initAdminConsole();
-                } else { auth.signOut(); }
-            } else { window.location.replace('index.html'); }
-        });
-        function initAdminConsole() {
-            startClock();
-            document.getElementById('admin-name').innerText = userProfile.name;
-            document.getElementById('admin-img').src = userProfile.photo || DEFAULT_PHOTO + 'Admin';
-            
+                } else { 
+                    auth.signOut(); 
+                }
+            } catch (err) {
+                console.error("Auth Error:", err);
+            }
+        } else { 
+            window.location.replace('index.html'); 
+        }
+    });
+
+    function initAdminConsole() {
+        startClock();
+        const adminNameEl = document.getElementById('admin-name');
+        const adminImgEl = document.getElementById('admin-img');
+        
+        if(adminNameEl) adminNameEl.innerText = userProfile.name;
+        if(adminImgEl) adminImgEl.src = userProfile.photo || DEFAULT_PHOTO + 'Admin';
+        
+        // إعداد محرر النصوص
+        const editorEl = document.getElementById('editor-container');
+        if(editorEl) {
             quill = new Quill('#editor-container', { 
                 theme: 'snow', 
                 modules: { toolbar: [['bold', 'italic'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link']] } 
             });
-        
-            // نداء واحد فقط لكل مراقب
-            listenToScreenshotResults();
-            listenToAllUsers(); // 👈 مرة واحدة كفاية
-            listenToProjects();
-            listenToGlobalMessages();
-            listenToPrivateMessages();
-        
-            setInterval(updateTimersUI, 1000);
-            document.getElementById('loader').classList.add('hidden');
         }
-
+        
+        // تشغيل جميع المراقبين (Listeners)
+        listenToScreenshotResults();
+        listenToAllUsers(); 
+        listenToProjects();
+        listenToGlobalMessages();
+        listenToPrivateMessages();
+        
+        setInterval(updateTimersUI, 1000);
+        
+        const loader = document.getElementById('loader');
+        if(loader) loader.classList.add('hidden');
+    }
         function listenToAllUsers() {
     db.collection('users').onSnapshot(snap => {
         const newUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
@@ -1815,6 +1873,7 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
+
 
 
 
