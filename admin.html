@@ -997,12 +997,25 @@ function renderGlobalTasks() {
         done: document.getElementById('kanban-done') 
     };
     
-    // تصفير المحتوى
+    // تصفير المحتوى القديم
     Object.values(cols).forEach(c => { if(c) c.innerHTML = ''; });
     
     let allTasks = [];
     allUsersData.forEach(u => { 
-        if(u.tasks) u.tasks.forEach(t => allTasks.push({...t, ownerName: u.name, ownerEmail: u.email, ownerPhoto: u.photo}));
+        if(u.tasks) u.tasks.forEach(t => {
+            // جلب بيانات المراجع (المدير)
+            const reviewerData = allUsersData.find(x => x.email === t.reviewerEmail);
+            allTasks.push({
+                ...t, 
+                ownerName: u.name, 
+                ownerEmail: u.email, 
+                ownerPhoto: u.photo,
+                ownerTitle: u.title || 'موظف',
+                reviewerName: reviewerData ? reviewerData.name : 'انتظار..',
+                reviewerPhoto: reviewerData ? reviewerData.photo : '',
+                reviewerTitle: reviewerData ? (reviewerData.title || 'مدير مراجع') : 'جاري التعيين..'
+            });
+        });
     }); 
     
     allTasks.sort((a,b) => b.id - a.id);
@@ -1013,32 +1026,67 @@ function renderGlobalTasks() {
         if(task.status === 'working') colKey = 'working';
         else if(task.status === 'review') colKey = 'review';
         else if(task.status === 'done') colKey = 'done';
-        
         counts[colKey]++;
         
         if(cols[colKey]) {
-            const reviewer = allUsersData.find(x => x.email === task.reviewerEmail);
-            const reviewerName = reviewer ? reviewer.name : 'تلقائي';
+            // منطق "سهم التوجيه" حسب الحالة
+            let flowIcon = '<i class="fas fa-arrow-left text-slate-700"></i>';
+            let flowColor = 'border-slate-800';
+            
+            if(task.status === 'review') { flowIcon = '<i class="fas fa-chevron-left text-purple-500 animate-pulse"></i>'; flowColor = 'border-purple-500/30'; }
+            if(task.status === 'done') { flowIcon = '<i class="fas fa-check-double text-green-500"></i>'; flowColor = 'border-green-500/30'; }
+            if(task.status === 'working') { flowIcon = '<i class="fas fa-running text-blue-500"></i>'; flowColor = 'border-blue-500/30'; }
 
             cols[colKey].innerHTML += `
-                <div onclick="openAdminTaskDetail('${task.id}', '${task.ownerEmail}')" class="task-kanban-card p-4 rounded-2xl cursor-pointer shadow-lg mb-3">
-                    <h4 class="font-black text-[11px] text-white leading-tight mb-3">${task.title}</h4>
-                    <div class="space-y-2 pt-3 border-t border-white/5">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[7px] text-slate-500 uppercase font-black">عمل:</span>
-                            <span class="text-[9px] font-bold text-slate-300 truncate">${task.ownerName}</span>
+                <div onclick="openAdminTaskDetail('${task.id}', '${task.ownerEmail}')" 
+                     class="group relative bg-gradient-to-br from-dark-900 to-dark-950 p-5 rounded-[2rem] border border-white/5 hover:border-primary-500/50 transition-all duration-500 cursor-pointer shadow-2xl mb-4 overflow-hidden">
+                    
+                    <div class="absolute -top-10 -right-10 w-24 h-24 bg-primary-500/5 blur-[40px] rounded-full group-hover:bg-primary-500/10 transition-all"></div>
+
+                    <div class="flex justify-between items-start mb-5">
+                        <div class="flex-1">
+                            <span class="text-[7px] font-black text-primary-500 uppercase tracking-[0.2em] bg-primary-500/10 px-2 py-0.5 rounded-md mb-2 inline-block">${task.projectName || 'مهمة عامة'}</span>
+                            <h4 class="text-[12px] font-black text-white leading-tight group-hover:text-primary-400 transition-colors">${task.title}</h4>
                         </div>
-                        ${(task.status === 'review' || task.status === 'done') ? `
-                        <div class="flex items-center gap-2">
-                            <span class="text-[7px] text-primary-500 uppercase font-black">راجعها:</span>
-                            <span class="text-[9px] font-black text-primary-400">${reviewerName}</span>
-                        </div>` : ''}
+                    </div>
+
+                    <div class="flex items-center justify-between bg-black/20 p-3 rounded-2xl border border-white/[0.02]">
+                        
+                        <div class="flex flex-col items-center gap-1 w-20">
+                            <img src="${task.ownerPhoto || DEFAULT_PHOTO+task.ownerName}" class="w-8 h-8 rounded-xl object-cover border border-white/10 shadow-lg">
+                            <p class="text-[8px] font-black text-slate-300 truncate w-full text-center">${task.ownerName.split(' ')[0]}</p>
+                            <p class="text-[6px] font-bold text-slate-600 uppercase tracking-tighter">${task.ownerTitle}</p>
+                        </div>
+
+                        <div class="flex-1 flex flex-col items-center justify-center gap-1">
+                            <div class="w-full h-[1px] bg-gradient-to-l from-transparent via-slate-700 to-transparent relative">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="bg-dark-900 px-2">${flowIcon}</span>
+                                </div>
+                            </div>
+                            <span class="text-[6px] font-black text-slate-700 uppercase tracking-widest">${task.status}</span>
+                        </div>
+
+                        <div class="flex flex-col items-center gap-1 w-20">
+                            <img src="${task.reviewerPhoto || DEFAULT_PHOTO+'Admin'}" class="w-8 h-8 rounded-xl object-cover border border-white/10 shadow-lg ${!task.reviewerPhoto ? 'opacity-20 grayscale' : ''}">
+                            <p class="text-[8px] font-black ${task.reviewerPhoto ? 'text-primary-400' : 'text-slate-700'} truncate w-full text-center">${task.reviewerName.split(' ')[0]}</p>
+                            <p class="text-[6px] font-bold text-slate-600 uppercase tracking-tighter">${task.reviewerTitle}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-4 pt-3 border-t border-white/5">
+                        <span class="text-[8px] font-bold text-slate-600"><i class="far fa-clock ml-1"></i> ${moment(task.id).fromNow()}</span>
+                        <div class="flex -space-x-2 rtl:space-x-reverse">
+                             <div class="w-5 h-5 rounded-full border-2 border-dark-950 bg-primary-600 flex items-center justify-center text-[7px] font-black text-white shadow-lg">
+                                <i class="fas fa-paperclip"></i>
+                             </div>
+                        </div>
                     </div>
                 </div>`;
         }
     });
 
-    // تحديث الأرقام في الهيدر
+    // تحديث العدادات في الهيدر
     if(document.getElementById('k-todo-count')) document.getElementById('k-todo-count').innerText = counts.todo;
     if(document.getElementById('k-working-count')) document.getElementById('k-working-count').innerText = counts.working;
     if(document.getElementById('k-review-count')) document.getElementById('k-review-count').innerText = counts.review;
@@ -1701,6 +1749,7 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
+
 
 
 
