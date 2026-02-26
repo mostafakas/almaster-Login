@@ -593,21 +593,23 @@
                 } else { auth.signOut(); }
             } else { window.location.replace('index.html'); }
         });
-
         function initAdminConsole() {
             startClock();
-            if ("Notification" in window) Notification.requestPermission(); // طلب إذن الإشعارات
-            listenToScreenshotResults();
-            listenToAllUsers(); // الدالة المعدلة فوق
             document.getElementById('admin-name').innerText = userProfile.name;
             document.getElementById('admin-img').src = userProfile.photo || DEFAULT_PHOTO + 'Admin';
             
-            quill = new Quill('#editor-container', { theme: 'snow', modules: { toolbar: [['bold', 'italic'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link']] } });
-            listenToScreenshotResults(); // 👈 أضف هذا السطر هنا ليعمل الاستقبال
-            listenToAllUsers();
+            quill = new Quill('#editor-container', { 
+                theme: 'snow', 
+                modules: { toolbar: [['bold', 'italic'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link']] } 
+            });
+        
+            // نداء واحد فقط لكل مراقب
+            listenToScreenshotResults();
+            listenToAllUsers(); // 👈 مرة واحدة كفاية
             listenToProjects();
             listenToGlobalMessages();
             listenToPrivateMessages();
+        
             setInterval(updateTimersUI, 1000);
             document.getElementById('loader').classList.add('hidden');
         }
@@ -1813,6 +1815,7 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
+
 
 
 
