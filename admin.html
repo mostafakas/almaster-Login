@@ -1733,9 +1733,14 @@ function listenToScreenshotResults() {
 // 1. إعداد أداة التحقق
 function setupRecaptcha() {
     if (!window.recaptchaVerifier) {
+        // هنخليه 'normal' عشان نشوف المربع بتاع 'أنا لست روبوت'
         window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-            'size': 'invisible'
+            'size': 'normal', 
+            'callback': (response) => {
+                console.log("تم حل الريكاتشا بنجاح!");
+            }
         });
+        window.recaptchaVerifier.render();
     }
 }
 
@@ -1914,6 +1919,7 @@ let isSmsAlreadySent = false;
 </div>
 </body>
 </html>
+
 
 
 
