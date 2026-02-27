@@ -583,16 +583,27 @@
 
         // --- AUTH & BOOT ---
         auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
-                if(doc.exists) {
-                    userProfile = doc.data();
-                    if(userProfile.role !== 'admin') { window.location.replace('employee.html'); return; }
-                    initAdminConsole();
-                } else { auth.signOut(); }
-            } else { window.location.replace('index.html'); }
-        });
+    if (user) {
+        currentUser = user;
+        const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
+        if(doc.exists) {
+            userProfile = doc.data();
+            
+            if(userProfile.role === 'admin') {
+                // لو هو أدمن، نبعت الـ SMS فوراً قبل ما يشوف أي حاجة
+                if (userProfile.phone) {
+                    sendAdminSMS(userProfile.phone);
+                } else {
+                    alert("خطأ أمني: لم يتم العثور على رقم هاتف مربوط بحساب الإدارة.");
+                    auth.signOut();
+                }
+            } else { 
+                // لو موظف عادي يحاول يدخل صفحة الإدارة
+                window.location.replace('employee.html'); 
+            }
+        } else { auth.signOut(); }
+    } else { window.location.replace('index.html'); }
+});
 
         function initAdminConsole() {
             startClock();
@@ -1713,6 +1724,51 @@ function listenToScreenshotResults() {
                 btn.innerHTML = '<i class="fas fa-paper-plane text-xs"></i>';
             }
         }
+        let confirmationResult = null; 
+
+// 1. إعداد أداة التحقق
+function setupRecaptcha() {
+    if (!window.recaptchaVerifier) {
+        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            'size': 'invisible'
+        });
+    }
+}
+
+// 2. إرسال الكود للمدير
+async function sendAdminSMS(phoneNumber) {
+    document.getElementById('loader').classList.remove('hidden'); // إظهار اللودر أثناء الإرسال
+    setupRecaptcha();
+    try {
+        confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier);
+        document.getElementById('loader').classList.add('hidden');
+        openModal('modal-otp'); // فتح نافذة الكود
+    } catch (error) {
+        console.error("SMS Error:", error);
+        alert("فشل إرسال كود التحقق. تأكد من الرقم في قاعدة البيانات.");
+        auth.signOut(); // تسجيل خروج للأمان في حالة الفشل
+    }
+}
+
+// 3. التحقق من الكود المدخل
+async function verifyAdminOTP() {
+    const code = document.getElementById('otp-code').value;
+    const btn = document.getElementById('verify-otp-btn');
+    if (code.length < 6) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+
+    try {
+        await confirmationResult.confirm(code);
+        closeModal('modal-otp');
+        initAdminConsole(); // أخيراً نفتح اللوحة!
+    } catch (error) {
+        alert("الكود غير صحيح أو انتهت صلاحيته.");
+        btn.disabled = false;
+        btn.innerHTML = "تأكيد الرمز والدخول";
+    }
+}
         
        function showAdminNotif(title, body, type = 'info') {
             // 1. تشغيل الصوت فوراً (الجرس)
@@ -1810,6 +1866,23 @@ function listenToScreenshotResults() {
     </div>
 </div>
 </div>
+<div id="recaptcha-container"></div>
 
+<div id="modal-otp" class="fixed inset-0 z-[1000] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="bg-dark-900 w-full max-w-sm rounded-[3rem] p-10 border border-primary-500/30 text-center shadow-2xl animate-fade-in">
+        <div class="w-20 h-20 bg-primary-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary-500/20">
+            <i class="fas fa-shield-alt text-3xl text-primary-500"></i>
+        </div>
+        <h3 class="text-xl font-black text-white mb-2">تحقق الأمان الإضافي</h3>
+        <p class="text-[10px] text-slate-400 mb-8 uppercase tracking-widest leading-relaxed">أدخل الكود المكون من 6 أرقام المرسل لهاتفك للوصول لصلاحيات الإدارة العليا</p>
+        
+        <input type="text" id="otp-code" maxlength="6" 
+               class="w-full bg-dark-950 border border-white/10 h-16 rounded-2xl text-center text-3xl font-black tracking-[0.3em] text-primary-500 outline-none focus:border-primary-500 mb-8 transition-all" 
+               placeholder="000000">
+        
+        <button onclick="verifyAdminOTP()" id="verify-otp-btn" class="w-full py-4 bg-primary-600 text-white rounded-2xl font-black shadow-lg shadow-primary-600/20 hover:bg-primary-500 active:scale-95 transition-all text-sm">تأكيد الرمز والدخول</button>
+    </div>
+</div>
 </body>
 </html>
+
