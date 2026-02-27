@@ -1741,16 +1741,24 @@ function setupRecaptcha() {
 
 // 2. إرسال الكود للمدير
 async function sendAdminSMS(phoneNumber) {
-    document.getElementById('loader').classList.remove('hidden'); // إظهار اللودر أثناء الإرسال
+    document.getElementById('loader').classList.remove('hidden');
     setupRecaptcha();
     try {
-        confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier);
+        // التعديل هنا: نستخدم linkWithPhoneNumber بدل signInWithPhoneNumber
+        confirmationResult = await auth.currentUser.linkWithPhoneNumber(phoneNumber, window.recaptchaVerifier);
         document.getElementById('loader').classList.add('hidden');
-        openModal('modal-otp'); // فتح نافذة الكود
+        openModal('modal-otp');
     } catch (error) {
         console.error("SMS Error:", error);
-        alert("فشل إرسال كود التحقق. تأكد من الرقم في قاعدة البيانات.");
-        auth.signOut(); // تسجيل خروج للأمان في حالة الفشل
+        // لو الرقم مربوط فعلاً قبل كدة، هنستخدم الدخول العادي
+        if (error.code === 'auth/credential-already-in-use' || error.code === 'auth/provider-already-linked') {
+             confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier);
+             document.getElementById('loader').classList.add('hidden');
+             openModal('modal-otp');
+        } else {
+            alert("فشل إرسال كود التحقق.");
+            auth.signOut();
+        }
     }
 }
 
@@ -1906,5 +1914,6 @@ let isSmsAlreadySent = false;
 </div>
 </body>
 </html>
+
 
 
