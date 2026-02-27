@@ -581,8 +581,8 @@
             document.getElementById(`tab-${viewName}`).classList.add('active', 'bg-dark-950', 'shadow-md');
         }
 
-        // --- AUTH & BOOT ---
-        auth.onAuthStateChanged(async (user) => {
+      // --- AUTH & BOOT ---
+auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
         const doc = await db.collection('users').doc(user.email.toLowerCase()).get();
@@ -590,21 +590,25 @@
             userProfile = doc.data();
             
             if(userProfile.role === 'admin') {
-                // لو هو أدمن، نبعت الـ SMS فوراً قبل ما يشوف أي حاجة
-                if (userProfile.phone) {
-                    sendAdminSMS(userProfile.phone);
-                } else {
-                    alert("خطأ أمني: لم يتم العثور على رقم هاتف مربوط بحساب الإدارة.");
-                    auth.signOut();
+                // نتحقق إذا كانت الرسالة أُرسلت بالفعل في هذه الجلسة أم لا
+                if (!isSmsAlreadySent) {
+                    if (userProfile.phone) {
+                        isSmsAlreadySent = true; // نغلق القفل فوراً لمنع التكرار
+                        sendAdminSMS(userProfile.phone);
+                    } else {
+                        alert("خطأ أمني: لم يتم العثور على رقم هاتف مربوط بحساب الإدارة.");
+                        auth.signOut();
+                    }
                 }
             } else { 
                 // لو موظف عادي يحاول يدخل صفحة الإدارة
                 window.location.replace('employee.html'); 
             }
         } else { auth.signOut(); }
-    } else { window.location.replace('index.html'); }
+    } else { 
+        window.location.replace('index.html'); 
+    }
 });
-
         function initAdminConsole() {
             startClock();
             if ("Notification" in window) Notification.requestPermission(); // طلب إذن الإشعارات
@@ -1751,22 +1755,39 @@ async function sendAdminSMS(phoneNumber) {
 }
 
 // 3. التحقق من الكود المدخل
-async function verifyAdminOTP() {
-    const code = document.getElementById('otp-code').value;
+let isSmsAlreadySent = false;
+        async function verifyAdminOTP() {
+    const code = document.getElementById('otp-code').value.trim();
     const btn = document.getElementById('verify-otp-btn');
+    
     if (code.length < 6) return;
-
+    
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التأكيد...';
+
+    let success = false;
 
     try {
+        // 1. نتأكد من الكود فقط
         await confirmationResult.confirm(code);
+        success = true; // لو وصلنا هنا يبقى الكود صح 100%
         closeModal('modal-otp');
-        initAdminConsole(); // أخيراً نفتح اللوحة!
     } catch (error) {
-        alert("الكود غير صحيح أو انتهت صلاحيته.");
+        console.error("OTP Verification Error:", error);
+        alert("الكود الذي أدخلته غير صحيح، يرجى المحاولة مرة أخرى.");
         btn.disabled = false;
         btn.innerHTML = "تأكيد الرمز والدخول";
+    }
+
+    // 2. لو الكود صح، نشغل اللوحة بره الـ try/catch بتاع الـ OTP
+    if (success) {
+        try {
+            initAdminConsole();
+        } catch (initError) {
+            console.error("لوحة التحكم بها خطأ في التحميل ولكن الكود صحيح:", initError);
+            // هنا اللوحة هتفتح حتى لو فيه خطأ بسيط في التحميل
+            initAdminConsole(); 
+        }
     }
 }
         
@@ -1885,4 +1906,5 @@ async function verifyAdminOTP() {
 </div>
 </body>
 </html>
+
 
