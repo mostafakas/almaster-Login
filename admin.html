@@ -1744,24 +1744,24 @@ async function sendAdminSMS(phoneNumber) {
     document.getElementById('loader').classList.remove('hidden');
     setupRecaptcha();
     try {
-        // التعديل هنا: نستخدم linkWithPhoneNumber بدل signInWithPhoneNumber
+        // محاولة ربط الرقم بحساب الإيميل الحالي
         confirmationResult = await auth.currentUser.linkWithPhoneNumber(phoneNumber, window.recaptchaVerifier);
         document.getElementById('loader').classList.add('hidden');
         openModal('modal-otp');
     } catch (error) {
-        console.error("SMS Error:", error);
-        // لو الرقم مربوط فعلاً قبل كدة، هنستخدم الدخول العادي
+        console.log("SMS Status:", error.code);
+        // لو الرقم مربوط فعلاً قبل كدة أو فيه تداخل، هنكتفي بالتحقق منه فقط
         if (error.code === 'auth/credential-already-in-use' || error.code === 'auth/provider-already-linked') {
              confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier);
              document.getElementById('loader').classList.add('hidden');
              openModal('modal-otp');
         } else {
-            alert("فشل إرسال كود التحقق.");
+            console.error("SMS Error:", error);
+            alert("حدث خطأ في نظام التحقق، يرجى إعادة المحاولة.");
             auth.signOut();
         }
     }
 }
-
 // 3. التحقق من الكود المدخل
 let isSmsAlreadySent = false;
         async function verifyAdminOTP() {
@@ -1914,6 +1914,7 @@ let isSmsAlreadySent = false;
 </div>
 </body>
 </html>
+
 
 
 
