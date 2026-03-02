@@ -782,50 +782,43 @@
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 
         // --- 5. CALCULATION & CHARTS ---
-            function updateStats() {
-    // 1. متغيرات "مدى الحياة" (للحساب التراكمي للخزينة)
-    let totalLifetimeVaultIn = 0;   // كل الإيداعات منذ البداية
-    let totalLifetimeVaultOut = 0;  // كل المصاريف التي خرجت فعلياً منذ البداية
+           function updateStats() {
+    let totalLifetimeVaultIn = 0;   // إجمالي الإيداعات (مدى الحياة)
+    let totalLifetimeVaultOut = 0;  // إجمالي المنصرف الفعلي (مدى الحياة)
 
-    // 2. متغيرات "الشهر الحالي" (للعرض في كروت الإحصائيات)
-    let baseT = 0, bonusT = 0, incenT = 0, deductT = 0;
+    // متغيرات الشهر الحالي للعرض في الكروت
     let paidS_Current = 0, apprvS_Current = 0, waitS_Current = 0;
     let flPaid_Current = 0, flHolding_Current = 0;
     let pureExpenses_Current = 0;
 
-    // --- أولاً: الحساب التراكمي (من مصفوفة كل الشهور) ---
+    // 1. الحساب التراكمي من كل الشهور
     allMonthsData.forEach(m => {
-        // جمع الأرصدة الافتتاحية لكل شهر (إذا كنت تضع رصيد ابتدائي يدوي في كل شهر)
+        // جمع الإيداعات
         totalLifetimeVaultIn += (parseFloat(m.vault) || 0);
-
-        // جمع الإيداعات من سجلات الخزينة
         (m.vault_logs || []).forEach(log => {
             totalLifetimeVaultIn += (parseFloat(log.amount) || 0);
         });
 
-        // جمع المصاريف الخارجة فعلياً (التي قللت الخزينة)
+        // جمع المنصرف الفعلي فقط (الرواتب، النثريات، المستقلين، السلف)
         (m.expenses || []).forEach(e => {
-            // ملاحظة: الخصومات (fl_deduction) لا تخرج مبالغ من الخزينة بل تعدل حساب فقط
-            if (e.type !== 'fl_deduction') {
+            // حددنا هنا الأنواع اللي بتخرج فلوس كاش فعلاً من الخزينة
+            const cashExitTypes = ['general', 'freelancer', 'salary_payout', 'emp_advance'];
+            if (cashExitTypes.includes(e.type)) {
                 totalLifetimeVaultOut += (parseFloat(e.amount) || 0);
             }
         });
     });
 
-    // --- ثانياً: حساب إحصائيات الشهر الحالي فقط (للعرض) ---
+    // 2. حساب إحصائيات الشهر الحالي المختار فقط (للكروت الملونة)
     const currentMonthExps = monthData.expenses || [];
 
     allUsers.forEach(u => {
         // للمستقلين
         if (u.contract === 'freelancer') {
-            // المبالغ المدفوعة لهم هذا الشهر فقط (موجودة في سجل المصاريف)
             const paidThisMonth = currentMonthExps
                 .filter(e => e.type === 'freelancer' && e.fl_id === u.id)
                 .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-            
             flPaid_Current += paidThisMonth;
-            
-            // المتبقي (Hold) هو إجمالي كل الأوقات (لأنه تراكمي للمستقل)
             flHolding_Current += ((u.fl_total_credit || 0) - (u.fl_total_paid || 0) - (u.fl_total_deducted || 0));
             return;
         }
@@ -834,13 +827,10 @@
         const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
         const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
         const advSum = currentMonthExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
-        
         const net = (parseFloat(u.salary_base) || 0) + (parseFloat(m.bonus) || 0) + (parseFloat(m.incentive) || 0) - dSum - advSum;
 
         if (m.status === 'paid') {
             paidS_Current += net;
-            // إضافة صافي الراتب للمنصرف التراكمي إذا لم يكن مسجلاً في Expenses
-            // (في نظامك الرواتب المدفوعة تُحسب ضمن totalLifetimeVaultOut تلقائياً لأنها تعتبر منصرف)
         } else if (m.status === 'approved') {
             apprvS_Current += net;
         } else {
@@ -848,45 +838,32 @@
         }
     });
 
-    // النثريات العامة للشهر الحالي فقط
+    // النثريات العامة للشهر الحالي
     pureExpenses_Current = currentMonthExps
         .filter(e => e.type === 'general')
         .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
 
-    // الرصيد الحالي المتوفر في الخزينة (تراكمي)
+    // الرصيد المتوفر (السيولة الحالية)
     const currentLiquid = totalLifetimeVaultIn - totalLifetimeVaultOut;
 
-    // --- ثالثاً: تحديث العناصر في الواجهة ---
-    
-    // الخزينة (أرقام تراكمية)
-    if(document.getElementById('vault-balance')) document.getElementById('vault-balance').innerText = totalLifetimeVaultIn.toLocaleString();
-    if(document.getElementById('remaining-vault')) document.getElementById('remaining-vault').innerText = currentLiquid.toLocaleString();
-    if(document.getElementById('total-spent')) document.getElementById('total-spent').innerText = totalLifetimeVaultOut.toLocaleString();
+    // 3. تحديث الأرقام في الواجهة
+    document.getElementById('vault-balance').innerText = totalLifetimeVaultIn.toLocaleString();
+    document.getElementById('remaining-vault').innerText = currentLiquid.toLocaleString();
+    document.getElementById('total-spent').innerText = totalLifetimeVaultOut.toLocaleString();
 
-    // إحصائيات الشهر الحالي (تتصفر تلقائياً كل شهر جديد بصرياً)
-    if(document.getElementById('total-paid-salaries-sum')) document.getElementById('total-paid-salaries-sum').innerText = paidS_Current.toLocaleString();
-    if(document.getElementById('pending-approved-total')) document.getElementById('pending-approved-total').innerText = apprvS_Current.toLocaleString();
-    if(document.getElementById('pending-waiting-total')) document.getElementById('pending-waiting-total').innerText = waitS_Current.toLocaleString();
-    if(document.getElementById('total-expenses')) document.getElementById('total-expenses').innerText = pureExpenses_Current.toLocaleString();
-    if(document.getElementById('stat-fl-paid')) document.getElementById('stat-fl-paid').innerText = flPaid_Current.toLocaleString();
-    if(document.getElementById('stat-fl-holding')) document.getElementById('stat-fl-holding').innerText = flHolding_Current.toLocaleString();
+    document.getElementById('total-paid-salaries-sum').innerText = paidS_Current.toLocaleString();
+    document.getElementById('pending-approved-total').innerText = apprvS_Current.toLocaleString();
+    document.getElementById('pending-waiting-total').innerText = waitS_Current.toLocaleString();
+    document.getElementById('total-expenses').innerText = pureExpenses_Current.toLocaleString();
+    document.getElementById('stat-fl-paid').innerText = flPaid_Current.toLocaleString();
+    document.getElementById('stat-fl-holding').innerText = flHolding_Current.toLocaleString();
 
-    // تحديث التقرير الداخلي
-    if(document.getElementById('vault-v-open')) document.getElementById('vault-v-open').innerText = totalLifetimeVaultIn.toLocaleString();
-    if(document.getElementById('vault-v-final')) document.getElementById('vault-v-final').innerText = currentLiquid.toLocaleString();
-
-    // تحديث الرسوم البيانية (بناءً على بيانات الشهر الحالي)
+    // تحديث الرسوم البيانية
     if(expenseChartInstance) { 
         expenseChartInstance.data.datasets[0].data = [paidS_Current, flPaid_Current, pureExpenses_Current]; 
         expenseChartInstance.update(); 
     }
-    if(cashFlowChartInstance) { 
-        const depositsThisMonth = (monthData.vault_logs || []).reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
-        const spentThisMonth = paidS_Current + flPaid_Current + pureExpenses_Current;
-        cashFlowChartInstance.data.datasets[0].data = [depositsThisMonth, spentThisMonth]; 
-        cashFlowChartInstance.update(); 
-    }
-
+    
     // ريندر الجداول
     renderPayroll(); renderFreelancers(); renderGeneralExpenses(); renderEmployeeLogs(); renderFreelancerLogs(); renderVaultLedger();
 }
@@ -1452,6 +1429,7 @@
     </script>
 </body>
 </html>
+
 
 
 
