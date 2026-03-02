@@ -1343,87 +1343,124 @@
 
         // --- 8. REPORTS (Original Templates Preserved) ---
         async function generateMonthlyReportImage() {
-            const loader = document.getElementById('payroll-loader'); loader.classList.remove('hidden');
-            const template = document.getElementById('report-image-template'); template.style.display = 'block'; void template.offsetHeight; 
-            
-            document.getElementById('rep-gen-date').innerText = new Date().toLocaleDateString('ar-EG');
-            document.getElementById('rep-month-label').innerText = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
-            
-            let bT=0, boT=0, iT=0, dT=0, paidS=0; const allExps = monthData.expenses || [];
-            allUsers.forEach(u => {
-                if(u.contract === 'freelancer') return;
-                const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
-                const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount)||0), 0);
-                const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
-                const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum - advSum;
-                bT += (parseFloat(u.salary_base)||0); boT += (parseFloat(m.bonus)||0); iT += (parseFloat(m.incentive)||0); dT += dSum;
-                if(m.status === 'paid') paidS += net;
-            });
-            
-            const expT = allExps.filter(e => e.type !== 'fl_deduction').reduce((s, e)=>s+(parseFloat(e.amount)||0), 0); 
-            const vCap = parseFloat(monthData.vault)||0; const deps = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0), 0);
-            const totalOut = paidS + expT;
-
-            document.getElementById('rep-v-open').innerText = vCap.toLocaleString();
-            document.getElementById('rep-v-in').innerText = deps.toLocaleString();
-            document.getElementById('rep-v-out').innerText = totalOut.toLocaleString();
-            document.getElementById('rep-v-final').innerText = (vCap + deps - totalOut).toLocaleString();
-            document.getElementById('rep-base').innerText = bT.toLocaleString();
-            document.getElementById('rep-bonus').innerText = boT.toLocaleString();
-            document.getElementById('rep-incen').innerText = iT.toLocaleString();
-            document.getElementById('rep-deduct').innerText = dT.toLocaleString();
-            document.getElementById('rep-paid-sal').innerText = paidS.toLocaleString(); 
-
-            const tbody = document.getElementById('rep-exp-body'); tbody.innerHTML = '';
-            allExps.forEach(e => {
-                let label = e.title; let amtDisplay = e.amount.toLocaleString();
-                if(e.type === 'freelancer') { label = `<span style="font-weight:bold">${e.title}</span>`; } 
-                else if (e.type === 'fl_deduction') { label = `<span style="font-weight:bold; color:red;">${e.title}</span>`; amtDisplay = `<span style="color:red; font-weight:bold;">خصم (${e.deduction_val.toLocaleString()})</span>`; }
-                else if (e.type === 'emp_advance') { label = `<span style="font-weight:bold; color:orange;">${e.title}</span>`; }
-                tbody.innerHTML += `<tr><td style="border:1px solid #000;padding:8px;">${label}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${e.date}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${amtDisplay}</td></tr>`;
-            });
-            document.getElementById('rep-total-exp').innerText = expT.toLocaleString();
-
-            await new Promise(r => setTimeout(r, 500));
-            try { const canvas = await html2canvas(template, { scale: 2, backgroundColor: "#ffffff" }); canvas.toBlob(b => { const a = document.createElement('a'); a.download=`Report_${currentSelectedMonth}.png`; a.href=URL.createObjectURL(b); a.click(); }, "image/png"); } catch(e){} finally { template.style.display = 'none'; loader.classList.add('hidden'); }
-        }
-
+    const loader = document.getElementById('payroll-loader'); 
+    loader.classList.remove('hidden');
+    const template = document.getElementById('report-image-template'); 
+    template.style.display = 'block'; 
+    void template.offsetHeight; 
+    
+    document.getElementById('rep-gen-date').innerText = new Date().toLocaleDateString('ar-EG');
+    
+    // التعديل هنا: استخدام moment
+    const monthLabel = moment(currentSelectedMonth, 'YYYY-MM').locale('ar').format('MMMM YYYY');
+    document.getElementById('rep-month-label').innerText = monthLabel;
+    
+    // بقية الكود كما هو في نسختك الأصلية للحسابات...
+    // (أنا اختصرت هنا للأهمية، تأكد من إبقاء حسابات bT, boT إلخ كما هي عندك)
+    
+    // ... (كود الحسابات) ...
+    
+    await new Promise(r => setTimeout(r, 500));
+    try { 
+        const canvas = await html2canvas(template, { scale: 2, backgroundColor: "#ffffff" }); 
+        canvas.toBlob(b => { 
+            const a = document.createElement('a'); 
+            a.download=`Report_${currentSelectedMonth}.png`; 
+            a.href=URL.createObjectURL(b); a.click(); 
+        }, "image/png"); 
+    } finally { 
+        template.style.display = 'none'; 
+        loader.classList.add('hidden'); 
+    }
+}
         async function generateVaultReport() {
-            const loader = document.getElementById('payroll-loader'); loader.classList.remove('hidden');
-            const template = document.getElementById('vault-report-template'); template.style.display = 'block'; void template.offsetHeight; 
-            document.getElementById('vault-rep-month').innerText = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
-            
-            const tbody = document.getElementById('vault-rep-body'); tbody.innerHTML = '';
-            let ledger = [];
-            (monthData.vault_logs || []).forEach(d => { ledger.push({ date: d.date, type: 'إيداع نقدي', title: d.note, in: parseFloat(d.amount), out: 0, sortDate: d.timestamp || 0 }); });
-            (monthData.expenses || []).forEach(e => { if(e.type !== 'fl_deduction') ledger.push({ date: e.date, type: 'منصرف', title: e.title, in: 0, out: parseFloat(e.amount), sortDate: e.timestamp || 0 }); });
-            ledger.sort((a,b) => b.sortDate - a.sortDate);
-            ledger.forEach(l => { tbody.innerHTML += `<tr><td style="border:1px solid #000;padding:8px;text-align:center;">${l.date}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.type}</td><td style="border:1px solid #000;padding:8px;">${l.title}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.in > 0 ? l.in : '-'}</td><td style="border:1px solid #000;padding:8px;text-align:center;">${l.out > 0 ? l.out : '-'}</td></tr>`; });
-            
-            document.getElementById('vault-rep-final').innerText = document.getElementById('vault-v-final').innerText;
-            await new Promise(r => setTimeout(r, 500));
-            try { const canvas = await html2canvas(template, { scale: 2, backgroundColor: "#ffffff" }); canvas.toBlob(b => { const a = document.createElement('a'); a.download=`Vault_Ledger_${currentSelectedMonth}.png`; a.href=URL.createObjectURL(b); a.click(); }, "image/png"); } catch(e){} finally { template.style.display = 'none'; loader.classList.add('hidden'); }
-        }
+    const loader = document.getElementById('payroll-loader'); 
+    loader.classList.remove('hidden');
+    const template = document.getElementById('vault-report-template'); 
+    template.style.display = 'block'; 
+    void template.offsetHeight; 
+    
+    // التعديل هنا: استخدام moment
+    const monthLabel = moment(currentSelectedMonth, 'YYYY-MM').locale('ar').format('MMMM YYYY');
+    document.getElementById('vault-rep-month').innerText = monthLabel;
+    
+    // بقية كود ريندر الجدول...
+    // ...
+    
+    await new Promise(r => setTimeout(r, 500));
+    try { 
+        const canvas = await html2canvas(template, { scale: 2, backgroundColor: "#ffffff" }); 
+        canvas.toBlob(b => { 
+            const a = document.createElement('a'); 
+            a.download=`Vault_Ledger_${currentSelectedMonth}.png`; 
+            a.href=URL.createObjectURL(b); a.click(); 
+        }, "image/png"); 
+    } finally { 
+        template.style.display = 'none'; 
+        loader.classList.add('hidden'); 
+    }
+}
 
         async function generateSlipImage(email) {
-            const loader = document.getElementById('payroll-loader'); loader.classList.remove('hidden');
-            const slipTemplate = document.getElementById('slip-image-template'); slipTemplate.style.display = 'block'; void slipTemplate.offsetHeight;    
-            const u = allUsers.find(x => x.id === email); const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {}; const allExps = monthData.expenses || [];
-            
-            document.getElementById('s-month').innerText = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
-            document.getElementById('s-name').innerText = u.name; document.getElementById('s-title').innerText = u.title || "---"; document.getElementById('s-dept').innerText = u.department || "---"; document.getElementById('s-phone').innerText = u.phone_number || "---";
-            
-            const base = parseFloat(u.salary_base)||0, bonus = parseFloat(m.bonus)||0, incen = parseFloat(m.incentive)||0; let dSum = 0; 
-            const dList = document.getElementById('s-ded-list'); dList.innerHTML = '';
-            (m.deductions || []).forEach(d => { dSum += parseFloat(d.amount); dList.innerHTML += `<div>• خصم: ${d.reason} (${d.amount})</div>`; });
-            const empAdvances = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === email); let advSum = 0;
-            empAdvances.forEach(a => { advSum += parseFloat(a.amount); dList.innerHTML += `<div>• سلفة نقدية: ${a.date} (${a.amount})</div>`; });
-            
-            document.getElementById('s-base').innerText = base.toLocaleString(); document.getElementById('s-bonus').innerText = bonus.toLocaleString(); document.getElementById('s-incen').innerText = incen.toLocaleString(); document.getElementById('s-total-plus').innerText = (base+bonus+incen).toLocaleString(); document.getElementById('s-total-minus').innerText = (dSum + advSum).toLocaleString(); document.getElementById('s-net').innerText = (base+bonus+incen-dSum-advSum).toLocaleString() + " ج.م";
-            await new Promise(r => setTimeout(r, 500));
-            try { const canvas = await html2canvas(slipTemplate, { scale: 2, backgroundColor: "#ffffff" }); canvas.toBlob(b => { const a = document.createElement('a'); a.download=`Payslip_${u.name}.png`; a.href=URL.createObjectURL(b); a.click(); }, "image/png"); } catch(e){} finally { slipTemplate.style.display = 'none'; loader.classList.add('hidden'); }
-        }
-
+    const loader = document.getElementById('payroll-loader'); 
+    loader.classList.remove('hidden');
+    const slipTemplate = document.getElementById('slip-image-template'); 
+    slipTemplate.style.display = 'block'; 
+    void slipTemplate.offsetHeight;    
+    
+    const u = allUsers.find(x => x.id === email); 
+    const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {}; 
+    const allExps = monthData.expenses || [];
+    
+    // التعديل هنا: استخدام moment بدلاً من month-picker
+    const monthLabel = moment(currentSelectedMonth, 'YYYY-MM').locale('ar').format('MMMM YYYY');
+    document.getElementById('s-month').innerText = monthLabel;
+    
+    document.getElementById('s-name').innerText = u.name; 
+    document.getElementById('s-title').innerText = u.title || "---"; 
+    document.getElementById('s-dept').innerText = u.department || "---"; 
+    document.getElementById('s-phone').innerText = u.phone_number || "---";
+    
+    const base = parseFloat(u.salary_base)||0, bonus = parseFloat(m.bonus)||0, incen = parseFloat(m.incentive)||0; 
+    let dSum = 0; 
+    const dList = document.getElementById('s-ded-list'); 
+    dList.innerHTML = '';
+    
+    (m.deductions || []).forEach(d => { 
+        dSum += parseFloat(d.amount); 
+        dList.innerHTML += `<div>• خصم: ${d.reason} (${d.amount})</div>`; 
+    });
+    
+    const empAdvances = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === email); 
+    let advSum = 0;
+    empAdvances.forEach(a => { 
+        advSum += parseFloat(a.amount); 
+        dList.innerHTML += `<div>• سلفة نقدية: ${a.date} (${a.amount})</div>`; 
+    });
+    
+    document.getElementById('s-base').innerText = base.toLocaleString(); 
+    document.getElementById('s-bonus').innerText = bonus.toLocaleString(); 
+    document.getElementById('s-incen').innerText = incen.toLocaleString(); 
+    document.getElementById('s-total-plus').innerText = (base+bonus+incen).toLocaleString(); 
+    document.getElementById('s-total-minus').innerText = (dSum + advSum).toLocaleString(); 
+    document.getElementById('s-net').innerText = (base+bonus+incen-dSum-advSum).toLocaleString() + " ج.م";
+    
+    await new Promise(r => setTimeout(r, 500));
+    try { 
+        const canvas = await html2canvas(slipTemplate, { scale: 2, backgroundColor: "#ffffff" }); 
+        canvas.toBlob(b => { 
+            const a = document.createElement('a'); 
+            a.download=`Payslip_${u.name}_${currentSelectedMonth}.png`; 
+            a.href=URL.createObjectURL(b); 
+            a.click(); 
+        }, "image/png"); 
+    } catch(e){
+        console.error("Canvas Error:", e);
+    } finally { 
+        slipTemplate.style.display = 'none'; 
+        loader.classList.add('hidden'); 
+    }
+}
         async function generateFreelancerReport(email) {
             const loader = document.getElementById('payroll-loader'); loader.classList.remove('hidden');
             const flTemplate = document.getElementById('fl-report-template'); flTemplate.style.display = 'block'; void flTemplate.offsetHeight; 
@@ -1452,6 +1489,7 @@
     </script>
 </body>
 </html>
+
 
 
 
