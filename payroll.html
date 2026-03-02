@@ -706,14 +706,33 @@
             startListeners();
         }
 
-        function changeMonth() { 
-            currentSelectedMonth = document.getElementById('month-picker').value; 
-            db.collection("financial_months").doc(currentSelectedMonth).get().then(doc => {
-                monthData = doc.exists ? doc.data() : { vault: 0, expenses: [], vault_logs: [] };
-                if(!doc.exists) db.collection("financial_months").doc(currentSelectedMonth).set(monthData);
-                updateStats();
-            });
+        async function changeMonth() { 
+    currentSelectedMonth = document.getElementById('month-picker').value; 
+    const doc = await db.collection("financial_months").doc(currentSelectedMonth).get();
+    
+    if (doc.exists) {
+        monthData = doc.data();
+        updateStats();
+    } else {
+        // إذا كان الشهر جديداً، نحسب الشهر السابق
+        const [year, month] = currentSelectedMonth.split('-');
+        let prevDate = new Date(year, parseInt(month) - 2, 1);
+        let prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
+        
+        let carryOverVault = 0;
+        const prevDoc = await db.collection("financial_months").doc(prevMonthStr).get();
+        
+        if (prevDoc.exists) {
+            // هنا يجب حساب الرصيد الختامي للشهر السابق (السيولة المتبقية)
+            // مؤقتاً سنفترض أنك قمت بتخزينها، أو ستحتاج لعمل دالة تحسبها
+            carryOverVault = prevDoc.data().closing_balance || prevDoc.data().vault || 0; 
         }
+
+        monthData = { vault: carryOverVault, expenses: [], vault_logs: [] };
+        db.collection("financial_months").doc(currentSelectedMonth).set(monthData);
+        updateStats();
+    }
+}
 
         function startListeners() {
             db.collection("users").onSnapshot(snapshot => {
@@ -755,7 +774,9 @@
             
             allUsers.forEach(u => {
                 if (u.contract === 'freelancer') {
-                    totalFlPaid += (u.fl_total_paid || 0);
+                // نقوم بجمع مدفوعات الفريلانسرز التي تمت في هذا الشهر المحدد فقط
+                const currentMonthFlPayments = allExps.filter(e => e.type === 'freelancer').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                totalFlPaid = currentMonthFlPayments;
                     totalFlHolding += ((u.fl_total_credit || 0) - (u.fl_total_paid || 0) - (u.fl_total_deducted || 0));
                     return;
                 }
@@ -1163,3 +1184,4 @@
     </script>
 </body>
 </html>
+
