@@ -1119,61 +1119,85 @@
     </div>`;
 }
        async function updatePaymentStatus(email, status) {
-    const u = allUsers.find(x => x.id === email);
-    const m = u.monthly_finance || {};
-    
-    // إذا كان الشهر غير موجود، ننشئه
-    if(!m[currentSelectedMonth]) m[currentSelectedMonth] = { status: 'pending', bonus: 0, incentive: 0, deductions: [] };
-    
-    // منع التكرار لو تم الصرف فعلاً
-    if (m[currentSelectedMonth].status === 'paid' && status === 'paid') {
-        alert("هذا الراتب تم صرفه بالفعل.");
-        return;
-    }
-
-    try {
-        // تحديث الحالة
-        m[currentSelectedMonth].status = status;
-        await db.collection("users").doc(email).update({ monthly_finance: m });
-
-        // لو الحالة "تم التحويل"، نحسب الصافي ونخصمه من الخزينة
-        if (status === 'paid') {
-            const base = parseFloat(u.salary_base) || 0;
-            const bonus = parseFloat(m[currentSelectedMonth].bonus) || 0;
-            const incen = parseFloat(m[currentSelectedMonth].incentive) || 0;
-            const dSum = (m[currentSelectedMonth].deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+                const u = allUsers.find(x => x.id === email);
+                const m = u.monthly_finance || {};
+                
+                // التأكد من وجود بيانات الشهر الحالي
+                if(!m[currentSelectedMonth]) m[currentSelectedMonth] = { status: 'pending', bonus: 0, incentive: 0, deductions: [] };
+                
+                // منع تكرار الصرف
+                if (m[currentSelectedMonth].status === 'paid' && status === 'paid') {
+                    alert("هذا الراتب تم صرفه وتوثيقه مسبقاً.");
+                    return;
+                }
             
-            // حساب السلف المسجلة في الـ Expenses لهذا الشهر
-            const advSum = (monthData.expenses || []).filter(e => e.type === 'emp_advance' && e.emp_email === email).reduce((s, a) => s + parseFloat(a.amount), 0);
+                try {
+                    // 1. تحديث الحالة في Firestore
+                    m[currentSelectedMonth].status = status;
+                    await db.collection("users").doc(email).update({ monthly_finance: m });
             
-            const netSalary = base + bonus + incen - dSum - advSum;
-
-            // تسجيل المصرف في الخزينة
-            let currentExps = [...(monthData.expenses || [])];
-            currentExps.push({
-                title: `صرف راتب: ${u.name}`,
-                amount: netSalary,
-                date: new Date().toISOString().split('T')[0],
-                type: 'salary_payout',
-                emp_email: email,
-                timestamp: Date.now()
-            });
-
-            await db.collection("financial_months").doc(currentSelectedMonth).update({ expenses: currentExps });
-
-            // إشعار الموظف
-            notifyUser(u.telegram_id, `✅ *إشعار صرف راتب*\nتم تحويل راتبك بنجاح بصافي: *${netSalary.toLocaleString()} ج.م*`);
-            notifyAdmin(`✅ تم صرف راتب ${u.name}`);
-        }
-
-        // تحديث العدادات (لو الـ Snapshot متأخر، بننده عليها يدوي)
-        updateStats();
-
-    } catch (error) {
-        console.error(error);
-        alert("حدث خطأ في تحديث البيانات");
-    }
-}
+                    // 2. إذا تم التحويل (صرف فعلي)
+                    if (status === 'paid') {
+                        // جلب الأرقام بدقة
+                        const base = parseFloat(u.salary_base) || 0;
+                        const bonus = parseFloat(m[currentSelectedMonth].bonus) || 0;
+                        const incen = parseFloat(m[currentSelectedMonth].incentive) || 0;
+                        const dSum = (m[currentSelectedMonth].deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+                        const advSum = (monthData.expenses || []).filter(e => e.type === 'emp_advance' && e.emp_email === email).reduce((s, a) => s + parseFloat(a.amount), 0);
+                        
+                        const netSalary = base + bonus + incen - dSum - advSum;
+                        
+                        // تحويل اسم الشهر للعربية (فبراير ٢٠٢٦)
+                        const monthLabel = moment(currentSelectedMonth, 'YYYY-MM').locale('ar').format('MMMM YYYY');
+            
+                        // --- أ: رسالة الموظف (التنسيق الجديد) ---
+                        const userMsg = `💰 *إشعار مالي من ALMASTER* 💰\n\n` +
+                            `أهلاً *${u.name}* 👋،\n` +
+                            `تم تحويل راتب شهر *${monthLabel}* بالتفاصيل التالية:\n\n` +
+                            `🔹 *الأساسي:* ${base.toLocaleString()} ج.م\n` +
+                            `🎁 *المكافآت:* ${bonus.toLocaleString()} ج.م\n` +
+                            `🚀 *الحوافز:* ${incen.toLocaleString()} ج.م\n` +
+                            `🔻 *الخصومات:* ${(dSum + advSum).toLocaleString()} ج.م\n\n` +
+                            `💵 *صافي المبلغ المحول:* [ *${netSalary.toLocaleString()} ج.م* ]\n\n` +
+                            `✨ --- دعواتنا لك بالبركة --- ✨\n` +
+                            `تمنياتنا لك بصرف مرتبك في الخير والهناء إن شاء الله. 🤲💐`;
+            
+                        // --- ب: رسالتك أنت (كآدمين) ---
+                        const adminMsg = `✅ *تم تأكيد صرف راتب جديد*\n\n` +
+                            `👤 *الموظف:* ${u.name}\n` +
+                            `📅 *عن شهر:* ${monthLabel}\n` +
+                            `--------------------------\n` +
+                            `💰 *التفاصيل المالية:*\n` +
+                            `• الأساسي: ${base.toLocaleString()}\n` +
+                            `• إضافات: ${(bonus + incen).toLocaleString()}\n` +
+                            `• استقطاعات: ${(dSum + advSum).toLocaleString()}\n\n` +
+                            `⚠️ *المبلغ المخصوم من الخزينة:* *${netSalary.toLocaleString()} ج.م*`;
+            
+                        // توثيق العملية في الخزينة
+                        let currentExps = [...(monthData.expenses || [])];
+                        currentExps.push({
+                            title: `راتب محول: ${u.name}`,
+                            amount: netSalary,
+                            date: new Date().toISOString().split('T')[0],
+                            type: 'salary_payout',
+                            emp_email: email,
+                            timestamp: Date.now()
+                        });
+            
+                        await db.collection("financial_months").doc(currentSelectedMonth).update({ expenses: currentExps });
+            
+                        // إرسال الرسائل
+                        notifyUser(u.telegram_id, userMsg, u.mute_notifications);
+                        notifyAdmin(adminMsg);
+                    }
+            
+                    updateStats();
+            
+                } catch (error) {
+                    console.error("Error:", error);
+                    alert("حدث خطأ أثناء تحديث الحالة.");
+                }
+            }
 
         // --- Modals: Employees ---
         function openFinanceModal(email) { 
@@ -1428,6 +1452,7 @@
     </script>
 </body>
 </html>
+
 
 
 
