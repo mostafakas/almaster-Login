@@ -714,22 +714,21 @@
         monthData = doc.data();
         updateStats();
     } else {
-        // إذا كان الشهر جديداً، نحسب الشهر السابق
+        // جلب بيانات الشهر السابق لترحيل الرصيد الختامي
         const [year, month] = currentSelectedMonth.split('-');
-        let prevDate = new Date(year, parseInt(month) - 2, 1);
+        let prevDate = new Date(parseInt(year), parseInt(month) - 2, 1);
         let prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
         
-        let carryOverVault = 0;
         const prevDoc = await db.collection("financial_months").doc(prevMonthStr).get();
-        
+        let carryOverVault = 0;
         if (prevDoc.exists) {
-            // هنا يجب حساب الرصيد الختامي للشهر السابق (السيولة المتبقية)
-            // مؤقتاً سنفترض أنك قمت بتخزينها، أو ستحتاج لعمل دالة تحسبها
-            carryOverVault = prevDoc.data().closing_balance || prevDoc.data().vault || 0; 
+            // أخذ الرصيد الختامي للشهر السابق
+            carryOverVault = prevDoc.data().closing_balance || parseFloat(prevDoc.data().vault) || 0;
         }
 
+        // إنشاء الشهر الجديد بالرصيد المُرحّل
         monthData = { vault: carryOverVault, expenses: [], vault_logs: [] };
-        db.collection("financial_months").doc(currentSelectedMonth).set(monthData);
+        await db.collection("financial_months").doc(currentSelectedMonth).set(monthData);
         updateStats();
     }
 }
@@ -768,54 +767,84 @@
 
         // --- 5. CALCULATION & CHARTS ---
         function updateStats() {
-            let baseT = 0, bonusT = 0, incenT = 0, deductT = 0, paidS = 0, apprvS = 0, waitS = 0;
-            let totalFlPaid = 0, totalFlHolding = 0;
-            const allExps = monthData.expenses || [];
-            
-            allUsers.forEach(u => {
-                if (u.contract === 'freelancer') {
-                // نقوم بجمع مدفوعات الفريلانسرز التي تمت في هذا الشهر المحدد فقط
-                const currentMonthFlPayments = allExps.filter(e => e.type === 'freelancer').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-                totalFlPaid = currentMonthFlPayments;
-                    totalFlHolding += ((u.fl_total_credit || 0) - (u.fl_total_paid || 0) - (u.fl_total_deducted || 0));
-                    return;
-                }
-                const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
-                const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
-                const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
-                const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum - advSum;
-                
-                if (m.status === 'paid') paidS += net; else if (m.status === 'approved') apprvS += net; else waitS += net;
-            });
-            
-            const pureExpenses = allExps.filter(e => e.type !== 'freelancer' && e.type !== 'fl_deduction' && e.type !== 'emp_advance').reduce((s, e)=>s+(parseFloat(e.amount)||0), 0);
-            const totalOut = paidS + pureExpenses + totalFlPaid; 
-            const vaultCap = parseFloat(monthData.vault) || 0;
-            const deposits = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0), 0);
-            const currentLiquid = vaultCap + deposits - totalOut;
+    let baseT = 0, bonusT = 0, incenT = 0, deductT = 0, paidS = 0, apprvS = 0, waitS = 0;
+    let totalFlHolding = 0;
+    const allExps = monthData.expenses || [];
 
-            // Updating all 9 elements
-            if(document.getElementById('vault-balance')) document.getElementById('vault-balance').innerText = vaultCap.toLocaleString();
-            if(document.getElementById('remaining-vault')) document.getElementById('remaining-vault').innerText = currentLiquid.toLocaleString();
-            if(document.getElementById('total-spent')) document.getElementById('total-spent').innerText = totalOut.toLocaleString();
-            if(document.getElementById('total-paid-salaries-sum')) document.getElementById('total-paid-salaries-sum').innerText = paidS.toLocaleString();
-            if(document.getElementById('pending-approved-total')) document.getElementById('pending-approved-total').innerText = apprvS.toLocaleString();
-            if(document.getElementById('pending-waiting-total')) document.getElementById('pending-waiting-total').innerText = waitS.toLocaleString();
-            if(document.getElementById('total-expenses')) document.getElementById('total-expenses').innerText = pureExpenses.toLocaleString();
-            if(document.getElementById('stat-fl-paid')) document.getElementById('stat-fl-paid').innerText = totalFlPaid.toLocaleString();
-            if(document.getElementById('stat-fl-holding')) document.getElementById('stat-fl-holding').innerText = totalFlHolding.toLocaleString();
-            
-            if(document.getElementById('vault-v-open')) document.getElementById('vault-v-open').innerText = vaultCap.toLocaleString();
-            if(document.getElementById('vault-v-in')) document.getElementById('vault-v-in').innerText = deposits.toLocaleString();
-            if(document.getElementById('vault-v-out')) document.getElementById('vault-v-out').innerText = totalOut.toLocaleString();
-            if(document.getElementById('vault-v-final')) document.getElementById('vault-v-final').innerText = currentLiquid.toLocaleString();
+    // 1. حساب مدفوعات الفريلانسرز لهذا الشهر فقط (خارج اللوب لضمان الدقة والسرعة)
+    const totalFlPaid = allExps.filter(e => e.type === 'freelancer').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
 
-            if(expenseChartInstance) { expenseChartInstance.data.datasets[0].data = [paidS, totalFlPaid, pureExpenses]; expenseChartInstance.update(); }
-            if(cashFlowChartInstance) { cashFlowChartInstance.data.datasets[0].data = [deposits, totalOut]; cashFlowChartInstance.update(); }
+    // 2. حساب إجمالي السلف التي خرجت كاش من الخزينة خلال هذا الشهر
+    const totalAdvancesGivenThisMonth = allExps.filter(e => e.type === 'emp_advance').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
 
-            renderPayroll(); renderFreelancers(); renderGeneralExpenses(); renderEmployeeLogs(); renderFreelancerLogs(); renderVaultLedger();
+    allUsers.forEach(u => {
+        if (u.contract === 'freelancer') {
+            // حساب مديونية الفريلانسر الكلية (ما تبقى له بذمة الشركة)
+            totalFlHolding += ((parseFloat(u.fl_total_credit) || 0) - (parseFloat(u.fl_total_paid) || 0) - (parseFloat(u.fl_total_deducted) || 0));
+            return;
         }
 
+        const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
+        const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+
+        // تعديل السلف: نقرأ السلف المتراكمة من حساب الموظف (total_advances) 
+        // أما إذا كانت حالة الراتب "مدفوع"، نقرأ ما تم خصمه فعلياً وأرشفته في الشهر لضمان ثبات التقارير القديمة
+        const advSum = m.status === 'paid' ? (parseFloat(m.advances_deducted) || 0) : (parseFloat(u.total_advances) || 0);
+
+        const net = (parseFloat(u.salary_base) || 0) + (parseFloat(m.bonus) || 0) + (parseFloat(m.incentive) || 0) - dSum - advSum;
+
+        if (m.status === 'paid') paidS += net; 
+        else if (m.status === 'approved') apprvS += net; 
+        else waitS += net;
+    });
+
+    // المصاريف العامة (ليست سلفاً ولا فريلانسر)
+    const pureExpenses = allExps.filter(e => e.type !== 'freelancer' && e.type !== 'fl_deduction' && e.type !== 'emp_advance').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+
+    // حساب إجمالي المنصرف من الخزينة في هذا الشهر:
+    // (صافي الرواتب المدفوعة فعلياً + المصاريف العامة + دفعات الفريلانسرز هذا الشهر + السلف الكاش التي خرجت هذا الشهر)
+    const totalOut = paidS + pureExpenses + totalFlPaid + totalAdvancesGivenThisMonth;
+
+    const vaultCap = parseFloat(monthData.vault) || 0;
+    const deposits = (monthData.vault_logs || []).reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
+    const currentLiquid = vaultCap + deposits - totalOut;
+
+    // تحديث عناصر واجهة المستخدم (DOM)
+    if (document.getElementById('vault-balance')) document.getElementById('vault-balance').innerText = vaultCap.toLocaleString();
+    if (document.getElementById('remaining-vault')) document.getElementById('remaining-vault').innerText = currentLiquid.toLocaleString();
+    if (document.getElementById('total-spent')) document.getElementById('total-spent').innerText = totalOut.toLocaleString();
+    if (document.getElementById('total-paid-salaries-sum')) document.getElementById('total-paid-salaries-sum').innerText = paidS.toLocaleString();
+    if (document.getElementById('pending-approved-total')) document.getElementById('pending-approved-total').innerText = apprvS.toLocaleString();
+    if (document.getElementById('pending-waiting-total')) document.getElementById('pending-waiting-total').innerText = waitS.toLocaleString();
+    if (document.getElementById('total-expenses')) document.getElementById('total-expenses').innerText = (pureExpenses + totalAdvancesGivenThisMonth).toLocaleString();
+    if (document.getElementById('stat-fl-paid')) document.getElementById('stat-fl-paid').innerText = totalFlPaid.toLocaleString();
+    if (document.getElementById('stat-fl-holding')) document.getElementById('stat-fl-holding').innerText = totalFlHolding.toLocaleString();
+
+    if (document.getElementById('vault-v-open')) document.getElementById('vault-v-open').innerText = vaultCap.toLocaleString();
+    if (document.getElementById('vault-v-in')) document.getElementById('vault-v-in').innerText = deposits.toLocaleString();
+    if (document.getElementById('vault-v-out')) document.getElementById('vault-v-out').innerText = totalOut.toLocaleString();
+    if (document.getElementById('vault-v-final')) document.getElementById('vault-v-final').innerText = currentLiquid.toLocaleString();
+
+    // تحديث الرسوم البيانية
+    if (expenseChartInstance) { 
+        expenseChartInstance.data.datasets[0].data = [paidS, totalFlPaid, pureExpenses + totalAdvancesGivenThisMonth]; 
+        expenseChartInstance.update(); 
+    }
+    if (cashFlowChartInstance) { 
+        cashFlowChartInstance.data.datasets[0].data = [deposits, totalOut]; 
+        cashFlowChartInstance.update(); 
+    }
+
+    renderPayroll(); renderFreelancers(); renderGeneralExpenses(); renderEmployeeLogs(); renderFreelancerLogs(); renderVaultLedger();
+
+    // حفظ الرصيد الختامي في Firebase ليكون متاحاً كـ "رصيد افتتاحي" للشهر القادم
+    if (dataLoadedFlags.finance) {
+        db.collection("financial_months").doc(currentSelectedMonth).update({ closing_balance: currentLiquid }).catch(() => {
+            // في حالة لم تكن الوثيقة موجودة استخدم set مع merge
+            db.collection("financial_months").doc(currentSelectedMonth).set({ closing_balance: currentLiquid }, { merge: true });
+        });
+    }
+}
         function initCharts() {
             Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Cairo';
             const ctxExp = document.getElementById('expenseChart');
@@ -834,7 +863,8 @@
             allUsers.filter(u => u.contract !== 'freelancer' && u.name.toLowerCase().includes(search)).forEach(u => {
                 const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
                 const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
-                const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
+// نقرأ السلف من حساب الموظف، ولو الراتب اتدفع نقرأها من أرشيف الشهر عشان نحافظ على دقة التقارير القديمة
+                const advSum = m.status === 'paid' ? (parseFloat(m.advances_deducted) || 0) : parseFloat(u.total_advances || 0);
                 const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum - advSum;
                 
                 tbody.innerHTML += `
@@ -979,18 +1009,26 @@
         }
 
         async function updatePaymentStatus(email, status) {
-            const u = allUsers.find(x => x.id === email); const m = u.monthly_finance || {};
-            if(!m[currentSelectedMonth]) m[currentSelectedMonth] = {}; m[currentSelectedMonth].status = status;
-            await db.collection("users").doc(email).update({ monthly_finance: m });
-            if (status === 'paid') {
-                 const monthLabel = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
-                 const base = parseFloat(u.salary_base)||0, bonus = parseFloat(m[currentSelectedMonth].bonus)||0, incen = parseFloat(m[currentSelectedMonth].incentive)||0;
-                 let dSum = 0; if (m[currentSelectedMonth].deductions) m[currentSelectedMonth].deductions.forEach(d => { dSum += (parseFloat(d.amount)||0); });
-                 const advSum = (monthData.expenses||[]).filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
-                 const net = base + bonus + incen - dSum - advSum;
-                 notifyUser(u.telegram_id, `🔔 *إشعار تحويل راتب*\nتم تحويل راتب ${monthLabel} بصافي: *${net} ج.م*`, u.mute_notifications);
-            }
-        }
+    const u = allUsers.find(x => x.id === email); const m = u.monthly_finance || {};
+    if(!m[currentSelectedMonth]) m[currentSelectedMonth] = {}; 
+    m[currentSelectedMonth].status = status;
+    
+    let updates = { monthly_finance: m };
+    
+    if (status === 'paid') {
+         // أرشفة قيمة السلفة المخصومة في الشهر ده، وتصفير دين الموظف
+         m[currentSelectedMonth].advances_deducted = parseFloat(u.total_advances || 0);
+         updates.total_advances = 0;
+         
+         const monthLabel = document.getElementById('month-picker').options[document.getElementById('month-picker').selectedIndex].text;
+         const base = parseFloat(u.salary_base)||0, bonus = parseFloat(m[currentSelectedMonth].bonus)||0, incen = parseFloat(m[currentSelectedMonth].incentive)||0;
+         let dSum = 0; if (m[currentSelectedMonth].deductions) m[currentSelectedMonth].deductions.forEach(d => { dSum += (parseFloat(d.amount)||0); });
+         const net = base + bonus + incen - dSum - m[currentSelectedMonth].advances_deducted;
+         
+         notifyUser(u.telegram_id, `🔔 *إشعار تحويل راتب*\nتم تحويل راتب ${monthLabel} بصافي: *${net} ج.م*`, u.mute_notifications);
+    }
+    await db.collection("users").doc(email).update(updates);
+}
 
         // --- Modals: Employees ---
         function openFinanceModal(email) { 
@@ -1010,12 +1048,20 @@
 
         function openEmpAdvanceModal(email) { const u = allUsers.find(x => x.id === email); if(!u) return; document.getElementById('adv-emp-email').value = email; document.getElementById('adv-emp-name').innerText = `للموظف: ${u.name}`; document.getElementById('adv-amount').value = ''; document.getElementById('adv-reason').value = 'سلفة نقدية'; openModal('modal-emp-advance'); }
         async function confirmEmpAdvance() {
-            const email = document.getElementById('adv-emp-email').value, amount = parseFloat(document.getElementById('adv-amount').value), reason = document.getElementById('adv-reason').value;
-            if(!amount) return; const u = allUsers.find(x => x.id === email); let currentExps = [...(monthData.expenses || [])];
-            currentExps.push({ title: `سلفة للموظف: ${u.name} (${reason})`, amount: amount, date: new Date().toISOString().split('T')[0], type: 'emp_advance', emp_email: email, timestamp: Date.now() });
-            await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
-            notifyUser(u.telegram_id, `💸 *سلفة*\nتم صرف: *${amount} ج.م*`, u.mute_notifications); notifyAdmin(`💸 صرف سلفة لـ ${u.name}\nالقيمة: ${amount}`); closeModal('modal-emp-advance');
-        }
+    const email = document.getElementById('adv-emp-email').value, amount = parseFloat(document.getElementById('adv-amount').value), reason = document.getElementById('adv-reason').value;
+    if(!amount) return; const u = allUsers.find(x => x.id === email); 
+    
+    // 1. تسجيل السلفة كمصروف يخصم من الخزينة هذا الشهر
+    let currentExps = [...(monthData.expenses || [])];
+    currentExps.push({ title: `سلفة للموظف: ${u.name} (${reason})`, amount: amount, date: new Date().toISOString().split('T')[0], type: 'emp_advance', emp_email: email, timestamp: Date.now() });
+    await db.collection("financial_months").doc(currentSelectedMonth).set({ expenses: currentExps }, { merge: true });
+    
+    // 2. تسجيل السلفة في حساب الموظف التراكمي (الدين)
+    const currentDebt = parseFloat(u.total_advances || 0);
+    await db.collection("users").doc(email).update({ total_advances: currentDebt + amount });
+    
+    notifyUser(u.telegram_id, `💸 *سلفة*\nتم صرف: *${amount} ج.م*`, u.mute_notifications); notifyAdmin(`💸 صرف سلفة لـ ${u.name}\nالقيمة: ${amount}`); closeModal('modal-emp-advance');
+}
 
         function openEmpDeductModal(email) {
             const u = allUsers.find(x => x.id === email); if(!u) return;
@@ -1086,7 +1132,8 @@
                 if(u.contract === 'freelancer') return;
                 const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
                 const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount)||0), 0);
-                const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
+// نقرأ السلف من حساب الموظف، ولو الراتب اتدفع نقرأها من أرشيف الشهر عشان نحافظ على دقة التقارير القديمة
+                const advSum = m.status === 'paid' ? (parseFloat(m.advances_deducted) || 0) : parseFloat(u.total_advances || 0);
                 const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum - advSum;
                 bT += (parseFloat(u.salary_base)||0); boT += (parseFloat(m.bonus)||0); iT += (parseFloat(m.incentive)||0); dT += dSum;
                 if(m.status === 'paid') paidS += net;
@@ -1184,4 +1231,5 @@
     </script>
 </body>
 </html>
+
 
