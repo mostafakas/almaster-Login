@@ -1103,67 +1103,65 @@
         <div class="hidden group-hover:flex absolute left-0 top-full mt-1 bg-dark-950 shadow-[0_10px_30px_rgba(0,0,0,0.5)] rounded-xl border border-white/10 p-1.5 z-[100] flex-col w-32 backdrop-blur-md">
             <button onclick="updatePaymentStatus('${email}', 'pending')" class="p-2 hover:bg-white/5 text-right text-[10px] font-bold text-slate-400 rounded-lg transition-colors">انتظار</button>
             <button onclick="updatePaymentStatus('${email}', 'approved')" class="p-2 hover:bg-white/5 text-right text-[10px] font-bold text-primary-400 rounded-lg transition-colors">اعتماد (Hold)</button>
-            <button onclick="updatePaymentStatus('${email}', 'paid')" class="p-2 hover:bg-green-500/10 text-right text-[10px] font-black text-green-400 rounded-lg transition-colors border-t border-white/5 mt-1">تم التحويل ✅</button>
+            <button onclick="updatePaymentStatus('${email}', 'paid')" class="p-2 hover:bg-green-500/10 text-right text-[10px] font-black text-green-400 rounded-lg transition-colors border-t border-white/5 mt-1">تحويل وصرف ✅</button>
         </div>
     </div>`;
 }
-
         async function updatePaymentStatus(email, status) {
     const u = allUsers.find(x => x.id === email);
     const m = u.monthly_finance || {};
     
-    // التأكد من وجود بيانات الشهر الحالي
     if(!m[currentSelectedMonth]) m[currentSelectedMonth] = { status: 'pending', bonus: 0, incentive: 0, deductions: [] };
     
-    // إذا كان الموظف تم تحويله بالفعل، لا نريد تكرار الخصم
+    // منع تكرار الصرف إذا كانت الحالة "مدفوع" بالفعل
     if (m[currentSelectedMonth].status === 'paid' && status === 'paid') {
-        alert("هذا الراتب تم صرفه بالفعل وتوثيقه في الخزينة.");
+        alert("هذا الراتب تم صرفه وتوثيقه مسبقاً.");
         return;
     }
 
-    m[currentSelectedMonth].status = status;
-
     try {
-        // 1. تحديث حالة الموظف في Firestore
+        // تحديث الحالة في ملف المستخدم
+        m[currentSelectedMonth].status = status;
         await db.collection("users").doc(email).update({ monthly_finance: m });
 
-        // 2. إذا تم التحويل، نقوم بخصم المبلغ من الخزينة (بإضافته للمصاريف)
+        // إذا كانت الحالة "تم التحويل" (صرف فعلي)
         if (status === 'paid') {
             const base = parseFloat(u.salary_base) || 0;
             const bonus = parseFloat(m[currentSelectedMonth].bonus) || 0;
             const incen = parseFloat(m[currentSelectedMonth].incentive) || 0;
             const dSum = (m[currentSelectedMonth].deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
             
-            // حساب السلف من المصاريف الحالية
+            // حساب السلف المسجلة في المصاريف
             const advSum = (monthData.expenses || []).filter(e => e.type === 'emp_advance' && e.emp_email === email).reduce((s, a) => s + parseFloat(a.amount), 0);
             
             const netSalary = base + bonus + incen - dSum - advSum;
 
-            // إضافة الراتب كـ "مصروف عام" لكي يظهر في دفتر الأستاذ ويخصم من السيولة
+            // توثيق العملية في سجل المصاريف لخصمها من الخزينة فعلياً
             let currentExps = [...(monthData.expenses || [])];
             currentExps.push({
-                title: `صرف راتب: ${u.name}`,
+                title: `راتب محول: ${u.name}`,
                 amount: netSalary,
                 date: new Date().toISOString().split('T')[0],
-                type: 'salary_payout', // نوع جديد لتمييزه
+                type: 'salary_payout',
                 emp_email: email,
                 timestamp: Date.now()
             });
 
             await db.collection("financial_months").doc(currentSelectedMonth).update({ expenses: currentExps });
 
-            // 3. إرسال إشعار التليجرام
-            const msg = `🔔 *إشعار استلام راتب*\n\nعزيزي ${u.name}،\nتم تحويل راتب شهر *${currentSelectedMonth}* بنجاح.\n\n💰 الصافي المستلم: *${netSalary.toLocaleString()} ج.م*\n\nشكراً لجهودك مع ALMASTER.`;
-            notifyUser(u.telegram_id, msg, u.mute_notifications);
-            notifyAdmin(`✅ تم تأكيد صرف راتب: ${u.name}\nبقيمة: ${netSalary.toLocaleString()}`);
+            // إرسال الإشعارات
+            notifyUser(u.telegram_id, `🔔 *إشعار استلام راتب*\nعزيزي ${u.name}، تم تحويل راتب شهر ${currentSelectedMonth} بصافي: *${netSalary.toLocaleString()} ج.م*`, u.mute_notifications);
+            notifyAdmin(`✅ تم تنفيذ صرف راتب للموظف: ${u.name}\nالصافي: ${netSalary.toLocaleString()}`);
+        } else {
+            notifyAdmin(`🔄 تم تغيير حالة راتب ${u.name} إلى: ${status === 'approved' ? 'معتمد' : 'انتظار'}`);
         }
-        
-        // تحديث الواجهة فوراً
+
+        // تحديث العدادات فوراً
         updateStats();
 
     } catch (error) {
         console.error("Error updating status:", error);
-        alert("حدث خطأ أثناء تحديث الحالة.");
+        alert("فشل تحديث الحالة في قاعدة البيانات.");
     }
 }
 
@@ -1420,5 +1418,6 @@
     </script>
 </body>
 </html>
+
 
 
