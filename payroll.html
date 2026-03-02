@@ -714,20 +714,21 @@
         monthData = doc.data();
         updateStats();
     } else {
-        // جلب بيانات الشهر السابق لترحيل الرصيد الختامي
+        // حساب الرصيد الختامي من الشهر السابق بدقة
         const [year, month] = currentSelectedMonth.split('-');
         let prevDate = new Date(parseInt(year), parseInt(month) - 2, 1);
         let prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
         
         const prevDoc = await db.collection("financial_months").doc(prevMonthStr).get();
         let carryOverVault = 0;
+        
         if (prevDoc.exists) {
-            // أخذ الرصيد الختامي للشهر السابق
-            carryOverVault = prevDoc.data().closing_balance || parseFloat(prevDoc.data().vault) || 0;
+            // نأخذ "السيولة الحقيقية المتبقية" فقط وليس إجمالي الخزنة القديم
+            carryOverVault = parseFloat(prevDoc.data().closing_balance) || 0;
         }
 
-        // إنشاء الشهر الجديد بالرصيد المُرحّل
-        monthData = { vault: carryOverVault, expenses: [], vault_logs: [] };
+        // إنشاء الشهر الجديد بصافي السيولة المُرحلة فقط
+        monthData = { vault: carryOverVault, closing_balance: carryOverVault, expenses: [], vault_logs: [] };
         await db.collection("financial_months").doc(currentSelectedMonth).set(monthData);
         updateStats();
     }
@@ -767,83 +768,47 @@
 
         // --- 5. CALCULATION & CHARTS ---
         function updateStats() {
-    let baseT = 0, bonusT = 0, incenT = 0, deductT = 0, paidS = 0, apprvS = 0, waitS = 0;
-    let totalFlHolding = 0;
+    let paidS = 0, apprvS = 0;
     const allExps = monthData.expenses || [];
 
-    // 1. حساب مدفوعات الفريلانسرز لهذا الشهر فقط (خارج اللوب لضمان الدقة والسرعة)
-    const totalFlPaid = allExps.filter(e => e.type === 'freelancer').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-
-    // 2. حساب إجمالي السلف التي خرجت كاش من الخزينة خلال هذا الشهر
-    const totalAdvancesGivenThisMonth = allExps.filter(e => e.type === 'emp_advance').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+    // 1. حساب المصروفات الفعلية لهذا الشهر فقط
+    const totalFlPaidMonth = allExps.filter(e => e.type === 'freelancer').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+    const totalAdvancesMonth = allExps.filter(e => e.type === 'emp_advance').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+    const pureExpenses = allExps.filter(e => e.type !== 'freelancer' && e.type !== 'fl_deduction' && e.type !== 'emp_advance').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
 
     allUsers.forEach(u => {
-        if (u.contract === 'freelancer') {
-            // حساب مديونية الفريلانسر الكلية (ما تبقى له بذمة الشركة)
-            totalFlHolding += ((parseFloat(u.fl_total_credit) || 0) - (parseFloat(u.fl_total_paid) || 0) - (parseFloat(u.fl_total_deducted) || 0));
-            return;
-        }
-
+        if (u.contract === 'freelancer') return;
         const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
         const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
-
-        // تعديل السلف: نقرأ السلف المتراكمة من حساب الموظف (total_advances) 
-        // أما إذا كانت حالة الراتب "مدفوع"، نقرأ ما تم خصمه فعلياً وأرشفته في الشهر لضمان ثبات التقارير القديمة
         const advSum = m.status === 'paid' ? (parseFloat(m.advances_deducted) || 0) : (parseFloat(u.total_advances) || 0);
-
         const net = (parseFloat(u.salary_base) || 0) + (parseFloat(m.bonus) || 0) + (parseFloat(m.incentive) || 0) - dSum - advSum;
 
         if (m.status === 'paid') paidS += net; 
-        else if (m.status === 'approved') apprvS += net; 
-        else waitS += net;
+        else if (m.status === 'approved') apprvS += net;
     });
 
-    // المصاريف العامة (ليست سلفاً ولا فريلانسر)
-    const pureExpenses = allExps.filter(e => e.type !== 'freelancer' && e.type !== 'fl_deduction' && e.type !== 'emp_advance').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+    // 2. المعادلة الصحيحة للسيولة:
+    const vaultOpening = parseFloat(monthData.vault) || 0; // الرصيد المرحل (الفلوس اللي بدأت بيها الشهر)
+    const deposits = (monthData.vault_logs || []).reduce((s, l) => s + (parseFloat(l.amount) || 0), 0); // إيداعات الشهر ده فقط
+    
+    // إجمالي الخارج الفعلي من الخزنة
+    const totalOutActual = paidS + pureExpenses + totalFlPaidMonth + totalAdvancesMonth;
 
-    // حساب إجمالي المنصرف من الخزينة في هذا الشهر:
-    // (صافي الرواتب المدفوعة فعلياً + المصاريف العامة + دفعات الفريلانسرز هذا الشهر + السلف الكاش التي خرجت هذا الشهر)
-    const totalOut = paidS + pureExpenses + totalFlPaid + totalAdvancesGivenThisMonth;
+    // السيولة المتاحة = (المبلغ المرحل + إيداعات الشهر) - (المنصرف الفعلي + المحجوز للرواتب المعتمدة)
+    const currentLiquid = (vaultOpening + deposits) - (totalOutActual + apprvS);
 
-    const vaultCap = parseFloat(monthData.vault) || 0;
-    const deposits = (monthData.vault_logs || []).reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
-    const currentLiquid = vaultCap + deposits - totalOut;
-
-    // تحديث عناصر واجهة المستخدم (DOM)
-    if (document.getElementById('vault-balance')) document.getElementById('vault-balance').innerText = vaultCap.toLocaleString();
-    if (document.getElementById('remaining-vault')) document.getElementById('remaining-vault').innerText = currentLiquid.toLocaleString();
-    if (document.getElementById('total-spent')) document.getElementById('total-spent').innerText = totalOut.toLocaleString();
-    if (document.getElementById('total-paid-salaries-sum')) document.getElementById('total-paid-salaries-sum').innerText = paidS.toLocaleString();
-    if (document.getElementById('pending-approved-total')) document.getElementById('pending-approved-total').innerText = apprvS.toLocaleString();
-    if (document.getElementById('pending-waiting-total')) document.getElementById('pending-waiting-total').innerText = waitS.toLocaleString();
-    if (document.getElementById('total-expenses')) document.getElementById('total-expenses').innerText = (pureExpenses + totalAdvancesGivenThisMonth).toLocaleString();
-    if (document.getElementById('stat-fl-paid')) document.getElementById('stat-fl-paid').innerText = totalFlPaid.toLocaleString();
-    if (document.getElementById('stat-fl-holding')) document.getElementById('stat-fl-holding').innerText = totalFlHolding.toLocaleString();
-
-    if (document.getElementById('vault-v-open')) document.getElementById('vault-v-open').innerText = vaultCap.toLocaleString();
-    if (document.getElementById('vault-v-in')) document.getElementById('vault-v-in').innerText = deposits.toLocaleString();
-    if (document.getElementById('vault-v-out')) document.getElementById('vault-v-out').innerText = totalOut.toLocaleString();
-    if (document.getElementById('vault-v-final')) document.getElementById('vault-v-final').innerText = currentLiquid.toLocaleString();
-
-    // تحديث الرسوم البيانية
-    if (expenseChartInstance) { 
-        expenseChartInstance.data.datasets[0].data = [paidS, totalFlPaid, pureExpenses + totalAdvancesGivenThisMonth]; 
-        expenseChartInstance.update(); 
-    }
-    if (cashFlowChartInstance) { 
-        cashFlowChartInstance.data.datasets[0].data = [deposits, totalOut]; 
-        cashFlowChartInstance.update(); 
-    }
-
-    renderPayroll(); renderFreelancers(); renderGeneralExpenses(); renderEmployeeLogs(); renderFreelancerLogs(); renderVaultLedger();
-
-    // حفظ الرصيد الختامي في Firebase ليكون متاحاً كـ "رصيد افتتاحي" للشهر القادم
+    // تحديث الأرقام في الواجهة
+    document.getElementById('vault-balance').innerText = vaultOpening.toLocaleString(); // الرصيد الافتتاحي
+    document.getElementById('remaining-vault').innerText = currentLiquid.toLocaleString(); // السيولة الحقيقية
+    
+    // حفظ الرصيد الختامي لضمان ترحيله للشهر القادم بشكل صحيح
     if (dataLoadedFlags.finance) {
         db.collection("financial_months").doc(currentSelectedMonth).update({ closing_balance: currentLiquid }).catch(() => {
-            // في حالة لم تكن الوثيقة موجودة استخدم set مع merge
             db.collection("financial_months").doc(currentSelectedMonth).set({ closing_balance: currentLiquid }, { merge: true });
         });
     }
+
+    renderPayroll(); renderFreelancers(); renderGeneralExpenses(); renderVaultLedger();
 }
         function initCharts() {
             Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Cairo';
@@ -1231,5 +1196,6 @@
     </script>
 </body>
 </html>
+
 
 
