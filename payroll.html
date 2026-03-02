@@ -31,6 +31,20 @@
     </script>
 
     <style>
+        /* منع الجدول من قص القائمة المنسدلة */
+#payroll-body tr, #payroll-body td {
+    overflow: visible !important;
+    position: relative;
+}
+
+#view-employees .flex-1.overflow-auto {
+    overflow: visible !important; /* أو اجعلها auto مع التأكد من وجود مساحة */
+}
+
+/* تحسين شكل القائمة */
+.status-dropdown {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+}
         /* الحل الجذري لمنع تداخل الشاشات */
         .hidden { display: none !important; }
 
@@ -1083,63 +1097,61 @@
         }
 
         function renderStatusBadge(s, email) {
-    const c = { 
-        'pending': 'bg-orange-500/20 text-orange-400 border-orange-500/30', 
-        'approved': 'bg-primary-500/20 text-primary-400 border-primary-500/30', 
-        'paid': 'bg-green-500/20 text-green-400 border-green-500/30' 
-    }[s || 'pending'];
+    const configs = {
+        'pending': { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', text: 'انتظار' },
+        'approved': { color: 'bg-primary-500/20 text-primary-400 border-primary-500/30', text: 'معتمد (Hold)' },
+        'paid': { color: 'bg-green-500/20 text-green-400 border-green-500/30', text: 'تم التحويل ✅' }
+    };
     
-    const t = { 
-        'pending': 'انتظار', 
-        'approved': 'معتمد', 
-        'paid': 'تم التحويل' 
-    }[s || 'pending'];
+    const current = configs[s || 'pending'];
 
     return `
     <div class="group relative inline-block text-right">
-        <button class="px-3 py-1 rounded-lg text-[10px] font-black ${c} border w-24 transition-all">
-            ${t} <i class="fas fa-chevron-down ml-1 text-[8px]"></i>
+        <button class="px-3 py-1.5 rounded-lg text-[10px] font-black ${current.color} border w-28 transition-all flex items-center justify-between">
+            ${current.text} <i class="fas fa-chevron-down text-[8px]"></i>
         </button>
-        <div class="hidden group-hover:flex absolute left-0 top-full mt-1 bg-dark-950 shadow-[0_10px_30px_rgba(0,0,0,0.5)] rounded-xl border border-white/10 p-1.5 z-[100] flex-col w-32 backdrop-blur-md">
-            <button onclick="updatePaymentStatus('${email}', 'pending')" class="p-2 hover:bg-white/5 text-right text-[10px] font-bold text-slate-400 rounded-lg transition-colors">انتظار</button>
-            <button onclick="updatePaymentStatus('${email}', 'approved')" class="p-2 hover:bg-white/5 text-right text-[10px] font-bold text-primary-400 rounded-lg transition-colors">اعتماد (Hold)</button>
-            <button onclick="updatePaymentStatus('${email}', 'paid')" class="p-2 hover:bg-green-500/10 text-right text-[10px] font-black text-green-400 rounded-lg transition-colors border-t border-white/5 mt-1">تحويل وصرف ✅</button>
+        
+        <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 absolute right-0 top-full mt-1 bg-dark-950 border border-white/10 rounded-xl p-1 z-[9999] flex flex-col w-36 shadow-2xl transition-all duration-200">
+            <button onclick="updatePaymentStatus('${email}', 'pending')" class="w-full text-right p-2.5 hover:bg-white/5 text-[10px] font-bold text-slate-400 rounded-lg transition-colors">إرجاع لانتظار</button>
+            <button onclick="updatePaymentStatus('${email}', 'approved')" class="w-full text-right p-2.5 hover:bg-white/5 text-[10px] font-bold text-primary-400 rounded-lg transition-colors">اعتماد الراتب (Hold)</button>
+            <button onclick="updatePaymentStatus('${email}', 'paid')" class="w-full text-right p-2.5 hover:bg-green-500/10 text-[10px] font-black text-green-400 rounded-lg transition-colors border-t border-white/5 mt-1">تحويل وصرف ✅</button>
         </div>
     </div>`;
 }
-        async function updatePaymentStatus(email, status) {
+       async function updatePaymentStatus(email, status) {
     const u = allUsers.find(x => x.id === email);
     const m = u.monthly_finance || {};
     
+    // إذا كان الشهر غير موجود، ننشئه
     if(!m[currentSelectedMonth]) m[currentSelectedMonth] = { status: 'pending', bonus: 0, incentive: 0, deductions: [] };
     
-    // منع تكرار الصرف إذا كانت الحالة "مدفوع" بالفعل
+    // منع التكرار لو تم الصرف فعلاً
     if (m[currentSelectedMonth].status === 'paid' && status === 'paid') {
-        alert("هذا الراتب تم صرفه وتوثيقه مسبقاً.");
+        alert("هذا الراتب تم صرفه بالفعل.");
         return;
     }
 
     try {
-        // تحديث الحالة في ملف المستخدم
+        // تحديث الحالة
         m[currentSelectedMonth].status = status;
         await db.collection("users").doc(email).update({ monthly_finance: m });
 
-        // إذا كانت الحالة "تم التحويل" (صرف فعلي)
+        // لو الحالة "تم التحويل"، نحسب الصافي ونخصمه من الخزينة
         if (status === 'paid') {
             const base = parseFloat(u.salary_base) || 0;
             const bonus = parseFloat(m[currentSelectedMonth].bonus) || 0;
             const incen = parseFloat(m[currentSelectedMonth].incentive) || 0;
             const dSum = (m[currentSelectedMonth].deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
             
-            // حساب السلف المسجلة في المصاريف
+            // حساب السلف المسجلة في الـ Expenses لهذا الشهر
             const advSum = (monthData.expenses || []).filter(e => e.type === 'emp_advance' && e.emp_email === email).reduce((s, a) => s + parseFloat(a.amount), 0);
             
             const netSalary = base + bonus + incen - dSum - advSum;
 
-            // توثيق العملية في سجل المصاريف لخصمها من الخزينة فعلياً
+            // تسجيل المصرف في الخزينة
             let currentExps = [...(monthData.expenses || [])];
             currentExps.push({
-                title: `راتب محول: ${u.name}`,
+                title: `صرف راتب: ${u.name}`,
                 amount: netSalary,
                 date: new Date().toISOString().split('T')[0],
                 type: 'salary_payout',
@@ -1149,19 +1161,17 @@
 
             await db.collection("financial_months").doc(currentSelectedMonth).update({ expenses: currentExps });
 
-            // إرسال الإشعارات
-            notifyUser(u.telegram_id, `🔔 *إشعار استلام راتب*\nعزيزي ${u.name}، تم تحويل راتب شهر ${currentSelectedMonth} بصافي: *${netSalary.toLocaleString()} ج.م*`, u.mute_notifications);
-            notifyAdmin(`✅ تم تنفيذ صرف راتب للموظف: ${u.name}\nالصافي: ${netSalary.toLocaleString()}`);
-        } else {
-            notifyAdmin(`🔄 تم تغيير حالة راتب ${u.name} إلى: ${status === 'approved' ? 'معتمد' : 'انتظار'}`);
+            // إشعار الموظف
+            notifyUser(u.telegram_id, `✅ *إشعار صرف راتب*\nتم تحويل راتبك بنجاح بصافي: *${netSalary.toLocaleString()} ج.م*`);
+            notifyAdmin(`✅ تم صرف راتب ${u.name}`);
         }
 
-        // تحديث العدادات فوراً
+        // تحديث العدادات (لو الـ Snapshot متأخر، بننده عليها يدوي)
         updateStats();
 
     } catch (error) {
-        console.error("Error updating status:", error);
-        alert("فشل تحديث الحالة في قاعدة البيانات.");
+        console.error(error);
+        alert("حدث خطأ في تحديث البيانات");
     }
 }
 
@@ -1418,6 +1428,7 @@
     </script>
 </body>
 </html>
+
 
 
 
