@@ -770,116 +770,33 @@
         // --- 5. CALCULATION & CHARTS ---
             function updateStats() {
     // 1. متغيرات "مدى الحياة" (للحساب التراكمي للخزينة)
-    let totalLifetimeVaultIn = 0;   // كل ما دخل الخزينة (رصيد + إيداعات)
-    let totalLifetimeVaultOut = 0;  // كل ما خرج من الخزينة فعلياً
+    let totalLifetimeVaultIn = 0;   // كل الإيداعات منذ البداية
+    let totalLifetimeVaultOut = 0;  // كل المصاريف التي خرجت فعلياً منذ البداية
 
-    // 2. متغيرات "الشهر الحالي" (لعرضها في كروت الداشبورد فقط)
-    let paidS_Current = 0;
-    let apprvS_Current = 0;
-    let waitS_Current = 0;
-    let flPaid_Current = 0;
-    let flHolding_Current = 0;
+    // 2. متغيرات "الشهر الحالي" (للعرض في كروت الإحصائيات)
+    let baseT = 0, bonusT = 0, incenT = 0, deductT = 0;
+    let paidS_Current = 0, apprvS_Current = 0, waitS_Current = 0;
+    let flPaid_Current = 0, flHolding_Current = 0;
     let pureExpenses_Current = 0;
 
-    // --- أولاً: الحساب التراكمي من سجلات كافة الشهور في قاعدة البيانات ---
+    // --- أولاً: الحساب التراكمي (من مصفوفة كل الشهور) ---
     allMonthsData.forEach(m => {
-        // جمع الرصيد الافتتاحي اليدوي (vault) الموجود في كل مستند شهر
-        // ملاحظة: إذا كنت تضع الإيداعات في vault_logs فقط، اجعل قيمة vault في الفايربيز 0 لتجنب التدبيل
+        // جمع الأرصدة الافتتاحية لكل شهر (إذا كنت تضع رصيد ابتدائي يدوي في كل شهر)
         totalLifetimeVaultIn += (parseFloat(m.vault) || 0);
 
-        // جمع كل حركات الإيداع من سجلات الخزينة
+        // جمع الإيداعات من سجلات الخزينة
         (m.vault_logs || []).forEach(log => {
             totalLifetimeVaultIn += (parseFloat(log.amount) || 0);
         });
 
-        // جمع كل ما خرج من الخزينة (نثريات، رواتب مدفوعة، دفعات فريلانسر، سلف)
+        // جمع المصاريف الخارجة فعلياً (التي قللت الخزينة)
         (m.expenses || []).forEach(e => {
-            // الخصومات (fl_deduction) لا تُخصم من الخزينة لأنها مجرد تعديل حسابي
+            // ملاحظة: الخصومات (fl_deduction) لا تخرج مبالغ من الخزينة بل تعدل حساب فقط
             if (e.type !== 'fl_deduction') {
                 totalLifetimeVaultOut += (parseFloat(e.amount) || 0);
             }
         });
     });
-
-    // --- ثانياً: حساب إحصائيات "الشهر الحالي" فقط (للعرض البصري) ---
-    // نستخدم monthData لأنها تمثل بيانات الشهر المختار حالياً
-    const currentMonthExps = monthData.expenses || [];
-
-    allUsers.forEach(u => {
-        if (u.contract === 'freelancer') {
-            // مدفوعات المستقلين خلال هذا الشهر فقط
-            const paidThisMonth = currentMonthExps
-                .filter(e => e.type === 'freelancer' && e.fl_id === u.id)
-                .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-            flPaid_Current += paidThisMonth;
-
-            // المتبقي للمستقلين (Hold) يظل تراكمياً دائماً لأنه مستحقات قائمة
-            flHolding_Current += ((u.fl_total_credit || 0) - (u.fl_total_paid || 0) - (u.fl_total_deducted || 0));
-        } else {
-            // حسابات الموظفين الأساسيين لهذا الشهر
-            const mFin = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
-            const dSum = (mFin.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
-            const advSum = currentMonthExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
-
-            const net = (parseFloat(u.salary_base) || 0) + (parseFloat(mFin.bonus) || 0) + (parseFloat(mFin.incentive) || 0) - dSum - advSum;
-
-            if (mFin.status === 'paid') paidS_Current += net;
-            else if (mFin.status === 'approved') apprvS_Current += net;
-            else waitS_Current += net;
-        }
-    });
-
-    // النثريات العامة لهذا الشهر فقط
-    pureExpenses_Current = currentMonthExps
-        .filter(e => e.type === 'general' || !e.type)
-        .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-
-    // الرصيد الحالي الصافي (السيولة المتوفرة الآن)
-    const currentLiquid = totalLifetimeVaultIn - totalLifetimeVaultOut;
-
-    // --- ثالثاً: تحديث الأرقام في واجهة المستخدم (UI) ---
-    const updateUI = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = value.toLocaleString();
-    };
-
-    // الخزينة والسيولة (أرقام تراكمية مدى الحياة)
-    updateUI('vault-balance', totalLifetimeVaultIn);
-    updateUI('remaining-vault', currentLiquid);
-    updateUI('total-spent', totalLifetimeVaultOut);
-
-    // إحصائيات الشهر الحالي (تتصفر تلقائياً بصرياً عند بداية كل شهر)
-    updateUI('total-paid-salaries-sum', paidS_Current);
-    updateUI('pending-approved-total', apprvS_Current);
-    updateUI('pending-waiting-total', waitS_Current);
-    updateUI('total-expenses', pureExpenses_Current);
-    updateUI('stat-fl-paid', flPaid_Current);
-    updateUI('stat-fl-holding', flHolding_Current);
-
-    // تحديث أرقام التقرير (Print Template)
-    updateUI('vault-v-open', totalLifetimeVaultIn);
-    updateUI('vault-v-final', currentLiquid);
-
-    // --- رابعاً: تحديث الرسوم البيانية (بناءً على الشهر الحالي) ---
-    if (expenseChartInstance) {
-        expenseChartInstance.data.datasets[0].data = [paidS_Current, flPaid_Current, pureExpenses_Current];
-        expenseChartInstance.update();
-    }
-    if (cashFlowChartInstance) {
-        const depositsThisMonth = (monthData.vault_logs || []).reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
-        const spentThisMonth = paidS_Current + flPaid_Current + pureExpenses_Current;
-        cashFlowChartInstance.data.datasets[0].data = [depositsThisMonth, spentThisMonth];
-        cashFlowChartInstance.update();
-    }
-
-    // استدعاء ريندر الجداول واللوجات
-    renderPayroll(); 
-    renderFreelancers(); 
-    renderGeneralExpenses(); 
-    renderEmployeeLogs(); 
-    renderFreelancerLogs(); 
-    renderVaultLedger();
-}
 
     // --- ثانياً: حساب إحصائيات الشهر الحالي فقط (للعرض) ---
     const currentMonthExps = monthData.expenses || [];
@@ -1252,35 +1169,11 @@
 
         // --- Modals: Vault & Expenses ---
         function openVaultModal(){document.getElementById('vault-amount-input').value=''; document.getElementById('vault-note-input').value=''; openModal('modal-vault');}
-        async function saveVaultTransaction() {
-    const amt = parseFloat(document.getElementById('vault-amount-input').value);
-    const note = document.getElementById('vault-note-input').value || "إيداع نقدي";
-    
-    if (isNaN(amt) || amt <= 0) return;
-
-    // إضافة العملية الجديدة للسجلات فقط
-    const newLogs = [
-        ...(monthData.vault_logs || []),
-        {
-            amount: amt,
-            note: note,
-            date: new Date().toLocaleString('ar-EG'),
-            timestamp: Date.now()
+        async function saveVaultTransaction(){
+            const amt=parseFloat(document.getElementById('vault-amount-input').value), note=document.getElementById('vault-note-input').value||"إيداع نقدي"; if(isNaN(amt)||amt<=0)return; 
+            const newLogs=[...(monthData.vault_logs||[]),{amount:amt,note,date:new Date().toLocaleString('ar-EG'), timestamp: Date.now()}]; 
+            await db.collection("financial_months").doc(currentSelectedMonth).set({vault:(parseFloat(monthData.vault)||0)+amt,vault_logs:newLogs},{merge:true}); notifyAdmin(`🏦 *إيداع خزنة*\nالمبلغ: ${amt}\nالبيان: ${note}`); closeModal('modal-vault');
         }
-    ];
-
-    try {
-        // نحدث السجلات فقط ولا نلمس حقل vault (الرصيد الافتتاحي)
-        await db.collection("financial_months").doc(currentSelectedMonth).set({
-            vault_logs: newLogs
-        }, { merge: true });
-
-        notifyAdmin(`🏦 *إيداع خزنة*\nالمبلغ: ${amt}\nالبيان: ${note}`);
-        closeModal('modal-vault');
-    } catch (error) {
-        console.error("Error: ", error);
-    }
-}
 
         function openExpenseModal(){document.getElementById('exp-modal-title').innerText="تسجيل مصروف تشغيل"; document.getElementById('edit-expense-idx').value=""; document.getElementById('exp-title').value=""; document.getElementById('exp-amount').value=""; document.getElementById('exp-date').valueAsDate=new Date(); openModal('modal-expense');}
         
@@ -1431,5 +1324,3 @@
     </script>
 </body>
 </html>
-
-
