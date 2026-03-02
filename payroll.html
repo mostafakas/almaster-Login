@@ -777,52 +777,57 @@
 
         // --- 5. CALCULATION & CHARTS ---
         function updateStats() {
-            let baseT = 0, bonusT = 0, incenT = 0, deductT = 0, paidS = 0, apprvS = 0, waitS = 0;
-            let totalFlPaid = 0, totalFlHolding = 0;
-            const allExps = monthData.expenses || [];
-            
-            allUsers.forEach(u => {
-                if (u.contract === 'freelancer') {
-                    totalFlPaid += (u.fl_total_paid || 0);
-                    totalFlHolding += ((u.fl_total_credit || 0) - (u.fl_total_paid || 0) - (u.fl_total_deducted || 0));
-                    return;
-                }
-                const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
-                const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
-                const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
-                const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum - advSum;
-                
-                if (m.status === 'paid') paidS += net; else if (m.status === 'approved') apprvS += net; else waitS += net;
-            });
-            
-            const pureExpenses = allExps.filter(e => e.type !== 'freelancer' && e.type !== 'fl_deduction' && e.type !== 'emp_advance').reduce((s, e)=>s+(parseFloat(e.amount)||0), 0);
-            const totalOut = paidS + pureExpenses + totalFlPaid; 
-            const vaultCap = parseFloat(monthData.vault) || 0;
-            const deposits = (monthData.vault_logs || []).reduce((s, l)=>s+(parseFloat(l.amount)||0), 0);
-            const currentLiquid = vaultCap + deposits - totalOut;
-
-            // Updating all 9 elements
-            if(document.getElementById('vault-balance')) document.getElementById('vault-balance').innerText = vaultCap.toLocaleString();
-            if(document.getElementById('remaining-vault')) document.getElementById('remaining-vault').innerText = currentLiquid.toLocaleString();
-            if(document.getElementById('total-spent')) document.getElementById('total-spent').innerText = totalOut.toLocaleString();
-            if(document.getElementById('total-paid-salaries-sum')) document.getElementById('total-paid-salaries-sum').innerText = paidS.toLocaleString();
-            if(document.getElementById('pending-approved-total')) document.getElementById('pending-approved-total').innerText = apprvS.toLocaleString();
-            if(document.getElementById('pending-waiting-total')) document.getElementById('pending-waiting-total').innerText = waitS.toLocaleString();
-            if(document.getElementById('total-expenses')) document.getElementById('total-expenses').innerText = pureExpenses.toLocaleString();
-            if(document.getElementById('stat-fl-paid')) document.getElementById('stat-fl-paid').innerText = totalFlPaid.toLocaleString();
-            if(document.getElementById('stat-fl-holding')) document.getElementById('stat-fl-holding').innerText = totalFlHolding.toLocaleString();
-            
-            if(document.getElementById('vault-v-open')) document.getElementById('vault-v-open').innerText = vaultCap.toLocaleString();
-            if(document.getElementById('vault-v-in')) document.getElementById('vault-v-in').innerText = deposits.toLocaleString();
-            if(document.getElementById('vault-v-out')) document.getElementById('vault-v-out').innerText = totalOut.toLocaleString();
-            if(document.getElementById('vault-v-final')) document.getElementById('vault-v-final').innerText = currentLiquid.toLocaleString();
-
-            if(expenseChartInstance) { expenseChartInstance.data.datasets[0].data = [paidS, totalFlPaid, pureExpenses]; expenseChartInstance.update(); }
-            if(cashFlowChartInstance) { cashFlowChartInstance.data.datasets[0].data = [deposits, totalOut]; cashFlowChartInstance.update(); }
-
-            renderPayroll(); renderFreelancers(); renderGeneralExpenses(); renderEmployeeLogs(); renderFreelancerLogs(); renderVaultLedger();
+    let paidS = 0, apprvS = 0, waitS = 0;
+    let totalFlPaidThisMonth = 0, totalFlHolding = 0;
+    const allExps = monthData.expenses || [];
+    
+    // 1. حساب الرواتب (بناءً على شهر مارس فقط)
+    allUsers.forEach(u => {
+        if (u.contract === 'freelancer') {
+            // حساب المتبقي الكلي للمستقل (ده للعرض فقط في كارت الإحصائيات)
+            totalFlHolding += ((u.fl_total_credit || 0) - (u.fl_total_paid || 0) - (u.fl_total_deducted || 0));
+            return;
         }
+        const m = (u.monthly_finance && u.monthly_finance[currentSelectedMonth]) || {};
+        const dSum = (m.deductions || []).reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+        const advSum = allExps.filter(e => e.type === 'emp_advance' && e.emp_email === u.id).reduce((s, a) => s + parseFloat(a.amount), 0);
+        
+        const net = (parseFloat(u.salary_base)||0) + (parseFloat(m.bonus)||0) + (parseFloat(m.incentive)||0) - dSum - advSum;
+        
+        if (m.status === 'paid') paidS += net; 
+        else if (m.status === 'approved') apprvS += net; 
+        else waitS += net;
+    });
 
+    // 2. حساب المدفوع للمستقلين "خلال هذا الشهر فقط" من جدول المصاريف
+    totalFlPaidThisMonth = allExps.filter(e => e.type === 'freelancer').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+
+    // 3. حساب النثريات العامة (بدون السلف ودفعات المستقلين لأننا حسبناهم فوق)
+    const pureExpenses = allExps.filter(e => e.type === 'general' || !e.type).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+    
+    // 4. إجمالي المنصرف الفعلي من الخزنة في مارس = (رواتب مدفوعة + دفعات مستقلين مارس + نثريات مارس + سلف مارس)
+    const totalAdvances = allExps.filter(e => e.type === 'emp_advance').reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+    const totalOutThisMonth = paidS + totalFlPaidThisMonth + pureExpenses + totalAdvances;
+
+    // 5. الحسبة الذهبية للسيولة
+    const vaultOpeningBalance = parseFloat(monthData.vault) || 0; // الرصيد المرحل من فبراير
+    const depositsThisMonth = (monthData.vault_logs || []).reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
+    const currentLiquid = vaultOpeningBalance + depositsThisMonth - totalOutThisMonth;
+
+    // تحديث الأرقام في الشاشة
+    document.getElementById('vault-balance').innerText = vaultOpeningBalance.toLocaleString();
+    document.getElementById('remaining-vault').innerText = currentLiquid.toLocaleString();
+    document.getElementById('total-spent').innerText = totalOutThisMonth.toLocaleString();
+    document.getElementById('total-paid-salaries-sum').innerText = paidS.toLocaleString();
+    document.getElementById('pending-approved-total').innerText = apprvS.toLocaleString();
+    document.getElementById('pending-waiting-total').innerText = waitS.toLocaleString();
+    document.getElementById('total-expenses').innerText = pureExpenses.toLocaleString();
+    document.getElementById('stat-fl-paid').innerText = totalFlPaidThisMonth.toLocaleString();
+    document.getElementById('stat-fl-holding').innerText = totalFlHolding.toLocaleString();
+
+    // تحديث الجداول
+    renderPayroll(); renderFreelancers(); renderGeneralExpenses(); renderEmployeeLogs(); renderFreelancerLogs(); renderVaultLedger();
+}
         function initCharts() {
             Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Cairo';
             const ctxExp = document.getElementById('expenseChart');
@@ -1196,4 +1201,5 @@
     </script>
 </body>
 </html>
+
 
