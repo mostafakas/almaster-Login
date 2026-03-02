@@ -664,7 +664,9 @@
 
         // --- 2. GLOBAL VARIABLES ---
         let currentSelectedMonth = ""; 
-        let allUsers = []; let monthData = { vault: 0, expenses: [], vault_logs: [] };
+        let allUsers = []; 
+        let monthData = { vault: 0, expenses: [], vault_logs: [] };
+        let allMonthsData = []; // <--- أضف هذا السطر هنا ليكون عالمياً
         let dataLoadedFlags = { users: false, finance: false };
         let empTempReceipts = []; 
         let systemLoadedOnce = false;
@@ -717,23 +719,32 @@
         }
 
         function startListeners() {
-            db.collection("users").onSnapshot(snapshot => {
-                allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                dataLoadedFlags.users = true; checkLoader(); updateStats(); 
-            });
-            db.collection("financial_months").doc(currentSelectedMonth).onSnapshot(doc => {
-                monthData = doc.exists ? doc.data() : { vault: 0, expenses: [], vault_logs: [] };
-                dataLoadedFlags.finance = true; checkLoader(); updateStats(); 
-            });
-            // أضف هذا المتغير في الأعلى مع المتغيرات العامة
-            let allMonthsData = [];
-            
-            // داخل دالة startListeners أضف هذا الجزء:
-            db.collection("financial_months").onSnapshot(snapshot => {
-                allMonthsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                updateStats(); 
-            });
+    // مراقبة المستخدمين
+    db.collection("users").onSnapshot(snapshot => {
+        allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        dataLoadedFlags.users = true; 
+        checkLoader(); 
+        updateStats(); 
+    });
+
+    // مراقبة بيانات الشهر الحالي
+    db.collection("financial_months").doc(currentSelectedMonth).onSnapshot(doc => {
+        if(doc.exists) {
+            monthData = doc.data();
+        } else {
+            monthData = { vault: 0, expenses: [], vault_logs: [] };
         }
+        dataLoadedFlags.finance = true; 
+        checkLoader(); 
+        updateStats(); 
+    });
+
+    // مراقبة كل الشهور للحساب التراكمي (بدون كلمة let)
+    db.collection("financial_months").onSnapshot(snapshot => {
+        allMonthsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); // تم إزالة let هنا
+        updateStats(); 
+    });
+}
 
         function checkLoader() {
             if(dataLoadedFlags.users && dataLoadedFlags.finance) {
@@ -1165,11 +1176,41 @@
         }
 
         function openExpenseModal(){document.getElementById('exp-modal-title').innerText="تسجيل مصروف تشغيل"; document.getElementById('edit-expense-idx').value=""; document.getElementById('exp-title').value=""; document.getElementById('exp-amount').value=""; document.getElementById('exp-date').valueAsDate=new Date(); openModal('modal-expense');}
-        async function saveExpense(){
-            const t=document.getElementById('exp-title').value, a=parseFloat(document.getElementById('exp-amount').value), d=document.getElementById('exp-date').value, idx=document.getElementById('edit-expense-idx').value; if(!t||isNaN(a))return; 
-            let newExps=[...(monthData.expenses||[])]; const item={title:t,amount:a,date:d,type:'general', timestamp: Date.now()}; if(idx==="")newExps.push(item); else newExps[parseInt(idx)]=item; 
-            await db.collection("financial_months").doc(currentSelectedMonth).set({expenses:newExps},{merge:true}); notifyAdmin(`🧾 *نثرية جديدة*\nالبيان: ${t}\nالمبلغ: ${a}`); closeModal('modal-expense');
-        }
+        
+        async function saveExpense() {
+    const t = document.getElementById('exp-title').value;
+    const a = parseFloat(document.getElementById('exp-amount').value);
+    const d = document.getElementById('exp-date').value;
+    const idx = document.getElementById('edit-expense-idx').value;
+
+    if (!t || isNaN(a)) {
+        alert("يرجى إكمال البيانات");
+        return;
+    }
+
+    let newExps = [...(monthData.expenses || [])];
+    const item = { title: t, amount: a, date: d, type: 'general', timestamp: Date.now() };
+
+    if (idx === "") {
+        newExps.push(item);
+    } else {
+        newExps[parseInt(idx)] = item;
+    }
+
+    try {
+        // التأكد من الحفظ في الشهر الصحيح بناءً على تاريخ المصروف 
+        // أو استخدام currentSelectedMonth
+        await db.collection("financial_months").doc(currentSelectedMonth).set({
+            expenses: newExps
+        }, { merge: true });
+
+        notifyAdmin(`🧾 *نثرية جديدة*\nالبيان: ${t}\nالمبلغ: ${a}`);
+        closeModal('modal-expense');
+    } catch (error) {
+        console.error("Error saving expense: ", error);
+        alert("فشل الحفظ في قاعدة البيانات");
+    }
+}
         function editExpense(idx){const e=monthData.expenses[idx]; document.getElementById('exp-modal-title').innerText="تعديل مصروف تشغيل"; document.getElementById('edit-expense-idx').value=idx; document.getElementById('exp-title').value=e.title; document.getElementById('exp-amount').value=e.amount; document.getElementById('exp-date').value=e.date; openModal('modal-expense');}
 
         // --- 8. REPORTS (Original Templates Preserved) ---
@@ -1283,3 +1324,4 @@
     </script>
 </body>
 </html>
+
