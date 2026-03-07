@@ -317,6 +317,45 @@
                 badge.classList.remove('hidden');
             }
         }
+        async function executeDailyResetAndLogout() {
+            console.log("🚨 نظام التصفير التلقائي نشط: بداية يوم جديد.");
+            
+            const userRef = db.collection('users').doc(currentUser.email.toLowerCase());
+            
+            try {
+                // 1. تصفير العدادات نهائياً في قاعدة البيانات
+                await userRef.update({
+                    timeBank: { 'Online': 0, 'Break': 0, 'Meeting': 0, 'Offline': 0 },
+                    idleBank: 0,
+                    isIdle: false,
+                    idleSince: null,
+                    lastChange: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'Offline'
+                });
+        
+                // 2. تسجيل "لوج" يوضح أن الخروج تم بواسطة النظام لتغيير اليوم
+                await db.collection('logs').add({
+                    user: currentUser.email,
+                    name: userProfile.name,
+                    from_status: userProfile.status,
+                    to_status: 'Offline',
+                    end_time: firebase.firestore.FieldValue.serverTimestamp(),
+                    reason: 'System Auto-Reset (New Day)',
+                    auto: true
+                });
+        
+                // 3. إظهار رسالة سريعة للموظف قبل الطرد
+                alert("انتهى يوم العمل تقنياً وبدأ يوم جديد. سيتم تسجيل خروجك لتصفير العدادات، يرجى إعادة الدخول.");
+                
+                // 4. الطرد الإجباري
+                auth.signOut().then(() => {
+                    window.location.replace('index.html');
+                });
+        
+            } catch (error) {
+                console.error("خطأ أثناء التصفير الدوري:", error);
+            }
+        }
 function playSound() {
             notificationSound.play().catch(e => console.log("الصوت يحتاج تفاعل المستخدم أولاً"));
         }
@@ -414,25 +453,54 @@ function playSound() {
             });
 
        function initWorkspace() {
-            startClock();
-            listenToProfile();
-            listenToAllUsers();
-            listenToGlobalMessages();
-            listenToPrivateMessages();
-            startIdleTracker();
-            startSmartMonitor(); 
-            listenToScreenshotRequests(); // 👈 تفعيل استقبال طلبات لقطة الشاشة
-            requestNotificationPermission(); // 👈 طلب إذن إشعارات الويندوز
-            setInterval(updateTimersUI, 1000);
-            toggleLoader(false);
-            
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    ['chat-window', 'users-dropdown', 'modal-qa', 'modal-logs', 'modal-screenshot-capture'].forEach(id => closeModal(id));
-                    document.getElementById('private-chats-container').innerHTML = '';
-                }
-            });
+    // 1. تشغيل المؤقتات والمراقبين الأساسيين
+    startClock();
+    listenToProfile();
+    listenToAllUsers();
+    listenToGlobalMessages();
+    listenToPrivateMessages();
+    startIdleTracker();
+    startSmartMonitor();
+    listenToScreenshotRequests(); // تفعيل استقبال طلبات لقطة الشاشة
+    requestNotificationPermission(); // طلب إذن إشعارات الويندوز
+
+    // 2. تحديث عدادات الواجهة كل ثانية
+    setInterval(updateTimersUI, 1000);
+
+    // 3. 🚨 نظام التصفير التلقائي (Midnight Watchdog)
+    // يقوم بالفحص كل 60 ثانية للتأكد من أننا ما زلنا في نفس اليوم
+    setInterval(() => {
+        if (!userProfile || !userProfile.lastChange) return;
+
+        // مقارنة تاريخ آخر حركة مسجلة بتاريخ اللحظة الحالية
+        const lastActionDate = moment(getMillis(userProfile.lastChange)).format('YYYY-MM-DD');
+        const currentDate = moment().format('YYYY-MM-DD');
+
+        // إذا اختلف التاريخ، فهذا يعني أننا دخلنا في يوم جديد
+        if (lastActionDate !== currentDate) {
+            console.log("📅 يوم جديد مكتشف! جاري بدء عملية التصفير والطرد...");
+            executeDailyResetAndLogout(); 
         }
+    }, 60000);
+
+    // 4. إخفاء شاشة التحميل بعد اكتمال الربط
+    toggleLoader(false);
+
+    // 5. مستمع لوحة المفاتيح لإغلاق النوافذ المنبثقة (Escape Key)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modals = ['chat-window', 'users-dropdown', 'modal-qa', 'modal-logs', 'modal-screenshot-capture'];
+            modals.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            const privateContainer = document.getElementById('private-chats-container');
+            if (privateContainer) privateContainer.innerHTML = '';
+        }
+    });
+
+    console.log("✅ بيئة العمل جاهزة ونظام الرقابة الدوري نشط.");
+}
 
         // --- 3. DATABASE LISTENERS ---
        function startSmartMonitor() {
@@ -1231,6 +1299,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
