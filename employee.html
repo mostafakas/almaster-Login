@@ -774,46 +774,77 @@ function listenToProfile() {
         async function setStatus(target, newStatus, isAuto) {
     const userRef = db.collection('users').doc(target);
     const snap = await userRef.get();
-    const uData = snap.data();
     
+    if (!snap.exists) return;
+    const uData = snap.data();
+
+    // 1. 🚨 صمام الأمان: فحص اليوم الجديد قبل أي احتساب للوقت
+    const lastDate = uData.lastChange ? moment(getMillis(uData.lastChange)).format('YYYY-MM-DD') : '';
+    const today = moment().format('YYYY-MM-DD');
+
+    if (lastDate !== today && lastDate !== '') {
+        console.log("📅 تم اكتشاف محاولة تغيير حالة في يوم جديد. بدء التصفير التلقائي...");
+        await executeDailyResetAndLogout();
+        return; // اخرج من الدالة ولا تنفذ أي شيء آخر
+    }
+
+    // 2. توحيد مرجع الوقت لمنع "قفزة العداد" (Clock Synchronization)
     const nowMillis = Date.now();
-    // نستخدم توقيت الجهاز الحالي لضمان التزامن مع العداد المرئي
+    // نستخدم توقيت الجهاز الحالي ليتطابق مع العداد الذي يراه الموظف
     const ts = firebase.firestore.Timestamp.fromMillis(nowMillis); 
 
+    // 3. حساب المدة المنقضية في الحالة القديمة
     const duration = nowMillis - getMillis(uData.lastChange);
     let tb = uData.timeBank || {};
-    const oldStatus = uData.status || 'Offline';
-    tb[oldStatus] = (tb[oldStatus] || 0) + duration;
+    const oldStatus = uData.isIdle ? 'Idle' : (uData.status || 'Offline');
 
+    // إضافة المدة للبنك الزمني الخاص بالحالة التي انتهت للتو
+    if (oldStatus !== 'Offline') {
+        tb[oldStatus] = (tb[oldStatus] || 0) + duration;
+    }
+
+    // 4. معالجة بنك الخمول (إذا كان الموظف يغير حالته وهو Idle)
     let idleB = uData.idleBank || 0;
     if (uData.isIdle && uData.idleSince) {
         const iDur = nowMillis - getMillis(uData.idleSince);
         idleB += iDur;
-        // إضافة سجل للخمول إذا أردت
     }
 
-    await userRef.update({
-        status: newStatus,
-        lastChange: ts, // التوقيت الموحد
-        timeBank: tb,
-        isIdle: false,
-        idleSince: null,
-        idleBank: idleB
-    });
+    // 5. تحديث قاعدة البيانات بالقيم الجديدة
+    try {
+        await userRef.update({
+            status: newStatus,
+            lastChange: ts,
+            timeBank: tb,
+            isIdle: false,
+            idleSince: null,
+            idleBank: idleB
+        });
 
-    // تسجيل اللوج بنفس التوقيت الموحد
-    await db.collection('logs').add({ 
-        user: target, 
-        name: uData.name, 
-        from_status: oldStatus, 
-        to_status: newStatus, 
-        start_time: uData.lastChange || ts, 
-        end_time: ts, 
-        duration_ms: duration, 
-        auto: isAuto 
-    });
+        // تحديث القفل المحلي لضمان عدم ظهور إشعار "تغيير من المدير" للموظف نفسه
+        if (typeof localStatusLock !== 'undefined') {
+            localStatusLock = newStatus;
+        }
+
+        // 6. تسجيل العملية في سجل الحركات (Logs)
+        await db.collection('logs').add({
+            user: target,
+            name: uData.name,
+            from_status: oldStatus,
+            to_status: newStatus,
+            start_time: uData.lastChange || ts,
+            end_time: ts,
+            duration_ms: duration,
+            auto: isAuto
+        });
+
+        console.log(`✅ تم تغيير الحالة إلى ${newStatus} وحفظ ${formatDuration(duration)} في بنك ${oldStatus}`);
+
+    } catch (error) {
+        console.error("❌ فشل تحديث الحالة:", error);
+        alert("خطأ في الاتصال بالسيرفر، يرجى التحقق من الإنترنت.");
+    }
 }
-
         async function handleCommentSubmit(e) {
             e.preventDefault();
             const inp = document.getElementById('comment-input');
@@ -1299,6 +1330,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
