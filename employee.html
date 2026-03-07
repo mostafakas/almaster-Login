@@ -416,7 +416,7 @@ function playSound() {
 
         // --- 2. AUTH & INIT ---
         // --- 2. AUTH & INIT ---
-            auth.onAuthStateChanged(async (user) => {
+           auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
         const docRef = db.collection('users').doc(user.email.toLowerCase());
@@ -425,16 +425,12 @@ function playSound() {
         if(doc.exists) {
             userProfile = doc.data();
             
-            // --- 🔒 نظام الجلسة الموحدة الجديد ---
-            // 1. توليد ID فريد لهذه الجلسة الحالية
+            // --- 🔒 [إضافة] نظام الجلسة الموحدة: توليد بصمة الجهاز الجديد ---
             const newSessionId = Date.now().toString() + "_" + Math.random().toString(36).substr(2, 9);
-            // 2. حفظه محلياً في المتصفح
             localStorage.setItem('almaster_session_id', newSessionId);
-            // 3. تحديثه في السيرفر فوراً
             await docRef.update({ currentSessionId: newSessionId });
-            // -----------------------------------
+            // -----------------------------------------------------------
 
-            // كود تصفير اليوم كما هو عندك...
             const lastDate = userProfile.lastChange ? moment(getMillis(userProfile.lastChange)).format('YYYY-MM-DD') : '';
             const today = moment().format('YYYY-MM-DD');
             
@@ -1349,6 +1345,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
