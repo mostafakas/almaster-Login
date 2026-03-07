@@ -1804,65 +1804,108 @@ function listenToScreenshotResults() {
  function viewDeviceInfo(email) {
     const user = allUsersData.find(u => u.email === email);
     if (!user || !user.deviceInfo) {
-        alert("لا توجد بيانات تقنية متوفرة حالياً.");
+        alert("لا توجد بيانات تقنية متوفرة لهذا الحساب حالياً.");
         return;
     }
 
     const info = user.deviceInfo;
     const photo = user.photo || (DEFAULT_PHOTO + encodeURIComponent(user.name));
     
-    // تصميم الواجهة الاحترافية (Audit Style)
+    // تصميم الواجهة الاحترافية (System Intelligence Audit)
     const content = `
         <div class="space-y-6 text-right animate-fade-in" dir="rtl">
-            <div class="flex items-center gap-5 p-4 bg-dark-900 rounded-[2rem] border border-primary-500/20 shadow-xl">
-                <img src="${photo}" class="w-16 h-16 rounded-2xl object-cover border-2 border-primary-500 bg-dark-800 shadow-lg">
-                <div>
-                    <h4 class="text-white font-black text-lg">${user.name}</h4>
-                    <p class="text-[10px] text-primary-500 font-bold uppercase tracking-widest">${user.title || 'موظف'}</p>
+            
+            <div class="flex items-center gap-6 p-5 bg-gradient-to-l from-dark-900 to-dark-950 rounded-[2.5rem] border border-primary-500/20 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-32 h-32 bg-primary-500/5 blur-3xl rounded-full"></div>
+                <img src="${photo}" class="w-20 h-20 rounded-3xl object-cover border-2 border-primary-500 bg-dark-800 shadow-lg relative z-10">
+                <div class="relative z-10">
+                    <h4 class="text-white font-black text-xl mb-1">${user.name}</h4>
+                    <p class="text-[10px] text-primary-500 font-black uppercase tracking-[0.3em] flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        Active Session Verified
+                    </p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-black/20 p-4 rounded-2xl border border-white/5 hover:border-primary-500/30 transition-all">
-                    <p class="text-[9px] text-slate-500 font-black mb-2 uppercase"><i class="fas fa-map-marker-alt ml-1 text-red-500"></i> الموقع الجغرافي الدقيق</p>
-                    <p class="text-xs font-black text-white">${info.location.city}, ${info.location.country}</p>
-                    ${info.location.exact ? 
-                        `<a href="${info.location.exact}" target="_blank" class="mt-2 inline-block text-[10px] bg-primary-600/20 text-primary-500 px-3 py-1 rounded-lg hover:bg-primary-600 hover:text-white transition-all">فتح الموقع على الخريطة <i class="fas fa-external-link-alt mr-1"></i></a>` 
-                        : `<p class="text-[9px] text-slate-600 mt-1 italic">إحداثيات GPS غير متوفرة (تم استخدام IP)</p>`}
-                </div>
-
-                <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-                    <p class="text-[9px] text-slate-500 font-black mb-2 uppercase"><i class="fas fa-network-wired ml-1 text-blue-500"></i> بيانات الاتصال والشبكة</p>
-                    <p class="text-xs font-black text-white">IP: <span class="text-primary-500">${info.ip || '---'}</span></p>
-                    <p class="text-[10px] text-slate-400 mt-1 truncate">${info.isp || 'مزود خدمة غير معروف'}</p>
-                </div>
-
-                <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-                    <p class="text-[9px] text-slate-500 font-black mb-2 uppercase"><i class="fas fa-microchip ml-1 text-green-500"></i> عتاد الجهاز (Hardware)</p>
-                    <p class="text-xs font-black text-white">${info.cores} Cores | ${info.ram} GB RAM</p>
-                    <p class="text-[10px] text-slate-400 mt-1">${info.screen}</p>
-                </div>
-
-                <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-                    <p class="text-[9px] text-slate-500 font-black mb-2 uppercase"><i class="fas fa-battery-three-quarters ml-1 text-orange-500"></i> حالة الطاقة</p>
-                    <p class="text-xs font-black ${info.battery.batteryCharging ? 'text-green-500' : 'text-orange-400'}">
-                        ${info.battery.level}% ${info.battery.batteryCharging ? '(متصل بالشاحن)' : '(على البطارية)'}
+                
+                <div class="bg-black/20 p-5 rounded-[2rem] border border-white/5 group hover:border-primary-500/30 transition-all">
+                    <p class="text-[9px] text-slate-500 font-black mb-3 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-microchip text-primary-500"></i> مواصفات العتاد (Hardware)
                     </p>
-                    <p class="text-[10px] text-slate-400 mt-1 uppercase">NET: ${info.connection || 'WIFI'}</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center"><span class="text-[10px] text-slate-400">المعالج:</span><span class="text-xs font-black text-white">${info.cores} Logical Cores</span></div>
+                        <div class="flex justify-between items-center"><span class="text-[10px] text-slate-400">الذاكرة (RAM):</span><span class="text-xs font-black text-white">${info.ram} GB Approx</span></div>
+                        <div class="flex justify-between items-center"><span class="text-[10px] text-slate-400">الشاشة:</span><span class="text-xs font-black text-white">${info.screen}</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-black/20 p-5 rounded-[2rem] border border-white/5 group hover:border-blue-500/30 transition-all">
+                    <p class="text-[9px] text-slate-500 font-black mb-3 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-network-wired text-blue-500"></i> بروتوكول الاتصال (Network)
+                    </p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center"><span class="text-[10px] text-slate-400">IP Address:</span><span class="text-xs font-black text-primary-500">${info.ip || '---'}</span></div>
+                        <div class="flex justify-between items-center"><span class="text-[10px] text-slate-400">نوع الشبكة:</span><span class="text-xs font-black text-white uppercase">${info.connection || 'WIFI/Fiber'}</span></div>
+                        <div class="flex justify-between items-center"><span class="text-[10px] text-slate-400">المزود (ISP):</span><span class="text-[10px] font-black text-white truncate max-w-[120px]">${info.isp || 'Private'}</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-black/20 p-5 rounded-[2rem] border border-white/5 group hover:border-orange-500/30 transition-all">
+                    <p class="text-[9px] text-slate-500 font-black mb-3 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-battery-half text-orange-500"></i> حالة الطاقة والبيئة
+                    </p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-slate-400">مستوى البطارية:</span>
+                            <span class="text-xs font-black ${info.battery.level > 20 ? 'text-green-500' : 'text-red-500'}">${info.battery.level}%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-slate-400">مصدر الطاقة:</span>
+                            <span class="text-xs font-black text-white">${info.battery.batteryCharging ? 'متصل بالشاحن ⚡' : 'يعمل على البطارية'}</span>
+                        </div>
+                        <div class="flex justify-between items-center"><span class="text-[10px] text-slate-400">لغة النظام:</span><span class="text-xs font-black text-white uppercase">${info.language}</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-black/20 p-5 rounded-[2rem] border border-white/5 group hover:border-purple-500/30 transition-all">
+                    <p class="text-[9px] text-slate-500 font-black mb-3 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-laptop-code text-purple-500"></i> بيئة التشغيل (OS)
+                    </p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center"><span class="text-[10px] text-slate-400">نظام التشغيل:</span><span class="text-xs font-black text-white">${info.os}</span></div>
+                        <div class="flex justify-between items-center"><span class="text-[10px] text-slate-400">وقت الدخول:</span><span class="text-xs font-black text-white">${moment(info.timestamp).format('hh:mm:ss A')}</span></div>
+                        <div class="flex justify-between items-center"><span class="text-[10px] text-slate-400">تزامن السيرفر:</span><span class="text-xs font-black text-green-500">مستقر</span></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-black/40 p-4 rounded-3xl border border-white/5 border-dashed">
-                <p class="text-[9px] text-slate-600 font-black mb-2 uppercase">Browser User-Agent (Digital Fingerprint)</p>
-                <p class="text-[9px] font-mono text-slate-500 break-all leading-relaxed">${info.browser}</p>
+            <div class="p-6 bg-dark-900/50 rounded-[2.5rem] border border-white/5 border-dashed relative group">
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest">Digital Fingerprint & Session Signature</p>
+                    <i class="fas fa-fingerprint text-primary-500 opacity-30 group-hover:opacity-100 transition-opacity"></i>
+                </div>
+                <div class="space-y-3">
+                    <div class="p-3 bg-black/30 rounded-xl border border-white/5">
+                        <p class="text-[8px] text-primary-500 font-black mb-1 uppercase">Session ID</p>
+                        <p class="text-[11px] font-mono text-slate-300 break-all">${user.currentSessionId}</p>
+                    </div>
+                    <div class="p-3 bg-black/30 rounded-xl border border-white/5">
+                        <p class="text-[8px] text-primary-500 font-black mb-1 uppercase">Browser User-Agent</p>
+                        <p class="text-[9px] font-mono text-slate-500 leading-relaxed break-all">${info.browser}</p>
+                    </div>
+                </div>
             </div>
         </div>
     `;
 
+    // عرض البيانات في مودال التفاصيل المتاح
     document.getElementById('m-task-title').innerText = "Security Audit Report";
     document.getElementById('m-task-desc').innerHTML = content;
-    document.getElementById('m-task-project').innerText = "🔒 نظام الرقابة المركزية";
-    document.getElementById('admin-task-actions').innerHTML = ''; 
+    document.getElementById('m-task-project').innerText = "🔒 ALMASTER MASTER CONSOLE";
+    document.getElementById('admin-task-actions').innerHTML = `
+        <button onclick="closeModal('modal-task-detail')" class="flex-1 py-4 bg-dark-800 text-white font-black rounded-2xl text-[11px] hover:bg-dark-700 transition-all uppercase tracking-widest">إغلاق التقرير الفني</button>
+    `; 
     openModal('modal-task-detail');
 }
    </script>
@@ -1948,6 +1991,7 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
+
 
 
 
