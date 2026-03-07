@@ -492,48 +492,62 @@ function playSound() {
     }, 60000); // الفحص يتم بدقة كل دقيقة
 }
 function listenToProfile() {
-    db.collection('users').doc(currentUser.email.toLowerCase()).onSnapshot(doc => {
-        if(!doc.exists) return;
-        const data = doc.data();
+    // نستخدم الـ email الموحد (lowercase) لمنع أي تضارب
+    const userDocPath = currentUser.email.toLowerCase().trim();
+
+    db.collection('users').doc(userDocPath).onSnapshot(doc => {
+        if (!doc.exists) return;
         
-        // 1. فحص إذا كانت الحالة تغيرت من طرف خارجي (المدير)
+        const data = doc.data();
+        const newTasks = data.tasks || [];
+
+        // 1. مراقبة تغيير الحالة (إشعار الموظف إذا كان المدير هو من غيرها)
         if (userProfile && userProfile.status !== data.status) {
+            // إذا كانت الحالة الجديدة ليست هي التي اختارها الموظف بنفسه (عبر الـ Lock)
             if (localStatusLock !== data.status) {
-                showToast('تغيير حالة إداري 🛡️', `قام المدير بتغيير حالتك الآن إلى: ${data.status}`, 'warning');
+                showToast('تنبيه إداري 🛡️', `قام المدير بتعديل حالتك الآن إلى: ${data.status}`, 'warning');
             }
+            // تحديث القفل المحلي ليتزامن مع السيرفر
             localStatusLock = data.status; 
         }
 
-        const newTasks = data.tasks || [];
-
-        // 2. منطق إشعارات المهام
+        // 2. منطق إشعارات المهام (يتم تجاهله في أول تحميل للصفحة)
         if (!isInitialTasksLoad) {
-            if (newTasks.length > (currentTasks ? currentTasks.length : 0)) {
+            // أ. اكتشاف المهام الجديدة تماماً
+            if (newTasks.length > currentTasks.length) {
                 const addedTask = newTasks[newTasks.length - 1];
                 showToast('مهمة جديدة 📋', `تم إسناد مهمة إليك: ${addedTask.title}`, 'success');
             }
 
+            // ب. اكتشاف المهام التي "عادت" من المراجعة للعمل
             newTasks.forEach(task => {
-                const oldTaskVersion = currentTasks ? currentTasks.find(t => t.id === task.id) : null;
+                const oldTaskVersion = currentTasks.find(t => t.id === task.id);
+                // إذا كانت حالة المهمة سابقاً review وأصبحت الآن working
                 if (oldTaskVersion && oldTaskVersion.status === 'review' && task.status === 'working') {
-                    showToast('تحديث مهمة ⚠️', `أعاد المدير المهمة "${task.title}" للعمل عليها مجدداً`, 'warning');
+                    showToast('تحديث مهمة ⚠️', `أعاد المدير المهمة "${task.title}" للمراجعة والتعديل`, 'warning');
                 }
             });
         }
 
+        // 3. تحديث البيانات المحلية (المرجعيات)
         isInitialTasksLoad = false;
         userProfile = data; 
         currentTasks = [...newTasks]; 
         
+        // 4. تحديث الواجهة الرسومية
         updateProfileUI(data); 
         renderTaskList();
         
-        if(selectedTaskId) { 
-            const t = currentTasks.find(x => x.id == selectedTaskId); 
-            if(t) renderTaskDetail(t); 
+        // 5. إذا كان الموظف يفتح تفاصيل مهمة حالياً، نقوم بتحديث بياناتها (مثل التعليقات الجديدة)
+        if (selectedTaskId) { 
+            const activeTask = currentTasks.find(x => x.id == selectedTaskId); 
+            if (activeTask) renderTaskDetail(activeTask); 
         }
+
     }, err => {
         console.error("خطأ في مراقب الملف الشخصي:", err);
+        // محاولة إعادة الاتصال في حال حدوث خطأ في الشبكة
+        setTimeout(listenToProfile, 5000);
     });
 }
         function startClock() {
@@ -690,23 +704,47 @@ function listenToProfile() {
         }
 
         async function setStatus(target, newStatus, isAuto) {
-            const userRef = db.collection('users').doc(target);
-            const uData = (await userRef.get()).data();
-            const now = Date.now();
-            let idleB = uData.idleBank || 0;
-            if (uData.isIdle && uData.idleSince) {
-                const dur = now - getMillis(uData.idleSince);
-                idleB += dur;
-                await db.collection('logs').add({ user: target, name: uData.name, from_status: 'Idle (Auto)', to_status: newStatus, start_time: uData.idleSince, end_time: firebase.firestore.FieldValue.serverTimestamp(), duration_ms: dur, auto: true });
-            }
-            const duration = now - getMillis(uData.lastChange);
-            let tb = uData.timeBank || {};
-            const old = uData.status || 'Offline';
-            tb[old] = (tb[old] || 0) + duration;
-            const ts = firebase.firestore.FieldValue.serverTimestamp();
-            await db.collection('logs').add({ user: target, name: uData.name, from_status: old, to_status: newStatus, start_time: uData.lastChange || ts, end_time: ts, duration_ms: duration, auto: isAuto });
-            await userRef.update({ status: newStatus, lastChange: ts, timeBank: tb, isIdle: false, idleSince: null, idleBank: idleB });
-        }
+    const userRef = db.collection('users').doc(target);
+    const snap = await userRef.get();
+    const uData = snap.data();
+    
+    const nowMillis = Date.now();
+    // نستخدم توقيت الجهاز الحالي لضمان التزامن مع العداد المرئي
+    const ts = firebase.firestore.Timestamp.fromMillis(nowMillis); 
+
+    const duration = nowMillis - getMillis(uData.lastChange);
+    let tb = uData.timeBank || {};
+    const oldStatus = uData.status || 'Offline';
+    tb[oldStatus] = (tb[oldStatus] || 0) + duration;
+
+    let idleB = uData.idleBank || 0;
+    if (uData.isIdle && uData.idleSince) {
+        const iDur = nowMillis - getMillis(uData.idleSince);
+        idleB += iDur;
+        // إضافة سجل للخمول إذا أردت
+    }
+
+    await userRef.update({
+        status: newStatus,
+        lastChange: ts, // التوقيت الموحد
+        timeBank: tb,
+        isIdle: false,
+        idleSince: null,
+        idleBank: idleB
+    });
+
+    // تسجيل اللوج بنفس التوقيت الموحد
+    await db.collection('logs').add({ 
+        user: target, 
+        name: uData.name, 
+        from_status: oldStatus, 
+        to_status: newStatus, 
+        start_time: uData.lastChange || ts, 
+        end_time: ts, 
+        duration_ms: duration, 
+        auto: isAuto 
+    });
+}
 
         async function handleCommentSubmit(e) {
             e.preventDefault();
@@ -1193,6 +1231,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
