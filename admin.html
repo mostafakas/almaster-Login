@@ -937,110 +937,127 @@
                 alert("❌ فشل إرسال الطلب.");
             }
         }    
-            async function viewHistory(email) {
+            let currentViewingEmail = ''; // متغير لحفظ الموظف الحالي عند تغيير التاريخ
+
+async function viewHistory(email, selectedDate = null) {
+    currentViewingEmail = email; // حفظ الإيميل للرجوع إليه عند تغيير التاريخ
     const container = document.getElementById('logs-timeline');
     const footer = document.getElementById('log-report-footer');
     const subtitle = document.getElementById('log-report-subtitle');
+    const dateInput = document.getElementById('history-date-picker');
     
     if (!container) return;
 
-    // 1. إظهار مؤشر التحميل وفتح المودال
-    container.innerHTML = `<tr><td colspan="7" class="py-20 text-center"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-primary-500 mx-auto mb-4"></div>جاري تحليل المسار الحركي وإعداد التقرير...</td></tr>`;
+    // 1. تحديد النطاق الزمني (بداية ونهاية اليوم المختار)
+    let dateToQuery = selectedDate ? moment(selectedDate) : moment();
+    dateInput.value = dateToQuery.format('YYYY-MM-DD'); // مزامنة الخانة مع التاريخ المعروض
+
+    const startTimestamp = dateToQuery.clone().startOf('day').toDate();
+    const endTimestamp = dateToQuery.clone().endOf('day').toDate();
+
+    // 2. إظهار مؤشر التحميل
+    container.innerHTML = `<tr><td colspan="7" class="py-20 text-center"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-primary-500 mx-auto mb-4"></div>جاري استرجاع البيانات التاريخية...</td></tr>`;
     openModal('modal-logs');
 
-    // 2. تحديد وقت بداية اليوم الحالي
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
     try {
-        // 3. جلب البيانات من Firestore
+        // 3. جلب البيانات من Firestore للنطاق المختار
         const snap = await db.collection('logs')
             .where('user', '==', email.toLowerCase().trim())
-            .where('end_time', '>=', startOfDay)
+            .where('end_time', '>=', startTimestamp)
+            .where('end_time', '<=', endTimestamp)
             .orderBy('end_time', 'desc')
             .get();
 
         const userData = allUsersData.find(u => u.email === email.toLowerCase());
-        subtitle.innerText = `تقرير المسار الحركي للموظف: ${userData ? userData.name : email}`;
+        subtitle.innerText = `الموظف: ${userData ? userData.name : email} | التاريخ: ${dateToQuery.locale('ar').format('DD MMMM YYYY')}`;
 
         if (snap.empty) {
-            container.innerHTML = `<tr><td colspan="7" class="py-20 text-center text-slate-600 italic">لا توجد سجلات نشاط مسجلة لهذا الموظف اليوم.</td></tr>`;
-            footer.innerHTML = '<p class="text-slate-500 font-bold text-xs uppercase tracking-widest">لا توجد بيانات حسابية متاحة</p>';
+            container.innerHTML = `<tr><td colspan="7" class="py-20 text-center text-slate-600 italic">لا توجد سجلات نشاط مسجلة لهذا التاريخ.</td></tr>`;
+            footer.innerHTML = '<p class="text-slate-500 font-bold text-xs uppercase tracking-widest">لا توجد بيانات حسابية متاحة لهذا اليوم</p>';
             return;
         }
 
         container.innerHTML = ''; 
-        let totalOnline = 0, totalBreak = 0, count = 1;
+        let totalOnline = 0, totalBreak = 0, totalIdle = 0, count = 1;
 
         snap.forEach(doc => {
             const l = doc.data();
-            const durationMs = Number(l.duration_ms) || 0; // تأكيد تحويل المدة لرقم لضمان الجمع الصحيح
+            const durationMs = Number(l.duration_ms) || 0;
             
-            // حساب الإجماليات بناءً على الحالة التي انتهت (from_status)
+            // حساب الإجماليات بدقة
             if(l.from_status === 'Online') totalOnline += durationMs;
             if(l.from_status === 'Break') totalBreak += durationMs;
+            if(l.from_status === 'Idle' || l.from_status === 'Idle (Auto)') totalIdle += durationMs;
 
             const endTime = l.end_time ? moment(l.end_time.toDate()) : moment();
-            const dateStr = endTime.format('YYYY/MM/DD');
             const timeStr = endTime.format('hh:mm:ss A');
             const durationFormatted = formatDuration(durationMs);
 
-            // دالة مساعدة لتلوين الحالات
             const getStatusBadge = (s) => {
                 const map = { 
                     'Online': 'text-green-500 bg-green-500/10 border-green-500/20', 
                     'Break': 'text-orange-500 bg-orange-500/10 border-orange-500/20', 
                     'Meeting': 'text-blue-500 bg-blue-500/10 border-blue-500/20',
                     'Idle': 'text-red-500 bg-red-500/10 border-red-500/20',
+                    'Idle (Auto)': 'text-red-500 bg-red-500/10 border-red-500/20',
                     'Offline': 'text-slate-500 bg-white/5 border-white/10'
                 };
-                return `<span class="px-3 py-1 rounded-lg ${map[s] || 'bg-slate-800'} text-[10px] uppercase font-black border">${s}</span>`;
+                return `<span class="px-3 py-1 rounded-lg ${map[s] || 'bg-slate-800'} text-[10px] uppercase font-black border border-white/5">${s}</span>`;
             };
 
-            // تحديد شكل "النوع" والفاعل
             let typeHTML = '';
             if (l.adminForced) {
-                typeHTML = `<div class="flex flex-col border-r-2 border-red-500 pr-3"><span class="text-red-400 text-[10px] font-black uppercase">👤 إجراء إداري</span><span class="text-[8px] text-slate-500 font-bold">بواسطة: ${l.performedBy || 'المدير'}</span></div>`;
+                typeHTML = `<div class="flex flex-col border-r-2 border-red-500 pr-3"><span class="text-red-400 text-[9px] font-black uppercase">👤 إجراء إداري</span><span class="text-[7px] text-slate-500 font-bold">بواسطة: ${l.performedBy || 'المدير'}</span></div>`;
             } else if (l.auto) {
-                typeHTML = `<div class="flex flex-col border-r-2 border-blue-500 pr-3"><span class="text-blue-400 text-[10px] font-black uppercase">⚙️ نظام تلقائي</span><span class="text-[8px] text-slate-500 font-bold">وضع الخمول</span></div>`;
+                typeHTML = `<div class="flex flex-col border-r-2 border-blue-500 pr-3"><span class="text-blue-400 text-[9px] font-black uppercase">⚙️ نظام تلقائي</span><span class="text-[7px] text-slate-500 font-bold">رصد خمول</span></div>`;
             } else {
-                typeHTML = `<div class="flex flex-col border-r-2 border-green-500 pr-3"><span class="text-green-400 text-[10px] font-black uppercase">📱 الموظف</span><span class="text-[8px] text-slate-500 font-bold">تغيير يدوي</span></div>`;
+                typeHTML = `<div class="flex flex-col border-r-2 border-green-500 pr-3"><span class="text-green-400 text-[9px] font-black uppercase">📱 الموظف</span><span class="text-[7px] text-slate-500 font-bold">تغيير يدوي</span></div>`;
             }
 
             container.innerHTML += `
-                <tr class="hover:bg-white/[0.02] transition-colors">
-                    <td class="p-5 text-slate-600 font-mono text-[10px]">${count++}</td>
-                    <td class="p-5">${getStatusBadge(l.from_status)}</td>
-                    <td class="p-5"><div class="flex items-center gap-2"><i class="fas fa-arrow-left text-slate-700 text-[10px]"></i> ${getStatusBadge(l.to_status)}</div></td>
-                    <td class="p-5 text-center font-mono text-slate-500 text-[10px]">${dateStr}</td>
-                    <td class="p-5 text-center font-mono text-white text-[10px]">${timeStr}</td>
-                    <td class="p-5 text-center">
+                <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/[0.01]">
+                    <td class="p-4 text-slate-600 font-mono text-[10px] text-center">${count++}</td>
+                    <td class="p-4">${getStatusBadge(l.from_status)}</td>
+                    <td class="p-4"><div class="flex items-center gap-2 text-slate-700"><i class="fas fa-long-arrow-alt-left"></i> ${getStatusBadge(l.to_status)}</div></td>
+                    <td class="p-4 text-center font-mono text-white text-[10px]">${timeStr}</td>
+                    <td class="p-4 text-center">
                         <span class="text-primary-500 font-black font-mono bg-primary-500/5 px-3 py-1 rounded-lg border border-primary-500/10 text-[11px]">
                             ${durationFormatted}
                         </span>
                     </td>
-                    <td class="p-5">${typeHTML}</td>
+                    <td class="p-4">${typeHTML}</td>
                 </tr>`;
         });
 
-        // 4. تحديث فوتر التقرير بالإجماليات النهائية
+        // 4. تحديث الإحصائيات النهائية لليوم المختار
         footer.innerHTML = `
-            <div class="flex gap-12 items-center">
+            <div class="flex gap-10 items-center">
                 <div class="text-center">
-                    <p class="text-[9px] text-slate-500 uppercase font-black mb-1 tracking-widest">إجمالي وقت العمل اليوم</p>
-                    <p class="text-2xl font-black text-green-500 font-mono leading-none">${formatDuration(totalOnline)}</p>
+                    <p class="text-[8px] text-slate-500 uppercase font-black mb-1">صافي وقت العمل</p>
+                    <p class="text-xl font-black text-green-500 font-mono leading-none">${formatDuration(totalOnline)}</p>
                 </div>
-                <div class="w-[1px] h-8 bg-white/10"></div>
                 <div class="text-center">
-                    <p class="text-[9px] text-slate-500 uppercase font-black mb-1 tracking-widest">إجمالي وقت الاستراحة</p>
-                    <p class="text-2xl font-black text-orange-500 font-mono leading-none">${formatDuration(totalBreak)}</p>
+                    <p class="text-[8px] text-slate-500 uppercase font-black mb-1">إجمالي الاستراحات</p>
+                    <p class="text-xl font-black text-orange-500 font-mono leading-none">${formatDuration(totalBreak)}</p>
+                </div>
+                <div class="text-center border-r border-white/10 pr-10">
+                    <p class="text-[8px] text-slate-500 uppercase font-black mb-1">وقت الضياع (خمول)</p>
+                    <p class="text-xl font-black text-red-500 font-mono leading-none">${formatDuration(totalIdle)}</p>
                 </div>
             </div>
         `;
 
     } catch (err) {
-        console.error("Report Generation Error:", err);
-        container.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-red-500 font-black">❌ فشل في تحميل التقرير: ${err.message}</td></tr>`;
+        console.error("History Error:", err);
+        container.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-red-500 font-black">❌ فشل جلب السجل: ${err.message}</td></tr>`;
+    }
+}
+
+// دالة مساعدة لتحديث السجل عند تغيير التاريخ من الخانة
+function refreshHistoryWithDate() {
+    const selectedDate = document.getElementById('history-date-picker').value;
+    if (currentViewingEmail && selectedDate) {
+        viewHistory(currentViewingEmail, selectedDate);
     }
 }
         // --- VIEW 2: TASKS ---
@@ -1787,50 +1804,68 @@ function listenToScreenshotResults() {
         </div>
     </div>
 </div>
-    <div id="modal-logs" class="fixed inset-0 z-[600] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4" onclick="closeModal('modal-logs')">
-    <div class="bg-dark-900 w-full max-w-5xl rounded-[3rem] flex flex-col max-h-[90vh] border border-white/10 shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+<div id="modal-logs" class="fixed inset-0 z-[600] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4" onclick="closeModal('modal-logs')">
+    <div class="bg-dark-900 w-full max-w-6xl rounded-[3rem] flex flex-col max-h-[92vh] border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.5)] overflow-hidden" onclick="event.stopPropagation()">
         
-        <div class="p-8 border-b border-white/5 bg-dark-950 flex justify-between items-end">
+        <div class="p-8 border-b border-white/5 bg-dark-950 flex flex-wrap justify-between items-end gap-6 shrink-0 relative">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-[1px] bg-gradient-to-r from-transparent via-primary-500/50 to-transparent"></div>
+            
             <div>
-                <h3 class="font-black text-2xl text-white mb-1">تقرير سجل النشاط اليومي</h3>
-                <p id="log-report-subtitle" class="text-[10px] text-primary-500 font-bold uppercase tracking-[0.2em]">تحليل المسار الحركي للموظف</p>
+                <h3 class="font-black text-2xl text-white mb-1 flex items-center gap-3">
+                    <i class="fas fa-history text-primary-500"></i> سجل النشاط التفصيلي
+                </h3>
+                <p id="log-report-subtitle" class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">تحليل المسار الحركي للموظف عبر الأيام</p>
             </div>
-            <div class="flex gap-3">
-                <button onclick="window.print()" class="px-5 py-2.5 bg-dark-800 text-slate-300 rounded-xl text-[10px] font-black hover:text-white transition-all">
-                    <i class="fas fa-print ml-2"></i> طباعة التقرير
-                </button>
-                <button onclick="closeModal('modal-logs')" class="w-11 h-11 rounded-xl btn-glass flex items-center justify-center text-slate-400 hover:text-white">
-                    <i class="fas fa-times"></i>
-                </button>
+
+            <div class="flex items-center gap-4 bg-dark-900/50 p-2 rounded-2xl border border-white/5 shadow-inner">
+                <div class="flex flex-col px-4 border-l border-white/5">
+                    <label class="text-[8px] font-black text-primary-500 uppercase mb-1">اختر يوم المراجعة</label>
+                    <input type="date" id="history-date-picker" 
+                           class="bg-transparent text-white text-xs font-black outline-none cursor-pointer [color-scheme:dark]" 
+                           onchange="refreshHistoryWithDate()">
+                </div>
+                
+                <div class="flex gap-2 pr-2">
+                    <button onclick="window.print()" class="w-11 h-11 bg-dark-800 text-slate-300 rounded-xl hover:bg-primary-600 hover:text-white transition-all flex items-center justify-center shadow-lg" title="طباعة التقرير">
+                        <i class="fas fa-print"></i>
+                    </button>
+                    <button onclick="closeModal('modal-logs')" class="w-11 h-11 rounded-xl btn-glass flex items-center justify-center text-slate-400 hover:bg-red-500 hover:text-white transition-all">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-            <div class="bg-dark-950 rounded-[2rem] border border-white/5 overflow-hidden shadow-inner">
+        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar bg-dark-950/20">
+            <div class="bg-dark-950 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
                 <table class="w-full text-right border-collapse">
                     <thead>
-                        <tr class="bg-dark-900/50 border-b border-white/5 text-slate-500 text-[9px] uppercase font-black tracking-widest">
-                            <th class="p-5">#</th>
-                            <th class="p-5">من حالة</th>
-                            <th class="p-5">إلى حالة</th>
-                            <th class="p-5 text-center">التاريخ</th>
+                        <tr class="bg-dark-900/80 border-b border-white/5 text-slate-500 text-[9px] uppercase font-black tracking-widest">
+                            <th class="p-5 text-center">#</th>
+                            <th class="p-5">الحالة السابقة</th>
+                            <th class="p-5">الحالة الجديدة</th>
+                            <th class="p-5 text-center">تاريخ اليوم</th>
                             <th class="p-5 text-center">توقيت الحدث</th>
                             <th class="p-5 text-center">المدة المستغرقة</th>
-                            <th class="p-5">النوع</th>
+                            <th class="p-5">نوع الإجراء</th>
                         </tr>
                     </thead>
                     <tbody id="logs-timeline" class="text-xs font-bold text-slate-300 divide-y divide-white/[0.02]">
-                        </tbody>
+                        <tr>
+                            <td colspan="7" class="py-20 text-center text-slate-600 italic">برجاء اختيار موظف لعرض سجله..</td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
         </div>
 
-        <div id="log-report-footer" class="p-6 bg-dark-950 border-t border-white/5 flex gap-10 justify-center">
-            </div>
+        <div id="log-report-footer" class="p-8 bg-dark-950 border-t border-white/5 flex gap-12 justify-center items-center shrink-0">
+            <p class="text-[10px] text-slate-600 font-black uppercase tracking-widest animate-pulse">في انتظار اختيار البيانات...</p>
+        </div>
     </div>
-</div>
 </div>
 
 </body>
 </html>
+
 
