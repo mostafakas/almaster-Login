@@ -321,37 +321,41 @@ function playSound() {
         }
 
         function showToast(title, message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                
+                const colors = {
+                    info: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
+                    warning: 'border-orange-500/30 bg-orange-500/10 text-orange-400',
+                    danger: 'border-red-500/30 bg-red-500/10 text-red-400',
+                    success: 'border-green-500/30 bg-green-500/10 text-green-400'
+                };
             
-            // تحديد ألوان الإشعار حسب نوعه
-            const colors = {
-                info: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
-                warning: 'border-orange-500/30 bg-orange-500/10 text-orange-400',
-                danger: 'border-red-500/30 bg-red-500/10 text-red-400',
-                success: 'border-green-500/30 bg-green-500/10 text-green-400'
-            };
-
-            toast.className = `p-4 rounded-2xl border ${colors[type]} backdrop-blur-xl shadow-2xl animate-fade-in flex items-start gap-3 pointer-events-auto transition-all duration-300 transform translate-x-0`;
+                toast.className = `p-4 rounded-2xl border ${colors[type]} backdrop-blur-xl shadow-2xl animate-fade-in flex items-start gap-3 pointer-events-auto transition-all duration-300`;
+                toast.innerHTML = `
+                    <div class="flex-1">
+                        <h4 class="font-black text-[12px] uppercase mb-1">${title}</h4>
+                        <p class="text-[10px] text-slate-300 leading-relaxed">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button>
+                `;
+                
+                container.appendChild(toast);
             
-            toast.innerHTML = `
-                <div class="flex-1">
-                    <h4 class="font-black text-[12px] uppercase mb-1">${title}</h4>
-                    <p class="text-[10px] text-slate-300 leading-relaxed">${message}</p>
-                </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button>
-            `;
+                // 1. إشعار صوتي
+                playSound(); 
+                
+                // 2. إشعار ويندوز (Desktop)
+                showWindowsNotification(title, message); 
             
-            container.appendChild(toast);
-            playSound();
-            updateBadge();
-            showWindowsNotification(title, message); // 👈 إضافة إشعار الويندوز هنا
-            // إخفاء الإشعار تلقائياً بعد 6 ثوانٍ
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-x-full');
-                setTimeout(() => toast.remove(), 300);
-            }, 6000);
-        }
+                // 3. إشعار السيستم (الـ Badge)
+                updateBadge(); 
+            
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-x-full');
+                    setTimeout(() => toast.remove(), 300);
+                }, 6000);
+            }
 
         function updateBadge() {
             unreadNotificationsCount++;
@@ -430,65 +434,75 @@ function playSound() {
         }
 
         // --- 3. DATABASE LISTENERS ---
-        function startSmartMonitor() {
-            setInterval(() => {
-                if(!userProfile) return;
-                const now = Date.now();
-                const ONE_HOUR = 60 * 60 * 1000;
-                
-                // 1. فحص المهام التي تجاوزت 24 ساعة ولم تنته
-                if(userProfile.tasks) {
-                    userProfile.tasks.forEach(task => {
-                        if(task.status !== 'done' && (now - task.id) > (24 * ONE_HOUR)) {
-                            const alertId = `24h_${task.id}`;
-                            if(!notifiedAlerts.has(alertId)) {
-                                showToast('تنبيه تأخير!', `المهمة "${task.title}" متأخرة وتجاوزت 24 ساعة.`, 'warning');
-                                notifiedAlerts.add(alertId);
-                            }
-                        }
-                        
-                        // 2. فحص مهام الـ QA المتأخرة (نفترض التأخير بعد ساعتين من تغيير الحالة لـ review)
-                        if(task.status === 'review' && (now - task.id) > (2 * ONE_HOUR)) { // يمكنك حفظ وقت الـ QA الفعلي بدلاً من task.id لاحقاً
-                             const qaAlertId = `qa_${task.id}`;
-                             if(!notifiedAlerts.has(qaAlertId)) {
-                                showToast('تأخير مراجعة', `المهمة "${task.title}" تنتظر المراجعة لفترة طويلة.`, 'danger');
-                                notifiedAlerts.add(qaAlertId);
-                             }
-                        }
-                    });
-                }
+       function startSmartMonitor() {
+    setInterval(() => {
+        if (!userProfile) return;
+        const now = Date.now();
+        const ONE_HOUR = 60 * 60 * 1000;
 
-                // 3. فحص تجاوز وقت الـ Break (نفترض الحد الأقصى 45 دقيقة)
-                const BREAK_LIMIT = 45 * 60 * 1000; 
-                if(userProfile.status === 'Break') {
-                    const currentBreak = (userProfile.timeBank['Break'] || 0) + (now - getMillis(userProfile.lastChange));
-                    if(currentBreak > BREAK_LIMIT && !notifiedAlerts.has('break_limit')) {
-                        showToast('تجاوز وقت الراحة', 'لقد تجاوزت الحد المسموح للـ Break، يرجى العودة للعمل.', 'danger');
-                        notifiedAlerts.add('break_limit');
+        // 1. فحص المهام التي تجاوزت 24 ساعة ولم تنتهِ
+        if (userProfile.tasks) {
+            userProfile.tasks.forEach(task => {
+                if (task.status !== 'done' && (now - task.id) > (24 * ONE_HOUR)) {
+                    const alertId = `24h_${task.id}`;
+                    if (!notifiedAlerts.has(alertId)) {
+                        showToast('تنبيه تأخير!', `المهمة "${task.title}" متأخرة وتجاوزت 24 ساعة.`, 'warning');
+                        notifiedAlerts.add(alertId);
                     }
-                } else {
-                    notifiedAlerts.delete('break_limit'); // إعادة الضبط عند تغيير الحالة
                 }
 
-                // 4. فحص الـ Idle Limit يتم التعامل معه في startIdleTracker بالفعل، يمكننا إضافة إشعار له
-                if(userProfile.isIdle && !notifiedAlerts.has('idle_alert')) {
-                    showToast('تنبيه خمول', 'تم تسجيل حسابك في وضع الخمول لعدم وجود نشاط.', 'warning');
-                    notifiedAlerts.add('idle_alert');
-                } else if (!userProfile.isIdle) {
-                    notifiedAlerts.delete('idle_alert');
+                // 2. فحص مهام الـ QA التي لم تُراجع بعد ساعتين
+                if (task.status === 'review' && (now - task.id) > (2 * ONE_HOUR)) {
+                    const qaAlertId = `qa_${task.id}`;
+                    if (!notifiedAlerts.has(qaAlertId)) {
+                        showToast('تأخير مراجعة', `المهمة "${task.title}" تنتظر المراجعة لفترة طويلة.`, 'danger');
+                        notifiedAlerts.add(qaAlertId);
+                    }
                 }
-
-            }, 60000); // الفحص يتم كل دقيقة (60000 مللي ثانية)
+            });
         }
-        // تأكد أن هذا المتغير موجود في أعلى السكريبت (خارج الدالة)
-let isInitialTasksLoad = true; 
 
+        // 3. تحديث فحص وقت الـ Break (60 دقيقة بدلاً من 45)
+        const BREAK_LIMIT = 60 * 60 * 1000; // 60 دقيقة
+        if (userProfile.status === 'Break') {
+            // حساب الوقت الجاري في الجلسة الحالية + الوقت المحفوظ في البنك
+            const currentSession = now - getMillis(userProfile.lastChange);
+            const totalBreakToday = (userProfile.timeBank?.['Break'] || 0) + currentSession;
+
+            if (totalBreakToday > BREAK_LIMIT && !notifiedAlerts.has('break_limit_reached')) {
+                showToast('تجاوز الحد المسموح ⚠️', 'لقد استنفدت الـ 60 دقيقة المخصصة للراحة اليوم. يرجى العودة للعمل فوراً.', 'danger');
+                notifiedAlerts.add('break_limit_reached');
+            }
+        } else {
+            // إعادة السماح بالتنبيه إذا عاد الموظف للعمل ثم خرج بريك مرة أخرى في وقت لاحق (اختياري)
+            if (notifiedAlerts.has('break_limit_reached') && userProfile.status === 'Online') {
+                notifiedAlerts.delete('break_limit_reached');
+            }
+        }
+
+        // 4. تنبيه وضع الخمول (Idle)
+        if (userProfile.isIdle && !notifiedAlerts.has('idle_alert')) {
+            showToast('تنبيه خمول', 'تم تسجيل حسابك في وضع الخمول لعدم وجود نشاط على الجهاز.', 'warning');
+            notifiedAlerts.add('idle_alert');
+        } else if (!userProfile.isIdle) {
+            notifiedAlerts.delete('idle_alert');
+        }
+
+    }, 60000); // الفحص يتم بدقة كل دقيقة
+}
 function listenToProfile() {
     db.collection('users').doc(currentUser.email.toLowerCase()).onSnapshot(doc => {
         if(!doc.exists) return;
         const data = doc.data();
+                // فحص إذا كانت الحالة تغيرت من طرف خارجي (المدير)
+        if (userProfile && userProfile.status !== data.status) {
+            if (localStatusLock !== data.status) {
+                showToast('تغيير حالة إداري 🛡️', `قام المدير بتغيير حالتك الآن إلى: ${data.status}`, 'warning');
+            }
+            localStatusLock = data.status; // مزامنة القفل
+        }
         const newTasks = data.tasks || [];
-
+        let localStatusLock = null; // لمتابعة الحالة التي اختارها الموظف بنفسه
         // 🟢 منطق الإشعارات 🟢
         if (!isInitialTasksLoad) {
             // 1. اكتشاف المهام الجديدة (حتى لو كانت أول مهمة للموظف)
@@ -541,20 +555,7 @@ function listenToProfile() {
             db.collection('users').onSnapshot(snap => {
                 allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
                 
-                // فحص تغيرات حالة المستخدمين
-                allUsersData.forEach(u => {
-                    if (u.email !== currentUser.email) {
-                        const oldStatus = userStatusesCache[u.email];
-                        const newStatus = u.status || 'Offline';
-                        
-                        if (oldStatus && oldStatus !== newStatus && newStatus === 'Online') {
-                            // إشعار فقط عند دخول شخص متصل لتجنب الإزعاج
-                            showToast('تحديث حالة', `${u.name} أصبح متصلاً الآن.`, 'success');
-                        }
-                        userStatusesCache[u.email] = newStatus;
-                    }
-                });
-
+                // تم إلغاء كود الـ showToast هنا لعدم إزعاج الموظف بحالة زملائه
                 renderPrivateUsersList();
             });
         }
@@ -685,8 +686,7 @@ function listenToProfile() {
         // --- 5. CORE ACTIONS ---
         async function handleStatusClick(s) {
             if(userProfile.status === s) return;
-            const card = document.getElementById('card-' + s);
-            card.className = `status-card cursor-pointer p-4 rounded-2xl flex items-center justify-between active-${s} transform scale-105 transition-all`;
+            localStatusLock = s; // الموظف هو من غير الحالة
             await setStatus(currentUser.email.toLowerCase(), s, false);
         }
 
@@ -959,17 +959,38 @@ function listenToPrivateChat(email, chatId) {
         }
 
         function startIdleTracker() {
-            ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
-                document.addEventListener(evt, () => {
-                    lastActionTime = Date.now();
-                    if(userProfile?.isIdle) db.collection('users').doc(currentUser.email).update({ isIdle: false, idleSince: null });
-                }, true);
+    ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+        document.addEventListener(evt, async () => {
+            const now = Date.now();
+            // إذا كان الموظف في حالة خمول وتحرك الآن
+            if (userProfile?.isIdle && userProfile?.idleSince) {
+                const idleDuration = now - getMillis(userProfile.idleSince);
+                const newIdleBank = (userProfile.idleBank || 0) + idleDuration;
+
+                // تحديث فوري لقاعدة البيانات لحفظ الوقت "المصرفي" للخمول
+                await db.collection('users').doc(currentUser.email.toLowerCase()).update({
+                    isIdle: false,
+                    idleSince: null,
+                    idleBank: newIdleBank
+                });
+                
+                showToast('نشاط مكتشف', 'تم إنهاء وضع الخمول وحفظ الوقت المستغرق.', 'info');
+            }
+            lastActionTime = now;
+        }, true);
+    });
+
+    setInterval(() => {
+        if (!userProfile || userProfile.status !== 'Online' || userProfile.isIdle) return;
+        const limit = (userProfile.idleLimit || 5) * 60000;
+        if (Date.now() - lastActionTime > limit) {
+            db.collection('users').doc(currentUser.email.toLowerCase()).update({
+                isIdle: true,
+                idleSince: firebase.firestore.Timestamp.now()
             });
-            setInterval(() => {
-                if(!userProfile || userProfile.status !== 'Online' || userProfile.isIdle) return;
-                if(Date.now() - lastActionTime > (userProfile.idleLimit || 5) * 60000) db.collection('users').doc(currentUser.email).update({ isIdle: true, idleSince: firebase.firestore.Timestamp.now() });
-            }, 10000);
         }
+    }, 10000);
+}
 
         // --- 8. UTILS ---
             function changeTaskTab(mode, btn) { 
@@ -1173,6 +1194,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
