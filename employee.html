@@ -283,13 +283,14 @@
         let previousTasksCount = 0;
         let userStatusesCache = {}; // لمراقبة تغيرات حالة المستخدمين
         let notifiedAlerts = new Set(); // لمنع تكرار الإشعار لنفس الحدث
-        
+        let isInitialTasksLoad = true; // نقلناه للأعلى لحل المشكلة
+        let localStatusLock = null;    // نقلناه للأعلى ليعمل في كل السكريبت
         const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
         const storage = firebase.storage();
-
+        
         let currentUser = null, userProfile = null, allUsersData = [], currentTasks = [], historyMode = false, selectedTaskId = null, attachedFileObj = null, lastActionTime = Date.now();
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
         // 🟢 HELPERS 🟢
@@ -494,37 +495,35 @@ function listenToProfile() {
     db.collection('users').doc(currentUser.email.toLowerCase()).onSnapshot(doc => {
         if(!doc.exists) return;
         const data = doc.data();
-                // فحص إذا كانت الحالة تغيرت من طرف خارجي (المدير)
+        
+        // 1. فحص إذا كانت الحالة تغيرت من طرف خارجي (المدير)
         if (userProfile && userProfile.status !== data.status) {
             if (localStatusLock !== data.status) {
                 showToast('تغيير حالة إداري 🛡️', `قام المدير بتغيير حالتك الآن إلى: ${data.status}`, 'warning');
             }
-            localStatusLock = data.status; // مزامنة القفل
+            localStatusLock = data.status; 
         }
+
         const newTasks = data.tasks || [];
-        let localStatusLock = null; // لمتابعة الحالة التي اختارها الموظف بنفسه
-        // 🟢 منطق الإشعارات 🟢
+
+        // 2. منطق إشعارات المهام
         if (!isInitialTasksLoad) {
-            // 1. اكتشاف المهام الجديدة (حتى لو كانت أول مهمة للموظف)
-            if (newTasks.length > currentTasks.length) {
-                const addedTask = newTasks[newTasks.length - 1]; // أحدث مهمة مضافة
-                // إظهار التوست (اللي بيشغل الصوت وإشعار الويندوز تلقائياً)
+            if (newTasks.length > (currentTasks ? currentTasks.length : 0)) {
+                const addedTask = newTasks[newTasks.length - 1];
                 showToast('مهمة جديدة 📋', `تم إسناد مهمة إليك: ${addedTask.title}`, 'success');
             }
 
-            // 2. اكتشاف المهام المسترجعة (من مراجعة إلى قيد التنفيذ)
             newTasks.forEach(task => {
-                const oldTaskVersion = currentTasks.find(t => t.id === task.id);
+                const oldTaskVersion = currentTasks ? currentTasks.find(t => t.id === task.id) : null;
                 if (oldTaskVersion && oldTaskVersion.status === 'review' && task.status === 'working') {
                     showToast('تحديث مهمة ⚠️', `أعاد المدير المهمة "${task.title}" للعمل عليها مجدداً`, 'warning');
                 }
             });
         }
 
-        // تحديث البيانات المحلية بعد فحص الإشعارات
         isInitialTasksLoad = false;
         userProfile = data; 
-        currentTasks = [...newTasks]; // أخذ نسخة جديدة من المهام للمقارنة المرة القادمة
+        currentTasks = [...newTasks]; 
         
         updateProfileUI(data); 
         renderTaskList();
@@ -1194,6 +1193,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
