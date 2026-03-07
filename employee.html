@@ -417,40 +417,45 @@ function playSound() {
         // --- 2. AUTH & INIT ---
         // --- 2. AUTH & INIT ---
             auth.onAuthStateChanged(async (user) => {
-                if (user) {
-                    currentUser = user;
-                    const docRef = db.collection('users').doc(user.email.toLowerCase());
-                    const doc = await docRef.get();
-                    
-                    if(doc.exists) {
-                        userProfile = doc.data();
-                        if (userProfile.role === 'admin') { window.location.replace('admin.html'); return; }
-                        
-                        // --- بداية التعديل: تصفير حقيقي وبدء العداد أوتوماتيكياً ---
-                        const lastDate = userProfile.lastChange ? moment(getMillis(userProfile.lastChange)).format('YYYY-MM-DD') : '';
-                        const today = moment().format('YYYY-MM-DD');
-                        
-                        // 1. تصفير العدادات في قاعدة البيانات مع بداية اليوم الجديد
-                        if (lastDate !== today && lastDate !== '') {
-                            await docRef.update({
-                                timeBank: { 'Online': 0, 'Break': 0, 'Meeting': 0, 'Offline': 0 },
-                                idleBank: 0,
-                                lastChange: firebase.firestore.FieldValue.serverTimestamp(),
-                                status: 'Offline'
-                            });
-                            userProfile.status = 'Offline'; 
-                        }
-    
-                        // 2. تفعيل حالة "متصل" (Online) أوتوماتيكياً فور تسجيل الدخول
-                        if (userProfile.status !== 'Online') {
-                            await setStatus(user.email.toLowerCase(), 'Online', true);
-                        }
-                        // --- نهاية التعديل ---
-    
-                        initWorkspace();
-                    } else { auth.signOut(); }
-                } else { window.location.replace('index.html'); }
-            });
+    if (user) {
+        currentUser = user;
+        const docRef = db.collection('users').doc(user.email.toLowerCase());
+        const doc = await docRef.get();
+        
+        if(doc.exists) {
+            userProfile = doc.data();
+            
+            // --- 🔒 نظام الجلسة الموحدة الجديد ---
+            // 1. توليد ID فريد لهذه الجلسة الحالية
+            const newSessionId = Date.now().toString() + "_" + Math.random().toString(36).substr(2, 9);
+            // 2. حفظه محلياً في المتصفح
+            localStorage.setItem('almaster_session_id', newSessionId);
+            // 3. تحديثه في السيرفر فوراً
+            await docRef.update({ currentSessionId: newSessionId });
+            // -----------------------------------
+
+            // كود تصفير اليوم كما هو عندك...
+            const lastDate = userProfile.lastChange ? moment(getMillis(userProfile.lastChange)).format('YYYY-MM-DD') : '';
+            const today = moment().format('YYYY-MM-DD');
+            
+            if (lastDate !== today && lastDate !== '') {
+                await docRef.update({
+                    timeBank: { 'Online': 0, 'Break': 0, 'Meeting': 0, 'Offline': 0 },
+                    idleBank: 0,
+                    lastChange: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'Offline'
+                });
+                userProfile.status = 'Offline'; 
+            }
+
+            if (userProfile.status !== 'Online') {
+                await setStatus(user.email.toLowerCase(), 'Online', true);
+            }
+
+            initWorkspace();
+        } else { auth.signOut(); }
+    } else { window.location.replace('index.html'); }
+});
 
        function initWorkspace() {
     // 1. تشغيل المؤقتات والمراقبين الأساسيين
@@ -560,53 +565,67 @@ function playSound() {
     }, 60000); // الفحص يتم بدقة كل دقيقة
 }
 function listenToProfile() {
-    // نستخدم الـ email الموحد (lowercase) لمنع أي تضارب
     const userDocPath = currentUser.email.toLowerCase().trim();
 
     db.collection('users').doc(userDocPath).onSnapshot(doc => {
         if (!doc.exists) return;
         
         const data = doc.data();
-        const newTasks = data.tasks || [];
 
-        // 1. مراقبة تغيير الحالة (إشعار الموظف إذا كان المدير هو من غيرها)
+        // --- 🛡️ 1. نظام الجلسة الموحدة (منع فتح الحساب على جهازين) ---
+        const remoteSessionId = data.currentSessionId;
+        const localSessionId = localStorage.getItem('almaster_session_id');
+
+        // إذا وجدنا أن المعرف في السيرفر اختلف عن المعرف المخزن في هذا المتصفح
+        if (remoteSessionId && localSessionId && remoteSessionId !== localSessionId) {
+            console.warn("🚫 تم اكتشاف دخول من جهاز آخر. جاري إنهاء الجلسة الحالية...");
+            
+            // تنبيه الموظف قبل الطرد
+            alert("⚠️ تنبيه أمني: تم فتح حسابك من جهاز أو متصفح آخر. سيتم تسجيل خروجك من هذا الجهاز الآن للحفاظ على تزامن العدادات.");
+            
+            auth.signOut().then(() => {
+                window.location.replace('index.html');
+            });
+            return; // التوقف عن تنفيذ باقي الدالة
+        }
+
+        // --- ⚙️ 2. مراقبة تغيير الحالة من قبل الإدارة ---
         if (userProfile && userProfile.status !== data.status) {
-            // إذا كانت الحالة الجديدة ليست هي التي اختارها الموظف بنفسه (عبر الـ Lock)
+            // التحقق هل التغيير تم بواسطة المدير (أي ليس الموظف من ضغط الزر)
             if (localStatusLock !== data.status) {
                 showToast('تنبيه إداري 🛡️', `قام المدير بتعديل حالتك الآن إلى: ${data.status}`, 'warning');
             }
-            // تحديث القفل المحلي ليتزامن مع السيرفر
             localStatusLock = data.status; 
         }
 
-        // 2. منطق إشعارات المهام (يتم تجاهله في أول تحميل للصفحة)
+        const newTasks = data.tasks || [];
+
+        // --- 📋 3. منطق إشعارات المهام الجديدة والمسترجعة ---
         if (!isInitialTasksLoad) {
-            // أ. اكتشاف المهام الجديدة تماماً
+            // أ. اكتشاف المهام الجديدة
             if (newTasks.length > currentTasks.length) {
                 const addedTask = newTasks[newTasks.length - 1];
                 showToast('مهمة جديدة 📋', `تم إسناد مهمة إليك: ${addedTask.title}`, 'success');
             }
 
-            // ب. اكتشاف المهام التي "عادت" من المراجعة للعمل
+            // ب. اكتشاف المهام العائدة من المراجعة
             newTasks.forEach(task => {
                 const oldTaskVersion = currentTasks.find(t => t.id === task.id);
-                // إذا كانت حالة المهمة سابقاً review وأصبحت الآن working
                 if (oldTaskVersion && oldTaskVersion.status === 'review' && task.status === 'working') {
                     showToast('تحديث مهمة ⚠️', `أعاد المدير المهمة "${task.title}" للمراجعة والتعديل`, 'warning');
                 }
             });
         }
 
-        // 3. تحديث البيانات المحلية (المرجعيات)
+        // --- 🔄 4. تحديث البيانات المحلية والواجهة ---
         isInitialTasksLoad = false;
         userProfile = data; 
         currentTasks = [...newTasks]; 
         
-        // 4. تحديث الواجهة الرسومية
         updateProfileUI(data); 
         renderTaskList();
         
-        // 5. إذا كان الموظف يفتح تفاصيل مهمة حالياً، نقوم بتحديث بياناتها (مثل التعليقات الجديدة)
+        // تحديث تفاصيل المهمة المفتوحة حالياً (مثل التعليقات الجديدة)
         if (selectedTaskId) { 
             const activeTask = currentTasks.find(x => x.id == selectedTaskId); 
             if (activeTask) renderTaskDetail(activeTask); 
@@ -614,7 +633,7 @@ function listenToProfile() {
 
     }, err => {
         console.error("خطأ في مراقب الملف الشخصي:", err);
-        // محاولة إعادة الاتصال في حال حدوث خطأ في الشبكة
+        // محاولة إعادة الاتصال التلقائي بعد 5 ثوانٍ
         setTimeout(listenToProfile, 5000);
     });
 }
@@ -1330,6 +1349,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
