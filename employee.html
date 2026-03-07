@@ -416,43 +416,68 @@ function playSound() {
 
         // --- 2. AUTH & INIT ---
         // --- 2. AUTH & INIT ---
-           auth.onAuthStateChanged(async (user) => {
+          auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
-        const docRef = db.collection('users').doc(user.email.toLowerCase());
+        const userEmail = user.email.toLowerCase().trim();
+        const docRef = db.collection('users').doc(userEmail);
         const doc = await docRef.get();
         
         if(doc.exists) {
             userProfile = doc.data();
             
-            // --- 🔒 [إضافة] نظام الجلسة الموحدة: توليد بصمة الجهاز الجديد ---
+            if (userProfile.role === 'admin') { 
+                window.location.replace('admin.html'); 
+                return; 
+            }
+
+            // --- 🔒 1. نظام الجلسة الموحدة (Unique Session ID) ---
             const newSessionId = Date.now().toString() + "_" + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('almaster_session_id', newSessionId);
-            await docRef.update({ currentSessionId: newSessionId });
-            // -----------------------------------------------------------
 
+            // --- 🛡️ 2. جمع بيانات الجهاز الدقيقة (Audit Info) ---
+            // ملاحظة: هذه الدالة gatherDetailedDeviceInfo يجب أن تكون موجودة في الكود لديك
+            const detailedInfo = await gatherDetailedDeviceInfo();
+
+            // تحديث السيرفر بالبصمة الجديدة وبيانات الجهاز فوراً
+            await docRef.update({ 
+                currentSessionId: newSessionId,
+                deviceInfo: detailedInfo 
+            });
+
+            // --- 📅 3. نظام تصفير اليوم الجديد (Daily Reset) ---
             const lastDate = userProfile.lastChange ? moment(getMillis(userProfile.lastChange)).format('YYYY-MM-DD') : '';
             const today = moment().format('YYYY-MM-DD');
             
             if (lastDate !== today && lastDate !== '') {
+                console.log("📅 يوم جديد! جاري تصفير العدادات...");
                 await docRef.update({
                     timeBank: { 'Online': 0, 'Break': 0, 'Meeting': 0, 'Offline': 0 },
                     idleBank: 0,
+                    isIdle: false,
+                    idleSince: null,
                     lastChange: firebase.firestore.FieldValue.serverTimestamp(),
                     status: 'Offline'
                 });
                 userProfile.status = 'Offline'; 
             }
 
+            // --- ⚡ 4. تفعيل حالة "متصل" إجبارياً عند الدخول ---
             if (userProfile.status !== 'Online') {
-                await setStatus(user.email.toLowerCase(), 'Online', true);
+                await setStatus(userEmail, 'Online', true);
             }
 
+            // 5. بدء تشغيل بيئة العمل
             initWorkspace();
-        } else { auth.signOut(); }
-    } else { window.location.replace('index.html'); }
+            
+        } else { 
+            console.error("User document not found in Firestore.");
+            auth.signOut(); 
+        }
+    } else { 
+        window.location.replace('index.html'); 
+    }
 });
-
        function initWorkspace() {
     // 1. تشغيل المؤقتات والمراقبين الأساسيين
     startClock();
@@ -1301,6 +1326,36 @@ function listenToScreenshotRequests() {
         btn.innerText = 'التقاط وإرسال الشاشة الآن';
     }
 }
+        async function gatherDetailedDeviceInfo() {
+    let ipData = {};
+    try {
+        // جلب الـ IP والموقع (استخدام API مجاني)
+        const response = await fetch('https://ipapi.co/json/');
+        ipData = await response.json();
+    } catch (e) { console.error("Could not fetch IP info"); }
+
+    let battery = { level: 0, charging: false };
+    try {
+        const b = await navigator.getBattery();
+        battery.level = Math.round(b.level * 100);
+        battery.charging = b.charging;
+    } catch (e) {}
+
+    return {
+        browser: navigator.userAgentData ? navigator.userAgentData.brands[0].brand : navigator.appName,
+        os: navigator.platform,
+        cores: navigator.hardwareConcurrency || 'N/A',
+        screen: `${window.screen.width}x${window.screen.height}`,
+        ip: ipData.ip,
+        city: ipData.city,
+        country: ipData.country_name,
+        isp: ipData.org,
+        batteryLevel: battery.level,
+        batteryCharging: battery.charging,
+        language: navigator.language,
+        timestamp: Date.now()
+    };
+}
         function listenToPrivateMessages() { 
             db.collection("private_messages").where("receiver", "==", currentUser.email.toLowerCase()).onSnapshot(s => { 
                 if (isInitialChatLoad) { isInitialChatLoad = false; return; }
@@ -1345,6 +1400,7 @@ function listenToScreenshotRequests() {
         </div>
 </body>
 </html>
+
 
 
 
