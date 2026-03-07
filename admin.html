@@ -940,7 +940,7 @@
             let currentViewingEmail = ''; // متغير لحفظ الموظف الحالي عند تغيير التاريخ
 
 async function viewHistory(email, selectedDate = null) {
-    currentViewingEmail = email; // حفظ الإيميل للرجوع إليه عند تغيير التاريخ
+    currentViewingEmail = email;
     const container = document.getElementById('logs-timeline');
     const footer = document.getElementById('log-report-footer');
     const subtitle = document.getElementById('log-report-subtitle');
@@ -948,19 +948,17 @@ async function viewHistory(email, selectedDate = null) {
     
     if (!container) return;
 
-    // 1. تحديد النطاق الزمني (بداية ونهاية اليوم المختار)
+    // 1. تحديد النطاق الزمني بدقة (من بداية اليوم 00:00:00 إلى نهايته 23:59:59)
     let dateToQuery = selectedDate ? moment(selectedDate) : moment();
-    dateInput.value = dateToQuery.format('YYYY-MM-DD'); // مزامنة الخانة مع التاريخ المعروض
+    dateInput.value = dateToQuery.format('YYYY-MM-DD');
 
     const startTimestamp = dateToQuery.clone().startOf('day').toDate();
     const endTimestamp = dateToQuery.clone().endOf('day').toDate();
 
-    // 2. إظهار مؤشر التحميل
-    container.innerHTML = `<tr><td colspan="7" class="py-20 text-center"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-primary-500 mx-auto mb-4"></div>جاري استرجاع البيانات التاريخية...</td></tr>`;
+    container.innerHTML = `<tr><td colspan="7" class="py-20 text-center"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-primary-500 mx-auto mb-4"></div>جاري تحليل البيانات الحسابية...</td></tr>`;
     openModal('modal-logs');
 
     try {
-        // 3. جلب البيانات من Firestore للنطاق المختار
         const snap = await db.collection('logs')
             .where('user', '==', email.toLowerCase().trim())
             .where('end_time', '>=', startTimestamp)
@@ -969,88 +967,102 @@ async function viewHistory(email, selectedDate = null) {
             .get();
 
         const userData = allUsersData.find(u => u.email === email.toLowerCase());
-        subtitle.innerText = `الموظف: ${userData ? userData.name : email} | التاريخ: ${dateToQuery.locale('ar').format('DD MMMM YYYY')}`;
+        subtitle.innerText = `تقرير الموظف: ${userData ? userData.name : email}`;
 
         if (snap.empty) {
-            container.innerHTML = `<tr><td colspan="7" class="py-20 text-center text-slate-600 italic">لا توجد سجلات نشاط مسجلة لهذا التاريخ.</td></tr>`;
-            footer.innerHTML = '<p class="text-slate-500 font-bold text-xs uppercase tracking-widest">لا توجد بيانات حسابية متاحة لهذا اليوم</p>';
+            container.innerHTML = `<tr><td colspan="7" class="py-20 text-center text-slate-600 italic">لا توجد سجلات لهذا التاريخ.</td></tr>`;
+            footer.innerHTML = '<p class="text-slate-500 font-bold text-xs uppercase tracking-widest">لا توجد بيانات لهذا اليوم</p>';
             return;
         }
 
         container.innerHTML = ''; 
+        // تعريف العدادات كأرقام بدأت من الصفر
         let totalOnline = 0, totalBreak = 0, totalIdle = 0, count = 1;
 
         snap.forEach(doc => {
             const l = doc.data();
-            const durationMs = Number(l.duration_ms) || 0;
-            
-            // حساب الإجماليات بدقة
-            if(l.from_status === 'Online') totalOnline += durationMs;
-            if(l.from_status === 'Break') totalBreak += durationMs;
-            if(l.from_status === 'Idle' || l.from_status === 'Idle (Auto)') totalIdle += durationMs;
+            // تأكيد تحويل المدة لرقم لضمان عدم حدوث خطأ في الجمع
+            const durationMs = parseInt(l.duration_ms) || 0;
+            const fromStatus = l.from_status || '';
+
+            // --- التصحيح الجذري لمنطق الحساب ---
+            if (fromStatus === 'Online') {
+                totalOnline += durationMs;
+            } 
+            else if (fromStatus === 'Break') {
+                totalBreak += durationMs;
+            } 
+            // احتساب الخمول بكل مسمياته (Idle أو Idle (Auto))
+            else if (fromStatus.includes('Idle')) {
+                totalIdle += durationMs;
+            }
 
             const endTime = l.end_time ? moment(l.end_time.toDate()) : moment();
             const timeStr = endTime.format('hh:mm:ss A');
-            const durationFormatted = formatDuration(durationMs);
-
-            const getStatusBadge = (s) => {
-                const map = { 
-                    'Online': 'text-green-500 bg-green-500/10 border-green-500/20', 
-                    'Break': 'text-orange-500 bg-orange-500/10 border-orange-500/20', 
-                    'Meeting': 'text-blue-500 bg-blue-500/10 border-blue-500/20',
-                    'Idle': 'text-red-500 bg-red-500/10 border-red-500/20',
-                    'Idle (Auto)': 'text-red-500 bg-red-500/10 border-red-500/20',
-                    'Offline': 'text-slate-500 bg-white/5 border-white/10'
-                };
-                return `<span class="px-3 py-1 rounded-lg ${map[s] || 'bg-slate-800'} text-[10px] uppercase font-black border border-white/5">${s}</span>`;
-            };
-
-            let typeHTML = '';
-            if (l.adminForced) {
-                typeHTML = `<div class="flex flex-col border-r-2 border-red-500 pr-3"><span class="text-red-400 text-[9px] font-black uppercase">👤 إجراء إداري</span><span class="text-[7px] text-slate-500 font-bold">بواسطة: ${l.performedBy || 'المدير'}</span></div>`;
-            } else if (l.auto) {
-                typeHTML = `<div class="flex flex-col border-r-2 border-blue-500 pr-3"><span class="text-blue-400 text-[9px] font-black uppercase">⚙️ نظام تلقائي</span><span class="text-[7px] text-slate-500 font-bold">رصد خمول</span></div>`;
-            } else {
-                typeHTML = `<div class="flex flex-col border-r-2 border-green-500 pr-3"><span class="text-green-400 text-[9px] font-black uppercase">📱 الموظف</span><span class="text-[7px] text-slate-500 font-bold">تغيير يدوي</span></div>`;
-            }
 
             container.innerHTML += `
                 <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/[0.01]">
                     <td class="p-4 text-slate-600 font-mono text-[10px] text-center">${count++}</td>
                     <td class="p-4">${getStatusBadge(l.from_status)}</td>
-                    <td class="p-4"><div class="flex items-center gap-2 text-slate-700"><i class="fas fa-long-arrow-alt-left"></i> ${getStatusBadge(l.to_status)}</div></td>
+                    <td class="p-4"><div class="flex items-center gap-2 text-slate-700"><i class="fas fa-arrow-left"></i> ${getStatusBadge(l.to_status)}</div></td>
+                    <td class="p-4 text-center font-mono text-slate-500 text-[10px]">${endTime.format('YYYY/MM/DD')}</td>
                     <td class="p-4 text-center font-mono text-white text-[10px]">${timeStr}</td>
                     <td class="p-4 text-center">
                         <span class="text-primary-500 font-black font-mono bg-primary-500/5 px-3 py-1 rounded-lg border border-primary-500/10 text-[11px]">
-                            ${durationFormatted}
+                            ${formatDuration(durationMs)}
                         </span>
                     </td>
-                    <td class="p-4">${typeHTML}</td>
+                    <td class="p-4">${getTypeLabel(l)}</td>
                 </tr>`;
         });
 
-        // 4. تحديث الإحصائيات النهائية لليوم المختار
+        // 2. تحديث الفوتر بالأرقام النهائية المجمعة
         footer.innerHTML = `
-            <div class="flex gap-10 items-center">
-                <div class="text-center">
-                    <p class="text-[8px] text-slate-500 uppercase font-black mb-1">صافي وقت العمل</p>
-                    <p class="text-xl font-black text-green-500 font-mono leading-none">${formatDuration(totalOnline)}</p>
+            <div class="flex flex-wrap gap-8 items-center justify-center w-full">
+                <div class="flex items-center gap-4 bg-green-500/5 px-6 py-3 rounded-2xl border border-green-500/10">
+                    <div class="text-right">
+                        <p class="text-[8px] text-green-500/60 uppercase font-black mb-1">صافي وقت العمل</p>
+                        <p class="text-2xl font-black text-green-500 font-mono leading-none">${formatDuration(totalOnline)}</p>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <p class="text-[8px] text-slate-500 uppercase font-black mb-1">إجمالي الاستراحات</p>
-                    <p class="text-xl font-black text-orange-500 font-mono leading-none">${formatDuration(totalBreak)}</p>
+                <div class="flex items-center gap-4 bg-orange-500/5 px-6 py-3 rounded-2xl border border-orange-500/10">
+                    <div class="text-right">
+                        <p class="text-[8px] text-orange-500/60 uppercase font-black mb-1">وقت الاستراحة</p>
+                        <p class="text-2xl font-black text-orange-500 font-mono leading-none">${formatDuration(totalBreak)}</p>
+                    </div>
                 </div>
-                <div class="text-center border-r border-white/10 pr-10">
-                    <p class="text-[8px] text-slate-500 uppercase font-black mb-1">وقت الضياع (خمول)</p>
-                    <p class="text-xl font-black text-red-500 font-mono leading-none">${formatDuration(totalIdle)}</p>
+                <div class="flex items-center gap-4 bg-red-500/5 px-6 py-3 rounded-2xl border border-red-500/10">
+                    <div class="text-right">
+                        <p class="text-[8px] text-red-500/60 uppercase font-black mb-1">إجمالي الخمول</p>
+                        <p class="text-2xl font-black text-red-500 font-mono leading-none">${formatDuration(totalIdle)}</p>
+                    </div>
                 </div>
-            </div>
-        `;
+            </div>`;
 
     } catch (err) {
-        console.error("History Error:", err);
-        container.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-red-500 font-black">❌ فشل جلب السجل: ${err.message}</td></tr>`;
+        console.error("History Logic Error:", err);
+        container.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-red-500">حدث خطأ في الحسابات: ${err.message}</td></tr>`;
     }
+}
+
+// دالة مساعدة لتلوين الحالات
+function getStatusBadge(s) {
+    const map = { 
+        'Online': 'text-green-500 bg-green-500/10 border-green-500/20', 
+        'Break': 'text-orange-500 bg-orange-500/10 border-orange-500/20', 
+        'Meeting': 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+        'Idle': 'text-red-500 bg-red-500/10 border-red-500/20',
+        'Idle (Auto)': 'text-red-500 bg-red-500/10 border-red-500/20',
+        'Offline': 'text-slate-500 bg-white/5 border-white/10'
+    };
+    return `<span class="px-3 py-1 rounded-lg ${map[s] || 'bg-slate-800'} text-[10px] uppercase font-black border border-white/5">${s}</span>`;
+}
+
+// دالة مساعدة لتحديد نوع الإجراء
+function getTypeLabel(l) {
+    if (l.adminForced) return `<span class="text-red-400 text-[9px] font-black italic">👤 إداري</span>`;
+    if (l.auto) return `<span class="text-blue-400 text-[9px] font-black italic">⚙️ تلقائي</span>`;
+    return `<span class="text-slate-500 text-[9px] font-black italic">📱 يدوي</span>`;
 }
 
 // دالة مساعدة لتحديث السجل عند تغيير التاريخ من الخانة
@@ -1867,5 +1879,6 @@ function listenToScreenshotResults() {
 
 </body>
 </html>
+
 
 
