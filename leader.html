@@ -875,46 +875,58 @@ function listenToProfile() {
             await setStatus(currentUser.email.toLowerCase(), s, false);
         }
 
-        async function setStatus(target, newStatus, isAuto) {
+       async function setStatus(target, newStatus, isAuto) {
     const userRef = db.collection('users').doc(target);
     const snap = await userRef.get();
     
     if (!snap.exists) return;
     const uData = snap.data();
 
-    // 1. 🚨 صمام الأمان: فحص اليوم الجديد قبل أي احتساب للوقت
+    // 1. مراجع الوقت
+    const nowMillis = Date.now();
+    const ts = firebase.firestore.Timestamp.fromMillis(nowMillis); 
+
+    // فحص التاريخ لاكتشاف اليوم الجديد
     const lastDate = uData.lastChange ? moment(getMillis(uData.lastChange)).format('YYYY-MM-DD') : '';
     const today = moment().format('YYYY-MM-DD');
 
-    if (lastDate !== today && lastDate !== '') {
-        console.log("📅 تم اكتشاف محاولة تغيير حالة في يوم جديد. بدء التصفير التلقائي...");
-        await executeDailyResetAndLogout();
-        return; // اخرج من الدالة ولا تنفذ أي شيء آخر
-    }
-
-    // 2. توحيد مرجع الوقت لمنع "قفزة العداد" (Clock Synchronization)
-    const nowMillis = Date.now();
-    // نستخدم توقيت الجهاز الحالي ليتطابق مع العداد الذي يراه الموظف
-    const ts = firebase.firestore.Timestamp.fromMillis(nowMillis); 
-
-    // 3. حساب المدة المنقضية في الحالة القديمة
-    const duration = nowMillis - getMillis(uData.lastChange);
     let tb = uData.timeBank || {};
+    let idleB = uData.idleBank || 0;
+    let duration = 0;
     const oldStatus = uData.isIdle ? 'Idle' : (uData.status || 'Offline');
 
-    // إضافة المدة للبنك الزمني الخاص بالحالة التي انتهت للتو
-    if (oldStatus !== 'Offline') {
-        tb[oldStatus] = (tb[oldStatus] || 0) + duration;
+    // 2. 🚨 التصفير الذكي والآمن (يمنع طرد المدير ويصفر العدادات بشكل صحيح)
+    if (lastDate !== today && lastDate !== '') {
+        console.log(`📅 يوم جديد لـ ${target}. جاري تصفير العدادات ومنع تراكم الوقت...`);
+        
+        // تصفير جميع العدادات فوراً لمنع القفزة الزمنية من أمس
+        tb = { 'Online': 0, 'Break': 0, 'Meeting': 0, 'Offline': 0 };
+        idleB = 0;
+        duration = 0; // أهم نقطة: المدة صفر حتى لا نحسب وقت من أمس إلى اليوم
+
+        // إذا كان الموظف نفسه هو من يغير حالته (وليس المدير)، نطبق الطرد لتحديث جلسته
+        if (typeof currentUser !== 'undefined' && currentUser.email.toLowerCase() === target.toLowerCase() && !isAuto) {
+            if (typeof executeDailyResetAndLogout === 'function') {
+                await executeDailyResetAndLogout();
+                return; // هنا فقط نوقف الدالة لأن الموظف سيطرد
+            }
+        }
+    } else {
+        // 3. حساب المدة المنقضية بشكل طبيعي في نفس اليوم
+        duration = nowMillis - getMillis(uData.lastChange);
+        
+        if (oldStatus !== 'Offline') {
+            tb[oldStatus] = (tb[oldStatus] || 0) + duration;
+        }
+
+        // معالجة بنك الخمول
+        if (uData.isIdle && uData.idleSince) {
+            const iDur = nowMillis - getMillis(uData.idleSince);
+            idleB += iDur;
+        }
     }
 
-    // 4. معالجة بنك الخمول (إذا كان الموظف يغير حالته وهو Idle)
-    let idleB = uData.idleBank || 0;
-    if (uData.isIdle && uData.idleSince) {
-        const iDur = nowMillis - getMillis(uData.idleSince);
-        idleB += iDur;
-    }
-
-    // 5. تحديث قاعدة البيانات بالقيم الجديدة
+    // 4. تحديث قاعدة البيانات بالقيم الجديدة
     try {
         await userRef.update({
             status: newStatus,
@@ -925,8 +937,8 @@ function listenToProfile() {
             idleBank: idleB
         });
 
-        // تحديث القفل المحلي لضمان عدم ظهور إشعار "تغيير من المدير" للموظف نفسه
-        if (typeof localStatusLock !== 'undefined') {
+        // 5. تحديث القفل المحلي لضمان عدم ظهور إشعار "تغيير من المدير" للموظف نفسه
+        if (typeof localStatusLock !== 'undefined' && typeof currentUser !== 'undefined' && currentUser.email.toLowerCase() === target.toLowerCase()) {
             localStatusLock = newStatus;
         }
 
@@ -934,9 +946,10 @@ function listenToProfile() {
         await db.collection('logs').add({
             user: target,
             name: uData.name,
-            from_status: oldStatus,
+            // إذا كان يوم جديد، نعتبر الحالة السابقة Offline لتنظيم شكل الأرشيف
+            from_status: (lastDate !== today && lastDate !== '') ? 'Offline' : oldStatus,
             to_status: newStatus,
-            start_time: uData.lastChange || ts,
+            start_time: (lastDate !== today && lastDate !== '') ? ts : (uData.lastChange || ts),
             end_time: ts,
             duration_ms: duration,
             auto: isAuto
@@ -1564,5 +1577,6 @@ function selectEmployeeForTask(email, name, photo) {
     </div>
 </body>
 </html>
+
 
 
