@@ -1422,6 +1422,7 @@ function openAdminTaskDetail(taskId, ownerEmail) {
             const form = document.getElementById('user-setup-form'); form.reset();
             document.getElementById('user-photo-preview').src = DEFAULT_PHOTO + 'New';
             document.getElementById('user-photo-b64').value = '';
+            document.getElementById('user-photo-upload').value = '';
             
             if(email === 'new') {
                 document.getElementById('modal-user-title').innerHTML = '<i class="fas fa-user-plus text-primary-500"></i> إضافة موظف جديد';
@@ -1461,74 +1462,77 @@ function openAdminTaskDetail(taskId, ownerEmail) {
             openModal('modal-user-form');
         }
 
-        async function saveUserData(e) {
-            e.preventDefault();
-            const btn = document.getElementById('save-user-btn'); 
-            
-            btn.disabled = true; 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري الحفظ...';
-            
-            try {
-                const mode = document.getElementById('edit-mode-email').value;
-                const email = document.getElementById('u-email').value.toLowerCase().trim();
-                const pass = document.getElementById('u-password') ? document.getElementById('u-password').value : '';
-                
-                // الحل البديل: جلب الصورة كنص مشفر (Base64) من الحقل المخفي مباشرة
-                let finalPhotoUrl = document.getElementById('user-photo-b64').value;
+        aasync function saveUserData(e) {
+    e.preventDefault();
+    const btn = document.getElementById('save-user-btn'); 
+    
+    btn.disabled = true; 
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري الحفظ...';
+    
+    try {
+        const mode = document.getElementById('edit-mode-email').value;
+        const email = document.getElementById('u-email').value.toLowerCase().trim();
+        const pass = document.getElementById('u-password') ? document.getElementById('u-password').value : '';
         
-                // تجميع البيانات
-                const userData = {
-                    name: document.getElementById('u-name').value,
-                    title: document.getElementById('u-title') ? document.getElementById('u-title').value : '',
-                    role: document.getElementById('u-role') ? document.getElementById('u-role').value : 'employee',
-                    contract: document.getElementById('u-contract') ? document.getElementById('u-contract').value : 'employee',
-                    idleLimit: parseInt(document.getElementById('u-idle') ? document.getElementById('u-idle').value : 5),
-                    backgroundLimit: parseInt(document.getElementById('u-bg') ? document.getElementById('u-bg').value : 60),
-                    isSuspended: document.getElementById('u-suspended') ? document.getElementById('u-suspended').checked : false,
-                    permissions: {
-                        crm: document.getElementById('perm-crm') ? document.getElementById('perm-crm').checked : false,
-                        payroll: document.getElementById('perm-payroll') ? document.getElementById('perm-payroll').checked : false,
-                        deleteTask: document.getElementById('perm-delete-task') ? document.getElementById('perm-delete-task').checked : false,
-                        screenshot: document.getElementById('perm-screenshot') ? document.getElementById('perm-screenshot').checked : false
-                    }
-                };
-        
-                // إضافة الصورة للبيانات (نصياً بدلاً من رابط Storage)
-                if (finalPhotoUrl && finalPhotoUrl.trim() !== '') {
-                    userData.photo = finalPhotoUrl;
-                }
-        
-                // الحفظ في قاعدة البيانات
-                if (mode === 'new') {
-                    await secondaryAuth.createUserWithEmailAndPassword(email, pass);
-                    await secondaryAuth.signOut();
-                    
-                    userData.email = email; 
-                    userData.status = 'Offline'; 
-                    userData.tasks = []; 
-                    userData.timeBank = {};
-                    
-                    await db.collection('users').doc(email).set(userData);
-                    alert("تم إنشاء حساب الموظف بنجاح");
-                } else {
-                    await db.collection('users').doc(email).update(userData);
-                    
-                    // تأثير بصري للنجاح
-                    btn.innerHTML = '<i class="fas fa-check ml-2"></i> تم الحفظ';
-                    btn.classList.add('bg-green-600');
-                    setTimeout(() => btn.classList.remove('bg-green-600'), 1500);
-                }
-                
-                closeModal('modal-user-form'); 
-        
-            } catch(err) { 
-                console.error("Error saving user:", err); 
-                alert("حدث خطأ أثناء الحفظ: " + err.message); 
-            } finally {
-                btn.disabled = false; 
-                if(!btn.classList.contains('bg-green-600')) btn.innerHTML = 'حفظ بيانات الموظف';
-            }
+        // --- بداية التعديل: التعامل الاحترافي مع الصورة ---
+        let finalPhotoUrl = document.getElementById('user-photo-b64').value; // الاحتفاظ بالرابط القديم إذا لم تتغير
+        const photoInput = document.getElementById('user-photo-upload');
+
+        // إذا قام المدير باختيار صورة جديدة، نرفعها على Storage ونأخذ الرابط
+        if (photoInput.files && photoInput.files.length > 0) {
+            finalPhotoUrl = await uploadFile(photoInput.files[0], 'profile_photos');
         }
+        // --- نهاية التعديل ---
+
+        const userData = {
+            name: document.getElementById('u-name').value,
+            title: document.getElementById('u-title') ? document.getElementById('u-title').value : '',
+            role: document.getElementById('u-role') ? document.getElementById('u-role').value : 'employee',
+            contract: document.getElementById('u-contract') ? document.getElementById('u-contract').value : 'employee',
+            idleLimit: parseInt(document.getElementById('u-idle') ? document.getElementById('u-idle').value : 5),
+            backgroundLimit: parseInt(document.getElementById('u-bg') ? document.getElementById('u-bg').value : 60),
+            isSuspended: document.getElementById('u-suspended') ? document.getElementById('u-suspended').checked : false,
+            permissions: {
+                crm: document.getElementById('perm-crm') ? document.getElementById('perm-crm').checked : false,
+                payroll: document.getElementById('perm-payroll') ? document.getElementById('perm-payroll').checked : false,
+                deleteTask: document.getElementById('perm-delete-task') ? document.getElementById('perm-delete-task').checked : false,
+                screenshot: document.getElementById('perm-screenshot') ? document.getElementById('perm-screenshot').checked : false
+            }
+        };
+
+        if (finalPhotoUrl && finalPhotoUrl.trim() !== '') {
+            userData.photo = finalPhotoUrl;
+        }
+
+        if (mode === 'new') {
+            await secondaryAuth.createUserWithEmailAndPassword(email, pass);
+            await secondaryAuth.signOut();
+            
+            userData.email = email; 
+            userData.status = 'Offline'; 
+            userData.tasks = []; 
+            userData.timeBank = {};
+            
+            await db.collection('users').doc(email).set(userData);
+            alert("تم إنشاء حساب الموظف بنجاح");
+        } else {
+            await db.collection('users').doc(email).update(userData);
+            
+            btn.innerHTML = '<i class="fas fa-check ml-2"></i> تم الحفظ';
+            btn.classList.add('bg-green-600');
+            setTimeout(() => btn.classList.remove('bg-green-600'), 1500);
+        }
+        
+        closeModal('modal-user-form'); 
+
+    } catch(err) { 
+        console.error("Error saving user:", err); 
+        alert("حدث خطأ أثناء الحفظ: " + err.message); 
+    } finally {
+        btn.disabled = false; 
+        if(!btn.classList.contains('bg-green-600')) btn.innerHTML = 'حفظ بيانات الموظف';
+    }
+}
         async function deleteUser() {
             const email = document.getElementById('edit-mode-email').value;
             if(email === currentUser.email) { alert("لا يمكنك حذف حسابك الإداري!"); return; }
