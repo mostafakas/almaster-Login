@@ -88,13 +88,20 @@
             <p class="text-[8px] text-primary-500 font-bold uppercase tracking-widest mt-1">نظام الإدارة المالية</p>
         </div>
 
-        <div class="p-5 border-b border-white/5 shrink-0 bg-dark-900/10">
-            <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 block"><i class="fas fa-calendar-alt mr-1"></i> الفترة المالية الحالية</label>
-            <div class="relative">
-                <select id="month-picker" onchange="changeMonth()" class="w-full bg-dark-900 border border-white/10 hover:border-primary-500/50 rounded-xl px-4 py-3 text-xs font-black text-white outline-none cursor-pointer appearance-none transition-all shadow-inner"></select>
-                <i class="fas fa-chevron-down absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] pointer-events-none"></i>
-            </div>
+<div class="p-5 border-b border-white/5 shrink-0 bg-dark-900/20">
+    <label class="text-[10px] font-black text-primary-500 uppercase tracking-[0.2em] mb-3 block flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse"></span>
+        الدورة المالية
+    </label>
+    <div class="relative group">
+        <select id="month-picker" onchange="changeMonth()" 
+            class="w-full bg-dark-950 border border-white/10 group-hover:border-primary-500/50 text-white rounded-2xl px-4 py-3.5 text-xs font-black appearance-none cursor-pointer transition-all shadow-2xl outline-none focus:ring-2 focus:ring-primary-500/20">
+            </select>
+        <div class="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 group-hover:text-primary-500 transition-colors">
+            <i class="fas fa-calendar-day text-xs"></i>
         </div>
+    </div>
+</div>
 
         <div class="flex-1 overflow-y-auto custom-scrollbar py-4 space-y-1">
             <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 px-6">لوحات التحكم والمتابعة</p>
@@ -711,42 +718,45 @@
 
         function initMonthPicker() {
     const picker = document.getElementById('month-picker');
+    if (!picker) return;
+
     const now = moment();
+    // تحديد نقطة البداية: 1 مارس 2026
+    const startDate = moment("2026-03-01");
     
-    // تحديد الشهر الحالي كافتراضي
+    // تحديد الشهر المختار افتراضياً (الشهر الحالي)
     if (!currentSelectedMonth) {
         currentSelectedMonth = now.format('YYYY-MM');
     }
 
-    // توليد قائمة بالشهور (من سنة فات لـ 3 شهور قدام)
     picker.innerHTML = '';
-    for (let i = -12; i <= 3; i++) {
-        const m = moment().add(i, 'months');
-        const val = m.format('YYYY-MM');
-        const label = m.locale('ar').format('MMMM YYYY');
-        const selected = val === currentSelectedMonth ? 'selected' : '';
-        picker.innerHTML += `<option value="${val}" ${selected}>${label}</option>`;
+    
+    // إنشاء قائمة الشهور من مارس 2026 وحتى نهاية عام 2026 (أو أضف شهور إضافية)
+    // سنقوم بعمل Loop يبدأ من startDate ويزيد شهراً بشهر
+    let iterator = startDate.clone();
+    
+    // سنعرض الشهور حتى نهاية عام 2026 + 3 شهور من 2027 للتخطيط المستقبلي
+    const endLimit = moment("2027-04-01"); 
+
+    while (iterator.isBefore(endLimit)) {
+        const val = iterator.format('YYYY-MM');
+        // تنسيق الاسم بالعربي (مثلاً: مارس 2026)
+        const label = iterator.locale('ar').format('MMMM YYYY');
+        
+        const isSelected = val === currentSelectedMonth ? 'selected' : '';
+        
+        // إضافة الخيار بتنسيق احترافي
+        picker.innerHTML += `<option value="${val}" ${isSelected} class="bg-dark-950 text-white py-2">${label}</option>`;
+        
+        iterator.add(1, 'month');
     }
+
+    // التأكد من إزالة أي كلاس إخفاء عن الحاوية
+    picker.closest('.bg-dark-900')?.classList.remove('hidden');
     
-    // إظهار القسم اللي كان مخفي
-    picker.parentElement.parentElement.classList.remove('hidden');
-    
+    // بدء الاستماع للبيانات
     startListeners();
 }
-
-        function changeMonth() {
-    // تحديث الشهر المختار من القائمة
-    currentSelectedMonth = document.getElementById('month-picker').value;
-    
-    // إعادة تشغيل الاستماع للبيانات الخاصة بالشهر الجديد
-    listenToCurrentMonth();
-    
-    // تنبيه بسيط
-    console.log("تم الانتقال إلى الفترة المالية: " + currentSelectedMonth);
-}
-
-        let monthListener = null; // متغير لحفظ الاستماع الحالي وإلغاؤه عند التغيير
-
 function startListeners() {
     // 1. مراقبة الموظفين (ثابتة لا تتغير بتغير الشهر)
     db.collection("users").onSnapshot(snapshot => {
