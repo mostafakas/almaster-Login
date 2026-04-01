@@ -1474,15 +1474,9 @@ function openAdminTaskDetail(taskId, ownerEmail) {
         const email = document.getElementById('u-email').value.toLowerCase().trim();
         const pass = document.getElementById('u-password') ? document.getElementById('u-password').value : '';
         
-        // --- بداية التعديل: التعامل الاحترافي مع الصورة ---
-        let finalPhotoUrl = document.getElementById('user-photo-b64').value; // الاحتفاظ بالرابط القديم إذا لم تتغير
-        const photoInput = document.getElementById('user-photo-upload');
-
-        // إذا قام المدير باختيار صورة جديدة، نرفعها على Storage ونأخذ الرابط
-        if (photoInput.files && photoInput.files.length > 0) {
-            finalPhotoUrl = await uploadFile(photoInput.files[0], 'profile_photos');
-        }
-        // --- نهاية التعديل ---
+        // هنا التعديل: بناخد كود الصورة من الـ Preview مباشرة (Base64)
+        // وبنلغي تماماً استخدام دالة uploadFile اللي كانت بتعمل Error
+        let finalPhotoUrl = document.getElementById('user-photo-b64').value; 
 
         const userData = {
             name: document.getElementById('u-name').value,
@@ -1500,6 +1494,7 @@ function openAdminTaskDetail(taskId, ownerEmail) {
             }
         };
 
+        // لو فيه صورة موجودة، خزنها كـ Base64
         if (finalPhotoUrl && finalPhotoUrl.trim() !== '') {
             userData.photo = finalPhotoUrl;
         }
@@ -1514,7 +1509,7 @@ function openAdminTaskDetail(taskId, ownerEmail) {
             userData.timeBank = {};
             
             await db.collection('users').doc(email).set(userData);
-            alert("تم إنشاء حساب الموظف بنجاح");
+            alert("تم إنشاء حساب الموظف بنجاح (بدون Storage)");
         } else {
             await db.collection('users').doc(email).update(userData);
             
