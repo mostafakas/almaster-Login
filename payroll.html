@@ -710,54 +710,77 @@
         }
 
         function initMonthPicker() {
-    // تحديد الشهر الحالي تلقائياً بتنسيق YYYY-MM
-    const now = moment();
-    currentSelectedMonth = now.format('YYYY-MM'); 
-    
-    // إخفاء الـ Select من الواجهة إذا أردت أو تعطيله
     const picker = document.getElementById('month-picker');
-    if(picker) {
-        picker.parentElement.parentElement.classList.add('hidden'); // إخفاء قسم اختيار الشهر
+    const now = moment();
+    
+    // تحديد الشهر الحالي كافتراضي
+    if (!currentSelectedMonth) {
+        currentSelectedMonth = now.format('YYYY-MM');
     }
+
+    // توليد قائمة بالشهور (من سنة فات لـ 3 شهور قدام)
+    picker.innerHTML = '';
+    for (let i = -12; i <= 3; i++) {
+        const m = moment().add(i, 'months');
+        const val = m.format('YYYY-MM');
+        const label = m.locale('ar').format('MMMM YYYY');
+        const selected = val === currentSelectedMonth ? 'selected' : '';
+        picker.innerHTML += `<option value="${val}" ${selected}>${label}</option>`;
+    }
+    
+    // إظهار القسم اللي كان مخفي
+    picker.parentElement.parentElement.classList.remove('hidden');
     
     startListeners();
 }
 
-        function changeMonth() { 
-            currentSelectedMonth = document.getElementById('month-picker').value; 
-            db.collection("financial_months").doc(currentSelectedMonth).get().then(doc => {
-                monthData = doc.exists ? doc.data() : { vault: 0, expenses: [], vault_logs: [] };
-                if(!doc.exists) db.collection("financial_months").doc(currentSelectedMonth).set(monthData);
-                updateStats();
-            });
-        }
+        function changeMonth() {
+    // تحديث الشهر المختار من القائمة
+    currentSelectedMonth = document.getElementById('month-picker').value;
+    
+    // إعادة تشغيل الاستماع للبيانات الخاصة بالشهر الجديد
+    listenToCurrentMonth();
+    
+    // تنبيه بسيط
+    console.log("تم الانتقال إلى الفترة المالية: " + currentSelectedMonth);
+}
 
-        function startListeners() {
-    // مراقبة المستخدمين
+        let monthListener = null; // متغير لحفظ الاستماع الحالي وإلغاؤه عند التغيير
+
+function startListeners() {
+    // 1. مراقبة الموظفين (ثابتة لا تتغير بتغير الشهر)
     db.collection("users").onSnapshot(snapshot => {
         allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        dataLoadedFlags.users = true; 
-        checkLoader(); 
-        updateStats(); 
+        dataLoadedFlags.users = true;
+        checkLoader();
+        updateStats();
     });
 
-    // مراقبة بيانات الشهر الحالي
-    db.collection("financial_months").doc(currentSelectedMonth).onSnapshot(doc => {
-        if(doc.exists) {
-            monthData = doc.data();
-        } else {
-            monthData = { vault: 0, expenses: [], vault_logs: [] };
-        }
-        dataLoadedFlags.finance = true; 
-        checkLoader(); 
-        updateStats(); 
-    });
-
-    // مراقبة كل الشهور للحساب التراكمي (بدون كلمة let)
+    // 2. مراقبة كل الشهور للحساب التراكمي
     db.collection("financial_months").onSnapshot(snapshot => {
-        allMonthsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); // تم إزالة let هنا
-        updateStats(); 
+        allMonthsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        updateStats();
     });
+
+    // 3. استدعاء دالة مراقبة الشهر المختار
+    listenToCurrentMonth();
+}
+        function listenToCurrentMonth() {
+    // إلغاء الاستماع للشهر القديم لو موجود
+    if (monthListener) monthListener();
+
+    // استماع للشهر الجديد المختار
+    monthListener = db.collection("financial_months").doc(currentSelectedMonth)
+        .onSnapshot(doc => {
+            if (doc.exists) {
+                monthData = doc.data();
+            } else {
+                monthData = { vault: 0, expenses: [], vault_logs: [] };
+            }
+            dataLoadedFlags.finance = true;
+            checkLoader();
+            updateStats();
+        });
 }
 
         function checkLoader() {
