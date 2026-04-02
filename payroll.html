@@ -758,6 +758,23 @@
     // بدء الاستماع للبيانات
     startListeners();
 }
+        // دالة تغيير الشهر وتحديث البيانات بناءً عليه
+function changeMonth() {
+    const picker = document.getElementById('month-picker');
+    if (!picker) return;
+
+    // تحديث الشهر المختار عالمياً
+    currentSelectedMonth = picker.value;
+
+    console.log("جاري الانتقال لبيانات شهر: " + currentSelectedMonth);
+
+    // إعادة ضبط الأعلام لظهور اللودر أثناء تحميل بيانات الشهر الجديد
+    dataLoadedFlags.finance = false;
+    document.getElementById('payroll-loader').classList.remove('hidden');
+
+    // بدء الاستماع لبيانات الشهر الجديد من Firebase
+    listenToCurrentMonth();
+}
 function startListeners() {
     // 1. مراقبة الموظفين (ثابتة لا تتغير بتغير الشهر)
     db.collection("users").onSnapshot(snapshot => {
