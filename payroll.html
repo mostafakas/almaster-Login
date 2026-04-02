@@ -794,23 +794,39 @@ function startListeners() {
     listenToCurrentMonth();
 }
         function listenToCurrentMonth() {
-    // إلغاء الاستماع للشهر القديم لو موجود
-    if (monthListener) monthListener();
+    // 1. إيقاف الاستماع للشهر القديم لتوفير الموارد ومنع تداخل البيانات
+    if (typeof monthListener === 'function') {
+        monthListener();
+    }
 
-    // استماع للشهر الجديد المختار
+    // 2. تصفير البيانات الحالية بصرياً ليظهر اللودر أو تختفي بيانات الشهر السابق
+    monthData = { vault: 0, expenses: [], vault_logs: [] };
+    dataLoadedFlags.finance = false;
+
+    // 3. بدء الاستماع لبيانات الشهر الجديد المختار
     monthListener = db.collection("financial_months").doc(currentSelectedMonth)
         .onSnapshot(doc => {
             if (doc.exists) {
                 monthData = doc.data();
+                // التأكد من وجود المصفوفات حتى لو كانت فارغة في قاعدة البيانات
+                if (!monthData.expenses) monthData.expenses = [];
+                if (!monthData.vault_logs) monthData.vault_logs = [];
             } else {
+                // إذا كان الشهر جديداً تماماً ولم تُسجل فيه بيانات بعد
                 monthData = { vault: 0, expenses: [], vault_logs: [] };
             }
+
             dataLoadedFlags.finance = true;
+            
+            // 4. تحديث الشاشة فوراً بالبيانات الجديدة
             checkLoader();
-            updateStats();
+            updateStats(); 
+            
+            console.log("تم تحديث البيانات لشهر: " + currentSelectedMonth);
+        }, (error) => {
+            console.error("خطأ في جلب بيانات الشهر: ", error);
         });
 }
-
         function checkLoader() {
             if(dataLoadedFlags.users && dataLoadedFlags.finance) {
                 document.getElementById('payroll-loader').classList.add('hidden');
