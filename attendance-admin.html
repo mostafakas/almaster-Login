@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR & Attendance | ALMASTER</title>
+    <meta name="theme-color" content="#0b1120">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { primary: { 500: '#0ea5e9', 600: '#0284c7' }, dark: { 800: '#1e293b', 900: '#0f172a', 950: '#0b1120' } },
+                    fontFamily: { sans: ['Cairo', 'Outfit', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #0b1120; color: #f1f5f9; height: 100vh; overflow: hidden; display: flex; font-family: 'Cairo', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 20px; }
+        .btn-glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px); }
+        .btn-glass:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+        .hr-tab.active { background-color: #0ea5e9; color: white; border-color: #0284c7; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3); }
+    </style>
+</head>
+
+<body class="dark selection:bg-primary-500/30">
+
+    <div id="loader" class="fixed inset-0 z-[300] bg-dark-950 flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-primary-500 mb-4"></div>
+        <h2 class="text-[10px] font-black tracking-[0.5em] text-slate-500 uppercase animate-pulse">Loading HR System...</h2>
+    </div>
+
+    <aside class="w-[280px] border-l border-white/5 flex flex-col bg-dark-950 shrink-0 h-full shadow-2xl relative z-20">
+        <div class="p-6 shrink-0 border-b border-white/5 bg-dark-900/30 text-center">
+            <h2 class="font-black text-xl text-white">إدارة الموارد البشرية</h2>
+            <p class="text-[9px] text-primary-500 font-bold uppercase tracking-widest mt-1">Attendance & Payroll</p>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-4 py-6 space-y-3">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="hr-tab active w-full py-4 rounded-2xl font-black text-xs flex items-center gap-3 px-5 transition-all text-slate-400 btn-glass">
+                <i class="fas fa-chart-pie text-lg"></i> مراقبة الحضور اليومي
+            </button>
+            
+            <button onclick="switchTab('requests')" id="tab-requests" class="hr-tab w-full py-4 rounded-2xl font-black text-xs flex items-center justify-between px-5 transition-all text-slate-400 btn-glass relative">
+                <div class="flex items-center gap-3"><i class="fas fa-bell text-lg"></i> طلبات الموظفين</div>
+                <span id="req-badge" class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full hidden">0</span>
+            </button>
+
+            <button onclick="switchTab('profiles')" id="tab-profiles" class="hr-tab w-full py-4 rounded-2xl font-black text-xs flex items-center gap-3 px-5 transition-all text-slate-400 btn-glass">
+                <i class="fas fa-user-cog text-lg"></i> سياسات ومواعيد العمل
+            </button>
+        </div>
+
+        <div class="p-4 shrink-0 border-t border-white/5">
+            <button onclick="window.close()" class="w-full py-3 rounded-xl bg-dark-800 text-slate-400 font-black hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 text-[10px] uppercase">
+                <i class="fas fa-arrow-right"></i> إغلاق والعودة للإدارة
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 relative overflow-hidden bg-dark-950">
+        
+        <div id="view-dashboard" class="absolute inset-0 flex flex-col w-full h-full transition-opacity duration-300">
+            <div class="p-8 pb-4 shrink-0 flex justify-between items-end border-b border-white/5 bg-dark-950/80">
+                <div>
+                    <h1 class="text-3xl font-black text-white mb-2">لوحة الحضور اليومية</h1>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">تتبع حالة الموظفين اللحظية - <span id="today-date-text" class="text-primary-500"></span></p>
+                </div>
+                <div class="flex gap-4">
+                    <div class="bg-dark-900 px-4 py-2 rounded-xl border border-white/5 text-center">
+                        <p class="text-[9px] text-slate-500 uppercase font-black">حضور مقر</p>
+                        <p id="stat-office" class="text-lg font-black text-white">0</p>
+                    </div>
+                    <div class="bg-dark-900 px-4 py-2 rounded-xl border border-white/5 text-center">
+                        <p class="text-[9px] text-slate-500 uppercase font-black">حضور أونلاين</p>
+                        <p id="stat-online" class="text-lg font-black text-primary-500">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+                <div class="bg-dark-900/50 rounded-[2rem] border border-white/5 overflow-hidden shadow-2xl">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-dark-900 text-slate-500 text-[10px] uppercase tracking-widest font-black border-b border-white/5">
+                            <tr>
+                                <th class="p-5">الموظف</th>
+                                <th class="p-5 text-center">نوع الحضور</th>
+                                <th class="p-5 text-center">وقت الحضور</th>
+                                <th class="p-5 text-center">التأخير (دقائق)</th>
+                                <th class="p-5 text-center">وقت الانصراف</th>
+                                <th class="p-5 text-center">ملاحظات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-tbody" class="divide-y divide-white/5">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-requests" class="absolute inset-0 hidden flex flex-col w-full h-full transition-opacity duration-300">
+            <div class="p-8 pb-4 shrink-0 border-b border-white/5 bg-dark-950/80">
+                <h1 class="text-3xl font-black text-white mb-2">طلبات الاستئذان والعمل أونلاين</h1>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">مراجعة طلبات تحويل الحضور والإجازات</p>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="requests-container">
+                    </div>
+            </div>
+        </div>
+
+        <div id="view-profiles" class="absolute inset-0 hidden flex flex-col w-full h-full transition-opacity duration-300">
+            <div class="p-8 pb-4 shrink-0 border-b border-white/5 bg-dark-950/80">
+                <h1 class="text-3xl font-black text-white mb-2">إعدادات الموظفين</h1>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">ضبط مواعيد العمل وأرصدة الإجازات لكل موظف</p>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+                <div id="hr-profiles-container" class="space-y-4">
+                    </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Firebase Config ---
+        const firebaseConfig = { apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", authDomain: "almaster-b8c18.firebaseapp.com", projectId: "almaster-b8c18", storageBucket: "almaster-b8c18.firebasestorage.app", messagingSenderId: "884142036232", appId: "1:884142036232:web:eeb6677d988565653a08bd" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let allUsers = [];
+        let todayStr = moment().format('YYYY-MM-DD');
+        document.getElementById('today-date-text').innerText = moment().locale('ar').format('DD MMMM YYYY');
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                // التحقق من الصلاحية (Admin Only) يمكن إضافتها هنا
+                initHRSystem();
+            } else {
+                window.close(); // لو مش مسجل دخول يقفل الصفحة
+            }
+        });
+
+        function initHRSystem() {
+            listenToUsers();
+            listenToTodayAttendance();
+            listenToRequests();
+            document.getElementById('loader').classList.add('hidden');
+        }
+
+        function switchTab(tabName) {
+            ['dashboard', 'requests', 'profiles'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+                document.getElementById(`tab-${v}`).classList.remove('active', 'bg-dark-950');
+            });
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('active', 'bg-dark-950');
+        }
+
+        // 1. جلب بيانات كل الموظفين لبناء الإعدادات
+        function listenToUsers() {
+            db.collection('users').onSnapshot(snap => {
+                allUsers = snap.docs.map(d => ({ email: d.id, ...d.data() }));
+                renderHRProfiles();
+            });
+        }
+
+        // 2. مراقبة حضور اليوم
+        function listenToTodayAttendance() {
+            db.collection('attendance_records').where('date', '==', todayStr).onSnapshot(snap => {
+                const records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderDailyDashboard(records);
+            });
+        }
+
+        // 3. مراقبة طلبات الأونلاين المعلقة
+        function listenToRequests() {
+            db.collection('work_mode_requests').where('status', '==', 'pending').onSnapshot(snap => {
+                const reqs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                // تحديث العداد
+                const badge = document.getElementById('req-badge');
+                if(reqs.length > 0) {
+                    badge.innerText = reqs.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+
+                renderRequests(reqs);
+            });
+        }
+
+        // --- RENDERERS ---
+
+        function renderDailyDashboard(records) {
+            const tbody = document.getElementById('attendance-tbody');
+            tbody.innerHTML = '';
+            let officeCount = 0; let onlineCount = 0;
+
+            // نعرض الموظفين اللي سجلوا حضور
+            records.forEach(rec => {
+                const u = allUsers.find(x => x.email === rec.userId) || { name: rec.userId, photo: '' };
+                const checkInTime = rec.checkIn ? moment(rec.checkIn.toMillis()).format('hh:mm A') : '---';
+                const checkOutTime = rec.checkOut ? moment(rec.checkOut.toMillis()).format('hh:mm A') : 'لم ينصرف بعد';
+                const late = rec.lateMinutes > 0 ? `<span class="text-red-500 font-bold">${rec.lateMinutes} دقيقة</span>` : `<span class="text-green-500">في الموعد</span>`;
+                const modeBadge = rec.workMode === 'online' ? '<span class="bg-primary-500/20 text-primary-400 px-3 py-1 rounded-md text-[10px]">أونلاين</span>' : '<span class="bg-slate-700 text-white px-3 py-1 rounded-md text-[10px]">مقر الشركة</span>';
+
+                if(rec.workMode === 'online') onlineCount++; else officeCount++;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-white/[0.02] transition-colors">
+                        <td class="p-4 flex items-center gap-3">
+                            <img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-8 h-8 rounded-lg object-cover">
+                            <span class="font-bold text-white text-xs">${u.name}</span>
+                        </td>
+                        <td class="p-4 text-center">${modeBadge}</td>
+                        <td class="p-4 text-center text-xs font-mono text-slate-300">${checkInTime}</td>
+                        <td class="p-4 text-center text-xs">${late}</td>
+                        <td class="p-4 text-center text-xs font-mono text-slate-500">${checkOutTime}</td>
+                        <td class="p-4 text-center">
+                            ${!rec.checkOut ? `<button onclick="forceCheckOut('${rec.id}')" class="text-[9px] bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-1 rounded-md hover:bg-red-500 hover:text-white transition">تسجيل انصراف إجباري</button>` : '---'}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('stat-office').innerText = officeCount;
+            document.getElementById('stat-online').innerText = onlineCount;
+        }
+
+        function renderRequests(reqs) {
+            const container = document.getElementById('requests-container');
+            container.innerHTML = '';
+
+            if(reqs.length === 0) {
+                container.innerHTML = '<div class="col-span-2 text-center py-20 text-slate-600 text-sm">لا توجد طلبات معلقة حالياً.</div>';
+                return;
+            }
+
+            reqs.forEach(req => {
+                const u = allUsers.find(x => x.email === req.userId) || { name: req.userId };
+                const time = req.timestamp ? moment(req.timestamp.toMillis()).fromNow() : '';
+
+                container.innerHTML += `
+                    <div class="bg-dark-900 border border-primary-500/30 p-6 rounded-[2rem] shadow-xl flex flex-col gap-4">
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-primary-600/20 text-primary-500 rounded-xl flex items-center justify-center"><i class="fas fa-home text-lg"></i></div>
+                                <div>
+                                    <h4 class="font-black text-white text-sm">${u.name}</h4>
+                                    <p class="text-[9px] text-slate-400">طلب تحويل الحضور لـ "أونلاين" اليوم</p>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-bold text-slate-600">${time}</span>
+                        </div>
+                        <p class="text-xs text-slate-300 bg-black/20 p-3 rounded-xl border border-white/5">يطلب الموظف السماح له بالعمل من المنزل لهذا اليوم بدلاً من مقر الشركة.</p>
+                        <div class="grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-white/5">
+                            <button onclick="respondToRequest('${req.id}', '${req.userId}', 'approved')" class="py-3 bg-green-600 text-white rounded-xl font-black text-xs hover:bg-green-500 shadow-lg shadow-green-600/20 transition active:scale-95">موافقة (السماح بالدخول)</button>
+                            <button onclick="respondToRequest('${req.id}', '${req.userId}', 'rejected')" class="py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl font-black text-xs hover:bg-red-500 hover:text-white transition active:scale-95">رفض الطلب</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderHRProfiles() {
+            const container = document.getElementById('hr-profiles-container');
+            container.innerHTML = '';
+
+            allUsers.forEach(u => {
+                // منع التعديل على الإدمن
+                if(u.role === 'admin') return;
+
+                const hr = u.hrProfile || { workStartTime: '09:00', workEndTime: '17:00', defaultWorkMode: 'office' };
+                const lb = u.leaveBalances || { annual: 21, casual: 6, sick: 14 };
+
+                container.innerHTML += `
+                    <div class="bg-dark-900/50 p-6 rounded-[2rem] border border-white/5 flex flex-col md:flex-row gap-6 items-start">
+                        <div class="w-full md:w-1/4 flex items-center gap-4">
+                            <img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-12 h-12 rounded-xl object-cover">
+                            <div>
+                                <h4 class="font-black text-white text-sm">${u.name}</h4>
+                                <p class="text-[9px] text-slate-500 uppercase">${u.email}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                            <div>
+                                <label class="text-[9px] text-slate-400 font-bold mb-1 block">وقت الحضور الإلزامي</label>
+                                <input type="time" id="start-${u.email}" value="${hr.workStartTime}" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary-500">
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-slate-400 font-bold mb-1 block">وقت الانصراف</label>
+                                <input type="time" id="end-${u.email}" value="${hr.workEndTime}" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary-500">
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-slate-400 font-bold mb-1 block">بيئة العمل الافتراضية</label>
+                                <select id="mode-${u.email}" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary-500">
+                                    <option value="office" ${hr.defaultWorkMode==='office'?'selected':''}>مقر الشركة (إجباري)</option>
+                                    <option value="online" ${hr.defaultWorkMode==='online'?'selected':''}>أونلاين (عن بعد)</option>
+                                    <option value="flexible" ${hr.defaultWorkMode==='flexible'?'selected':''}>مرن (يختار يومياً)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="w-full md:w-1/4 flex flex-col gap-2">
+                            <button onclick="saveHRProfile('${u.email}')" class="w-full py-2.5 bg-primary-600 text-white rounded-xl font-black text-[10px] shadow-lg hover:bg-primary-500 transition active:scale-95">حفظ إعدادات الموظف</button>
+                            <div class="flex justify-between text-[9px] text-slate-500 bg-black/20 p-2 rounded-lg border border-white/5">
+                                <span>سنوي: ${lb.annual}</span> | <span>عارضة: ${lb.casual}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- ACTIONS ---
+
+        async function saveHRProfile(email) {
+            try {
+                const startTime = document.getElementById(`start-${email}`).value;
+                const endTime = document.getElementById(`end-${email}`).value;
+                const mode = document.getElementById(`mode-${email}`).value;
+
+                await db.collection('users').doc(email).update({
+                    hrProfile: {
+                        workStartTime: startTime,
+                        workEndTime: endTime,
+                        defaultWorkMode: mode
+                    }
+                });
+                alert("تم تحديث سياسة الموظف بنجاح.");
+            } catch(e) {
+                console.error(e);
+                alert("حدث خطأ أثناء الحفظ.");
+            }
+        }
+
+        async function respondToRequest(reqId, userEmail, status) {
+            try {
+                // تحديث حالة الطلب
+                await db.collection('work_mode_requests').doc(reqId).update({ status: status });
+                
+                if(status === 'approved') {
+                    // إذا تمت الموافقة، نسجل له حضور أونلاين فوراً (لأن النظام كان مانعه)
+                    const uData = allUsers.find(x => x.email === userEmail);
+                    const startTime = uData?.hrProfile?.workStartTime || '09:00';
+                    
+                    // حساب التأخير لو وافقنا متأخر
+                    const now = moment();
+                    const startMoment = moment(startTime, 'HH:mm');
+                    let lateMins = now.diff(startMoment, 'minutes');
+                    if (lateMins < 0) lateMins = 0;
+
+                    await db.collection('attendance_records').add({
+                        userId: userEmail,
+                        date: todayStr,
+                        checkIn: firebase.firestore.FieldValue.serverTimestamp(),
+                        checkOut: null,
+                        workMode: 'online',
+                        lateMinutes: lateMins,
+                        earlyLeaveMinutes: 0
+                    });
+
+                    // إرسال إشعار للموظف عبر السيستم انه يقدر يدخل
+                    // (يتم استلامه في واجهة الموظف)
+                }
+
+                alert(`تم ${status === 'approved' ? 'قبول' : 'رفض'} الطلب بنجاح.`);
+            } catch(e) {
+                console.error(e);
+                alert("خطأ في معالجة الطلب.");
+            }
+        }
+
+        async function forceCheckOut(recordId) {
+            if(!confirm("هل أنت متأكد من تسجيل انصراف هذا الموظف إجبارياً الآن؟")) return;
+            try {
+                await db.collection('attendance_records').doc(recordId).update({
+                    checkOut: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {
+                console.error(e);
+                alert("فشل الإجراء.");
+            }
+        }
+
+    </script>
+</body>
+</html>
