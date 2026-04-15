@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HR Command Center | ALMASTER</title>
     <meta name="theme-color" content="#0b1120">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -28,23 +29,50 @@
 
     <style>
         body { background-color: #0b1120; color: #f1f5f9; height: 100vh; overflow: hidden; display: flex; font-family: 'Cairo', sans-serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 20px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        
+        /* السكرول بار الاحترافي */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        
+        /* أزرار زجاجية */
         .btn-glass { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); transition: all 0.3s; }
-        .btn-glass:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
+        .btn-glass:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+        
+        /* التاب النشط في القائمة الجانبية */
         .hr-tab.active { background: linear-gradient(90deg, rgba(14,165,233,0.15) 0%, transparent 100%); border-right: 4px solid #0ea5e9; color: white; }
+        
+        /* كروت الإحصائيات (KPIs) */
         .kpi-card { background: linear-gradient(145deg, rgba(30,41,59,0.6) 0%, rgba(15,23,42,0.8) 100%); border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
         
-        /* Roster Grid Styles */
-        .roster-cell { transition: all 0.2s; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); min-width: 60px; }
-        .roster-cell:hover { background-color: rgba(14, 165, 233, 0.15); border-color: #0ea5e9; transform: scale(1.1); z-index: 50; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .mode-office { background-color: rgba(51, 65, 85, 0.4); border-bottom: 2px solid #64748b; }
-        .mode-online { background-color: rgba(14, 165, 233, 0.1); border-bottom: 2px solid #0ea5e9; }
-        .mode-off { background-color: rgba(239, 68, 68, 0.05); border-bottom: 2px solid #ef4444; }
-        .mode-sick { background-color: rgba(168, 85, 247, 0.1); border-bottom: 2px solid #a855f7; }
-        .mode-casual { background-color: rgba(249, 115, 22, 0.1); border-bottom: 2px solid #f97316; }
+        /* ========================================= */
+        /* ستايل جدول الورديات الجديد (الاحترافي)    */
+        /* ========================================= */
+        .roster-table-wrapper { position: relative; max-height: 100%; overflow: auto; }
+        .roster-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: max-content; }
         
+        /* تثبيت الهيدر (الأيام) */
+        .roster-th { position: sticky; top: 0; z-index: 40; background-color: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        
+        /* تثبيت العمود الأول (أسماء الموظفين) */
+        .roster-td-name { position: sticky; right: 0; z-index: 30; background-color: #0b1120; border-l: 1px solid rgba(255,255,255,0.1); padding: 12px; font-weight: 900; box-shadow: -4px 0 15px -3px rgba(0,0,0,0.5); }
+        
+        /* تقاطع الهيدر مع عمود الأسماء */
+        .roster-th-corner { position: sticky; top: 0; right: 0; z-index: 50; background-color: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.1); border-l: 1px solid rgba(255,255,255,0.1); }
+        
+        /* خلايا الجدول */
+        .roster-td { border-bottom: 1px solid rgba(255,255,255,0.02); border-l: 1px solid rgba(255,255,255,0.02); padding: 6px; }
+        .roster-cell-inner { border-radius: 8px; padding: 6px 4px; text-align: center; cursor: pointer; transition: all 0.2s; min-width: 75px; border: 1px solid transparent; }
+        .roster-cell-inner:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4); z-index: 20; position: relative; }
+        
+        /* ألوان حالات الورديات */
+        .mode-office { background-color: rgba(51, 65, 85, 0.3); border-color: rgba(100, 116, 139, 0.3); }
+        .mode-online { background-color: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.3); }
+        .mode-off    { background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+        .mode-sick   { background-color: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3); }
+        .mode-casual { background-color: rgba(249, 115, 22, 0.15); border-color: rgba(249, 115, 22, 0.3); }
+
+        /* التوافق مع الوضع المظلم للمدخلات */
         input[type="time"], input[type="number"], select { color-scheme: dark; }
     </style>
 </head>
@@ -53,27 +81,27 @@
 
     <div id="loader" class="fixed inset-0 z-[600] bg-dark-950 flex flex-col items-center justify-center">
         <div class="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-primary-500 mb-4"></div>
-        <h2 class="text-[10px] font-black tracking-[0.5em] text-primary-500 uppercase animate-pulse">Initializing HR System...</h2>
+        <h2 class="text-[10px] font-black tracking-[0.5em] text-primary-500 uppercase animate-pulse">يتم بناء نظام الرقابة...</h2>
     </div>
 
-    <aside class="w-[280px] bg-dark-950 border-l border-white/5 flex flex-col shrink-0 h-full relative z-20">
+    <aside class="w-[280px] bg-dark-950 border-l border-white/5 flex flex-col shrink-0 h-full relative z-20 shadow-2xl">
         <div class="p-8 shrink-0 text-center border-b border-white/5 relative overflow-hidden">
             <div class="absolute inset-0 bg-primary-500/5 blur-[50px]"></div>
             <h2 class="font-black text-2xl text-white relative z-10 tracking-tight">ALMASTER <span class="text-primary-500">HR</span></h2>
-            <p class="text-[8px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-2 relative z-10">Attendance Management</p>
+            <p class="text-[8px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-2 relative z-10">Audit & Management</p>
         </div>
 
         <div class="flex-1 overflow-y-auto px-4 py-6 space-y-2 custom-scrollbar">
-            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="hr-tab active w-full py-4 font-black text-[11px] flex items-center gap-4 px-6 text-slate-400 rounded-lg">
-                <i class="fas fa-satellite-dish text-lg w-6 text-center"></i> الرقابة اللحظية
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="hr-tab active w-full py-4 font-black text-[11px] flex items-center gap-4 px-6 text-slate-400 rounded-lg transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-satellite-dish text-lg w-6 text-center"></i> المراقبة اللحظية
             </button>
-            <button onclick="switchTab('roster')" id="tab-roster" class="hr-tab w-full py-4 font-black text-[11px] flex items-center gap-4 px-6 text-slate-400 rounded-lg">
-                <i class="far fa-calendar-alt text-lg w-6 text-center"></i> مخطط الورديات الشهري
+            <button onclick="switchTab('roster')" id="tab-roster" class="hr-tab w-full py-4 font-black text-[11px] flex items-center gap-4 px-6 text-slate-400 rounded-lg transition-colors hover:text-white hover:bg-white/5">
+                <i class="far fa-calendar-alt text-lg w-6 text-center"></i> مخطط الورديات (الشهري)
             </button>
-            <button onclick="switchTab('employees')" id="tab-employees" class="hr-tab w-full py-4 font-black text-[11px] flex items-center gap-4 px-6 text-slate-400 rounded-lg">
-                <i class="fas fa-user-shield text-lg w-6 text-center"></i> سجلات وأرصدة الموظفين
+            <button onclick="switchTab('employees')" id="tab-employees" class="hr-tab w-full py-4 font-black text-[11px] flex items-center gap-4 px-6 text-slate-400 rounded-lg transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-user-shield text-lg w-6 text-center"></i> سجلات الأرصدة والإجازات
             </button>
-            <button onclick="switchTab('requests')" id="tab-requests" class="hr-tab w-full py-4 font-black text-[11px] flex items-center justify-between px-6 text-slate-400 rounded-lg relative">
+            <button onclick="switchTab('requests')" id="tab-requests" class="hr-tab w-full py-4 font-black text-[11px] flex items-center justify-between px-6 text-slate-400 rounded-lg transition-colors hover:text-white hover:bg-white/5 relative">
                 <div class="flex items-center gap-4"><i class="fas fa-inbox text-lg w-6 text-center"></i> مركز الطلبات</div>
                 <span id="req-badge" class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full hidden shadow-[0_0_10px_rgba(239,68,68,0.5)]">0</span>
             </button>
@@ -81,7 +109,7 @@
 
         <div class="p-6 shrink-0 border-t border-white/5 bg-dark-900/30">
             <button onclick="window.close()" class="w-full py-3.5 btn-glass text-slate-400 rounded-xl font-black hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest">
-                <i class="fas fa-sign-out-alt"></i> عودة للإدارة
+                <i class="fas fa-sign-out-alt"></i> عودة للوحة الإدارة
             </button>
         </div>
     </aside>
@@ -108,7 +136,7 @@
                     </div>
                     <div class="kpi-card p-5 rounded-2xl border-orange-500/20">
                         <div class="flex justify-between items-start mb-2"><p class="text-[9px] text-orange-400 font-bold uppercase tracking-widest">إجمالي تأخير المتواجدين</p><i class="fas fa-clock text-orange-500"></i></div>
-                        <p id="kpi-late-mins" class="text-2xl font-black text-orange-500">0 <span class="text-xs">دقيقة</span></p>
+                        <p id="kpi-late-mins" class="text-2xl font-black text-orange-500">0</p>
                     </div>
                 </div>
             </div>
@@ -134,23 +162,23 @@
         </div>
 
         <div id="view-roster" class="absolute inset-0 hidden flex flex-col w-full h-full transition-opacity duration-300">
-            <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md flex justify-between items-end">
+            <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md flex justify-between items-end shadow-md z-10">
                 <div>
                     <h1 class="text-3xl font-black text-white mb-2">مخطط الورديات الشهري</h1>
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">إدارة متكاملة لجميع الموظفين على مدار الشهر.</p>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">إدارة متكاملة واحترافية لمواعيد عمل جميع الموظفين.</p>
                 </div>
-                <div class="flex gap-4 items-center bg-dark-900 p-2 rounded-xl border border-white/5">
+                <div class="flex gap-4 items-center bg-dark-900 p-2 rounded-xl border border-white/5 shadow-inner">
                     <button onclick="changeMonth(1)" class="w-10 h-10 rounded-lg btn-glass text-slate-400 hover:text-white"><i class="fas fa-chevron-right"></i></button>
-                    <span id="roster-month-label" class="text-xs font-black text-primary-500 px-4 min-w-[120px] text-center">شهر...</span>
+                    <span id="roster-month-label" class="text-sm font-black text-primary-500 px-4 min-w-[150px] text-center">شهر...</span>
                     <button onclick="changeMonth(-1)" class="w-10 h-10 rounded-lg btn-glass text-slate-400 hover:text-white"><i class="fas fa-chevron-left"></i></button>
                 </div>
             </div>
 
-            <div class="flex-1 overflow-auto p-8 custom-scrollbar">
-                <div class="bg-dark-950 rounded-3xl border border-white/5 shadow-2xl relative w-full h-full flex flex-col">
-                    <div class="overflow-auto custom-scrollbar flex-1 relative">
-                        <table class="w-full text-right whitespace-nowrap border-collapse">
-                            <thead id="roster-thead" class="bg-dark-900 text-slate-400 text-[10px] font-black uppercase tracking-widest sticky top-0 z-20 shadow-md">
+            <div class="flex-1 p-6 overflow-hidden flex flex-col">
+                <div class="bg-dark-950 rounded-3xl border border-white/10 shadow-2xl flex-1 relative overflow-hidden flex flex-col">
+                    <div class="roster-table-wrapper custom-scrollbar flex-1">
+                        <table class="roster-table">
+                            <thead id="roster-thead">
                                 </thead>
                             <tbody id="roster-tbody" class="divide-y divide-white/[0.02]">
                                 </tbody>
@@ -163,8 +191,8 @@
         <div id="view-employees" class="absolute inset-0 hidden flex flex-col w-full h-full transition-opacity duration-300">
             <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md flex justify-between items-end">
                 <div>
-                    <h1 class="text-3xl font-black text-white mb-2">السجلات والأرصدة الإدارية</h1>
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">تعديل أرصدة الإجازات وسياسات الموظفين.</p>
+                    <h1 class="text-3xl font-black text-white mb-2">أرصدة الإجازات</h1>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">إدارة وتعديل الرصيد السنوي والمرضي للفرق.</p>
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
@@ -175,15 +203,15 @@
 
         <div id="view-requests" class="absolute inset-0 hidden flex flex-col w-full h-full transition-opacity duration-300">
             <div class="p-8 pb-0 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md">
-                <h1 class="text-3xl font-black text-white mb-2">مركز الطلبات والاستئذانات</h1>
-                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">إدارة طلبات العمل أونلاين والإجازات.</p>
+                <h1 class="text-3xl font-black text-white mb-2">الاستئذانات وتحويل بيئة العمل</h1>
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">البت في الطلبات المقدمة من الموظفين.</p>
                 
                 <div class="flex gap-2">
-                    <button onclick="switchRequestTab('pending')" id="req-tab-pending" class="px-6 py-3 bg-primary-600 text-white rounded-t-xl font-black text-xs transition-all">الطلبات المعلقة</button>
-                    <button onclick="switchRequestTab('history')" id="req-tab-history" class="px-6 py-3 bg-dark-900 text-slate-400 rounded-t-xl font-black text-xs transition-all border-x border-t border-white/5">سجل الطلبات السابقة</button>
+                    <button onclick="switchRequestTab('pending')" id="req-tab-pending" class="px-8 py-3.5 bg-primary-600 text-white rounded-t-xl font-black text-xs transition-all shadow-lg">الطلبات المعلقة</button>
+                    <button onclick="switchRequestTab('history')" id="req-tab-history" class="px-8 py-3.5 bg-dark-900 text-slate-400 rounded-t-xl font-black text-xs transition-all border-x border-t border-white/5 hover:text-white">سجل الطلبات</button>
                 </div>
             </div>
-            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar bg-dark-900/20">
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar bg-dark-900/30">
                 <div id="requests-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     </div>
             </div>
@@ -191,81 +219,83 @@
 
     </main>
 
-    <div id="modal-shift" class="fixed inset-0 z-[600] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-dark-900 w-full max-w-md rounded-[2.5rem] p-8 border border-white/10 shadow-2xl">
+    <div id="modal-shift" class="fixed inset-0 z-[700] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-dark-900 w-full max-w-md rounded-[2.5rem] p-8 border border-primary-500/30 shadow-[0_0_50px_rgba(14,165,233,0.15)]">
             <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
                 <div>
-                    <h3 class="text-xl font-black text-white">تعديل الوردية</h3>
+                    <h3 class="text-xl font-black text-white">إعدادات الوردية</h3>
                     <p id="modal-shift-info" class="text-[10px] font-bold text-primary-500 uppercase tracking-widest mt-1">يتم التحميل...</p>
                 </div>
-                <button onclick="closeModal('modal-shift')" class="w-8 h-8 rounded-lg bg-white/5 text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+                <button onclick="closeModal('modal-shift')" class="w-8 h-8 rounded-lg bg-white/5 text-slate-400 hover:text-white hover:bg-red-500/20 transition-all"><i class="fas fa-times"></i></button>
             </div>
             
             <input type="hidden" id="shift-email">
             <input type="hidden" id="shift-date">
 
             <div class="flex gap-2 mb-6">
-                <button type="button" onclick="quickShift('09:00', '17:00')" class="flex-1 py-2 rounded-lg bg-dark-950 border border-white/5 text-[9px] font-black text-slate-300 hover:border-primary-500">09:00 - 17:00</button>
-                <button type="button" onclick="quickShift('10:00', '18:00')" class="flex-1 py-2 rounded-lg bg-dark-950 border border-white/5 text-[9px] font-black text-slate-300 hover:border-primary-500">10:00 - 18:00</button>
-                <button type="button" onclick="quickShift('00:00', '00:00', 'off')" class="flex-1 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-[9px] font-black text-red-400 hover:bg-red-500 hover:text-white">إجازة</button>
+                <button type="button" onclick="quickShift('09:00', '17:00')" class="flex-1 py-2 rounded-lg bg-dark-950 border border-white/10 text-[10px] font-black text-slate-300 hover:border-primary-500 hover:text-white transition-all">09:00 - 17:00</button>
+                <button type="button" onclick="quickShift('10:00', '18:00')" class="flex-1 py-2 rounded-lg bg-dark-950 border border-white/10 text-[10px] font-black text-slate-300 hover:border-primary-500 hover:text-white transition-all">10:00 - 18:00</button>
+                <button type="button" onclick="quickShift('00:00', '00:00', 'off')" class="flex-1 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-400 hover:bg-red-500 hover:text-white transition-all">إجازة</button>
             </div>
 
             <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[9px] text-slate-400 font-bold block mb-1">الحضور (Start)</label>
-                        <input type="time" id="shift-start" class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono outline-none focus:border-primary-500">
+                        <label class="text-[9px] text-slate-400 font-bold block mb-1 uppercase tracking-widest">الحضور (Start)</label>
+                        <input type="time" id="shift-start" class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono outline-none focus:border-primary-500 transition-all">
                     </div>
                     <div>
-                        <label class="text-[9px] text-slate-400 font-bold block mb-1">الانصراف (End)</label>
-                        <input type="time" id="shift-end" class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono outline-none focus:border-primary-500">
+                        <label class="text-[9px] text-slate-400 font-bold block mb-1 uppercase tracking-widest">الانصراف (End)</label>
+                        <input type="time" id="shift-end" class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono outline-none focus:border-primary-500 transition-all">
                     </div>
                 </div>
                 <div>
-                    <label class="text-[9px] text-slate-400 font-bold block mb-1">نوع الحضور</label>
-                    <select id="shift-mode" class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-bold outline-none focus:border-primary-500">
+                    <label class="text-[9px] text-slate-400 font-bold block mb-1 uppercase tracking-widest">نوع الحضور</label>
+                    <select id="shift-mode" class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-bold outline-none focus:border-primary-500 transition-all">
                         <option value="office">🏢 مقر الشركة (إلزامي)</option>
                         <option value="online">💻 أونلاين</option>
-                        <option value="off" class="text-red-400">🏝️ إجازة اعتيادية / راحة</option>
-                        <option value="sick" class="text-purple-400">🤒 إجازة مرضية</option>
-                        <option value="casual" class="text-orange-400">🏃 إجازة عارضة</option>
+                        <option value="off" class="text-red-400 font-black">🏝️ إجازة اعتيادية / راحة</option>
+                        <option value="sick" class="text-purple-400 font-black">🤒 إجازة مرضية</option>
+                        <option value="casual" class="text-orange-400 font-black">🏃 إجازة عارضة</option>
                     </select>
                 </div>
             </div>
 
-            <div class="mt-8">
-                <button onclick="saveShift()" class="w-full py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-black text-[12px] shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
-                    <i class="fas fa-save"></i> حفظ الإعدادات للوردية
+            <div class="mt-8 flex gap-3">
+                <button onclick="saveShift()" class="flex-1 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-black text-[12px] shadow-[0_5px_15px_rgba(14,165,233,0.3)] active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-check-circle"></i> حفظ الوردية
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="modal-balances" class="fixed inset-0 z-[600] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-dark-900 w-full max-w-sm rounded-[2.5rem] p-8 border border-white/10 shadow-2xl text-center">
-            <h3 class="text-xl font-black text-white mb-1">تعديل أرصدة الإجازات</h3>
-            <p id="modal-bal-name" class="text-[10px] font-bold text-primary-500 mb-6 uppercase tracking-widest">يتم التحميل...</p>
+    <div id="modal-balances" class="fixed inset-0 z-[700] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-dark-900 w-full max-w-sm rounded-[2.5rem] p-8 border border-white/10 shadow-2xl text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-full h-2 bg-gradient-to-r from-green-400 via-primary-500 to-purple-500"></div>
+            
+            <h3 class="text-2xl font-black text-white mb-1 mt-2">تعديل الأرصدة</h3>
+            <p id="modal-bal-name" class="text-[11px] font-black text-primary-500 mb-8 uppercase tracking-widest">يتم التحميل...</p>
             
             <input type="hidden" id="bal-email">
 
-            <div class="space-y-4 text-right mb-8">
-                <div class="flex items-center justify-between bg-dark-950 p-4 rounded-xl border border-white/5">
-                    <label class="text-xs text-white font-bold">إجازة اعتيادي (Annual)</label>
-                    <input type="number" id="bal-ann" class="w-20 bg-dark-900 border border-white/10 rounded-lg text-center py-2 text-white font-black outline-none focus:border-primary-500">
+            <div class="space-y-3 text-right mb-8">
+                <div class="flex items-center justify-between bg-dark-950 p-4 rounded-2xl border border-white/5 hover:border-slate-500 transition-colors">
+                    <label class="text-xs text-white font-bold"><i class="fas fa-umbrella-beach text-blue-400 mr-2"></i> اعتيادي (Annual)</label>
+                    <input type="number" id="bal-ann" class="w-16 bg-dark-900 border border-white/10 rounded-lg text-center py-2 text-white font-black outline-none focus:border-blue-500">
                 </div>
-                <div class="flex items-center justify-between bg-dark-950 p-4 rounded-xl border border-white/5">
-                    <label class="text-xs text-orange-400 font-bold">إجازة عارضة (Casual)</label>
-                    <input type="number" id="bal-cas" class="w-20 bg-dark-900 border border-white/10 rounded-lg text-center py-2 text-white font-black outline-none focus:border-primary-500">
+                <div class="flex items-center justify-between bg-dark-950 p-4 rounded-2xl border border-white/5 hover:border-slate-500 transition-colors">
+                    <label class="text-xs text-white font-bold"><i class="fas fa-running text-orange-400 mr-2"></i> عارضة (Casual)</label>
+                    <input type="number" id="bal-cas" class="w-16 bg-dark-900 border border-white/10 rounded-lg text-center py-2 text-white font-black outline-none focus:border-orange-500">
                 </div>
-                <div class="flex items-center justify-between bg-dark-950 p-4 rounded-xl border border-white/5">
-                    <label class="text-xs text-purple-400 font-bold">إجازة مرضي (Sick)</label>
-                    <input type="number" id="bal-sic" class="w-20 bg-dark-900 border border-white/10 rounded-lg text-center py-2 text-white font-black outline-none focus:border-primary-500">
+                <div class="flex items-center justify-between bg-dark-950 p-4 rounded-2xl border border-white/5 hover:border-slate-500 transition-colors">
+                    <label class="text-xs text-white font-bold"><i class="fas fa-briefcase-medical text-purple-400 mr-2"></i> مرضي (Sick)</label>
+                    <input type="number" id="bal-sic" class="w-16 bg-dark-900 border border-white/10 rounded-lg text-center py-2 text-white font-black outline-none focus:border-purple-500">
                 </div>
             </div>
 
             <div class="flex gap-3">
-                <button onclick="submitBalances()" class="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-black text-[11px] shadow-lg active:scale-95 transition-all">اعتماد الأرصدة</button>
-                <button onclick="closeModal('modal-balances')" class="px-6 py-3 bg-dark-800 text-slate-400 hover:text-white rounded-xl font-black text-[11px] transition-all">إلغاء</button>
+                <button onclick="submitBalances()" class="flex-1 py-3.5 bg-white text-dark-950 rounded-xl font-black text-[12px] shadow-lg hover:bg-slate-200 active:scale-95 transition-all">اعتماد الحفظ</button>
+                <button onclick="closeModal('modal-balances')" class="px-6 py-3.5 bg-dark-800 text-slate-400 hover:text-white rounded-xl font-black text-[12px] transition-all">إلغاء</button>
             </div>
         </div>
     </div>
@@ -289,9 +319,21 @@
         let reqViewMode = 'pending'; // pending OR history
 
         const currentDayStr = moment().format('YYYY-MM-DD');
-        let currentRosterMonth = moment().startOf('month'); // Start at current month
+        let currentRosterMonth = moment().startOf('month'); // يعرض الشهر الحالي
 
-        // ESC Key Listener (Global)
+        const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
+
+        // دالة مساعدة ذكية: تحويل الدقائق لساعات ودقائق نصية
+        function formatHoursMins(totalMins) {
+            if (!totalMins || totalMins <= 0) return '0 دقيقة';
+            const h = Math.floor(totalMins / 60);
+            const m = totalMins % 60;
+            if (h > 0 && m > 0) return `${h} ساعة و ${m} دقيقة`;
+            if (h > 0) return `${h} ساعة`;
+            return `${m} دقيقة`;
+        }
+
+        // مستمع زر ESC لإغلاق النوافذ
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeModal('modal-shift');
@@ -317,7 +359,7 @@
         }
 
         // ==========================================
-        // 4. DATA LISTENERS
+        // 4. DATA LISTENERS (مستمعات قواعد البيانات)
         // ==========================================
         function listenToUsers() {
             db.collection('users').onSnapshot(snap => {
@@ -345,7 +387,6 @@
         }
 
         function listenToRequests() {
-            // Fetch ALL requests to allow toggling between Pending and History
             db.collection('work_mode_requests').orderBy('timestamp', 'desc').onSnapshot(snap => {
                 allRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 
@@ -358,6 +399,7 @@
             });
         }
 
+        // التنقل بين الشاشات
         function switchTab(tabName) {
             ['dashboard', 'roster', 'employees', 'requests'].forEach(v => {
                 document.getElementById(`view-${v}`).classList.add('hidden');
@@ -366,48 +408,63 @@
             document.getElementById(`view-${tabName}`).classList.remove('hidden');
             document.getElementById(`tab-${tabName}`).classList.add('active');
         }
+
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 
         // ==========================================
-        // 5. VIEW 1: AUDIT DASHBOARD (ONLY ACTIVE USERS)
+        // 5. VIEW 1: AUDIT DASHBOARD (الداش بورد اللحظية)
         // ==========================================
         function renderDashboard() {
             const tbody = document.getElementById('audit-table-body');
             tbody.innerHTML = '';
             
-            let tOffice = 0, tOnline = 0, tLate = 0;
+            let tOffice = 0, tOnline = 0, tLateTotalMins = 0;
 
-            // 🚩 التعديل هنا: الفلترة لعرض "من سجلوا حضوراً فقط"
+            // تصفية: عرض الموظفين الذين قاموا بتسجيل الحضور فقط (يوجد لهم Document اليوم)
             const activeUsers = allUsersData.filter(u => todayRecords.some(r => r.userId === u.email));
 
             if (activeUsers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500 italic">لا يوجد موظفون نشطون حتى الآن.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-slate-500 font-bold"><i class="fas fa-coffee text-2xl mb-3 block opacity-50"></i>لم يقم أي موظف بتسجيل الدخول اليوم بعد.</td></tr>';
             }
 
             activeUsers.forEach(u => {
                 const rec = todayRecords.find(r => r.userId === u.email);
+                
+                // جلب ميعاد الموظف المقرر من جدول الورديات
                 const monthId = moment(currentDayStr).format('YYYY-MM');
                 const schedDoc = allSchedules[`${u.email}_${monthId}`];
                 const daySched = schedDoc && schedDoc.days ? schedDoc.days[currentDayStr] : null;
-                
                 const schedStart = daySched ? daySched.start : '09:00';
 
+                // إحصائيات سريعة
                 if(rec.workMode === 'online') tOnline++; else tOffice++;
-                tLate += (rec.lateMinutes || 0);
+                tLateTotalMins += (rec.lateMinutes || 0);
 
                 const checkInFmt = rec.checkIn ? moment(rec.checkIn.toMillis()).format('hh:mm A') : '---';
                 const checkOutFmt = rec.checkOut ? moment(rec.checkOut.toMillis()).format('hh:mm A') : '---';
                 
-                const lateUI = rec.lateMinutes > 0 ? `<span class="text-orange-500 font-bold">${rec.lateMinutes}m متأخر</span>` : `<span class="text-green-500"><i class="fas fa-check"></i> ملتزم</span>`;
-                const modeUI = rec.workMode === 'online' ? `<span class="bg-primary-500/20 text-primary-400 px-2 py-1 rounded text-[9px]">أونلاين 💻</span>` : `<span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-[9px]">مقر 🏢</span>`;
-                const overall = rec.checkOut ? '<span class="text-slate-500">انصرف</span>' : '<span class="text-green-500 font-black animate-pulse">نشط الآن</span>';
+                // تصميم حالة التأخير باستخدام دالة الساعات والدقائق
+                const lateUI = rec.lateMinutes > 0 
+                    ? `<span class="bg-orange-500/10 text-orange-500 px-3 py-1.5 rounded-lg border border-orange-500/20 font-black">${formatHoursMins(rec.lateMinutes)} متأخر</span>` 
+                    : `<span class="text-green-500 font-black"><i class="fas fa-check-circle"></i> في الموعد</span>`;
+                
+                const modeUI = rec.workMode === 'online' 
+                    ? `<span class="bg-primary-500/10 text-primary-400 px-3 py-1.5 rounded-lg text-[10px] border border-primary-500/20 font-black"><i class="fas fa-laptop-house mr-1"></i> أونلاين</span>` 
+                    : `<span class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-[10px] border border-white/5 font-black"><i class="fas fa-building mr-1"></i> مقر الشركة</span>`;
+                
+                const overall = rec.checkOut 
+                    ? '<span class="text-slate-500 font-black"><i class="fas fa-sign-out-alt"></i> انصرف</span>' 
+                    : '<span class="text-green-500 font-black animate-pulse"><i class="fas fa-circle text-[8px] mr-1"></i> متصل الآن</span>';
 
                 tbody.innerHTML += `
-                    <tr class="hover:bg-white/[0.02]">
-                        <td class="p-4 flex items-center gap-3"><img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-8 h-8 rounded-lg object-cover border border-white/10"> <span class="text-white">${u.name}</span></td>
-                        <td class="p-4 text-center font-mono text-slate-500 text-[10px]">${moment(schedStart, 'HH:mm').format('hh:mm A')}</td>
-                        <td class="p-4 text-center font-mono text-white text-[11px]">${checkInFmt}</td>
+                    <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/[0.02]">
+                        <td class="p-4 flex items-center gap-4">
+                            <img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name)}" class="w-10 h-10 rounded-xl object-cover border border-white/10 shadow-md"> 
+                            <span class="text-white font-black text-sm">${u.name}</span>
+                        </td>
+                        <td class="p-4 text-center font-mono text-slate-400 text-[11px]">${moment(schedStart, 'HH:mm').format('hh:mm A')}</td>
+                        <td class="p-4 text-center font-mono text-white text-[12px] font-black">${checkInFmt}</td>
                         <td class="p-4 text-center">${lateUI}</td>
                         <td class="p-4 text-center">${modeUI}</td>
                         <td class="p-4 text-center font-mono text-slate-500 text-[11px]">${checkOutFmt}</td>
@@ -415,13 +472,14 @@
                     </tr>`;
             });
 
+            // تحديث الكروت العلوية
             document.getElementById('kpi-office').innerText = tOffice;
             document.getElementById('kpi-online').innerText = tOnline;
-            document.getElementById('kpi-late-mins').innerHTML = `${tLate} <span class="text-xs">دقيقة</span>`;
+            document.getElementById('kpi-late-mins').innerHTML = `<span class="text-lg">${formatHoursMins(tLateTotalMins)}</span>`;
         }
 
         // ==========================================
-        // 6. VIEW 2: MONTHLY ROSTER (الجدول الشهري)
+        // 6. VIEW 2: MONTHLY ROSTER (مخطط الورديات الشهري الاحترافي)
         // ==========================================
         function changeMonth(offset) {
             currentRosterMonth.add(offset, 'months');
@@ -429,7 +487,7 @@
         }
 
         function renderRosterGrid() {
-            const monthStr = currentRosterMonth.format('YYYY-MM'); // للبحث في الداتا بيز
+            const monthStr = currentRosterMonth.format('YYYY-MM'); // "YYYY-MM"
             document.getElementById('roster-month-label').innerText = currentRosterMonth.locale('ar').format('MMMM YYYY');
             
             const thead = document.getElementById('roster-thead');
@@ -437,45 +495,62 @@
             
             const daysInMonth = currentRosterMonth.daysInMonth();
             
-            // Build Headers (1 to 30/31)
-            let headHTML = '<tr><th class="p-4 bg-dark-900 sticky right-0 z-30 w-48 text-right border-l border-white/5 shadow-md">الموظف</th>';
+            // 1. بناء الهيدر (الصف العلوي للأيام)
+            let headHTML = '<tr><th class="roster-th-corner w-48 text-right px-4 text-white font-black text-xs">اســـم الموظـــف</th>';
             let dates = [];
             for(let i=1; i<=daysInMonth; i++) {
                 const d = currentRosterMonth.clone().date(i);
                 dates.push(d.format('YYYY-MM-DD'));
                 const isToday = d.format('YYYY-MM-DD') === currentDayStr;
-                headHTML += `<th class="p-3 text-center min-w-[70px] ${isToday ? 'text-primary-500 bg-primary-500/10' : ''}">${d.locale('ar').format('dd')}<br><span class="text-[9px] opacity-60">${d.format('DD/MM')}</span></th>`;
+                const isWeekend = (d.day() === 5 || d.day() === 6); // جمعة وسبت
+                
+                let thClasses = "roster-th text-center min-w-[85px] ";
+                if(isToday) thClasses += "text-primary-500 bg-primary-500/10 border-b-2 border-b-primary-500 ";
+                else if(isWeekend) thClasses += "text-red-400/70 bg-red-500/5 ";
+                else thClasses += "text-slate-400 ";
+
+                headHTML += `<th class="${thClasses}">${d.locale('ar').format('ddd')}<br><span class="text-[9px] opacity-70 font-mono">${d.format('DD/MM')}</span></th>`;
             }
             headHTML += '</tr>';
             thead.innerHTML = headHTML;
 
-            // Build Rows (Employees)
+            // 2. بناء الصفوف (الموظفين)
             tbody.innerHTML = '';
             if (allUsersData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${daysInMonth+1}" class="p-8 text-center text-slate-500">لا يوجد موظفين مسجلين.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${daysInMonth+1}" class="p-8 text-center text-slate-500 font-bold">لا يوجد موظفين مسجلين في النظام.</td></tr>`;
                 return;
             }
 
             allUsersData.forEach(u => {
-                let rowHTML = `<tr><td class="p-3 bg-dark-950 sticky right-0 z-20 border-l border-white/5 font-bold text-white text-xs truncate flex items-center gap-3 shadow-[5px_0_15px_rgba(0,0,0,0.3)]"><img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-8 h-8 rounded-lg object-cover border border-white/10"> <div class="truncate">${u.name}</div></td>`;
+                let rowHTML = `<tr><td class="roster-td-name text-white truncate flex items-center gap-3"><img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name)}" class="w-8 h-8 rounded-lg object-cover border border-white/10"> <div class="truncate text-xs">${u.name}</div></td>`;
                 
                 dates.forEach(dateStr => {
                     const schedDoc = allSchedules[`${u.email}_${monthStr}`];
                     const daySched = schedDoc && schedDoc.days ? schedDoc.days[dateStr] : null;
                     
+                    // إعدادات افتراضية إذا لم يوجد جدول محفوظ
+                    const isWeekend = (moment(dateStr).day() === 5 || moment(dateStr).day() === 6);
                     const start = daySched ? daySched.start : '09:00';
                     const end = daySched ? daySched.end : '17:00';
-                    const mode = daySched ? daySched.mode : 'office';
+                    const mode = daySched ? daySched.mode : (isWeekend ? 'off' : 'office');
 
-                    let modeIcon = mode === 'office' ? '<i class="fas fa-building text-slate-400"></i>' : 
-                                  (mode === 'online' ? '<i class="fas fa-laptop-house text-primary-400"></i>' : 
-                                  (mode === 'sick' ? '<i class="fas fa-briefcase-medical text-purple-400"></i>' :
-                                  (mode === 'casual' ? '<i class="fas fa-running text-orange-400"></i>' : '<i class="fas fa-umbrella-beach text-red-400"></i>')));
+                    // اختيار الأيقونة والنص حسب الحالة
+                    let cellContent = '';
+                    if (mode === 'office' || mode === 'online') {
+                        const icon = mode === 'office' ? '<i class="fas fa-building text-slate-400 text-[10px]"></i>' : '<i class="fas fa-laptop-house text-primary-400 text-[10px]"></i>';
+                        cellContent = `<span class="text-[9px] font-black text-white mb-0.5">${start}</span><span class="text-[8px] font-bold text-slate-500">${end}</span><div class="mt-1">${icon}</div>`;
+                    } else if (mode === 'off') {
+                        cellContent = `<i class="fas fa-bed text-red-400 text-sm mb-1 block"></i><span class="text-[8px] font-black text-red-400">راحة</span>`;
+                    } else if (mode === 'sick') {
+                        cellContent = `<i class="fas fa-briefcase-medical text-purple-400 text-sm mb-1 block"></i><span class="text-[8px] font-black text-purple-400">مرضي</span>`;
+                    } else if (mode === 'casual') {
+                        cellContent = `<i class="fas fa-running text-orange-400 text-sm mb-1 block"></i><span class="text-[8px] font-black text-orange-400">عارضة</span>`;
+                    }
                     
                     rowHTML += `
-                        <td class="p-1 text-center">
-                            <div onclick="openShiftModal('${u.email}', '${u.name}', '${dateStr}', '${start}', '${end}', '${mode}')" class="roster-cell mode-${mode} p-1.5 rounded-lg flex flex-col items-center justify-center gap-1 h-[45px]">
-                                ${mode === 'office' || mode === 'online' ? `<span class="text-[8px] font-mono text-slate-300 leading-none">${start}</span><span class="text-[8px] font-mono text-slate-500 leading-none">${end}</span>` : `<span class="text-[8px] font-bold text-white mb-0.5">${modeIcon}</span>`}
+                        <td class="roster-td text-center">
+                            <div onclick="openShiftModal('${u.email}', '${u.name}', '${dateStr}', '${start}', '${end}', '${mode}')" class="roster-cell-inner mode-${mode} flex flex-col items-center justify-center h-[55px]">
+                                ${cellContent}
                             </div>
                         </td>`;
                 });
@@ -484,11 +559,11 @@
             });
         }
 
-        // --- Shift Modal Controls ---
+        // دوال النافذة المنبثقة للورديات
         function openShiftModal(email, name, dateStr, start, end, mode) {
             document.getElementById('shift-email').value = email;
             document.getElementById('shift-date').value = dateStr;
-            document.getElementById('modal-shift-info').innerText = `${name} | ${moment(dateStr).locale('ar').format('dddd, DD MMMM')}`;
+            document.getElementById('modal-shift-info').innerText = `${name} | ${moment(dateStr).locale('ar').format('dddd, DD MMMM YYYY')}`;
             
             document.getElementById('shift-start').value = start;
             document.getElementById('shift-end').value = end;
@@ -518,11 +593,11 @@
                 await docRef.set({ userId: email, monthId: monthId }, { merge: true });
                 await docRef.update({ [`days.${dateStr}`]: { start, end, mode } });
                 closeModal('modal-shift');
-            } catch(e) { console.error(e); alert("فشل الحفظ."); }
+            } catch(e) { console.error(e); alert("فشل الحفظ. تأكد من قواعد حماية Firestore (Rules)."); }
         }
 
         // ==========================================
-        // 7. VIEW 3: EMPLOYEES RECORDS (الإجازات والأرصدة)
+        // 7. VIEW 3: EMPLOYEES RECORDS (سجلات الموظفين)
         // ==========================================
         function renderEmployeesRecord() {
             const container = document.getElementById('employees-record-container');
@@ -531,33 +606,35 @@
             allUsersData.forEach(u => {
                 const lb = u.leaveBalances || { annual: 21, casual: 6, sick: 14 };
                 container.innerHTML += `
-                    <div class="bg-dark-900 border border-white/5 p-6 rounded-3xl shadow-xl flex flex-col h-full hover:border-primary-500/20 transition-colors">
-                        <div class="flex items-center gap-4 border-b border-white/5 pb-4 mb-4">
-                            <img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-14 h-14 rounded-2xl object-cover border border-white/10">
+                    <div class="bg-dark-900 border border-white/5 p-6 rounded-[2rem] shadow-xl flex flex-col h-full hover:border-primary-500/30 transition-colors group relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-full h-1 bg-gradient-to-l from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        
+                        <div class="flex items-center gap-4 border-b border-white/5 pb-5 mb-5">
+                            <img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name)}" class="w-14 h-14 rounded-2xl object-cover border-2 border-dark-950 shadow-[0_0_0_2px_rgba(255,255,255,0.1)]">
                             <div>
                                 <h3 class="font-black text-white text-base">${u.name}</h3>
-                                <p class="text-[9px] text-primary-500 font-bold uppercase tracking-widest">${u.title || u.role}</p>
+                                <p class="text-[9px] text-primary-500 font-black uppercase tracking-widest mt-1">${u.title || u.role}</p>
                             </div>
                         </div>
                         
-                        <div class="flex-1">
-                            <div class="flex justify-between items-center bg-dark-950 px-4 py-2.5 rounded-lg mb-2 border border-white/5">
-                                <span class="text-[10px] font-bold text-slate-400">اعتيادي (Annual)</span>
-                                <span class="text-sm font-black text-white bg-dark-800 px-3 py-1 rounded-md">${lb.annual}</span>
+                        <div class="flex-1 space-y-2">
+                            <div class="flex justify-between items-center bg-dark-950 px-4 py-3 rounded-xl border border-white/5">
+                                <span class="text-[10px] font-bold text-slate-400"><i class="fas fa-umbrella-beach text-blue-400 mr-2 w-4"></i> اعتيادي (Annual)</span>
+                                <span class="text-sm font-black text-white bg-dark-800 px-3 py-1 rounded-lg">${lb.annual}</span>
                             </div>
-                            <div class="flex justify-between items-center bg-dark-950 px-4 py-2.5 rounded-lg mb-2 border border-white/5">
-                                <span class="text-[10px] font-bold text-orange-400">عارضة (Casual)</span>
-                                <span class="text-sm font-black text-white bg-dark-800 px-3 py-1 rounded-md">${lb.casual}</span>
+                            <div class="flex justify-between items-center bg-dark-950 px-4 py-3 rounded-xl border border-white/5">
+                                <span class="text-[10px] font-bold text-slate-400"><i class="fas fa-running text-orange-400 mr-2 w-4"></i> عارضة (Casual)</span>
+                                <span class="text-sm font-black text-white bg-dark-800 px-3 py-1 rounded-lg">${lb.casual}</span>
                             </div>
-                            <div class="flex justify-between items-center bg-dark-950 px-4 py-2.5 rounded-lg border border-white/5">
-                                <span class="text-[10px] font-bold text-purple-400">مرضي (Sick)</span>
-                                <span class="text-sm font-black text-white bg-dark-800 px-3 py-1 rounded-md">${lb.sick}</span>
+                            <div class="flex justify-between items-center bg-dark-950 px-4 py-3 rounded-xl border border-white/5">
+                                <span class="text-[10px] font-bold text-slate-400"><i class="fas fa-briefcase-medical text-purple-400 mr-2 w-4"></i> مرضي (Sick)</span>
+                                <span class="text-sm font-black text-white bg-dark-800 px-3 py-1 rounded-lg">${lb.sick}</span>
                             </div>
                         </div>
                         
-                        <div class="mt-4 pt-4 border-t border-white/5">
-                            <button onclick="openBalancesModal('${u.email}', '${u.name}', ${lb.annual}, ${lb.casual}, ${lb.sick})" class="w-full py-3 bg-dark-800 hover:bg-primary-600 text-white rounded-xl font-black text-[10px] transition-all border border-white/5 active:scale-95 flex items-center justify-center gap-2">
-                                <i class="fas fa-edit"></i> تعديل الأرصدة
+                        <div class="mt-5 pt-5 border-t border-white/5">
+                            <button onclick="openBalancesModal('${u.email}', '${u.name}', ${lb.annual}, ${lb.casual}, ${lb.sick})" class="w-full py-3.5 bg-dark-800 hover:bg-white text-slate-300 hover:text-dark-950 rounded-xl font-black text-[11px] transition-all active:scale-95 flex items-center justify-center gap-2">
+                                <i class="fas fa-edit"></i> تعديل أرصدة الموظف
                             </button>
                         </div>
                     </div>`;
@@ -566,7 +643,7 @@
 
         function openBalancesModal(email, name, ann, cas, sic) {
             document.getElementById('bal-email').value = email;
-            document.getElementById('modal-bal-name').innerText = `الموظف: ${name}`;
+            document.getElementById('modal-bal-name').innerText = name;
             document.getElementById('bal-ann').value = ann;
             document.getElementById('bal-cas').value = cas;
             document.getElementById('bal-sic').value = sic;
@@ -585,16 +662,16 @@
         }
 
         // ==========================================
-        // 8. VIEW 4: REQUESTS HUB (الطلبات)
+        // 8. VIEW 4: REQUESTS HUB (مركز الطلبات)
         // ==========================================
         function switchRequestTab(mode) {
             reqViewMode = mode;
             if(mode === 'pending') {
-                document.getElementById('req-tab-pending').className = "px-6 py-3 bg-primary-600 text-white rounded-t-xl font-black text-xs transition-all";
-                document.getElementById('req-tab-history').className = "px-6 py-3 bg-dark-900 text-slate-400 rounded-t-xl font-black text-xs transition-all border-x border-t border-white/5";
+                document.getElementById('req-tab-pending').className = "px-8 py-3.5 bg-primary-600 text-white rounded-t-xl font-black text-xs transition-all shadow-lg";
+                document.getElementById('req-tab-history').className = "px-8 py-3.5 bg-dark-900 text-slate-400 hover:text-white rounded-t-xl font-black text-xs transition-all border-x border-t border-white/5";
             } else {
-                document.getElementById('req-tab-pending').className = "px-6 py-3 bg-dark-900 text-slate-400 rounded-t-xl font-black text-xs transition-all border-x border-t border-white/5";
-                document.getElementById('req-tab-history').className = "px-6 py-3 bg-primary-600 text-white rounded-t-xl font-black text-xs transition-all";
+                document.getElementById('req-tab-pending').className = "px-8 py-3.5 bg-dark-900 text-slate-400 hover:text-white rounded-t-xl font-black text-xs transition-all border-x border-t border-white/5";
+                document.getElementById('req-tab-history').className = "px-8 py-3.5 bg-primary-600 text-white rounded-t-xl font-black text-xs transition-all shadow-lg";
             }
             renderRequests();
         }
@@ -606,35 +683,46 @@
             const filteredReqs = allRequests.filter(r => reqViewMode === 'pending' ? r.status === 'pending' : r.status !== 'pending');
 
             if (filteredReqs.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-20"><i class="fas fa-check-circle text-4xl text-green-500/20 mb-4 block"></i><p class="text-slate-500 text-sm font-bold">${reqViewMode === 'pending' ? 'لا يوجد طلبات معلقة.' : 'لا يوجد سجلات تاريخية.'}</p></div>`; return;
+                container.innerHTML = `<div class="col-span-full text-center py-24"><i class="fas fa-shield-alt text-6xl text-slate-700/50 mb-4 block"></i><p class="text-slate-500 text-sm font-bold">${reqViewMode === 'pending' ? 'لا يوجد أي طلبات استئذان معلقة حالياً.' : 'سجل الطلبات فارغ.'}</p></div>`; 
+                return;
             }
 
             filteredReqs.forEach(req => {
                 const u = allUsersData.find(x => x.email === req.userId) || { name: req.userId };
-                const reqDateFormatted = moment(req.date).locale('ar').format('dddd, DD MMMM');
+                const reqDateFormatted = moment(req.date).locale('ar').format('dddd, DD MMMM YYYY');
                 const timeStr = req.timestamp ? moment(req.timestamp.toMillis()).locale('ar').fromNow() : '';
                 
                 let actionArea = '';
                 if (req.status === 'pending') {
                     actionArea = `
-                        <div class="mt-auto flex gap-2">
-                            <button onclick="processRequest('${req.id}', '${req.userId}', 'approved', '${req.date}')" class="flex-1 py-3 bg-green-600 text-white rounded-xl font-black text-[10px] shadow-lg hover:bg-green-500 active:scale-95">موافقة <i class="fas fa-check ml-1"></i></button>
-                            <button onclick="processRequest('${req.id}', '${req.userId}', 'rejected', '${req.date}')" class="flex-1 py-3 bg-red-500/10 text-red-500 rounded-xl font-black text-[10px] hover:bg-red-500 hover:text-white border border-red-500/20 active:scale-95">رفض <i class="fas fa-times ml-1"></i></button>
+                        <div class="mt-auto flex gap-3">
+                            <button onclick="processRequest('${req.id}', '${req.userId}', 'approved', '${req.date}')" class="flex-1 py-3.5 bg-green-600 text-white rounded-xl font-black text-[11px] shadow-lg hover:bg-green-500 active:scale-95 transition-all border border-green-500/50">
+                                موافقة واعتماد <i class="fas fa-check ml-1"></i>
+                            </button>
+                            <button onclick="processRequest('${req.id}', '${req.userId}', 'rejected', '${req.date}')" class="flex-1 py-3.5 bg-dark-800 text-red-400 hover:bg-red-500 hover:text-white rounded-xl font-black text-[11px] transition-all border border-red-500/20 active:scale-95">
+                                رفض <i class="fas fa-times ml-1"></i>
+                            </button>
                         </div>`;
                 } else {
-                    const statusBadge = req.status === 'approved' ? '<span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-md text-[10px] font-black"><i class="fas fa-check"></i> تمت الموافقة</span>' : '<span class="bg-red-500/20 text-red-400 px-3 py-1 rounded-md text-[10px] font-black"><i class="fas fa-times"></i> تم الرفض</span>';
-                    actionArea = `<div class="mt-auto text-center border-t border-white/5 pt-4">${statusBadge}</div>`;
+                    const statusBadge = req.status === 'approved' 
+                        ? '<span class="bg-green-500/10 text-green-500 border border-green-500/20 px-4 py-2 rounded-lg text-[10px] font-black"><i class="fas fa-check-circle mr-1"></i> تمت الموافقة بنجاح</span>' 
+                        : '<span class="bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg text-[10px] font-black"><i class="fas fa-times-circle mr-1"></i> تم رفض الطلب</span>';
+                    actionArea = `<div class="mt-auto text-center border-t border-white/5 pt-5">${statusBadge}</div>`;
                 }
 
                 container.innerHTML += `
-                    <div class="bg-dark-900 border border-white/5 p-6 rounded-3xl shadow-xl flex flex-col relative overflow-hidden group hover:border-primary-500/30 transition-all h-full">
-                        <div class="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
-                            <div class="w-10 h-10 rounded-xl bg-primary-500/10 text-primary-500 flex items-center justify-center text-lg"><i class="fas fa-laptop-house"></i></div>
-                            <div><h4 class="font-black text-white text-sm">${u.name}</h4><p class="text-[9px] text-slate-400 font-bold">${timeStr}</p></div>
+                    <div class="bg-dark-900 border border-white/5 p-6 rounded-[2rem] shadow-xl flex flex-col relative overflow-hidden group hover:border-primary-500/30 transition-all h-full">
+                        <div class="flex items-center gap-4 mb-5 border-b border-white/5 pb-5">
+                            <div class="w-12 h-12 rounded-xl bg-primary-500/10 text-primary-500 border border-primary-500/20 flex items-center justify-center text-xl shadow-inner"><i class="fas fa-laptop-house"></i></div>
+                            <div>
+                                <h4 class="font-black text-white text-base">${u.name}</h4>
+                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">${timeStr}</p>
+                            </div>
                         </div>
-                        <p class="text-[10px] text-primary-500 font-black uppercase mb-2">طلب استثناء (أونلاين)</p>
+                        <p class="text-[10px] text-primary-500 font-black uppercase mb-3 tracking-widest"><i class="fas fa-info-circle mr-1"></i> استئذان وتغيير بيئة العمل</p>
                         <p class="text-xs text-slate-300 bg-dark-950 p-4 rounded-xl border border-white/5 mb-6 leading-relaxed">
-                            تاريخ العمل المطلوب: <span class="font-bold text-white block mt-1">${reqDateFormatted}</span>
+                            يطلب الموظف تحويل مكان عمله إلى <span class="text-primary-400 font-bold">(أونلاين)</span> لليوم الموافق:<br>
+                            <span class="font-black text-white block mt-2 text-sm">${reqDateFormatted}</span>
                         </p>
                         ${actionArea}
                     </div>`;
@@ -646,7 +734,7 @@
                 // 1. تحديث حالة الطلب
                 await db.collection('work_mode_requests').doc(reqId).update({ status: decision });
                 
-                // 2. 🚩 إذا تمت الموافقة، نقوم بتعديل جدول الموظف (الروستر) لهذا اليوم ليكون "أونلاين"
+                // 2. 🚩 سحر الأتمتة: لو وافقت، السيستم هيروح يغير وردية الموظف في اليوم ده لـ Online لوحده!
                 if (decision === 'approved') {
                     const monthId = moment(reqDateStr).format('YYYY-MM');
                     await db.collection('monthly_schedules').doc(`${userEmail}_${monthId}`).set({
