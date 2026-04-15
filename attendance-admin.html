@@ -578,23 +578,67 @@
             if(mode) document.getElementById('shift-mode').value = mode;
         }
 
-        async function saveShift() {
-            const email = document.getElementById('shift-email').value;
-            const dateStr = document.getElementById('shift-date').value;
-            const start = document.getElementById('shift-start').value;
-            const end = document.getElementById('shift-end').value;
-            const mode = document.getElementById('shift-mode').value;
-            
-            const monthId = moment(dateStr).format('YYYY-MM');
-            const docId = `${email}_${monthId}`;
+            // ==========================================
+// دالة حفظ الوردية مع الخصم التلقائي من الأرصدة
+// ==========================================
+async function saveShift() {
+    const email = document.getElementById('shift-email').value;
+    const dateStr = document.getElementById('shift-date').value;
+    const newStart = document.getElementById('shift-start').value;
+    const newEnd = document.getElementById('shift-end').value;
+    const newMode = document.getElementById('shift-mode').value; // office, online, off, sick, casual
+    
+    const monthId = moment(dateStr).format('YYYY-MM');
+    const docId = `${email}_${monthId}`;
 
-            try {
-                const docRef = db.collection('monthly_schedules').doc(docId);
-                await docRef.set({ userId: email, monthId: monthId }, { merge: true });
-                await docRef.update({ [`days.${dateStr}`]: { start, end, mode } });
-                closeModal('modal-shift');
-            } catch(e) { console.error(e); alert("فشل الحفظ. تأكد من قواعد حماية Firestore (Rules)."); }
-        }
+    try {
+        const userRef = db.collection('users').doc(email);
+        const schedRef = db.collection('monthly_schedules').doc(docId);
+
+        // 1. جلب البيانات الحالية للموظف والجدول للمقارنة
+        const [userSnap, schedSnap] = await Promise.all([userRef.get(), schedRef.get()]);
+        
+        if (!userSnap.exists) return;
+        
+        let userData = userSnap.data();
+        let balances = userData.leaveBalances || { annual: 21, casual: 6, sick: 14 };
+        
+        let oldDays = schedSnap.exists ? schedSnap.data().days : {};
+        let oldMode = oldDays[dateStr] ? oldDays[dateStr].mode : 'office'; // الافتراضي عمل لو ملوش جدول
+
+        // 2. منطق إدارة الأرصدة (الزيادة والنقصان التلقائي)
+        
+        // أ - إرجاع الرصيد القديم لو كانت الحالة القديمة إجازة
+        if (oldMode === 'off') balances.annual += 1;
+        if (oldMode === 'sick') balances.sick += 1;
+        if (oldMode === 'casual') balances.casual += 1;
+
+        // ب - خصم الرصيد الجديد بناءً على الاختيار الجديد
+        if (newMode === 'off') balances.annual -= 1;
+        if (newMode === 'sick') balances.sick -= 1;
+        if (newMode === 'casual') balances.casual -= 1;
+
+        // 3. تحديث قاعدة البيانات (الجدول + رصيد الموظف) في عملية واحدة
+        const batch = db.batch();
+
+        // تحديث الجدول الشهري
+        batch.set(schedRef, { userId: email, monthId: monthId }, { merge: true });
+        batch.update(schedRef, { [`days.${dateStr}`]: { start: newStart, end: newEnd, mode: newMode } });
+
+        // تحديث أرصدة الموظف
+        batch.update(userRef, { leaveBalances: balances });
+
+        await batch.commit();
+
+        closeModal('modal-shift');
+        // إشعار نجاح
+        console.log(`✅ تم تحديث الوردية وتعديل رصيد الموظف: ${email}`);
+        
+    } catch(e) { 
+        console.error("Shift Save Error:", e); 
+        alert("فشل الحفظ: تأكد من صلاحيات الفايربيز وتوافر الإنترنت."); 
+    }
+}
 
         // ==========================================
         // 7. VIEW 3: EMPLOYEES RECORDS (سجلات الموظفين)
