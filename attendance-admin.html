@@ -28,7 +28,7 @@
     </script>
 
     <style>
-       /* ========================================= */
+/* ========================================= */
 /* إعدادات الثيم الأبيض الملكي الشامل (Full Light UI) */
 /* ========================================= */
 body { 
@@ -45,7 +45,7 @@ body {
     background-color: #ffffff !important; 
 }
 
-/* تبييض الأجزاء ذات الشفافية (التي كانت تظهر سوداء فوق) */
+/* تبييض الأجزاء ذات الشفافية (Header) */
 div[class*="bg-dark-950/80"], 
 div[class*="bg-dark-900/50"], 
 header {
@@ -54,7 +54,7 @@ header {
     border-bottom: 1px solid #e2e8f0 !important;
 }
 
-/* 2. تصحيح ألوان النصوص (إجبارها على اللون الداكن) */
+/* 2. تصحيح ألوان النصوص */
 h1, h2, h3, h4, .text-white { 
     color: #0f172a !important; 
 }
@@ -69,7 +69,7 @@ aside {
     box-shadow: 4px 0 10px rgba(0,0,0,0.02) !important;
 }
 
-.hr-tab { color: #64748b !important; }
+.hr-tab { color: #64748b !important; border-right: 4px solid transparent; }
 .hr-tab:hover { background-color: #f1f5f9 !important; color: #0ea5e9 !important; }
 
 .hr-tab.active { 
@@ -85,46 +85,107 @@ aside {
     border: 1px solid #e2e8f0 !important; 
 }
 
-/* 5. جدول المراقبة اللحظية (Dashboard Table) */
+/* 5. جدول المراقبة اللحظية */
 #audit-table-body tr:hover { background-color: #f8fafc !important; }
 #audit-table-body td { color: #334155 !important; border-bottom: 1px solid #f1f5f9; }
 
-/* 6. ستايل جدول الورديات (Roster) - احترافي جداً */
-.roster-table-wrapper { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1rem; }
+/* 6. النظام الجديد لجدول الورديات (Weekly Roster) */
+.roster-table-wrapper { 
+    background: #ffffff; 
+    border-radius: 1.5rem; 
+    overflow: auto;
+    border: 1px solid #eef2f6;
+    box-shadow: 0 10px 30px -15px rgba(0,0,0,0.05);
+}
 
+.roster-table { border-collapse: separate; border-spacing: 0; width: 100%; }
+
+/* الهيدر المثبت */
 .roster-th { 
-    background-color: #f1f5f9 !important; 
-    color: #1e293b !important; 
-    border-bottom: 1px solid #e2e8f0 !important; 
-}
-
-.roster-td-name { 
-    background-color: #ffffff !important; 
-    color: #0f172a !important;
-    border-left: 1px solid #e2e8f0 !important;
-    min-width: 260px !important;
+    position: sticky; top: 0; z-index: 40;
+    background-color: #fcfdfe !important; 
+    color: #64748b !important; 
     font-weight: 800 !important;
+    border-bottom: 2px solid #f1f5f9 !important;
+    padding: 15px 10px !important;
+    text-align: center;
 }
 
-.roster-cell-inner { border-radius: 8px; border: 1px solid transparent; }
-.roster-cell-inner:hover { border-color: #0ea5e9; background-color: #f0f9ff !important; }
+/* عمود الأسماء المثبت */
+.roster-td-name { 
+    position: sticky; right: 0; z-index: 30;
+    background-color: #ffffff !important; 
+    border-left: 2px solid #f1f5f9 !important;
+    padding: 12px !important;
+    min-width: 280px !important;
+    box-shadow: 4px 0 10px -5px rgba(0,0,0,0.05);
+}
 
-/* ألوان حالات الجدول */
-.mode-office { background-color: #f1f5f9 !important; }
-.mode-online { background-color: #e0f2fe !important; color: #0369a1 !important; }
-.mode-off    { background-color: #fef2f2 !important; color: #991b1b !important; }
-.mode-sick   { background-color: #f5f3ff !important; color: #5b21b6 !important; }
-.mode-casual { background-color: #fff7ed !important; color: #9a3412 !important; }
+.roster-th-corner { 
+    position: sticky; top: 0; right: 0; z-index: 50;
+    background-color: #fcfdfe !important; 
+    border-bottom: 2px solid #f1f5f9 !important;
+    border-left: 2px solid #f1f5f9 !important;
+}
+
+/* كروت الحالات (الوردية) */
+.shift-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 14px;
+    padding: 10px 5px;
+    margin: 4px;
+    border: 1px solid transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 65px;
+    cursor: pointer;
+}
+
+.shift-card:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 15px -5px rgba(0,0,0,0.1);
+}
+
+/* 🟦 المقر: أزرق خافت */
+.mode-office { 
+    background-color: #eff6ff !important; 
+    border-color: #dbeafe !important; 
+    color: #1e40af !important; 
+}
+.mode-office i { color: #3b82f6; }
+
+/* ⬜ أونلاين: رصاصي خافت */
+.mode-online { 
+    background-color: #f8fafc !important; 
+    border-color: #e2e8f0 !important; 
+    color: #475569 !important; 
+}
+.mode-online i { color: #94a3b8; }
+
+/* 🟥 الإجازات بجميع أنواعها: أحمر خافت */
+.mode-off, .mode-sick, .mode-casual, .mode-vacation { 
+    background-color: #fff1f2 !important; 
+    border-color: #ffe4e6 !important; 
+    color: #be123c !important; 
+}
+.mode-off i, .mode-sick i, .mode-casual i { color: #fb7185; }
+
+/* نصوص داخل الكارت */
+.day-name { font-size: 11px; font-weight: 900; }
+.day-date { font-size: 9px; opacity: 0.6; }
+.shift-time { font-size: 10px; font-weight: 800; margin-bottom: 2px; }
 
 /* 7. النوافذ المنبثقة (Modals) */
-.fixed.inset-0.bg-black\/90 { background-color: rgba(15, 23, 42, 0.5) !important; backdrop-filter: blur(4px) !important; }
-.bg-dark-900.rounded-\[2\.5rem\] { 
+.fixed.inset-0 { background-color: rgba(15, 23, 42, 0.4) !important; backdrop-filter: blur(4px) !important; }
+.bg-dark-900.rounded-\[2\.5rem\], .bg-white.rounded-\[2rem\] { 
     background-color: #ffffff !important; 
     border: 1px solid #e2e8f0 !important; 
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
 }
 
-/* 8. المدخلات (Forms) */
+/* 8. المدخلات */
 input, select { 
     background-color: #ffffff !important; 
     color: #0f172a !important; 
@@ -139,11 +200,12 @@ input:focus, select:focus { border-color: #0ea5e9 !important; outline: none; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
 
-/* زر فحص الغياب (مميز) */
+/* زر فحص الغياب */
 button[onclick="checkAbsences()"] {
     background-color: #fff1f2 !important;
     color: #e11d48 !important;
     border: 1px solid #fecdd3 !important;
+    transition: all 0.3s;
 }
 button[onclick="checkAbsences()"]:hover { background-color: #e11d48 !important; color: #ffffff !important; }
     </style>
@@ -326,11 +388,11 @@ button[onclick="checkAbsences()"]:hover { background-color: #e11d48 !important; 
             <input type="hidden" id="shift-email">
             <input type="hidden" id="shift-date">
 
-            <div class="flex gap-2 mb-6">
-                <button type="button" onclick="quickShift('09:30', '18:00')" class="flex-1 py-2 rounded-lg bg-dark-950 border border-white/10 text-[10px] font-black text-slate-300 hover:border-primary-500 hover:text-white transition-all">09:00 - 17:00</button>
-                <button type="button" onclick="quickShift('10:00', '18:00')" class="flex-1 py-2 rounded-lg bg-dark-950 border border-white/10 text-[10px] font-black text-slate-300 hover:border-primary-500 hover:text-white transition-all">10:00 - 18:00</button>
-                <button type="button" onclick="quickShift('00:00', '00:00', 'off')" class="flex-1 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-400 hover:bg-red-500 hover:text-white transition-all">إجازة</button>
-            </div>
+           <div class="flex gap-2 mb-6">
+            <button type="button" onclick="quickShift('09:30', '18:00', 'office')" class="flex-1 py-3 rounded-xl bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-black hover:bg-blue-600 hover:text-white transition-all">09:30 - 18:00</button>
+            <button type="button" onclick="quickShift('09:30', '18:00', 'online')" class="flex-1 py-3 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 text-[10px] font-black hover:bg-slate-700 hover:text-white transition-all">أونلاين</button>
+            <button type="button" onclick="quickShift('00:00', '00:00', 'off')" class="flex-1 py-3 rounded-xl bg-red-50 text-red-700 border border-red-100 text-[10px] font-black hover:bg-red-600 hover:text-white transition-all">إجازة</button>
+        </div>
 
             <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
@@ -710,43 +772,54 @@ function renderDashboard() {
             renderRosterGrid();
         }
 
-        function renderRosterGrid() {
+       function renderRosterGrid() {
     const monthStr = document.getElementById('roster-month-select').value;
     const weekStartStr = document.getElementById('roster-week-select').value;
-    if(!weekStartStr) return; // حماية لو مفيش أسبوع متحدد
+    if(!weekStartStr || !monthStr) return;
 
     const weekStart = moment(weekStartStr, 'YYYY-MM-DD');
     const thead = document.getElementById('roster-thead');
     const tbody = document.getElementById('roster-tbody');
     
-    // 1. بناء الهيدر (7 أيام فقط)
-    let headHTML = '<tr><th class="roster-th-corner w-48 text-right px-4 text-white font-black text-xs">اســـم الموظـــف</th>';
+    // 1. بناء الهيدر (أيام الأسبوع)
+    let headHTML = `<tr><th class="roster-th-corner text-right px-6 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em]">فريق العمل</th>`;
     let dates = [];
     for(let i=0; i<7; i++) {
         const d = weekStart.clone().add(i, 'days');
         dates.push(d.format('YYYY-MM-DD'));
-        const isToday = d.format('YYYY-MM-DD') === currentDayStr;
-        const isWeekend = (d.day() === 5 || d.day() === 6); // جمعة وسبت
+        const isToday = d.format('YYYY-MM-DD') === moment().format('YYYY-MM-DD');
         
-        let thClasses = "roster-th text-center min-w-[85px] ";
-        if(isToday) thClasses += "text-primary-500 bg-primary-500/10 border-b-2 border-b-primary-500 ";
-        else if(isWeekend) thClasses += "text-red-400/70 bg-red-500/5 ";
-        else thClasses += "text-slate-400 ";
+        let thClasses = "roster-th text-center ";
+        if(isToday) thClasses += "bg-primary-50/50 text-primary-600 border-b-primary-500 ";
 
-        headHTML += `<th class="${thClasses}">${d.locale('ar').format('ddd')}<br><span class="text-[9px] opacity-70 font-mono">${d.format('DD/MM')}</span></th>`;
+        headHTML += `
+            <th class="${thClasses}">
+                <div class="day-name">${d.locale('ar').format('dddd')}</div>
+                <div class="day-date">${d.format('DD MMM')}</div>
+            </th>`;
     }
     headHTML += '</tr>';
     thead.innerHTML = headHTML;
 
     // 2. بناء الصفوف (الموظفين)
     tbody.innerHTML = '';
-    if (allUsersData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500 font-bold">لا يوجد موظفين مسجلين.</td></tr>`;
-        return;
-    }
-
+    
     allUsersData.forEach(u => {
-        let rowHTML = `<tr><td class="roster-td-name text-slate-800 flex items-center gap-3"><img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name)}" class="w-10 h-10 rounded-xl object-cover border border-slate-300 shadow-sm shrink-0"> <div class="flex flex-col"><span class="font-black text-sm">${u.name}</span><span class="text-[9px] text-slate-500 font-bold">${u.title || u.role}</span></div></td>`;        
+        let rowHTML = `
+            <tr>
+                <td class="roster-td-name">
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            <img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name)}" class="w-11 h-11 rounded-2xl object-cover shadow-sm border border-slate-100">
+                            <span class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${u.status === 'Online' ? 'bg-green-500' : 'bg-slate-300'}"></span>
+                        </div>
+                        <div class="flex flex-col overflow-hidden">
+                            <span class="font-black text-slate-800 text-sm truncate">${u.name}</span>
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${u.title || u.role}</span>
+                        </div>
+                    </div>
+                </td>`;
+        
         dates.forEach(dateStr => {
             const schedDoc = allSchedules[`${u.email}_${monthStr}`];
             const daySched = schedDoc && schedDoc.days ? schedDoc.days[dateStr] : null;
@@ -756,22 +829,35 @@ function renderDashboard() {
             const end = daySched ? daySched.end : '18:00';
             const mode = daySched ? daySched.mode : (isWeekend ? 'off' : 'office');
 
-            let cellContent = '';
-            if (mode === 'office' || mode === 'online') {
-                const icon = mode === 'office' ? '<i class="fas fa-building text-slate-400 text-[10px]"></i>' : '<i class="fas fa-laptop-house text-primary-400 text-[10px]"></i>';
-                cellContent = `<span class="text-[9px] font-black text-white mb-0.5">${start}</span><span class="text-[8px] font-bold text-slate-500">${end}</span><div class="mt-1">${icon}</div>`;
-            } else if (mode === 'off') {
-                cellContent = `<i class="fas fa-bed text-red-400 text-sm mb-1 block"></i><span class="text-[8px] font-black text-red-400">راحة</span>`;
-            } else if (mode === 'sick') {
-                cellContent = `<i class="fas fa-briefcase-medical text-purple-400 text-sm mb-1 block"></i><span class="text-[8px] font-black text-purple-400">مرضي</span>`;
-            } else if (mode === 'casual') {
-                cellContent = `<i class="fas fa-running text-orange-400 text-sm mb-1 block"></i><span class="text-[8px] font-black text-orange-400">عارضة</span>`;
+            // تحديد التصنيف واللون
+            let styleClass = '';
+            let icon = '';
+            let label = '';
+
+            if (mode === 'office') {
+                styleClass = 'mode-office';
+                icon = '<i class="fas fa-building text-xs mb-1"></i>';
+                label = 'المقر';
+            } else if (mode === 'online') {
+                styleClass = 'mode-online';
+                icon = '<i class="fas fa-laptop-house text-xs mb-1"></i>';
+                label = 'أونلاين';
+            } else {
+                // إجازة، مرضي، عارضة كلهم أحمر
+                styleClass = 'mode-vacation';
+                const leaveIcons = { 'off': 'fa-bed', 'sick': 'fa-procedures', 'casual': 'fa-running' };
+                const leaveLabels = { 'off': 'راحة', 'sick': 'مرضي', 'casual': 'عارضة' };
+                icon = `<i class="fas ${leaveIcons[mode] || 'fa-calendar-times'} text-xs mb-1"></i>`;
+                label = leaveLabels[mode] || 'إجازة';
             }
-            
+
             rowHTML += `
-                <td class="roster-td text-center">
-                    <div onclick="openShiftModal('${u.email}', '${u.name}', '${dateStr}', '${start}', '${end}', '${mode}')" class="roster-cell-inner mode-${mode} flex flex-col items-center justify-center h-[55px]">
-                        ${cellContent}
+                <td class="roster-td p-1">
+                    <div onclick="openShiftModal('${u.email}', '${u.name}', '${dateStr}', '${start}', '${end}', '${mode}')" 
+                         class="shift-card ${styleClass} cursor-pointer">
+                        <div class="shift-time">${mode === 'office' || mode === 'online' ? start : ''}</div>
+                        ${icon}
+                        <div class="text-[9px] font-black uppercase">${label}</div>
                     </div>
                 </td>`;
         });
