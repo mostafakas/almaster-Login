@@ -224,6 +224,10 @@ input[type="time"], input[type="number"], select, input[type="month"] {
             <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md">
                 <div class="flex justify-between items-end mb-6">
             <div>
+                <div class="mb-4">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">عرض بيانات يوم محدد:</label>
+                    <input type="date" id="dash-date-filter" class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-xs font-bold outline-none focus:border-primary-500" onchange="changeDashDate()">
+                </div>
                 <h1 class="text-3xl font-black text-white mb-2">المتواجدون حالياً بالشركة</h1>
                 <p class="text-[10px] font-bold text-primary-500 uppercase tracking-widest" id="dash-date-display">يتم التحميل...</p>
             </div>
@@ -442,7 +446,7 @@ input[type="time"], input[type="number"], select, input[type="month"] {
         let allRequests = [];
         let reqViewMode = 'pending'; // pending OR history
 
-        const currentDayStr = moment().format('YYYY-MM-DD');
+        let currentDayStr = moment().format('YYYY-MM-DD'); // تحويلها لـ let لتغييرها
         let currentRosterMonth = moment().startOf('month'); // يعرض الشهر الحالي
 
         const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&bold=true&name=';
@@ -468,10 +472,85 @@ input[type="time"], input[type="number"], select, input[type="month"] {
         // ==========================================
         // 3. AUTHENTICATION & INITIALIZATION
         // ==========================================
-        auth.onAuthStateChanged(user => {
-            if (user) { initAdminEngine(); } 
-            else { window.close(); }
-        });
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        currentUser = user;
+        const userEmail = user.email.toLowerCase().trim();
+        const docRef = db.collection('users').doc(userEmail);
+        const doc = await docRef.get();
+        
+        if(doc.exists) {
+            userProfile = doc.data();
+            
+            if (userProfile.role === 'admin') { 
+                window.location.replace('admin.html'); 
+                return; 
+            }
+
+            const today = moment().format('YYYY-MM-DD');
+
+            // --- 🛑 الجزء الجديد: فحص هل يوجد طلب مرفوض اليوم؟ ---
+            const rejectedSnap = await db.collection('work_mode_requests')
+                .where('userId', '==', userEmail)
+                .where('date', '==', today)
+                .where('status', '==', 'rejected')
+                .get();
+
+            if (!rejectedSnap.empty) {
+                // منع الدخول وإظهار شاشة الرفض داخل اللودر
+                document.getElementById('loader').classList.remove('hidden');
+                document.getElementById('loader').innerHTML = `
+                    <div class="text-center p-10 bg-white rounded-[3rem] shadow-2xl border-4 border-red-500 max-w-sm mx-auto animate-fade-in">
+                        <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-user-slash text-3xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-black text-slate-900 mb-3">عذراً.. طلبك مرفوض</h2>
+                        <p class="text-slate-600 font-bold text-xs leading-relaxed mb-8">
+                            لقد تم رفض طلبك للعمل (أونلاين) لهذا اليوم من قبل الإدارة. 
+                            يرجى الالتزام بالحضور لمقر الشركة أو التواصل مع مديرك.
+                        </p>
+                        <button onclick="location.reload()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg transition-all active:scale-95">
+                            تحديث الحالة
+                        </button>
+                    </div>
+                `;
+                return; // إيقاف الكود هنا ومنع تشغيل initWorkspace
+            }
+            // ---------------------------------------------------
+
+            // نظام الجلسة الموحدة
+            const newSessionId = Date.now().toString() + "_" + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('almaster_session_id', newSessionId);
+            const detailedInfo = await gatherDetailedDeviceInfo();
+
+            await docRef.update({ 
+                currentSessionId: newSessionId,
+                deviceInfo: detailedInfo 
+            });
+
+            // فحص تسجيل الحضور
+            const attendanceSnap = await db.collection('attendance_records')
+                .where('userId', '==', userEmail)
+                .where('date', '==', today)
+                .get();
+
+            if (!attendanceSnap.empty) {
+                if (userProfile.status !== 'Online') {
+                    await setStatus(userEmail, 'Online', true);
+                }
+            } else {
+                openModal('modal-attendance-mode');
+            }
+
+            initWorkspace();
+            
+        } else { 
+            auth.signOut(); 
+        }
+    } else { 
+        window.location.replace('index.html'); 
+    }
+});
 
         function initAdminEngine() {
             document.getElementById('dash-date-display').innerText = moment().locale('ar').format('dddd, DD MMMM YYYY');
@@ -997,6 +1076,13 @@ function handleMonthChange() {
     currentRosterMonth = moment(monthStr, 'YYYY-MM');
     populateWeeksDropdown(currentRosterMonth);
     renderRosterGrid();
+}
+        function changeDashDate() {
+    const newDate = document.getElementById('dash-date-filter').value;
+    if(!newDate) return;
+    currentDayStr = newDate;
+    // إعادة تشغيل المستمعات لليوم الجديد
+    listenToTodayAttendance();
 }
 
 // دالة لإنشاء قائمة الأسابيع داخل الشهر (تبدأ من السبت)
