@@ -1510,7 +1510,61 @@ function listenToScreenshotRequests() {
                 } 
             }); 
         }
-        async function logout() { if(confirm("Are you sure you want to end your session?")) { await setStatus(currentUser.email, 'Offline', true); auth.signOut().then(() => window.location.replace('index.html')); } }
+// دالة تسجيل الخروج والانصراف المبكر المتقدمة
+        async function logout() { 
+            if(!confirm("هل أنت متأكد من تسجيل الخروج وإنهاء يوم العمل؟")) return;
+            
+            try {
+                const email = currentUser.email.toLowerCase().trim();
+                const today = moment().format('YYYY-MM-DD');
+                const now = moment();
+        
+                // 1. جلب ميعاد انصراف الموظف المقرر من الروستر
+                const monthId = now.format('YYYY-MM');
+                const schedRef = await db.collection('monthly_schedules').doc(`${email}_${monthId}`).get();
+                let schedEnd = '17:00'; // الافتراضي
+                if (schedRef.exists && schedRef.data().days && schedRef.data().days[today]) {
+                    schedEnd = schedRef.data().days[today].end;
+                }
+        
+                // 2. حساب الانصراف المبكر
+                const endMoment = moment(schedEnd, 'HH:mm');
+                let earlyMins = endMoment.diff(now, 'minutes');
+                if (earlyMins < 0) earlyMins = 0; // انصرف في ميعاده أو متأخراً
+        
+                // 3. تحديث سجل الحضور الخاص باليوم
+                const attSnap = await db.collection('attendance_records')
+                    .where('userId', '==', email)
+                    .where('date', '==', today)
+                    .get();
+                
+                if (!attSnap.empty) {
+                    const recordId = attSnap.docs[0].id;
+                    await db.collection('attendance_records').doc(recordId).update({
+                        checkOut: firebase.firestore.FieldValue.serverTimestamp(),
+                        earlyLeaveMinutes: earlyMins
+                    });
+                    
+                    // 4. إرسال التنبيهات على التليجرام
+                    if (earlyMins > 0) {
+                        // إشعار انصراف مبكر أحمر
+                        sendTelegramNotification(`🚨 <b>انصراف مبكر!</b>\n👤 الموظف: ${userProfile.name}\n🏃 غادر العمل مبكراً بـ: <b>${earlyMins} دقيقة</b>\n⏰ الوقت المقرر للانصراف: ${schedEnd}`);
+                    } else {
+                        // إشعار انصراف طبيعي
+                        sendTelegramNotification(`👋 <b>انصراف وتسكير شيفت</b>\n👤 الموظف: ${userProfile.name}\n⏰ الوقت: ${now.format('hh:mm A')}`);
+                    }
+                }
+        
+                // 5. تصفير العداد وتغيير الحالة لأوفلاين قبل الخروج
+                await setStatus(email, 'Offline', true); 
+                auth.signOut().then(() => window.location.replace('index.html'));
+        
+            } catch(e) {
+                console.error("Logout Error", e);
+                // في حالة وجود خطأ، نقوم بتسجيل الخروج كإجراء احتياطي
+                auth.signOut().then(() => window.location.replace('index.html'));
+            }
+        }
         function resetTaskDetailView() {
     selectedTaskId = null; // تصفير المعرف المختار
     document.getElementById('task-empty-state').classList.remove('hidden');
