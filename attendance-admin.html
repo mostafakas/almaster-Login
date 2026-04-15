@@ -1004,58 +1004,72 @@ async function saveShift() {
         }
 
         function renderRequests() {
-            const container = document.getElementById('requests-container');
-            container.innerHTML = '';
-            
-            const filteredReqs = allRequests.filter(r => reqViewMode === 'pending' ? r.status === 'pending' : r.status !== 'pending');
+    const container = document.getElementById('requests-container');
+    const dateFilter = document.getElementById('req-date-filter').value; // 1. جلب قيمة فلتر التاريخ
+    container.innerHTML = '';
+    
+    // 2. الفلترة بناءً على (النوع: معلق/سجل) + (التاريخ المختارد)
+    const filteredReqs = allRequests.filter(r => {
+        const matchStatus = (reqViewMode === 'pending' ? r.status === 'pending' : r.status !== 'pending');
+        const matchDate = dateFilter ? r.date === dateFilter : true; // لو مفيش تاريخ مختار يعرض الكل
+        return matchStatus && matchDate;
+    });
 
-            if (filteredReqs.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-24"><i class="fas fa-shield-alt text-6xl text-slate-700/50 mb-4 block"></i><p class="text-slate-500 text-sm font-bold">${reqViewMode === 'pending' ? 'لا يوجد أي طلبات استئذان معلقة حالياً.' : 'سجل الطلبات فارغ.'}</p></div>`; 
-                return;
-            }
+    // 3. حالة عدم وجود نتائج
+    if (filteredReqs.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full text-center py-24">
+                <i class="fas fa-search text-6xl text-slate-200 mb-4 block"></i>
+                <p class="text-slate-500 text-sm font-bold">
+                    ${dateFilter ? `لا توجد طلبات مسجلة لهذا التاريخ: ${dateFilter}` : 'لا توجد أي طلبات معلقة حالياً.'}
+                </p>
+            </div>`; 
+        return;
+    }
 
-            filteredReqs.forEach(req => {
-                const u = allUsersData.find(x => x.email === req.userId) || { name: req.userId };
-                const reqDateFormatted = moment(req.date).locale('ar').format('dddd, DD MMMM YYYY');
-                const timeStr = req.timestamp ? moment(req.timestamp.toMillis()).locale('ar').fromNow() : '';
-                
-                let actionArea = '';
-                if (req.status === 'pending') {
-                    actionArea = `
-                        <div class="mt-auto flex gap-3">
-                            <button onclick="processRequest('${req.id}', '${req.userId}', 'approved', '${req.date}')" class="flex-1 py-3.5 bg-green-600 text-white rounded-xl font-black text-[11px] shadow-lg hover:bg-green-500 active:scale-95 transition-all border border-green-500/50">
-                                موافقة واعتماد <i class="fas fa-check ml-1"></i>
-                            </button>
-                            <button onclick="processRequest('${req.id}', '${req.userId}', 'rejected', '${req.date}')" class="flex-1 py-3.5 bg-dark-800 text-red-400 hover:bg-red-500 hover:text-white rounded-xl font-black text-[11px] transition-all border border-red-500/20 active:scale-95">
-                                رفض <i class="fas fa-times ml-1"></i>
-                            </button>
-                        </div>`;
-                } else {
-                    const statusBadge = req.status === 'approved' 
-                        ? '<span class="bg-green-500/10 text-green-500 border border-green-500/20 px-4 py-2 rounded-lg text-[10px] font-black"><i class="fas fa-check-circle mr-1"></i> تمت الموافقة بنجاح</span>' 
-                        : '<span class="bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg text-[10px] font-black"><i class="fas fa-times-circle mr-1"></i> تم رفض الطلب</span>';
-                    actionArea = `<div class="mt-auto text-center border-t border-white/5 pt-5">${statusBadge}</div>`;
-                }
-
-                container.innerHTML += `
-                    <div class="bg-dark-900 border border-white/5 p-6 rounded-[2rem] shadow-xl flex flex-col relative overflow-hidden group hover:border-primary-500/30 transition-all h-full">
-                        <div class="flex items-center gap-4 mb-5 border-b border-white/5 pb-5">
-                            <div class="w-12 h-12 rounded-xl bg-primary-500/10 text-primary-500 border border-primary-500/20 flex items-center justify-center text-xl shadow-inner"><i class="fas fa-laptop-house"></i></div>
-                            <div>
-                                <h4 class="font-black text-white text-base">${u.name}</h4>
-                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">${timeStr}</p>
-                            </div>
-                        </div>
-                        <p class="text-[10px] text-primary-500 font-black uppercase mb-3 tracking-widest"><i class="fas fa-info-circle mr-1"></i> استئذان وتغيير بيئة العمل</p>
-                        <p class="text-xs text-slate-300 bg-dark-950 p-4 rounded-xl border border-white/5 mb-6 leading-relaxed">
-                            يطلب الموظف تحويل مكان عمله إلى <span class="text-primary-400 font-bold">(أونلاين)</span> لليوم الموافق:<br>
-                            <span class="font-black text-white block mt-2 text-sm">${reqDateFormatted}</span>
-                        </p>
-                        ${actionArea}
-                    </div>`;
-            });
+    // 4. بناء الكروت
+    filteredReqs.forEach(req => {
+        const u = allUsersData.find(x => x.email === req.userId) || { name: req.userId };
+        const reqDateFormatted = moment(req.date).locale('ar').format('dddd, DD MMMM YYYY');
+        const timeStr = req.timestamp ? moment(req.timestamp.toMillis()).locale('ar').fromNow() : '';
+        
+        let actionArea = '';
+        if (req.status === 'pending') {
+            actionArea = `
+                <div class="mt-auto flex gap-3">
+                    <button onclick="processRequest('${req.id}', '${req.userId}', 'approved', '${req.date}')" class="flex-1 py-3.5 bg-green-600 text-white rounded-xl font-black text-[11px] shadow-lg hover:bg-green-500 active:scale-95 transition-all border border-green-500/50">
+                        موافقة واعتماد <i class="fas fa-check ml-1"></i>
+                    </button>
+                    <button onclick="processRequest('${req.id}', '${req.userId}', 'rejected', '${req.date}')" class="flex-1 py-3.5 bg-slate-100 text-red-600 hover:bg-red-600 hover:text-white rounded-xl font-black text-[11px] transition-all border border-red-200 active:scale-95">
+                        رفض الطلب <i class="fas fa-times ml-1"></i>
+                    </button>
+                </div>`;
+        } else {
+            // شكل الحالة في السجل التاريخي (ألوان هادئة للثيم الأبيض)
+            const statusBadge = req.status === 'approved' 
+                ? '<span class="bg-green-100 text-green-700 border border-green-200 px-4 py-2 rounded-lg text-[10px] font-black"><i class="fas fa-check-circle mr-1"></i> تمت الموافقة بنجاح</span>' 
+                : '<span class="bg-red-100 text-red-700 border border-red-200 px-4 py-2 rounded-lg text-[10px] font-black"><i class="fas fa-times-circle mr-1"></i> تم رفض هذا الطلب</span>';
+            actionArea = `<div class="mt-auto text-center border-t border-slate-100 pt-5">${statusBadge}</div>`;
         }
 
+        container.innerHTML += `
+            <div class="bg-white border border-slate-200 p-6 rounded-[2rem] shadow-xl flex flex-col relative overflow-hidden group hover:border-primary-500/30 transition-all h-full">
+                <div class="flex items-center gap-4 mb-5 border-b border-slate-100 pb-5">
+                    <div class="w-12 h-12 rounded-xl bg-primary-50 text-primary-500 border border-primary-100 flex items-center justify-center text-xl shadow-inner"><i class="fas fa-laptop-house"></i></div>
+                    <div>
+                        <h4 class="font-black text-slate-800 text-base">${u.name}</h4>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">${timeStr}</p>
+                    </div>
+                </div>
+                <p class="text-[10px] text-primary-600 font-black uppercase mb-3 tracking-widest"><i class="fas fa-info-circle mr-1"></i> استئذان وتغيير بيئة العمل</p>
+                <p class="text-xs text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6 leading-relaxed">
+                    يطلب الموظف تحويل مكان عمله إلى <span class="text-primary-600 font-bold">(أونلاين)</span> لليوم الموافق:<br>
+                    <span class="font-black text-slate-800 block mt-2 text-sm">${reqDateFormatted}</span>
+                </p>
+                ${actionArea}
+            </div>`;
+    });
+}
         async function processRequest(reqId, userEmail, decision, reqDateStr) {
             try {
                 // 1. تحديث حالة الطلب
