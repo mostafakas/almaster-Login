@@ -119,11 +119,16 @@
         <div id="view-dashboard" class="absolute inset-0 flex flex-col w-full h-full transition-opacity duration-300">
             <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md">
                 <div class="flex justify-between items-end mb-6">
-                    <div>
-                        <h1 class="text-3xl font-black text-white mb-2">المتواجدون حالياً بالشركة</h1>
-                        <p class="text-[10px] font-bold text-primary-500 uppercase tracking-widest" id="dash-date-display">يتم التحميل...</p>
-                    </div>
-                </div>
+            <div>
+                <h1 class="text-3xl font-black text-white mb-2">المتواجدون حالياً بالشركة</h1>
+                <p class="text-[10px] font-bold text-primary-500 uppercase tracking-widest" id="dash-date-display">يتم التحميل...</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="checkAbsences()" class="bg-red-500/20 text-red-500 border border-red-500/30 px-5 py-2.5 rounded-xl text-[10px] font-black hover:bg-red-500 hover:text-white transition-all shadow-lg flex items-center gap-2 active:scale-95">
+                    <i class="fas fa-user-clock text-sm"></i> فحص وإشعار غياب اليوم
+                </button>
+            </div>
+        </div>
                 
                 <div class="grid grid-cols-3 gap-4">
                     <div class="kpi-card p-5 rounded-2xl border-blue-500/20">
@@ -415,69 +420,128 @@
         // ==========================================
         // 5. VIEW 1: AUDIT DASHBOARD (الداش بورد اللحظية)
         // ==========================================
-        function renderDashboard() {
-            const tbody = document.getElementById('audit-table-body');
-            tbody.innerHTML = '';
-            
-            let tOffice = 0, tOnline = 0, tLateTotalMins = 0;
+       // --- إعدادات التليجرام للأدمن ---
+const TELEGRAM_BOT_TOKEN = 'ضع_توكن_البوت_هنا'; 
+const TELEGRAM_CHAT_ID = 'ضع_معرف_الشات_هنا';
 
-            // تصفية: عرض الموظفين الذين قاموا بتسجيل الحضور فقط (يوجد لهم Document اليوم)
-            const activeUsers = allUsersData.filter(u => todayRecords.some(r => r.userId === u.email));
+async function sendAdminTelegramNotification(message) {
+    if(TELEGRAM_BOT_TOKEN.includes('ضع_')) return;
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' }) }); } catch(e) {}
+}
 
-            if (activeUsers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-slate-500 font-bold"><i class="fas fa-coffee text-2xl mb-3 block opacity-50"></i>لم يقم أي موظف بتسجيل الدخول اليوم بعد.</td></tr>';
-            }
+// دالة فحص الغياب اليدوي/التلقائي
+async function checkAbsences() {
+    let absentList = [];
+    allUsersData.forEach(u => {
+        const rec = todayRecords.find(r => r.userId === u.email);
+        const monthId = moment(currentDayStr).format('YYYY-MM');
+        const schedDoc = allSchedules[`${u.email}_${monthId}`];
+        const daySched = schedDoc && schedDoc.days ? schedDoc.days[currentDayStr] : null;
+        const mode = daySched ? daySched.mode : 'office'; // الافتراضي عمل
 
-            activeUsers.forEach(u => {
-                const rec = todayRecords.find(r => r.userId === u.email);
-                
-                // جلب ميعاد الموظف المقرر من جدول الورديات
-                const monthId = moment(currentDayStr).format('YYYY-MM');
-                const schedDoc = allSchedules[`${u.email}_${monthId}`];
-                const daySched = schedDoc && schedDoc.days ? schedDoc.days[currentDayStr] : null;
-                const schedStart = daySched ? daySched.start : '09:00';
+        // لو مطلوب منه يشتغل (مقر أو أونلاين) وملوش سجل حضور، يبقى غايب!
+        if (!rec && (mode === 'office' || mode === 'online')) {
+            absentList.push(`- 👤 ${u.name} (مقرر له: ${mode==='office'?'مقر':'أونلاين'})`);
+        }
+    });
 
-                // إحصائيات سريعة
-                if(rec.workMode === 'online') tOnline++; else tOffice++;
-                tLateTotalMins += (rec.lateMinutes || 0);
+    if (absentList.length === 0) {
+        alert("ممتاز! جميع الموظفين المجدولين حضروا اليوم.");
+        return;
+    }
 
-                const checkInFmt = rec.checkIn ? moment(rec.checkIn.toMillis()).format('hh:mm A') : '---';
-                const checkOutFmt = rec.checkOut ? moment(rec.checkOut.toMillis()).format('hh:mm A') : '---';
-                
-                // تصميم حالة التأخير باستخدام دالة الساعات والدقائق
-                const lateUI = rec.lateMinutes > 0 
-                    ? `<span class="bg-orange-500/10 text-orange-500 px-3 py-1.5 rounded-lg border border-orange-500/20 font-black">${formatHoursMins(rec.lateMinutes)} متأخر</span>` 
-                    : `<span class="text-green-500 font-black"><i class="fas fa-check-circle"></i> في الموعد</span>`;
-                
-                const modeUI = rec.workMode === 'online' 
-                    ? `<span class="bg-primary-500/10 text-primary-400 px-3 py-1.5 rounded-lg text-[10px] border border-primary-500/20 font-black"><i class="fas fa-laptop-house mr-1"></i> أونلاين</span>` 
-                    : `<span class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-[10px] border border-white/5 font-black"><i class="fas fa-building mr-1"></i> مقر الشركة</span>`;
-                
-                const overall = rec.checkOut 
-                    ? '<span class="text-slate-500 font-black"><i class="fas fa-sign-out-alt"></i> انصرف</span>' 
-                    : '<span class="text-green-500 font-black animate-pulse"><i class="fas fa-circle text-[8px] mr-1"></i> متصل الآن</span>';
+    const msg = `🚨 <b>تقرير الغياب اليومي</b>\n📅 التاريخ: ${currentDayStr}\n\n<b>الموظفين المتغيبين:</b>\n${absentList.join('\n')}`;
+    await sendAdminTelegramNotification(msg);
+    alert(`تم رصد ${absentList.length} حالات غياب وإرسال التقرير على تليجرام.`);
+}
 
-                tbody.innerHTML += `
-                    <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/[0.02]">
-                        <td class="p-4 flex items-center gap-4">
-                            <img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name)}" class="w-10 h-10 rounded-xl object-cover border border-white/10 shadow-md"> 
-                            <span class="text-white font-black text-sm">${u.name}</span>
-                        </td>
-                        <td class="p-4 text-center font-mono text-slate-400 text-[11px]">${moment(schedStart, 'HH:mm').format('hh:mm A')}</td>
-                        <td class="p-4 text-center font-mono text-white text-[12px] font-black">${checkInFmt}</td>
-                        <td class="p-4 text-center">${lateUI}</td>
-                        <td class="p-4 text-center">${modeUI}</td>
-                        <td class="p-4 text-center font-mono text-slate-500 text-[11px]">${checkOutFmt}</td>
-                        <td class="p-4 text-center">${overall}</td>
-                    </tr>`;
-            });
+// دالة الداش بورد المحدثة (لعرض أوقات كل حالة)
+function renderDashboard() {
+    const tbody = document.getElementById('audit-table-body');
+    tbody.innerHTML = '';
+    
+    let tOffice = 0, tOnline = 0, tLateTotalMins = 0;
 
-            // تحديث الكروت العلوية
-            document.getElementById('kpi-office').innerText = tOffice;
-            document.getElementById('kpi-online').innerText = tOnline;
-            document.getElementById('kpi-late-mins').innerHTML = `<span class="text-lg">${formatHoursMins(tLateTotalMins)}</span>`;
+    const activeUsers = allUsersData.filter(u => todayRecords.some(r => r.userId === u.email));
+
+    if (activeUsers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-slate-500 font-bold"><i class="fas fa-coffee text-2xl mb-3 block opacity-50"></i>لم يقم أي موظف بتسجيل الدخول اليوم بعد.</td></tr>';
+        return;
+    }
+
+    activeUsers.forEach(u => {
+        const rec = todayRecords.find(r => r.userId === u.email);
+        const monthId = moment(currentDayStr).format('YYYY-MM');
+        const schedDoc = allSchedules[`${u.email}_${monthId}`];
+        const daySched = schedDoc && schedDoc.days ? schedDoc.days[currentDayStr] : null;
+        const schedStart = daySched ? daySched.start : '09:00';
+
+        if(rec.workMode === 'online') tOnline++; else tOffice++;
+        tLateTotalMins += (rec.lateMinutes || 0);
+
+        const checkInFmt = rec.checkIn ? moment(rec.checkIn.toMillis()).format('hh:mm A') : '---';
+        const checkOutFmt = rec.checkOut ? moment(rec.checkOut.toMillis()).format('hh:mm A') : '---';
+        
+        // --- ⏳ حساب أوقات الحالات المجمعة (السر هنا) ---
+        const tb = u.timeBank || {};
+        const lastChange = u.lastChange ? u.lastChange.toMillis() : Date.now();
+        const status = u.status || 'Offline';
+        
+        let onlineMins = Math.floor((tb['Online'] || 0) / 60000);
+        let breakMins = Math.floor((tb['Break'] || 0) / 60000);
+        let meetMins = Math.floor((tb['Meeting'] || 0) / 60000);
+        
+        // لو لسه مسجلش انصراف وحالته الحالية شغالة، نزود الوقت الجاري للبنك
+        if (!rec.checkOut && status !== 'Offline') {
+            const currentSessionMins = Math.floor((Date.now() - lastChange) / 60000);
+            if (status === 'Online') onlineMins += currentSessionMins;
+            if (status === 'Break') breakMins += currentSessionMins;
+            if (status === 'Meeting') meetMins += currentSessionMins;
         }
 
+        // تصميم عرض الأوقات
+        const timeBankUI = `
+            <div class="flex flex-col gap-1 text-[9px] font-mono font-black text-right pr-4">
+                <span class="text-green-400"><i class="fas fa-laptop-code w-3"></i> ${formatHoursMins(onlineMins)}</span>
+                <span class="text-orange-400"><i class="fas fa-coffee w-3"></i> ${formatHoursMins(breakMins)}</span>
+                <span class="text-blue-400"><i class="fas fa-users w-3"></i> ${formatHoursMins(meetMins)}</span>
+            </div>
+        `;
+        // -------------------------------------------------
+
+        const lateUI = rec.lateMinutes > 0 
+            ? `<span class="bg-orange-500/10 text-orange-500 px-3 py-1.5 rounded-lg border border-orange-500/20 font-black">${formatHoursMins(rec.lateMinutes)} تأخير</span>` 
+            : `<span class="text-green-500 font-black"><i class="fas fa-check-circle"></i> ملتزم</span>`;
+        
+        const modeUI = rec.workMode === 'online' 
+            ? `<span class="bg-primary-500/10 text-primary-400 px-3 py-1.5 rounded-lg text-[10px] border border-primary-500/20 font-black"><i class="fas fa-laptop-house mr-1"></i> أونلاين</span>` 
+            : `<span class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-[10px] border border-white/5 font-black"><i class="fas fa-building mr-1"></i> مقر الشركة</span>`;
+        
+        let overall = rec.checkOut ? '<span class="text-slate-500 font-black"><i class="fas fa-sign-out-alt"></i> انصرف</span>' : '<span class="text-green-500 font-black animate-pulse"><i class="fas fa-circle text-[8px] mr-1"></i> نشط الآن</span>';
+        
+        // التحقق من الانصراف المبكر
+        if (rec.checkOut && rec.earlyLeaveMinutes > 0) {
+            overall = `<span class="text-red-500 font-black"><i class="fas fa-door-open"></i> انصراف مبكر (${formatHoursMins(rec.earlyLeaveMinutes)})</span>`;
+        }
+
+        // ملاحظة: تأكد من إضافة عمود "سجل الأوقات" في HTML الـ table thead إذا أردت مساحة أوسع، أو استبدله بـ عمود "الانصراف". قمت هنا بدمجه بدلاً من الانصراف لتوفير المساحة.
+        tbody.innerHTML += `
+            <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/[0.02]">
+                <td class="p-4 flex items-center gap-4"><img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-10 h-10 rounded-xl object-cover border border-white/10 shadow-md"> <span class="text-white font-black text-sm">${u.name}</span></td>
+                <td class="p-4 text-center font-mono text-slate-400 text-[11px]">${moment(schedStart, 'HH:mm').format('hh:mm A')}</td>
+                <td class="p-4 text-center font-mono text-white text-[12px] font-black">${checkInFmt}</td>
+                <td class="p-4 text-center">${lateUI}</td>
+                <td class="p-4 text-center">${modeUI}</td>
+                <td class="p-2">${timeBankUI}</td>
+                <td class="p-4 text-center">${overall}</td>
+            </tr>`;
+    });
+
+    document.getElementById('kpi-office').innerText = tOffice;
+    document.getElementById('kpi-online').innerText = tOnline;
+    document.getElementById('kpi-late-mins').innerHTML = `<span class="text-lg">${formatHoursMins(tLateTotalMins)}</span>`;
+}
         // ==========================================
         // 6. VIEW 2: MONTHLY ROSTER (مخطط الورديات الشهري الاحترافي)
         // ==========================================
