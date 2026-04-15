@@ -175,8 +175,13 @@ aside {
 /* نصوص داخل الكارت */
 .day-name { font-size: 11px; font-weight: 900; }
 .day-date { font-size: 9px; opacity: 0.6; }
-.shift-time { font-size: 10px; font-weight: 800; margin-bottom: 2px; }
-
+.shift-time { 
+    font-size: 9px !important; 
+    font-weight: 800 !important; 
+    margin-bottom: 4px; 
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.2px; /* لتقريب الأرقام من بعضها قليلاً */
+}
 /* 7. النوافذ المنبثقة (Modals) */
 .fixed.inset-0 { background-color: rgba(15, 23, 42, 0.4) !important; backdrop-filter: blur(4px) !important; }
 .bg-dark-900.rounded-\[2\.5rem\], .bg-white.rounded-\[2rem\] { 
@@ -855,7 +860,9 @@ function renderDashboard() {
                 <td class="roster-td p-1">
                     <div onclick="openShiftModal('${u.email}', '${u.name}', '${dateStr}', '${start}', '${end}', '${mode}')" 
                          class="shift-card ${styleClass} cursor-pointer">
-                        <div class="shift-time">${mode === 'office' || mode === 'online' ? start : ''}</div>
+                        <div class="shift-time text-[8px] font-black opacity-80 mb-1">
+                            ${(mode === 'office' || mode === 'online') ? `${start} - ${end}` : ''}
+                        </div>                 
                         ${icon}
                         <div class="text-[9px] font-black uppercase">${label}</div>
                     </div>
