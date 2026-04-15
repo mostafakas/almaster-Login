@@ -453,47 +453,36 @@ function playSystemSound(type) {
                 return; 
             }
 
-            // --- 🔒 1. نظام الجلسة الموحدة (Unique Session ID) ---
+            // --- 🔒 نظام الجلسة الموحدة ---
             const newSessionId = Date.now().toString() + "_" + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('almaster_session_id', newSessionId);
-
-            // --- 🛡️ 2. جمع بيانات الجهاز الدقيقة (Audit Info) ---
-            // ملاحظة: هذه الدالة gatherDetailedDeviceInfo يجب أن تكون موجودة في الكود لديك
             const detailedInfo = await gatherDetailedDeviceInfo();
 
-            // تحديث السيرفر بالبصمة الجديدة وبيانات الجهاز فوراً
             await docRef.update({ 
                 currentSessionId: newSessionId,
                 deviceInfo: detailedInfo 
             });
 
-            // --- 📅 3. نظام تصفير اليوم الجديد (Daily Reset) ---
-            const lastDate = userProfile.lastChange ? moment(getMillis(userProfile.lastChange)).format('YYYY-MM-DD') : '';
+            // --- 📅 فحص تسجيل الحضور قبل الدخول (التعديل هنا) ---
             const today = moment().format('YYYY-MM-DD');
-            
-            if (lastDate !== today && lastDate !== '') {
-                console.log("📅 يوم جديد! جاري تصفير العدادات...");
-                await docRef.update({
-                    timeBank: { 'Online': 0, 'Break': 0, 'Meeting': 0, 'Offline': 0 },
-                    idleBank: 0,
-                    isIdle: false,
-                    idleSince: null,
-                    lastChange: firebase.firestore.FieldValue.serverTimestamp(),
-                    status: 'Offline'
-                });
-                userProfile.status = 'Offline'; 
+            const attendanceSnap = await db.collection('attendance_records')
+                .where('userId', '==', userEmail)
+                .where('date', '==', today)
+                .get();
+
+            // لو مسجل حضور قبل كدا النهاردة، دخله Online علطول
+            if (!attendanceSnap.empty) {
+                if (userProfile.status !== 'Online') {
+                    await setStatus(userEmail, 'Online', true);
+                }
+            } else {
+                // لو أول مرة النهاردة، افتحله البوب أب وميدخلش Online غير لما يختار
+                openModal('modal-attendance-mode');
             }
 
-            // --- ⚡ 4. تفعيل حالة "متصل" إجبارياً عند الدخول ---
-            if (userProfile.status !== 'Online') {
-                await setStatus(userEmail, 'Online', true);
-            }
-
-            // 5. بدء تشغيل بيئة العمل
             initWorkspace();
             
         } else { 
-            console.error("User document not found in Firestore.");
             auth.signOut(); 
         }
     } else { 
