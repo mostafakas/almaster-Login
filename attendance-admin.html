@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HR & Audit Command Center | ALMASTER</title>
+    <title>HR Command Center | ALMASTER</title>
     <meta name="theme-color" content="#0b1120">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -28,14 +28,22 @@
 
     <style>
         body { background-color: #0b1120; color: #f1f5f9; height: 100vh; overflow: hidden; display: flex; font-family: 'Cairo', sans-serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 20px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
         .btn-glass { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); transition: all 0.3s; }
         .btn-glass:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
         .hr-tab.active { background: linear-gradient(90deg, rgba(14,165,233,0.15) 0%, transparent 100%); border-right: 4px solid #0ea5e9; color: white; }
         .kpi-card { background: linear-gradient(145deg, rgba(30,41,59,0.6) 0%, rgba(15,23,42,0.8) 100%); border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
-        input[type="time"], input[type="date"], select { color-scheme: dark; }
+        
+        /* Roster Grid Styles */
+        .roster-cell { transition: all 0.2s; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
+        .roster-cell:hover { background-color: rgba(14, 165, 233, 0.1); border-color: #0ea5e9; transform: scale(1.05); z-index: 10; position: relative; }
+        .mode-office { background-color: rgba(51, 65, 85, 0.4); border-bottom: 2px solid #64748b; }
+        .mode-online { background-color: rgba(14, 165, 233, 0.1); border-bottom: 2px solid #0ea5e9; }
+        .mode-off { background-color: rgba(239, 68, 68, 0.05); border-bottom: 2px solid #ef4444; opacity: 0.7; }
+        
+        input[type="time"], select { color-scheme: dark; }
     </style>
 </head>
 
@@ -43,35 +51,35 @@
 
     <div id="loader" class="fixed inset-0 z-[600] bg-dark-950 flex flex-col items-center justify-center">
         <div class="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-primary-500 mb-4"></div>
-        <h2 class="text-[10px] font-black tracking-[0.5em] text-primary-500 uppercase animate-pulse">Initializing HR & Audit Engine...</h2>
+        <h2 class="text-[10px] font-black tracking-[0.5em] text-primary-500 uppercase animate-pulse">Initializing HR System...</h2>
     </div>
 
     <aside class="w-[280px] bg-dark-950 border-l border-white/5 flex flex-col shrink-0 h-full relative z-20">
         <div class="p-8 shrink-0 text-center border-b border-white/5 relative overflow-hidden">
             <div class="absolute inset-0 bg-primary-500/5 blur-[50px]"></div>
             <h2 class="font-black text-2xl text-white relative z-10 tracking-tight">ALMASTER <span class="text-primary-500">HR</span></h2>
-            <p class="text-[8px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-2 relative z-10">Audit & Control Center</p>
+            <p class="text-[8px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-2 relative z-10">Attendance Management</p>
         </div>
 
         <div class="flex-1 overflow-y-auto px-4 py-6 space-y-2 custom-scrollbar">
             <button onclick="switchTab('dashboard')" id="tab-dashboard" class="hr-tab active w-full py-4 font-black text-[11px] flex items-center gap-4 px-6 text-slate-400 rounded-lg">
-                <i class="fas fa-satellite-dish text-lg w-6 text-center"></i> الرقابة اللحظية (Audit)
+                <i class="fas fa-satellite-dish text-lg w-6 text-center"></i> الرقابة اللحظية
             </button>
             <button onclick="switchTab('roster')" id="tab-roster" class="hr-tab w-full py-4 font-black text-[11px] flex items-center gap-4 px-6 text-slate-400 rounded-lg">
-                <i class="far fa-calendar-alt text-lg w-6 text-center"></i> مخطط الورديات (Roster)
+                <i class="far fa-calendar-alt text-lg w-6 text-center"></i> مخطط الورديات
             </button>
             <button onclick="switchTab('employees')" id="tab-employees" class="hr-tab w-full py-4 font-black text-[11px] flex items-center gap-4 px-6 text-slate-400 rounded-lg">
-                <i class="fas fa-user-shield text-lg w-6 text-center"></i> شؤون الموظفين (Records)
+                <i class="fas fa-user-shield text-lg w-6 text-center"></i> سجلات وأرصدة الموظفين
             </button>
             <button onclick="switchTab('requests')" id="tab-requests" class="hr-tab w-full py-4 font-black text-[11px] flex items-center justify-between px-6 text-slate-400 rounded-lg relative">
-                <div class="flex items-center gap-4"><i class="fas fa-inbox text-lg w-6 text-center"></i> مركز الطلبات</div>
+                <div class="flex items-center gap-4"><i class="fas fa-inbox text-lg w-6 text-center"></i> طلبات الاستئذان</div>
                 <span id="req-badge" class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full hidden shadow-[0_0_10px_rgba(239,68,68,0.5)]">0</span>
             </button>
         </div>
 
         <div class="p-6 shrink-0 border-t border-white/5 bg-dark-900/30">
             <button onclick="window.close()" class="w-full py-3.5 btn-glass text-slate-400 rounded-xl font-black hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest">
-                <i class="fas fa-sign-out-alt"></i> إغلاق لوحة الـ HR
+                <i class="fas fa-sign-out-alt"></i> عودة للإدارة
             </button>
         </div>
     </aside>
@@ -82,17 +90,21 @@
             <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md">
                 <div class="flex justify-between items-end mb-6">
                     <div>
-                        <h1 class="text-3xl font-black text-white mb-2">الداش بورد اللحظية</h1>
+                        <h1 class="text-3xl font-black text-white mb-2">الداش بورد اللحظية للشركة</h1>
                         <p class="text-[10px] font-bold text-primary-500 uppercase tracking-widest" id="dash-date-display">يتم التحميل...</p>
                     </div>
-                    <button onclick="renderDashboard()" class="w-10 h-10 rounded-xl btn-glass flex items-center justify-center text-slate-400 hover:text-white" title="تحديث البيانات"><i class="fas fa-sync-alt"></i></button>
                 </div>
                 
                 <div class="grid grid-cols-4 gap-4">
-                    <div class="kpi-card p-5 rounded-2xl">
-                        <div class="flex justify-between items-start mb-2"><p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">إجمالي الحضور</p><i class="fas fa-users text-blue-500"></i></div>
-                        <p id="kpi-present" class="text-2xl font-black text-white">0</p>
-                        <p class="text-[8px] text-slate-500 mt-1"><span class="text-green-500" id="kpi-office">0 مقر</span> | <span class="text-primary-500" id="kpi-online">0 أونلاين</span></p>
+                    <div class="kpi-card p-5 rounded-2xl border-blue-500/20">
+                        <div class="flex justify-between items-start mb-2"><p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">مقر الشركة</p><i class="fas fa-building text-blue-500"></i></div>
+                        <p id="kpi-office" class="text-2xl font-black text-white">0</p>
+                        <p class="text-[8px] text-slate-500 mt-1">موظف حاضر بالمقر</p>
+                    </div>
+                    <div class="kpi-card p-5 rounded-2xl border-primary-500/20">
+                        <div class="flex justify-between items-start mb-2"><p class="text-[9px] text-primary-400 font-bold uppercase tracking-widest">أونلاين</p><i class="fas fa-laptop-house text-primary-500"></i></div>
+                        <p id="kpi-online" class="text-2xl font-black text-primary-500">0</p>
+                        <p class="text-[8px] text-slate-500 mt-1">موظف يعمل عن بعد</p>
                     </div>
                     <div class="kpi-card p-5 rounded-2xl border-orange-500/20">
                         <div class="flex justify-between items-start mb-2"><p class="text-[9px] text-orange-400 font-bold uppercase tracking-widest">إجمالي التأخير</p><i class="fas fa-clock text-orange-500"></i></div>
@@ -100,14 +112,9 @@
                         <p class="text-[8px] text-slate-500 mt-1">تأخيرات مجمعة لليوم</p>
                     </div>
                     <div class="kpi-card p-5 rounded-2xl border-red-500/20">
-                        <div class="flex justify-between items-start mb-2"><p class="text-[9px] text-red-400 font-bold uppercase tracking-widest">خروج مبكر / غياب</p><i class="fas fa-door-open text-red-500"></i></div>
-                        <p id="kpi-early-leave" class="text-2xl font-black text-red-500">0</p>
-                        <p class="text-[8px] text-slate-500 mt-1">حالة تتطلب المراجعة</p>
-                    </div>
-                    <div class="kpi-card p-5 rounded-2xl border-purple-500/20">
-                        <div class="flex justify-between items-start mb-2"><p class="text-[9px] text-purple-400 font-bold uppercase tracking-widest">إجازات اليوم</p><i class="fas fa-umbrella-beach text-purple-500"></i></div>
-                        <p id="kpi-on-leave" class="text-2xl font-black text-purple-500">0</p>
-                        <p class="text-[8px] text-slate-500 mt-1">موظف في عطلة رسمية أو معتمدة</p>
+                        <div class="flex justify-between items-start mb-2"><p class="text-[9px] text-red-400 font-bold uppercase tracking-widest">غياب / إجازة</p><i class="fas fa-user-times text-red-500"></i></div>
+                        <p id="kpi-absent" class="text-2xl font-black text-red-500">0</p>
+                        <p class="text-[8px] text-slate-500 mt-1">موظفين غير متواجدين</p>
                     </div>
                 </div>
             </div>
@@ -118,11 +125,11 @@
                         <thead class="bg-dark-900 border-b border-white/5 text-slate-500 text-[9px] uppercase tracking-widest font-black">
                             <tr>
                                 <th class="p-5">الموظف</th>
-                                <th class="p-5 text-center">ميعاد الجدول</th>
+                                <th class="p-5 text-center">الجدول الزمني</th>
                                 <th class="p-5 text-center">الحضور الفعلي</th>
                                 <th class="p-5 text-center">التأخير</th>
-                                <th class="p-5 text-center">بيئة العمل</th>
-                                <th class="p-5 text-center">الانصراف الفعلي</th>
+                                <th class="p-5 text-center">مكان العمل</th>
+                                <th class="p-5 text-center">الانصراف</th>
                                 <th class="p-5 text-center">الحالة الإجمالية</th>
                             </tr>
                         </thead>
@@ -134,60 +141,37 @@
         </div>
 
         <div id="view-roster" class="absolute inset-0 hidden flex flex-col w-full h-full transition-opacity duration-300">
-            <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md">
-                <h1 class="text-3xl font-black text-white mb-2">مخطط الورديات الشهري (Roster)</h1>
-                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">تخصيص مواعيد وأماكن العمل اليومية لكل موظف بدقة.</p>
-                
-                <div class="flex gap-4 items-center bg-dark-900 p-3 rounded-2xl border border-white/5 w-fit">
-                    <select id="roster-user-select" class="bg-dark-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-primary-500 w-64 font-bold" onchange="generateRosterGrid()">
-                        <option value="">-- اختر الموظف لضبط جدوله --</option>
-                    </select>
-                    <input type="month" id="roster-month-select" class="bg-dark-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none font-bold" onchange="generateRosterGrid()">
-                    <button onclick="saveRoster()" class="bg-primary-600 hover:bg-primary-500 text-white px-6 py-2.5 rounded-xl font-black text-xs shadow-lg shadow-primary-600/20 active:scale-95 transition-all flex items-center gap-2">
-                        <i class="fas fa-save"></i> اعتماد وحفظ الجدول
-                    </button>
+            <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md flex justify-between items-end">
+                <div>
+                    <h1 class="text-3xl font-black text-white mb-2">مخطط الورديات الأسبوعي</h1>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">تحديد مواعيد العمل وموقع الحضور لكل موظف.</p>
+                </div>
+                <div class="flex gap-4 items-center bg-dark-900 p-2 rounded-xl border border-white/5">
+                    <button onclick="changeWeek(-1)" class="w-10 h-10 rounded-lg btn-glass text-slate-400 hover:text-white"><i class="fas fa-chevron-right"></i></button>
+                    <span id="roster-week-label" class="text-xs font-black text-primary-500 px-4">أسبوع...</span>
+                    <button onclick="changeWeek(1)" class="w-10 h-10 rounded-lg btn-glass text-slate-400 hover:text-white"><i class="fas fa-chevron-left"></i></button>
                 </div>
             </div>
 
             <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                <div id="roster-grid-container" class="bg-dark-950 p-6 rounded-3xl border border-white/5 shadow-2xl hidden">
-                    <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
-                        <h3 class="font-black text-white" id="roster-employee-name">جدول الموظف</h3>
-                        <div class="flex gap-2">
-                            <button onclick="applyBulkRoster('office')" class="text-[9px] px-3 py-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700">تطبيق "مقر" للكل</button>
-                            <button onclick="applyBulkRoster('online')" class="text-[9px] px-3 py-1.5 bg-primary-600/20 text-primary-400 rounded-lg hover:bg-primary-600/40">تطبيق "أونلاين" للكل</button>
-                            <button onclick="applyBulkRoster('off')" class="text-[9px] px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/40">تطبيق "إجازة" للكل</button>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-12 gap-4 mb-2 px-4 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">
-                        <div class="col-span-2 text-right">التاريخ واليوم</div>
-                        <div class="col-span-3">بداية الشفت</div>
-                        <div class="col-span-3">نهاية الشفت</div>
-                        <div class="col-span-4">نظام الدخول الإلزامي</div>
-                    </div>
-                    
-                    <div id="roster-rows" class="space-y-2"></div>
-                </div>
-                
-                <div id="roster-empty-state" class="h-full flex flex-col items-center justify-center text-slate-600">
-                    <i class="far fa-calendar-alt text-6xl mb-4 opacity-20"></i>
-                    <p class="font-bold text-sm">يرجى اختيار الموظف والشهر لعرض وتعديل الجدول</p>
+                <div class="bg-dark-950 rounded-3xl border border-white/5 overflow-hidden shadow-2xl overflow-x-auto">
+                    <table class="w-full text-right whitespace-nowrap min-w-[1000px]">
+                        <thead id="roster-thead" class="bg-dark-900 border-b border-white/5 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                            </thead>
+                        <tbody id="roster-tbody" class="divide-y divide-white/[0.02]">
+                            </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
         <div id="view-employees" class="absolute inset-0 hidden flex flex-col w-full h-full transition-opacity duration-300">
-            <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md">
-                <div class="flex justify-between items-end">
-                    <div>
-                        <h1 class="text-3xl font-black text-white mb-2">السجلات والأرصدة الإدارية</h1>
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">إدارة أرصدة الإجازات وتعديل الملفات الوظيفية.</p>
-                    </div>
-                    <input type="text" id="emp-search" placeholder="ابحث عن موظف..." class="bg-dark-900 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-primary-500 w-64" oninput="renderEmployeesRecord()">
+            <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md flex justify-between items-end">
+                <div>
+                    <h1 class="text-3xl font-black text-white mb-2">السجلات والأرصدة</h1>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">تعديل أرصدة الإجازات.</p>
                 </div>
             </div>
-            
             <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="employees-record-container">
                     </div>
@@ -196,8 +180,8 @@
 
         <div id="view-requests" class="absolute inset-0 hidden flex flex-col w-full h-full transition-opacity duration-300">
             <div class="p-8 pb-6 shrink-0 bg-dark-950/80 border-b border-white/5 backdrop-blur-md">
-                <h1 class="text-3xl font-black text-white mb-2">الطلبات والاستئذانات المعلقة</h1>
-                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">البت في طلبات تحويل بيئة العمل أو طلبات الإجازة العاجلة.</p>
+                <h1 class="text-3xl font-black text-white mb-2">طلبات تحويل بيئة العمل</h1>
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">إدارة استئذانات الموظفين للعمل أونلاين.</p>
             </div>
             <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
                 <div id="requests-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -206,6 +190,40 @@
         </div>
 
     </main>
+
+    <div id="modal-shift" class="fixed inset-0 z-[600] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-dark-900 w-full max-w-sm rounded-[2.5rem] p-8 border border-primary-500/20 shadow-2xl">
+            <h3 class="text-xl font-black text-white mb-1">تحديد وردية العمل</h3>
+            <p id="modal-shift-info" class="text-[10px] font-bold text-primary-500 mb-6 uppercase tracking-widest">يتم التحميل...</p>
+            
+            <input type="hidden" id="shift-email">
+            <input type="hidden" id="shift-date">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[9px] text-slate-400 font-bold block mb-1">ميعاد الحضور</label>
+                    <input type="time" id="shift-start" class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono outline-none focus:border-primary-500">
+                </div>
+                <div>
+                    <label class="text-[9px] text-slate-400 font-bold block mb-1">ميعاد الانصراف</label>
+                    <input type="time" id="shift-end" class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono outline-none focus:border-primary-500">
+                </div>
+                <div>
+                    <label class="text-[9px] text-slate-400 font-bold block mb-1">نوع الحضور</label>
+                    <select id="shift-mode" class="w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-bold outline-none focus:border-primary-500">
+                        <option value="office">🏢 مقر الشركة (إلزامي)</option>
+                        <option value="online">💻 أونلاين</option>
+                        <option value="off" class="text-red-400">🏝️ إجازة / عطلة</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button onclick="saveShift()" class="flex-1 py-3.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-black text-[11px] shadow-lg active:scale-95 transition-all">حفظ الوردية</button>
+                <button onclick="closeModal('modal-shift')" class="px-6 py-3.5 bg-dark-800 text-slate-400 hover:text-white rounded-xl font-black text-[11px] transition-all">إلغاء</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ==========================================
@@ -221,54 +239,39 @@
         // ==========================================
         let allUsersData = [];
         let todayRecords = [];
-        let currentMonthStr = moment().format('YYYY-MM'); // "2026-04"
-        let currentDayStr = moment().format('YYYY-MM-DD');
+        let allSchedules = {}; // { 'email_YYYY-MM': { days: {...} } }
         let pendingRequests = [];
 
-        // Set default month in UI
-        document.getElementById('roster-month-select').value = currentMonthStr;
-        document.getElementById('dash-date-display').innerText = moment().locale('ar').format('dddd, DD MMMM YYYY');
+        const currentDayStr = moment().format('YYYY-MM-DD');
+        let weekStart = moment().clone().day(6); // Egypt Week starts on Saturday (6)
+        if (moment().day() < 6) weekStart.subtract(7, 'days');
 
         // ==========================================
         // 3. AUTHENTICATION & INITIALIZATION
         // ==========================================
         auth.onAuthStateChanged(user => {
-            if (user) {
-                // To keep it simple: Ensure user is admin (You can add specific role check here)
-                initAdminEngine();
-            } else {
-                window.close(); // Or redirect to login
-            }
+            if (user) { initAdminEngine(); } 
+            else { window.close(); }
         });
 
         function initAdminEngine() {
+            document.getElementById('dash-date-display').innerText = moment().locale('ar').format('dddd, DD MMMM YYYY');
             listenToUsers();
             listenToTodayAttendance();
+            listenToSchedules();
             listenToRequests();
             document.getElementById('loader').classList.add('hidden');
-            setInterval(() => {
-                document.getElementById('dash-date-display').innerText = moment().locale('ar').format('dddd, DD MMMM YYYY - hh:mm:ss A');
-            }, 1000);
         }
 
         // ==========================================
-        // 4. DATA LISTENERS (Real-time)
+        // 4. DATA LISTENERS
         // ==========================================
         function listenToUsers() {
             db.collection('users').onSnapshot(snap => {
-                allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
-                
-                // Populate Roster Dropdown
-                const sel = document.getElementById('roster-user-select');
-                const currVal = sel.value;
-                sel.innerHTML = '<option value="">-- اختر الموظف لضبط جدوله --</option>';
-                allUsersData.forEach(u => {
-                    if(u.role !== 'admin') sel.innerHTML += `<option value="${u.email}">${u.name}</option>`;
-                });
-                sel.value = currVal;
-
+                allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() })).filter(u => u.role !== 'admin');
                 renderEmployeesRecord();
-                renderDashboard(); // Re-render dash to update KPI based on new user limits
+                renderDashboard();
+                renderRosterGrid();
             });
         }
 
@@ -279,24 +282,26 @@
             });
         }
 
+        function listenToSchedules() {
+            // جلب كل الورديات للمطابقة مع داش بورد الحضور
+            db.collection('monthly_schedules').onSnapshot(snap => {
+                allSchedules = {};
+                snap.forEach(doc => { allSchedules[doc.id] = doc.data(); });
+                renderDashboard();
+                renderRosterGrid();
+            });
+        }
+
         function listenToRequests() {
             db.collection('work_mode_requests').where('status', '==', 'pending').onSnapshot(snap => {
                 pendingRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                
                 const badge = document.getElementById('req-badge');
-                if(pendingRequests.length > 0) {
-                    badge.innerText = pendingRequests.length;
-                    badge.classList.remove('hidden');
-                } else {
-                    badge.classList.add('hidden');
-                }
+                if(pendingRequests.length > 0) { badge.innerText = pendingRequests.length; badge.classList.remove('hidden'); } 
+                else { badge.classList.add('hidden'); }
                 renderRequests();
             });
         }
 
-        // ==========================================
-        // 5. TAB NAVIGATION
-        // ==========================================
         function switchTab(tabName) {
             ['dashboard', 'roster', 'employees', 'requests'].forEach(v => {
                 document.getElementById(`view-${v}`).classList.add('hidden');
@@ -305,388 +310,238 @@
             document.getElementById(`view-${tabName}`).classList.remove('hidden');
             document.getElementById(`tab-${tabName}`).classList.add('active');
         }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 
         // ==========================================
-        // 6. RENDER: AUDIT DASHBOARD (الرقابة اللحظية)
+        // 5. VIEW 1: AUDIT DASHBOARD
         // ==========================================
-        async function renderDashboard() {
+        function renderDashboard() {
             const tbody = document.getElementById('audit-table-body');
             tbody.innerHTML = '';
             
-            let totalPresent = 0; let totalOffice = 0; let totalOnline = 0;
-            let totalLateMins = 0; let earlyLeaversCount = 0; let onLeaveCount = 0;
-
-            // We need today's schedule for everyone to compare
-            // To prevent heavy reads, we fetch schedules for current month once per render or rely on cached data.
-            // For simplicity here, we fetch it per render for the dashboard.
-            const schedulesSnap = await db.collection('monthly_schedules').where('monthId', '==', currentMonthStr).get();
-            const monthlySchedules = {};
-            schedulesSnap.forEach(doc => { monthlySchedules[doc.data().userId] = doc.data().days; });
+            let tOffice = 0, tOnline = 0, tLate = 0, tAbsent = 0;
 
             allUsersData.forEach(u => {
-                if(u.role === 'admin') return;
-
-                // Find schedule for today for this user
-                const userSchedule = monthlySchedules[u.email] ? monthlySchedules[u.email][currentDayStr] : null;
-                const schedStart = userSchedule ? userSchedule.start : '09:00';
-                const schedEnd = userSchedule ? userSchedule.end : '17:00';
-                const schedMode = userSchedule ? userSchedule.mode : 'office';
-
-                // Find attendance record for today
+                // البحث عن حضور اليوم
                 const rec = todayRecords.find(r => r.userId === u.email);
+                
+                // البحث عن جدوله اليوم
+                const monthId = moment(currentDayStr).format('YYYY-MM');
+                const schedDoc = allSchedules[`${u.email}_${monthId}`];
+                const daySched = schedDoc && schedDoc.days ? schedDoc.days[currentDayStr] : null;
+                
+                const schedStart = daySched ? daySched.start : '09:00';
+                const schedMode = daySched ? daySched.mode : 'office';
 
                 if (schedMode === 'off') {
-                    onLeaveCount++;
-                    // If they are off, skip adding them to the live tracking unless they logged in anyway
-                    if(!rec) return; 
+                    if(!rec) return; // لو في إجازة ومجاش، نتجاهله في الداش بورد
                 }
 
                 if (rec) {
-                    totalPresent++;
-                    if(rec.workMode === 'online') totalOnline++; else totalOffice++;
-                    totalLateMins += (rec.lateMinutes || 0);
-                    if(rec.earlyLeaveMinutes > 0) earlyLeaversCount++;
+                    if(rec.workMode === 'online') tOnline++; else tOffice++;
+                    tLate += (rec.lateMinutes || 0);
 
                     const checkInFmt = rec.checkIn ? moment(rec.checkIn.toMillis()).format('hh:mm A') : '---';
                     const checkOutFmt = rec.checkOut ? moment(rec.checkOut.toMillis()).format('hh:mm A') : '---';
                     
-                    const lateUI = rec.lateMinutes > 0 ? `<span class="bg-orange-500/10 text-orange-500 px-2 py-1 rounded border border-orange-500/20">${rec.lateMinutes}m متأخر</span>` : `<span class="text-green-500"><i class="fas fa-check-circle"></i> ملتزم</span>`;
-                    const modeUI = rec.workMode === 'online' ? `<span class="text-primary-400"><i class="fas fa-laptop-house mr-1"></i>أونلاين</span>` : `<span class="text-slate-400"><i class="fas fa-building mr-1"></i>مقر الشركة</span>`;
-                    
-                    // Status Calculation
-                    let overallStatus = '<span class="text-green-500 font-black">نشط الآن</span>';
-                    if (rec.checkOut) {
-                        overallStatus = rec.earlyLeaveMinutes > 0 ? `<span class="text-red-500 font-black">انصراف مبكر (${rec.earlyLeaveMinutes}m)</span>` : '<span class="text-slate-500 font-black">انصراف طبيعي</span>';
-                    }
+                    const lateUI = rec.lateMinutes > 0 ? `<span class="text-orange-500 font-bold">${rec.lateMinutes}m متأخر</span>` : `<span class="text-green-500"><i class="fas fa-check"></i></span>`;
+                    const modeUI = rec.workMode === 'online' ? `<span class="bg-primary-500/20 text-primary-400 px-2 py-1 rounded text-[9px]">أونلاين 💻</span>` : `<span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-[9px]">مقر 🏢</span>`;
+                    const overall = rec.checkOut ? '<span class="text-slate-500">انصرف</span>' : '<span class="text-green-500 font-black animate-pulse">نشط الآن</span>';
 
                     tbody.innerHTML += `
-                        <tr class="hover:bg-white/[0.01]">
-                            <td class="p-4 flex items-center gap-3">
-                                <img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-8 h-8 rounded-lg object-cover">
-                                <span>${u.name}</span>
-                            </td>
-                            <td class="p-4 text-center text-[10px] text-slate-500 font-mono">${moment(schedStart, 'HH:mm').format('hh:mm A')}</td>
-                            <td class="p-4 text-center text-[11px] font-black text-white font-mono">${checkInFmt}</td>
-                            <td class="p-4 text-center text-[10px]">${lateUI}</td>
-                            <td class="p-4 text-center text-[10px] font-black">${modeUI}</td>
-                            <td class="p-4 text-center text-[11px] font-mono text-slate-400">${checkOutFmt}</td>
-                            <td class="p-4 text-center">${overallStatus}</td>
-                        </tr>
-                    `;
-                } else if (schedMode !== 'off') {
-                    // Not present, not off
-                    const now = moment();
-                    const sTime = moment(schedStart, 'HH:mm');
-                    let isAbsent = now.isAfter(sTime.add(2, 'hours')); // Absent if 2 hours late
-
+                        <tr class="hover:bg-white/[0.02]">
+                            <td class="p-4 flex items-center gap-3"><img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-8 h-8 rounded-lg object-cover"> <span>${u.name}</span></td>
+                            <td class="p-4 text-center font-mono text-slate-500 text-[10px]">${moment(schedStart, 'HH:mm').format('hh:mm A')}</td>
+                            <td class="p-4 text-center font-mono text-white text-[11px]">${checkInFmt}</td>
+                            <td class="p-4 text-center">${lateUI}</td>
+                            <td class="p-4 text-center">${modeUI}</td>
+                            <td class="p-4 text-center font-mono text-slate-500 text-[11px]">${checkOutFmt}</td>
+                            <td class="p-4 text-center">${overall}</td>
+                        </tr>`;
+                } else {
+                    tAbsent++;
                     tbody.innerHTML += `
-                        <tr class="hover:bg-white/[0.01] opacity-60">
-                            <td class="p-4 flex items-center gap-3">
-                                <img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-8 h-8 rounded-lg object-cover grayscale">
-                                <span>${u.name}</span>
-                            </td>
-                            <td class="p-4 text-center text-[10px] text-slate-500 font-mono">${moment(schedStart, 'HH:mm').format('hh:mm A')}</td>
-                            <td class="p-4 text-center text-[11px] font-black text-slate-600">---</td>
-                            <td class="p-4 text-center text-[10px]">-</td>
-                            <td class="p-4 text-center text-[10px] font-black text-slate-600">مقرر: ${schedMode === 'online' ? 'أونلاين':'مقر'}</td>
-                            <td class="p-4 text-center text-[11px] font-mono text-slate-600">---</td>
-                            <td class="p-4 text-center">${isAbsent ? '<span class="text-red-600 font-black">غائب (Absent)</span>' : '<span class="text-slate-500 font-black">لم يحضر بعد</span>'}</td>
-                        </tr>
-                    `;
+                        <tr class="opacity-50">
+                            <td class="p-4 flex items-center gap-3"><img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-8 h-8 rounded-lg object-cover grayscale"> <span>${u.name}</span></td>
+                            <td class="p-4 text-center font-mono text-slate-500 text-[10px]">${moment(schedStart, 'HH:mm').format('hh:mm A')}</td>
+                            <td class="p-4 text-center text-slate-600">---</td>
+                            <td class="p-4 text-center text-slate-600">---</td>
+                            <td class="p-4 text-center text-[10px] text-slate-500">مقرر: ${schedMode==='online'?'أونلاين':'مقر'}</td>
+                            <td class="p-4 text-center text-slate-600">---</td>
+                            <td class="p-4 text-center text-red-500 font-bold text-[10px]">غائب / لم يحضر</td>
+                        </tr>`;
                 }
             });
 
-            // Update KPIs
-            document.getElementById('kpi-present').innerText = totalPresent;
-            document.getElementById('kpi-office').innerText = totalOffice + ' مقر';
-            document.getElementById('kpi-online').innerText = totalOnline + ' أونلاين';
-            document.getElementById('kpi-late-mins').innerHTML = `${totalLateMins} <span class="text-xs">دقيقة</span>`;
-            document.getElementById('kpi-early-leave').innerText = earlyLeaversCount;
-            document.getElementById('kpi-on-leave').innerText = onLeaveCount;
+            document.getElementById('kpi-office').innerText = tOffice;
+            document.getElementById('kpi-online').innerText = tOnline;
+            document.getElementById('kpi-late-mins').innerHTML = `${tLate} <span class="text-xs">دقيقة</span>`;
+            document.getElementById('kpi-absent').innerText = tAbsent;
         }
 
         // ==========================================
-        // 7. RENDER: ROSTER PLANNER (مخطط الورديات)
+        // 6. VIEW 2: WEEKLY ROSTER (الجدول الأسبوعي)
         // ==========================================
-        async function generateRosterGrid() {
-            const email = document.getElementById('roster-user-select').value;
-            const monthStr = document.getElementById('roster-month-select').value; // "YYYY-MM"
-            const container = document.getElementById('roster-grid-container');
-            const emptyState = document.getElementById('roster-empty-state');
-            const rowsBox = document.getElementById('roster-rows');
+        function changeWeek(offset) {
+            weekStart.add(offset, 'weeks');
+            renderRosterGrid();
+        }
 
-            if(!email || !monthStr) {
-                container.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-                return;
-            }
-
-            container.classList.remove('hidden');
-            emptyState.classList.add('hidden');
+        function renderRosterGrid() {
+            document.getElementById('roster-week-label').innerText = `أسبوع (${weekStart.format('DD MMM')} - ${weekStart.clone().add(6, 'days').format('DD MMM')})`;
             
-            const user = allUsersData.find(u => u.email === email);
-            document.getElementById('roster-employee-name').innerText = `جدول العمل: ${user.name} (${moment(monthStr, 'YYYY-MM').locale('ar').format('MMMM YYYY')})`;
+            const thead = document.getElementById('roster-thead');
+            const tbody = document.getElementById('roster-tbody');
+            
+            // Build Headers (7 Days)
+            let headHTML = '<tr><th class="p-4 bg-dark-950 sticky right-0 z-10 w-48 text-right">الموظف</th>';
+            let dates = [];
+            for(let i=0; i<7; i++) {
+                const d = weekStart.clone().add(i, 'days');
+                dates.push(d.format('YYYY-MM-DD'));
+                const isToday = d.format('YYYY-MM-DD') === currentDayStr;
+                headHTML += `<th class="p-4 text-center ${isToday ? 'text-primary-500 bg-primary-500/5' : ''}">${d.locale('ar').format('ddd')}<br><span class="text-[8px] opacity-50">${d.format('DD/MM')}</span></th>`;
+            }
+            headHTML += '</tr>';
+            thead.innerHTML = headHTML;
 
-            // Fetch existing schedule if any
-            const schedRef = db.collection('monthly_schedules').doc(`${email}_${monthStr}`);
-            const doc = await schedRef.get();
-            const existingDays = doc.exists ? doc.data().days : {};
-
-            rowsBox.innerHTML = '';
-            const daysInMonth = moment(monthStr, 'YYYY-MM').daysInMonth();
-
-            for(let i = 1; i <= daysInMonth; i++) {
-                const dateStr = `${monthStr}-${i.toString().padStart(2, '0')}`; // "YYYY-MM-DD"
-                const dayName = moment(dateStr, 'YYYY-MM-DD').locale('ar').format('dddd');
-                const isWeekend = (moment(dateStr).day() === 5 || moment(dateStr).day() === 6); // Friday or Saturday
+            // Build Rows (Employees)
+            tbody.innerHTML = '';
+            allUsersData.forEach(u => {
+                let rowHTML = `<tr><td class="p-4 bg-dark-950 sticky right-0 z-10 border-l border-white/5 font-bold text-white text-xs truncate flex items-center gap-3"><img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-7 h-7 rounded object-cover border border-white/10"> ${u.name.split(' ')[0]}</td>`;
                 
-                // Defaults
-                let start = '09:00'; let end = '17:00'; let mode = isWeekend ? 'off' : 'office';
+                dates.forEach(dateStr => {
+                    const monthId = moment(dateStr).format('YYYY-MM');
+                    const schedDoc = allSchedules[`${u.email}_${monthId}`];
+                    const daySched = schedDoc && schedDoc.days ? schedDoc.days[dateStr] : null;
+                    
+                    const start = daySched ? daySched.start : '09:00';
+                    const end = daySched ? daySched.end : '17:00';
+                    const mode = daySched ? daySched.mode : 'office';
 
-                if(existingDays[dateStr]) {
-                    start = existingDays[dateStr].start;
-                    end = existingDays[dateStr].end;
-                    mode = existingDays[dateStr].mode;
-                }
-
-                const rowBg = mode === 'off' ? 'bg-red-500/5 border-red-500/10' : (mode === 'online' ? 'bg-primary-500/5 border-primary-500/10' : 'bg-dark-900 border-white/5');
-
-                rowsBox.innerHTML += `
-                    <div class="grid grid-cols-12 gap-4 p-3 rounded-xl border ${rowBg} items-center transition-colors hover:border-slate-500" id="row-${dateStr}">
-                        <div class="col-span-2 flex flex-col text-right">
-                            <span class="text-white font-black text-xs">${i.toString().padStart(2, '0')}</span>
-                            <span class="text-[9px] text-slate-500 font-bold">${dayName}</span>
-                        </div>
-                        <div class="col-span-3">
-                            <input type="time" id="start-${dateStr}" value="${start}" class="w-full bg-dark-950 border border-white/10 rounded-lg px-2 py-2 text-xs text-slate-300 outline-none focus:border-primary-500" ${mode==='off'?'disabled':''}>
-                        </div>
-                        <div class="col-span-3">
-                            <input type="time" id="end-${dateStr}" value="${end}" class="w-full bg-dark-950 border border-white/10 rounded-lg px-2 py-2 text-xs text-slate-300 outline-none focus:border-primary-500" ${mode==='off'?'disabled':''}>
-                        </div>
-                        <div class="col-span-4">
-                            <select id="mode-${dateStr}" onchange="updateRowVisuals('${dateStr}')" class="w-full bg-dark-950 border border-white/10 rounded-lg px-2 py-2 text-xs font-bold text-white outline-none focus:border-primary-500">
-                                <option value="office" ${mode==='office'?'selected':''}>🏢 مقر الشركة</option>
-                                <option value="online" ${mode==='online'?'selected':''}>💻 أونلاين (استثناء)</option>
-                                <option value="off" ${mode==='off'?'selected':''} class="text-red-400">🏝️ إجازة / عطلة</option>
-                            </select>
-                        </div>
-                    </div>
-                `;
-            }
+                    let modeIcon = mode === 'office' ? '<i class="fas fa-building text-slate-400"></i>' : (mode === 'online' ? '<i class="fas fa-laptop-house text-primary-400"></i>' : '<i class="fas fa-times text-red-400"></i>');
+                    
+                    rowHTML += `
+                        <td class="p-2 text-center">
+                            <div onclick="openShiftModal('${u.email}', '${u.name}', '${dateStr}', '${start}', '${end}', '${mode}')" class="roster-cell mode-${mode} p-2 rounded-lg flex flex-col items-center justify-center gap-1 min-h-[50px]">
+                                ${mode !== 'off' ? `<span class="text-[9px] font-mono text-slate-300">${start} - ${end}</span>` : '<span class="text-[9px] text-red-400 font-bold">إجازة</span>'}
+                                <span>${modeIcon}</span>
+                            </div>
+                        </td>`;
+                });
+                rowHTML += '</tr>';
+                tbody.innerHTML += rowHTML;
+            });
         }
 
-        function updateRowVisuals(dateStr) {
-            const mode = document.getElementById(`mode-${dateStr}`).value;
-            const row = document.getElementById(`row-${dateStr}`);
-            const start = document.getElementById(`start-${dateStr}`);
-            const end = document.getElementById(`end-${dateStr}`);
+        function openShiftModal(email, name, dateStr, start, end, mode) {
+            document.getElementById('shift-email').value = email;
+            document.getElementById('shift-date').value = dateStr;
+            document.getElementById('modal-shift-info').innerText = `${name} | ${moment(dateStr).locale('ar').format('dddd, DD MMMM')}`;
             
-            row.className = `grid grid-cols-12 gap-4 p-3 rounded-xl border items-center transition-colors hover:border-slate-500 ${mode === 'off' ? 'bg-red-500/5 border-red-500/10' : (mode === 'online' ? 'bg-primary-500/5 border-primary-500/10' : 'bg-dark-900 border-white/5')}`;
-            start.disabled = (mode === 'off');
-            end.disabled = (mode === 'off');
+            document.getElementById('shift-start').value = start;
+            document.getElementById('shift-end').value = end;
+            document.getElementById('shift-mode').value = mode;
+
+            openModal('modal-shift');
         }
 
-        function applyBulkRoster(mode) {
-            const monthStr = document.getElementById('roster-month-select').value;
-            const daysInMonth = moment(monthStr, 'YYYY-MM').daysInMonth();
-            for(let i = 1; i <= daysInMonth; i++) {
-                const dateStr = `${monthStr}-${i.toString().padStart(2, '0')}`;
-                const sel = document.getElementById(`mode-${dateStr}`);
-                if(sel) { sel.value = mode; updateRowVisuals(dateStr); }
-            }
-        }
-
-        async function saveRoster() {
-            const email = document.getElementById('roster-user-select').value;
-            const monthStr = document.getElementById('roster-month-select').value;
-            if(!email || !monthStr) return;
-
-            const btn = event.currentTarget;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
-            btn.disabled = true;
-
-            const daysData = {};
-            const daysInMonth = moment(monthStr, 'YYYY-MM').daysInMonth();
-
-            for(let i = 1; i <= daysInMonth; i++) {
-                const dateStr = `${monthStr}-${i.toString().padStart(2, '0')}`;
-                daysData[dateStr] = {
-                    start: document.getElementById(`start-${dateStr}`).value,
-                    end: document.getElementById(`end-${dateStr}`).value,
-                    mode: document.getElementById(`mode-${dateStr}`).value
-                };
-            }
+        async function saveShift() {
+            const email = document.getElementById('shift-email').value;
+            const dateStr = document.getElementById('shift-date').value;
+            const start = document.getElementById('shift-start').value;
+            const end = document.getElementById('shift-end').value;
+            const mode = document.getElementById('shift-mode').value;
+            
+            const monthId = moment(dateStr).format('YYYY-MM');
+            const docId = `${email}_${monthId}`;
 
             try {
-                await db.collection('monthly_schedules').doc(`${email}_${monthStr}`).set({
-                    userId: email,
-                    monthId: monthStr,
-                    days: daysData,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                alert("✅ تم حفظ وتأكيد خطة عمل الموظف لهذا الشهر بنجاح.");
-            } catch(e) {
-                console.error(e);
-                alert("❌ فشل الحفظ.");
-            } finally {
-                btn.innerHTML = '<i class="fas fa-save"></i> اعتماد وحفظ الجدول';
-                btn.disabled = false;
-            }
+                const docRef = db.collection('monthly_schedules').doc(docId);
+                // Save specific day in the monthly document
+                await docRef.set({ userId: email, monthId: monthId }, { merge: true });
+                await docRef.update({ [`days.${dateStr}`]: { start, end, mode } });
+                
+                closeModal('modal-shift');
+            } catch(e) { console.error(e); alert("فشل الحفظ."); }
         }
 
         // ==========================================
-        // 8. RENDER: EMPLOYEES RECORDS (شؤون الموظفين)
+        // 7. VIEW 3: EMPLOYEES RECORDS
         // ==========================================
         function renderEmployeesRecord() {
             const container = document.getElementById('employees-record-container');
-            const search = document.getElementById('emp-search').value.toLowerCase();
             container.innerHTML = '';
-
-            allUsersData.filter(u => u.role !== 'admin' && u.name.toLowerCase().includes(search)).forEach(u => {
+            allUsersData.forEach(u => {
                 const lb = u.leaveBalances || { annual: 21, casual: 6, sick: 14 };
-
                 container.innerHTML += `
-                    <div class="bg-dark-900 border border-white/5 p-6 rounded-3xl shadow-xl flex flex-col gap-5">
-                        <div class="flex items-center gap-4 border-b border-white/5 pb-4">
-                            <img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-14 h-14 rounded-2xl object-cover border border-white/10">
-                            <div>
-                                <h3 class="font-black text-white text-lg">${u.name}</h3>
-                                <p class="text-[10px] text-primary-500 font-bold uppercase tracking-widest">${u.title || u.role}</p>
-                            </div>
+                    <div class="bg-dark-900 border border-white/5 p-6 rounded-3xl shadow-xl">
+                        <div class="flex items-center gap-4 border-b border-white/5 pb-4 mb-4">
+                            <img src="${u.photo || DEFAULT_PHOTO+u.name}" class="w-12 h-12 rounded-xl object-cover">
+                            <div><h3 class="font-black text-white text-sm">${u.name}</h3><p class="text-[9px] text-primary-500 font-bold uppercase">${u.role}</p></div>
                         </div>
-
-                        <div>
-                            <p class="text-[9px] text-slate-500 font-black uppercase mb-3"><i class="fas fa-wallet mr-1"></i> أرصدة الإجازات المتبقية (أيام)</p>
-                            <div class="grid grid-cols-3 gap-3">
-                                <div class="bg-dark-950 p-3 rounded-xl border border-white/5">
-                                    <label class="text-[8px] text-slate-400 block mb-1">اعتيادي (Annual)</label>
-                                    <input type="number" id="ann-${u.email}" value="${lb.annual}" class="w-full bg-transparent text-white font-black text-lg outline-none text-center">
-                                </div>
-                                <div class="bg-dark-950 p-3 rounded-xl border border-white/5">
-                                    <label class="text-[8px] text-slate-400 block mb-1">عارضة (Casual)</label>
-                                    <input type="number" id="cas-${u.email}" value="${lb.casual}" class="w-full bg-transparent text-orange-400 font-black text-lg outline-none text-center">
-                                </div>
-                                <div class="bg-dark-950 p-3 rounded-xl border border-white/5">
-                                    <label class="text-[8px] text-slate-400 block mb-1">مرضي (Sick)</label>
-                                    <input type="number" id="sic-${u.email}" value="${lb.sick}" class="w-full bg-transparent text-red-400 font-black text-lg outline-none text-center">
-                                </div>
-                            </div>
+                        <div class="grid grid-cols-3 gap-3 mb-4">
+                            <div class="bg-dark-950 p-2 rounded-xl text-center border border-white/5"><label class="text-[8px] text-slate-400 block">اعتيادي</label><input type="number" id="ann-${u.email}" value="${lb.annual}" class="w-full bg-transparent text-white font-black text-sm text-center outline-none"></div>
+                            <div class="bg-dark-950 p-2 rounded-xl text-center border border-white/5"><label class="text-[8px] text-slate-400 block">عارضة</label><input type="number" id="cas-${u.email}" value="${lb.casual}" class="w-full bg-transparent text-orange-400 font-black text-sm text-center outline-none"></div>
+                            <div class="bg-dark-950 p-2 rounded-xl text-center border border-white/5"><label class="text-[8px] text-slate-400 block">مرضي</label><input type="number" id="sic-${u.email}" value="${lb.sick}" class="w-full bg-transparent text-red-400 font-black text-sm text-center outline-none"></div>
                         </div>
-
-                        <div class="mt-auto pt-4 flex gap-3">
-                            <button onclick="saveLeaveBalances('${u.email}')" class="flex-1 py-3 bg-dark-800 hover:bg-primary-600 text-white rounded-xl font-black text-[10px] transition-all border border-white/5 active:scale-95">
-                                حفظ تعديل الأرصدة
-                            </button>
-                        </div>
-                    </div>
-                `;
+                        <button onclick="saveLeaveBalances('${u.email}')" class="w-full py-2.5 bg-dark-800 hover:bg-primary-600 text-white rounded-xl font-black text-[10px] transition-all border border-white/5 active:scale-95">حفظ التعديلات</button>
+                    </div>`;
             });
         }
 
         async function saveLeaveBalances(email) {
-            const a = parseInt(document.getElementById(`ann-${email}`).value) || 0;
-            const c = parseInt(document.getElementById(`cas-${email}`).value) || 0;
-            const s = parseInt(document.getElementById(`sic-${email}`).value) || 0;
-
-            try {
-                await db.collection('users').doc(email).update({
-                    leaveBalances: { annual: a, casual: c, sick: s }
-                });
-                alert("تم تحديث أرصدة الإجازات للموظف.");
-            } catch(e) { alert("حدث خطأ."); }
+            const a = parseInt(document.getElementById(`ann-${email}`).value)||0;
+            const c = parseInt(document.getElementById(`cas-${email}`).value)||0;
+            const s = parseInt(document.getElementById(`sic-${email}`).value)||0;
+            try { await db.collection('users').doc(email).update({ leaveBalances: { annual: a, casual: c, sick: s }}); alert("تم الحفظ."); } catch(e) {}
         }
 
         // ==========================================
-        // 9. RENDER: REQUESTS HUB (مركز الطلبات)
+        // 8. VIEW 4: REQUESTS HUB
         // ==========================================
         function renderRequests() {
             const container = document.getElementById('requests-container');
             container.innerHTML = '';
-
             if (pendingRequests.length === 0) {
-                container.innerHTML = '<div class="col-span-full text-center py-20"><i class="fas fa-check-circle text-4xl text-green-500/20 mb-4 block"></i><p class="text-slate-500 text-sm font-bold">صندوق الطلبات فارغ. كل شيء على ما يرام!</p></div>';
-                return;
+                container.innerHTML = '<div class="col-span-full text-center py-20"><i class="fas fa-check-circle text-4xl text-green-500/20 mb-4 block"></i><p class="text-slate-500 text-sm font-bold">لا يوجد استئذانات معلقة.</p></div>'; return;
             }
-
             pendingRequests.forEach(req => {
                 const u = allUsersData.find(x => x.email === req.userId) || { name: req.userId };
                 const timeStr = req.timestamp ? moment(req.timestamp.toMillis()).locale('ar').fromNow() : '';
-                
-                // تحديد نوع الطلب
-                let typeIcon = '<i class="fas fa-laptop-house"></i>';
-                let typeTitle = 'طلب عمل أونلاين';
-                let typeColor = 'text-primary-500';
-                let typeBg = 'bg-primary-500/10 border-primary-500/20';
-
-                // يمكن إضافة أنواع أخرى مستقبلاً مثل type === 'leave'
-                
                 container.innerHTML += `
-                    <div class="bg-dark-900 border border-white/5 p-6 rounded-3xl shadow-xl flex flex-col relative overflow-hidden group hover:border-primary-500/50 transition-all">
-                        <div class="absolute top-0 right-0 w-full h-1 ${typeBg} border-t"></div>
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl ${typeBg} ${typeColor} flex items-center justify-center text-lg">${typeIcon}</div>
-                                <div>
-                                    <h4 class="font-black text-white text-sm">${u.name}</h4>
-                                    <p class="text-[9px] text-slate-400 font-bold">${timeStr}</p>
-                                </div>
-                            </div>
+                    <div class="bg-dark-900 border border-primary-500/30 p-5 rounded-3xl shadow-xl flex flex-col relative overflow-hidden">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-primary-500/10 text-primary-500 flex items-center justify-center text-lg"><i class="fas fa-laptop-house"></i></div>
+                            <div><h4 class="font-black text-white text-sm">${u.name}</h4><p class="text-[9px] text-slate-400 font-bold">${timeStr}</p></div>
                         </div>
-                        
-                        <div class="bg-dark-950 p-4 rounded-xl border border-white/5 mb-6">
-                            <p class="text-[10px] ${typeColor} font-black uppercase mb-1">${typeTitle}</p>
-                            <p class="text-xs text-slate-300 leading-relaxed">يطلب الموظف استثناء لتسجيل الحضور والعمل بنظام (أونلاين) لهذا اليوم بدلاً من مقر الشركة.</p>
+                        <p class="text-xs text-slate-300 bg-dark-950 p-3 rounded-xl border border-white/5 mb-4 leading-relaxed">يطلب الموظف السماح له بالعمل (أونلاين) لهذا اليوم رغم أن جدوله الزمني مقرر من (المقر).</p>
+                        <div class="mt-auto flex gap-2">
+                            <button onclick="processRequest('${req.id}', '${req.userId}', 'approved')" class="flex-1 py-3 bg-green-600 text-white rounded-xl font-black text-[10px] shadow-lg hover:bg-green-500 active:scale-95">موافقة</button>
+                            <button onclick="processRequest('${req.id}', '${req.userId}', 'rejected')" class="flex-1 py-3 bg-red-500/10 text-red-500 rounded-xl font-black text-[10px] hover:bg-red-500 hover:text-white border border-red-500/20 active:scale-95">رفض</button>
                         </div>
-
-                        <div class="mt-auto flex gap-3">
-                            <button onclick="processRequest('${req.id}', '${req.userId}', 'approved', 'online')" class="flex-1 py-3 bg-green-600 text-white rounded-xl font-black text-[10px] shadow-lg hover:bg-green-500 transition active:scale-95 border border-green-500/50">
-                                موافقة <i class="fas fa-check ml-1"></i>
-                            </button>
-                            <button onclick="processRequest('${req.id}', '${req.userId}', 'rejected', 'online')" class="flex-1 py-3 bg-red-500/10 text-red-500 rounded-xl font-black text-[10px] hover:bg-red-500 hover:text-white transition border border-red-500/20 active:scale-95">
-                                رفض <i class="fas fa-times ml-1"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
-        async function processRequest(reqId, userEmail, decision, type) {
+        async function processRequest(reqId, userEmail, decision) {
             try {
-                // 1. تحديث حالة الطلب
                 await db.collection('work_mode_requests').doc(reqId).update({ status: decision });
-                
-                // 2. إذا موافقة، نسجل الحضور أونلاين وحساب التأخير
-                if (decision === 'approved' && type === 'online') {
-                    // نجلب جدول الموظف لليوم لحساب وقت بدايته المخطط
-                    const schedRef = await db.collection('monthly_schedules').doc(`${userEmail}_${currentMonthStr}`).get();
-                    let schedStart = '09:00';
-                    if(schedRef.exists && schedRef.data().days[currentDayStr]) {
-                        schedStart = schedRef.data().days[currentDayStr].start;
-                    }
+                if (decision === 'approved') {
+                    const monthId = moment(currentDayStr).format('YYYY-MM');
+                    const schedDoc = allSchedules[`${userEmail}_${monthId}`];
+                    const daySched = schedDoc && schedDoc.days ? schedDoc.days[currentDayStr] : null;
+                    const schedStart = daySched ? daySched.start : '09:00';
+                    
+                    const lateMins = Math.max(0, moment().diff(moment(schedStart, 'HH:mm'), 'minutes'));
 
-                    const now = moment();
-                    const startMoment = moment(schedStart, 'HH:mm');
-                    let lateMins = now.diff(startMoment, 'minutes');
-                    if (lateMins < 0) lateMins = 0;
-
-                    // إنشاء سجل حضور للموظف
                     await db.collection('attendance_records').add({
-                        userId: userEmail,
-                        date: currentDayStr,
-                        checkIn: firebase.firestore.FieldValue.serverTimestamp(),
-                        checkOut: null,
-                        workMode: 'online',
-                        lateMinutes: lateMins,
-                        earlyLeaveMinutes: 0
+                        userId: userEmail, date: currentDayStr, checkIn: firebase.firestore.FieldValue.serverTimestamp(), checkOut: null, workMode: 'online', lateMinutes: lateMins, earlyLeaveMinutes: 0
                     });
                 }
-            } catch(e) {
-                console.error(e);
-                alert("حدث خطأ في معالجة الطلب.");
-            }
+            } catch(e) { alert("حدث خطأ."); }
         }
-
     </script>
 </body>
 </html>
