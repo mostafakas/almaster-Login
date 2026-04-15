@@ -181,8 +181,7 @@ input[type="time"], input[type="number"], select, input[type="month"] {
     </style>
 </head>
 
-<body class="dark selection:bg-primary-500/30">
-
+<body class="selection:bg-primary-500/30">
     <div id="loader" class="fixed inset-0 z-[600] bg-white flex flex-col items-center justify-center">
     <div class="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-primary-500 mb-4"></div>
         <h2 class="text-[10px] font-black tracking-[0.5em] text-primary-500 uppercase animate-pulse">يتم بناء نظام الرقابة...</h2>
@@ -472,6 +471,9 @@ input[type="time"], input[type="number"], select, input[type="month"] {
         // ==========================================
         // 3. AUTHENTICATION & INITIALIZATION
         // ==========================================
+// ==========================================
+// 3. AUTHENTICATION & INITIALIZATION (نسخة الأدمن)
+// ==========================================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
@@ -482,76 +484,25 @@ auth.onAuthStateChanged(async (user) => {
         if(doc.exists) {
             userProfile = doc.data();
             
-            if (userProfile.role === 'admin') { 
-                window.location.replace('admin.html'); 
-                return; 
+            // التحقق من الصلاحية: مسموح فقط للأدمن والسوبر فايزر والليدر
+            const allowedRoles = ['admin', 'supervisor', 'leader'];
+            if (!allowedRoles.includes(userProfile.role)) {
+                alert("عذراً، لا تملك صلاحية الوصول لهذه اللوحة.");
+                window.location.replace('employee.html');
+                return;
             }
 
-            const today = moment().format('YYYY-MM-DD');
-
-            // --- 🛑 الجزء الجديد: فحص هل يوجد طلب مرفوض اليوم؟ ---
-            const rejectedSnap = await db.collection('work_mode_requests')
-                .where('userId', '==', userEmail)
-                .where('date', '==', today)
-                .where('status', '==', 'rejected')
-                .get();
-
-            if (!rejectedSnap.empty) {
-                // منع الدخول وإظهار شاشة الرفض داخل اللودر
-                document.getElementById('loader').classList.remove('hidden');
-                document.getElementById('loader').innerHTML = `
-                    <div class="text-center p-10 bg-white rounded-[3rem] shadow-2xl border-4 border-red-500 max-w-sm mx-auto animate-fade-in">
-                        <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <i class="fas fa-user-slash text-3xl"></i>
-                        </div>
-                        <h2 class="text-2xl font-black text-slate-900 mb-3">عذراً.. طلبك مرفوض</h2>
-                        <p class="text-slate-600 font-bold text-xs leading-relaxed mb-8">
-                            لقد تم رفض طلبك للعمل (أونلاين) لهذا اليوم من قبل الإدارة. 
-                            يرجى الالتزام بالحضور لمقر الشركة أو التواصل مع مديرك.
-                        </p>
-                        <button onclick="location.reload()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg transition-all active:scale-95">
-                            تحديث الحالة
-                        </button>
-                    </div>
-                `;
-                return; // إيقاف الكود هنا ومنع تشغيل initWorkspace
-            }
-            // ---------------------------------------------------
-
-            // نظام الجلسة الموحدة
-            const newSessionId = Date.now().toString() + "_" + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('almaster_session_id', newSessionId);
-            const detailedInfo = await gatherDetailedDeviceInfo();
-
-            await docRef.update({ 
-                currentSessionId: newSessionId,
-                deviceInfo: detailedInfo 
-            });
-
-            // فحص تسجيل الحضور
-            const attendanceSnap = await db.collection('attendance_records')
-                .where('userId', '==', userEmail)
-                .where('date', '==', today)
-                .get();
-
-            if (!attendanceSnap.empty) {
-                if (userProfile.status !== 'Online') {
-                    await setStatus(userEmail, 'Online', true);
-                }
-            } else {
-                openModal('modal-attendance-mode');
-            }
-
-            initWorkspace();
+            // تشغيل محرك الإدارة فوراً
+            initAdminEngine();
             
         } else { 
             auth.signOut(); 
+            window.location.replace('index.html');
         }
     } else { 
         window.location.replace('index.html'); 
     }
 });
-
         function initAdminEngine() {
             document.getElementById('dash-date-display').innerText = moment().locale('ar').format('dddd, DD MMMM YYYY');
             document.getElementById('roster-month-select').value = moment().format('YYYY-MM');
