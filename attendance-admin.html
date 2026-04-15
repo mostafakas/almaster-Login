@@ -28,6 +28,21 @@
     </script>
 
     <style>
+        /* ========================================= */
+/* تحويل الثيم إلى الأبيض الفاتح (Light Mode) */
+/* ========================================= */
+body { background-color: #f8fafc !important; color: #1e293b !important; }
+.bg-dark-950 { background-color: #f1f5f9 !important; border-color: #e2e8f0 !important; }
+.bg-dark-900 { background-color: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;}
+.bg-dark-800 { background-color: #e2e8f0 !important; color: #1e293b !important;}
+.text-white { color: #0f172a !important; }
+.text-slate-300, .text-slate-400 { color: #475569 !important; }
+.border-white\/5, .border-white\/10 { border-color: rgba(0,0,0,0.08) !important; }
+.divide-white\/\[0\.02\] > :not([hidden]) ~ :not([hidden]) { border-color: rgba(0,0,0,0.05) !important; }
+.kpi-card { background: #ffffff !important; box-shadow: 0 4px 15px -3px rgba(0,0,0,0.05) !important; border: 1px solid #e2e8f0 !important; }
+.roster-th, .roster-th-corner, .roster-td-name { background-color: #f8fafc !important; color: #0f172a !important; border-color: #e2e8f0 !important; }
+input[type="time"], input[type="number"], select, input[type="month"] { background-color: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; color-scheme: light !important; }
+.roster-td-name { min-width: 220px; white-space: normal; } /* لتوسيع مساحة الاسم */
         body { background-color: #0b1120; color: #f1f5f9; height: 100vh; overflow: hidden; display: flex; font-family: 'Cairo', sans-serif; }
         
         /* السكرول بار الاحترافي */
@@ -239,7 +254,7 @@
             <input type="hidden" id="shift-date">
 
             <div class="flex gap-2 mb-6">
-                <button type="button" onclick="quickShift('09:00', '17:00')" class="flex-1 py-2 rounded-lg bg-dark-950 border border-white/10 text-[10px] font-black text-slate-300 hover:border-primary-500 hover:text-white transition-all">09:00 - 17:00</button>
+                <button type="button" onclick="quickShift('09:30', '18:00')" class="flex-1 py-2 rounded-lg bg-dark-950 border border-white/10 text-[10px] font-black text-slate-300 hover:border-primary-500 hover:text-white transition-all">09:00 - 17:00</button>
                 <button type="button" onclick="quickShift('10:00', '18:00')" class="flex-1 py-2 rounded-lg bg-dark-950 border border-white/10 text-[10px] font-black text-slate-300 hover:border-primary-500 hover:text-white transition-all">10:00 - 18:00</button>
                 <button type="button" onclick="quickShift('00:00', '00:00', 'off')" class="flex-1 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-400 hover:bg-red-500 hover:text-white transition-all">إجازة</button>
             </div>
@@ -303,6 +318,20 @@
                 <button onclick="submitBalances()" class="flex-1 py-3.5 bg-white text-dark-950 rounded-xl font-black text-[12px] shadow-lg hover:bg-slate-200 active:scale-95 transition-all">اعتماد الحفظ</button>
                 <button onclick="closeModal('modal-balances')" class="px-6 py-3.5 bg-dark-800 text-slate-400 hover:text-white rounded-xl font-black text-[12px] transition-all">إلغاء</button>
             </div>
+        </div>
+    </div>
+    <div id="modal-absence-report" class="fixed inset-0 z-[700] hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[2rem] p-8 shadow-2xl relative overflow-hidden border border-slate-200">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-200 pb-4">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800">تقرير الغياب اليومي</h3>
+                    <p class="text-[10px] font-bold text-red-500 uppercase tracking-widest mt-1" id="absence-date">يتم التحميل...</p>
+                </div>
+                <button onclick="closeModal('modal-absence-report')" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-500 transition-all"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="absence-list" class="max-h-64 overflow-y-auto custom-scrollbar space-y-3 mb-6">
+                </div>
+            <button onclick="closeModal('modal-absence-report')" class="w-full py-3.5 bg-slate-800 text-white rounded-xl font-black text-xs hover:bg-slate-700 transition-all">إغلاق التقرير</button>
         </div>
     </div>
 
@@ -434,42 +463,52 @@ async function sendAdminTelegramNotification(message) {
 }
 
 // دالة فحص الغياب اليدوي/التلقائي
-async function checkAbsences() {
-    let absentList = [];
+// دالة فحص الغياب وإظهار التقرير الاحترافي
+function checkAbsences() {
+    const container = document.getElementById('absence-list');
+    document.getElementById('absence-date').innerText = moment().locale('ar').format('dddd, DD MMMM YYYY');
+    container.innerHTML = '';
+    
+    let absentCount = 0;
     allUsersData.forEach(u => {
         const rec = todayRecords.find(r => r.userId === u.email);
         const monthId = moment(currentDayStr).format('YYYY-MM');
         const schedDoc = allSchedules[`${u.email}_${monthId}`];
         const daySched = schedDoc && schedDoc.days ? schedDoc.days[currentDayStr] : null;
-        const mode = daySched ? daySched.mode : 'office'; // الافتراضي عمل
+        const mode = daySched ? daySched.mode : 'office';
 
-        // لو مطلوب منه يشتغل (مقر أو أونلاين) وملوش سجل حضور، يبقى غايب!
+        // لو مطلوب يحضر (مقر أو أونلاين) وملوش بصمة، يبقى غايب!
         if (!rec && (mode === 'office' || mode === 'online')) {
-            absentList.push(`- 👤 ${u.name} (مقرر له: ${mode==='office'?'مقر':'أونلاين'})`);
+            absentCount++;
+            container.innerHTML += `
+                <div class="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-xl">
+                    <img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name)}" class="w-10 h-10 rounded-lg object-cover">
+                    <div class="flex-1">
+                        <h4 class="font-black text-slate-800 text-sm">${u.name}</h4>
+                        <p class="text-[10px] text-slate-500 font-bold">مكان العمل المقرر: <span class="text-red-500">${mode === 'office' ? 'مقر الشركة' : 'أونلاين'}</span></p>
+                    </div>
+                </div>`;
         }
     });
 
-    if (absentList.length === 0) {
-        alert("ممتاز! جميع الموظفين المجدولين حضروا اليوم.");
-        return;
+    if (absentCount === 0) {
+        container.innerHTML = `<div class="text-center py-8"><i class="fas fa-check-circle text-5xl text-green-500 mb-4 drop-shadow-md"></i><p class="font-black text-slate-700 text-lg">ممتاز!</p><p class="text-slate-500 text-xs mt-1 font-bold">لا يوجد أي حالات غياب، جميع المجدولين حضروا.</p></div>`;
     }
-
-    const msg = `🚨 <b>تقرير الغياب اليومي</b>\n📅 التاريخ: ${currentDayStr}\n\n<b>الموظفين المتغيبين:</b>\n${absentList.join('\n')}`;
-    await sendAdminTelegramNotification(msg);
-    alert(`تم رصد ${absentList.length} حالات غياب وإرسال التقرير على تليجرام.`);
+    openModal('modal-absence-report');
 }
 
-// دالة الداش بورد المحدثة (لعرض أوقات كل حالة)
+// دالة الداش بورد (تم إضافة حالات البريك والميتنج)
 function renderDashboard() {
     const tbody = document.getElementById('audit-table-body');
     tbody.innerHTML = '';
-    
     let tOffice = 0, tOnline = 0, tLateTotalMins = 0;
 
     const activeUsers = allUsersData.filter(u => todayRecords.some(r => r.userId === u.email));
-
     if (activeUsers.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-slate-500 font-bold"><i class="fas fa-coffee text-2xl mb-3 block opacity-50"></i>لم يقم أي موظف بتسجيل الدخول اليوم بعد.</td></tr>';
+        document.getElementById('kpi-office').innerText = '0';
+        document.getElementById('kpi-online').innerText = '0';
+        document.getElementById('kpi-late-mins').innerHTML = '0';
         return;
     }
 
@@ -478,15 +517,15 @@ function renderDashboard() {
         const monthId = moment(currentDayStr).format('YYYY-MM');
         const schedDoc = allSchedules[`${u.email}_${monthId}`];
         const daySched = schedDoc && schedDoc.days ? schedDoc.days[currentDayStr] : null;
-        const schedStart = daySched ? daySched.start : '09:00';
+        
+        // 🚩 تعديل الميعاد الافتراضي هنا ليكون 09:30
+        const schedStart = daySched ? daySched.start : '09:30';
 
         if(rec.workMode === 'online') tOnline++; else tOffice++;
         tLateTotalMins += (rec.lateMinutes || 0);
 
         const checkInFmt = rec.checkIn ? moment(rec.checkIn.toMillis()).format('hh:mm A') : '---';
-        const checkOutFmt = rec.checkOut ? moment(rec.checkOut.toMillis()).format('hh:mm A') : '---';
         
-        // --- ⏳ حساب أوقات الحالات المجمعة (السر هنا) ---
         const tb = u.timeBank || {};
         const lastChange = u.lastChange ? u.lastChange.toMillis() : Date.now();
         const status = u.status || 'Offline';
@@ -495,7 +534,6 @@ function renderDashboard() {
         let breakMins = Math.floor((tb['Break'] || 0) / 60000);
         let meetMins = Math.floor((tb['Meeting'] || 0) / 60000);
         
-        // لو لسه مسجلش انصراف وحالته الحالية شغالة، نزود الوقت الجاري للبنك
         if (!rec.checkOut && status !== 'Offline') {
             const currentSessionMins = Math.floor((Date.now() - lastChange) / 60000);
             if (status === 'Online') onlineMins += currentSessionMins;
@@ -503,40 +541,45 @@ function renderDashboard() {
             if (status === 'Meeting') meetMins += currentSessionMins;
         }
 
-        // تصميم عرض الأوقات
         const timeBankUI = `
-            <div class="flex flex-col gap-1 text-[9px] font-mono font-black text-right pr-4">
-                <span class="text-green-400"><i class="fas fa-laptop-code w-3"></i> ${formatHoursMins(onlineMins)}</span>
-                <span class="text-orange-400"><i class="fas fa-coffee w-3"></i> ${formatHoursMins(breakMins)}</span>
-                <span class="text-blue-400"><i class="fas fa-users w-3"></i> ${formatHoursMins(meetMins)}</span>
+            <div class="flex flex-col gap-1 text-[10px] font-mono font-black">
+                <span class="text-green-500"><i class="fas fa-laptop-code w-4 text-slate-400"></i> ${formatHoursMins(onlineMins)}</span>
+                <span class="text-orange-500"><i class="fas fa-coffee w-4 text-slate-400"></i> ${formatHoursMins(breakMins)}</span>
+                <span class="text-blue-500"><i class="fas fa-users w-4 text-slate-400"></i> ${formatHoursMins(meetMins)}</span>
             </div>
         `;
-        // -------------------------------------------------
 
         const lateUI = rec.lateMinutes > 0 
-            ? `<span class="bg-orange-500/10 text-orange-500 px-3 py-1.5 rounded-lg border border-orange-500/20 font-black">${formatHoursMins(rec.lateMinutes)} تأخير</span>` 
-            : `<span class="text-green-500 font-black"><i class="fas fa-check-circle"></i> ملتزم</span>`;
+            ? `<span class="bg-orange-100 text-orange-600 px-3 py-1.5 rounded-lg border border-orange-200 font-black">${formatHoursMins(rec.lateMinutes)} تأخير</span>` 
+            : `<span class="text-green-500 font-black"><i class="fas fa-check-circle"></i> في الموعد</span>`;
         
         const modeUI = rec.workMode === 'online' 
-            ? `<span class="bg-primary-500/10 text-primary-400 px-3 py-1.5 rounded-lg text-[10px] border border-primary-500/20 font-black"><i class="fas fa-laptop-house mr-1"></i> أونلاين</span>` 
-            : `<span class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-[10px] border border-white/5 font-black"><i class="fas fa-building mr-1"></i> مقر الشركة</span>`;
+            ? `<span class="bg-primary-50 text-primary-600 px-3 py-1.5 rounded-lg text-[10px] border border-primary-200 font-black"><i class="fas fa-laptop-house mr-1"></i> أونلاين</span>` 
+            : `<span class="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-[10px] border border-slate-300 font-black"><i class="fas fa-building mr-1"></i> مقر الشركة</span>`;
         
-        let overall = rec.checkOut ? '<span class="text-slate-500 font-black"><i class="fas fa-sign-out-alt"></i> انصرف</span>' : '<span class="text-green-500 font-black animate-pulse"><i class="fas fa-circle text-[8px] mr-1"></i> نشط الآن</span>';
-        
-        // التحقق من الانصراف المبكر
-        if (rec.checkOut && rec.earlyLeaveMinutes > 0) {
-            overall = `<span class="text-red-500 font-black"><i class="fas fa-door-open"></i> انصراف مبكر (${formatHoursMins(rec.earlyLeaveMinutes)})</span>`;
+        // 🚩 تعديل الحالة اللحظية (البريك، الميتنج، الأونلاين، الأوفلاين)
+        let overall = '';
+        if (rec.checkOut) {
+            if (rec.earlyLeaveMinutes > 0) {
+                overall = `<span class="text-red-500 font-black block leading-tight"><i class="fas fa-door-open"></i> انصراف مبكر<br>(${formatHoursMins(rec.earlyLeaveMinutes)})</span>`;
+            } else {
+                overall = '<span class="text-slate-500 font-black"><i class="fas fa-sign-out-alt"></i> انصرف طبيعي</span>';
+            }
+        } else {
+            if(status === 'Break') overall = '<span class="bg-orange-100 text-orange-600 px-3 py-1 rounded-md font-black animate-pulse"><i class="fas fa-coffee"></i> في استراحة</span>';
+            else if(status === 'Meeting') overall = '<span class="bg-blue-100 text-blue-600 px-3 py-1 rounded-md font-black animate-pulse"><i class="fas fa-users"></i> في اجتماع</span>';
+            else if(status === 'Offline') overall = '<span class="text-red-500 font-black"><i class="fas fa-power-off"></i> أوفلاين (بدون انصراف)</span>';
+            else overall = '<span class="text-green-500 font-black animate-pulse"><i class="fas fa-circle text-[8px] mr-1"></i> يعمل الآن</span>';
         }
 
-        // ملاحظة: تأكد من إضافة عمود "سجل الأوقات" في HTML الـ table thead إذا أردت مساحة أوسع، أو استبدله بـ عمود "الانصراف". قمت هنا بدمجه بدلاً من الانصراف لتوفير المساحة.
         tbody.innerHTML += `
-            <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/[0.02]">
-                <td class="p-4 flex items-center gap-4"><img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-10 h-10 rounded-xl object-cover border border-white/10 shadow-md"> <span class="text-white font-black text-sm">${u.name}</span></td>
-                <td class="p-4 text-center font-mono text-slate-400 text-[11px]">${moment(schedStart, 'HH:mm').format('hh:mm A')}</td>
-                <td class="p-4 text-center font-mono text-white text-[12px] font-black">${checkInFmt}</td>
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100">
+                <td class="p-4 flex items-center gap-4"><img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name)}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-sm"> <span class="text-slate-800 font-black text-sm">${u.name}</span></td>
+                <td class="p-4 text-center font-mono text-slate-500 text-[11px]">${moment(schedStart, 'HH:mm').format('hh:mm A')}</td>
+                <td class="p-4 text-center font-mono text-slate-800 text-[12px] font-black">${checkInFmt}</td>
                 <td class="p-4 text-center">${lateUI}</td>
                 <td class="p-4 text-center">${modeUI}</td>
-                <td class="p-2">${timeBankUI}</td>
+                <td class="p-2 text-right">${timeBankUI}</td>
                 <td class="p-4 text-center">${overall}</td>
             </tr>`;
     });
@@ -589,15 +632,14 @@ function renderDashboard() {
     }
 
     allUsersData.forEach(u => {
-        let rowHTML = `<tr><td class="roster-td-name text-white truncate flex items-center gap-3"><img src="${u.photo || 'https://ui-avatars.com/api/?background=0ea5e9&color=fff&name='+u.name}" class="w-8 h-8 rounded-lg object-cover border border-white/10"> <div class="truncate text-xs">${u.name}</div></td>`;
-        
+        let rowHTML = `<tr><td class="roster-td-name text-slate-800 flex items-center gap-3"><img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name)}" class="w-10 h-10 rounded-xl object-cover border border-slate-300 shadow-sm shrink-0"> <div class="flex flex-col"><span class="font-black text-sm">${u.name}</span><span class="text-[9px] text-slate-500 font-bold">${u.title || u.role}</span></div></td>`;        
         dates.forEach(dateStr => {
             const schedDoc = allSchedules[`${u.email}_${monthStr}`];
             const daySched = schedDoc && schedDoc.days ? schedDoc.days[dateStr] : null;
             
             const isWeekend = (moment(dateStr).day() === 5 || moment(dateStr).day() === 6);
-            const start = daySched ? daySched.start : '09:00';
-            const end = daySched ? daySched.end : '17:00';
+            const start = daySched ? daySched.start : '09:30';
+            const end = daySched ? daySched.end : '18:00';
             const mode = daySched ? daySched.mode : (isWeekend ? 'off' : 'office');
 
             let cellContent = '';
