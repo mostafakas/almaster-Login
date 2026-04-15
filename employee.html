@@ -827,12 +827,133 @@ function listenToProfile() {
         }
 
         // --- 5. CORE ACTIONS ---
-        async function handleStatusClick(s) {
-            if(userProfile.status === s) return;
-            localStatusLock = s; // الموظف هو من غير الحالة
-            await setStatus(currentUser.email.toLowerCase(), s, false);
-        }
+       // --- إعدادات بوت التليجرام (قم بوضع بياناتك هنا) ---
+const TELEGRAM_BOT_TOKEN = 'ضع_توكن_البوت_هنا'; 
+const TELEGRAM_CHAT_ID = 'ضع_معرف_الشات_هنا';
 
+async function sendTelegramNotification(message) {
+    if(TELEGRAM_BOT_TOKEN === 'ضع_توكن_البوت_هنا') return; // يتجاهل الإرسال لو لم تضع التوكن
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    try {
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' })
+        });
+    } catch(e) { console.error("Telegram Error:", e); }
+}
+
+// 1. الدالة المعدلة للضغط على كروت الحالة
+async function handleStatusClick(s) {
+    if(userProfile.status === s) return;
+    localStatusLock = s; 
+
+    // لو اختار يبدأ شغل (Online)
+    if(s === 'Online') {
+        const today = moment().format('YYYY-MM-DD');
+        // نفحص هل هو سجل حضور النهاردة ولا لأ
+        const snap = await db.collection('attendance_records')
+            .where('userId', '==', currentUser.email.toLowerCase().trim())
+            .where('date', '==', today)
+            .get();
+        
+        if(snap.empty) {
+            // لو لم يسجل حضور، نوقف السيستم ونطلعله نافذة اختيار المكان
+            openModal('modal-attendance-mode');
+            return; 
+        }
+    }
+    
+    // لو هو مسجل حضور بالفعل (مثلاً كان بريك وراجع يكمل)، أو بيختار بريك/ميتنج
+    await setStatus(currentUser.email.toLowerCase(), s, false);
+}
+
+// 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
+async function submitAttendance(mode) {
+    closeModal('modal-attendance-mode');
+    const email = currentUser.email.toLowerCase().trim();
+    const today = moment().format('YYYY-MM-DD');
+    // جلب سياسة الموظف أو وضع قيم افتراضية
+    const hrProfile = userProfile.hrProfile || { workStartTime: '09:00', defaultWorkMode: 'office' };
+    
+    // لو اختار أونلاين ونظامه الأساسي إجباري من المقر
+    if(mode === 'online' && hrProfile.defaultWorkMode === 'office') {
+        openModal('modal-pending-approval'); // يظهر شاشة الانتظار
+        try {
+            // إرسال طلب لصفحة الإدارة
+            const reqRef = await db.collection('work_mode_requests').add({
+                userId: email,
+                date: today,
+                status: 'pending',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // إشعار تليجرام للمدير
+            sendTelegramNotification(`⚠️ <b>طلب عمل أونلاين استثنائي</b>\nالموظف: ${userProfile.name}\nيطلب العمل أونلاين اليوم رغم أن نظامه (مقر). الرجاء الدخول للوحة التحكم للمراجعة.`);
+            
+            // مراقبة رد المدير اللحظي
+            const unsubscribe = db.collection('work_mode_requests').doc(reqRef.id).onSnapshot(async (doc) => {
+                if(doc.exists && doc.data().status === 'approved') {
+                    unsubscribe();
+                    closeModal('modal-pending-approval');
+                    showToast('تمت الموافقة', 'وافق المدير على عملك أونلاين اليوم، تم تسجيل الحضور.', 'success');
+                    await finalizeCheckIn('online', hrProfile.workStartTime);
+                } else if (doc.exists && doc.data().status === 'rejected') {
+                    unsubscribe();
+                    closeModal('modal-pending-approval');
+                    showToast('تم الرفض', 'رفض المدير الطلب. يجب الحضور لمقر الشركة.', 'danger');
+                }
+            });
+        } catch(e) {
+            console.error(e);
+            alert("حدث خطأ أثناء إرسال الطلب");
+            closeModal('modal-pending-approval');
+        }
+        return;
+    }
+
+    // لو اختار مقر، أو اختار أونلاين وهو مسموح له بالأونلاين، يسجل حضور فوراً
+    await finalizeCheckIn(mode, hrProfile.workStartTime);
+}
+
+// 3. دالة تسجيل الحضور الفعلية وحساب التأخير
+async function finalizeCheckIn(mode, startTimeStr) {
+    const email = currentUser.email.toLowerCase().trim();
+    const today = moment().format('YYYY-MM-DD');
+    const now = moment();
+    
+    // حساب دقائق التأخير
+    const startMoment = moment(startTimeStr, 'HH:mm');
+    let lateMins = now.diff(startMoment, 'minutes');
+    if (lateMins < 0) lateMins = 0; // لو جه بدري
+
+    try {
+        // حفظ في سجل الحضور
+        await db.collection('attendance_records').add({
+            userId: email,
+            date: today,
+            checkIn: firebase.firestore.FieldValue.serverTimestamp(),
+            checkOut: null,
+            workMode: mode,
+            lateMinutes: lateMins,
+            earlyLeaveMinutes: 0
+        });
+
+        // رسالة التليجرام
+        let msg = `✅ <b>تسجيل حضور جديد</b>\n👤 الموظف: ${userProfile.name}\n📍 المكان: ${mode === 'online' ? 'أونلاين 💻' : 'مقر الشركة 🏢'}\n⏰ الوقت: ${now.format('hh:mm A')}`;
+        if(lateMins > 0) msg += `\n⚠️ <b>تأخير:</b> ${lateMins} دقيقة`;
+        sendTelegramNotification(msg);
+
+        // إشعار في السيستم للموظف
+        showToast('تم تسجيل الحضور بنجاح', `مكان العمل: ${mode === 'online' ? 'أونلاين' : 'مقر الشركة'}. ${lateMins > 0 ? `(تأخير ${lateMins} دقيقة)` : ''}`, 'success');
+        
+        // تحويل حالته لـ Online ليبدأ العداد يحسب وقت الشغل
+        await setStatus(email, 'Online', false);
+    } catch(e) {
+        console.error(e);
+        alert("فشل تسجيل الحضور، تأكد من الاتصال بالإنترنت.");
+    }
+}
         async function setStatus(target, newStatus, isAuto) {
     const userRef = db.collection('users').doc(target);
     const snap = await userRef.get();
@@ -1423,6 +1544,37 @@ function listenToScreenshotRequests() {
                 <p class="text-[9px] text-slate-600 font-bold uppercase tracking-widest">نظام الرقابة المركزية - ALMASTER</p>
             </div>
         </div>
+        <div id="modal-attendance-mode" class="fixed inset-0 z-[500] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-dark-900 w-full max-w-sm rounded-[2.5rem] p-8 border border-white/10 shadow-2xl text-center">
+        <div class="w-16 h-16 bg-primary-500/10 text-primary-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-map-marker-alt text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-black text-white mb-2">تحديد موقع العمل</h3>
+        <p class="text-xs text-slate-400 mb-6">من أين ستباشر عملك اليوم؟</p>
+        <div class="flex gap-3">
+            <button onclick="submitAttendance('office')" class="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black transition-all border border-white/5 active:scale-95">
+                <i class="fas fa-building mb-2 block text-lg"></i> مقر الشركة
+            </button>
+            <button onclick="submitAttendance('online')" class="flex-1 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-primary-600/20 active:scale-95">
+                <i class="fas fa-laptop-house mb-2 block text-lg"></i> أونلاين (عن بعد)
+            </button>
+        </div>
+        <button onclick="closeModal('modal-attendance-mode')" class="mt-4 text-[10px] text-slate-500 hover:text-white underline">إلغاء والتراجع</button>
+    </div>
+</div>
+
+<div id="modal-pending-approval" class="fixed inset-0 z-[550] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="bg-dark-900 w-full max-w-md rounded-[2.5rem] p-10 border-2 border-orange-500/30 shadow-2xl text-center">
+        <div class="w-20 h-20 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <i class="fas fa-hourglass-half text-3xl"></i>
+        </div>
+        <h3 class="text-xl font-black text-white mb-2">في انتظار موافقة الإدارة</h3>
+        <p class="text-xs text-slate-400 mb-6 leading-relaxed">طبيعة عملك تتطلب الحضور للمقر. تم إرسال طلب للمدير للعمل أونلاين اليوم، يرجى الانتظار حتى تتم الموافقة لتتمكن من تسجيل الدخول وبدء العمل.</p>
+        <div class="flex justify-center items-center gap-2 text-orange-500 text-[10px] font-black uppercase tracking-widest">
+            <i class="fas fa-circle-notch fa-spin"></i> جاري المتابعة اللحظية...
+        </div>
+    </div>
+</div>
 </body>
 </html>
 
