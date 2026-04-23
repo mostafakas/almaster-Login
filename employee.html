@@ -859,35 +859,50 @@ async function handleStatusClick(s) {
 }
 
 // 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
+// 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
 async function submitAttendance(mode) {
     closeModal('modal-attendance-mode');
     const email = currentUser.email.toLowerCase().trim();
     const today = moment().format('YYYY-MM-DD');
-    // جلب سياسة الموظف أو وضع قيم افتراضية
-    const hrProfile = userProfile.hrProfile || { workStartTime: '09:00', defaultWorkMode: 'office' };
-    
-    // لو اختار أونلاين ونظامه الأساسي إجباري من المقر
-    if(mode === 'online' && hrProfile.defaultWorkMode === 'office') {
-        openModal('modal-pending-approval'); // يظهر شاشة الانتظار
+    const monthId = moment().format('YYYY-MM');
+
+    let scheduledMode = 'office'; // الافتراضي
+    let scheduledStart = '09:00'; // الافتراضي
+
+    try {
+        // 1. جلب الجدول المخصص للموظف لليوم الحالي من لوحة الإدارة
+        const schedRef = await db.collection('monthly_schedules').doc(`${email}_${monthId}`).get();
+        if (schedRef.exists && schedRef.data().days && schedRef.data().days[today]) {
+            scheduledMode = schedRef.data().days[today].mode;
+            scheduledStart = schedRef.data().days[today].start;
+        } else if (userProfile.hrProfile) {
+            // لو لم يقم المدير بوضع جدول لهذا اليوم، نعتمد على الإعدادات الافتراضية
+            scheduledStart = userProfile.hrProfile.workStartTime || '09:00';
+            scheduledMode = userProfile.hrProfile.defaultWorkMode || 'office';
+        }
+    } catch (e) {
+        console.error("خطأ في جلب الجدول:", e);
+    }
+
+    // 2. التحقق من الاختيار: لو اختار (أونلاين) ولكن جدوله في النظام (مقر) -> يحتاج موافقة
+    if(mode === 'online' && scheduledMode === 'office') {
+        openModal('modal-pending-approval');
         try {
-            // إرسال طلب لصفحة الإدارة
             const reqRef = await db.collection('work_mode_requests').add({
                 userId: email,
                 date: today,
                 status: 'pending',
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-            
-            // إشعار تليجرام للمدير
-            sendTelegramNotification(`⚠️ <b>طلب عمل أونلاين استثنائي</b>\nالموظف: ${userProfile.name}\nيطلب العمل أونلاين اليوم رغم أن نظامه (مقر). الرجاء الدخول للوحة التحكم للمراجعة.`);
-            
-            // مراقبة رد المدير اللحظي
+
+            sendTelegramNotification(`⚠️ <b>طلب عمل أونلاين استثنائي</b>\nالموظف: ${userProfile.name}\nيطلب العمل أونلاين اليوم رغم أن جدوله (مقر). الرجاء الدخول للوحة التحكم للمراجعة.`);
+
             const unsubscribe = db.collection('work_mode_requests').doc(reqRef.id).onSnapshot(async (doc) => {
                 if(doc.exists && doc.data().status === 'approved') {
                     unsubscribe();
                     closeModal('modal-pending-approval');
                     showToast('تمت الموافقة', 'وافق المدير على عملك أونلاين اليوم، تم تسجيل الحضور.', 'success');
-                    await finalizeCheckIn('online', hrProfile.workStartTime);
+                    await finalizeCheckIn('online', scheduledStart);
                 } else if (doc.exists && doc.data().status === 'rejected') {
                     unsubscribe();
                     closeModal('modal-pending-approval');
@@ -902,10 +917,9 @@ async function submitAttendance(mode) {
         return;
     }
 
-    // لو اختار مقر، أو اختار أونلاين وهو مسموح له بالأونلاين، يسجل حضور فوراً
-    await finalizeCheckIn(mode, hrProfile.workStartTime);
+    // 3. لو اختار (مقر) وجدوله (مقر)، أو اختار (أونلاين) وجدوله أصلاً (أونلاين) -> دخول مباشر دون إذن
+    await finalizeCheckIn(mode, scheduledStart);
 }
-
 // 3. دالة تسجيل الحضور الفعلية وحساب التأخير
 async function finalizeCheckIn(mode, startTimeStr) {
     const email = currentUser.email.toLowerCase().trim();
