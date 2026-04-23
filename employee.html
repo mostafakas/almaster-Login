@@ -862,6 +862,7 @@ async function handleStatusClick(s) {
 // 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
 // 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
 // 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
+// 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
 async function submitAttendance(mode) {
     closeModal('modal-attendance-mode');
     const email = currentUser.email.toLowerCase().trim();
@@ -869,7 +870,7 @@ async function submitAttendance(mode) {
     const monthId = moment().format('YYYY-MM');
 
     let scheduledMode = 'office'; 
-    let scheduledStart = '09:00'; 
+    let scheduledStart = '09:30'; 
 
     try {
         const schedRef = await db.collection('monthly_schedules').doc(`${email}_${monthId}`).get();
@@ -877,13 +878,11 @@ async function submitAttendance(mode) {
             scheduledMode = schedRef.data().days[today].mode;
             scheduledStart = schedRef.data().days[today].start;
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("خطأ في جلب الجدول:", e); }
 
-    // لو طلب أونلاين وهو جدول مقر
     if(mode === 'online' && scheduledMode === 'office') {
-        openModal('modal-pending-approval');
-        
         try {
+            // البحث عن وجود طلب سابق لهذا اليوم
             const existingReqs = await db.collection('work_mode_requests')
                 .where('userId', '==', email)
                 .where('date', '==', today)
@@ -895,16 +894,13 @@ async function submitAttendance(mode) {
                 const existingDoc = existingReqs.docs[0];
                 reqId = existingDoc.id;
                 
+                // إذا كان الطلب مقبولاً مسبقاً، سجل الحضور فوراً
                 if (existingDoc.data().status === 'approved') {
-                    closeModal('modal-pending-approval');
                     await finalizeCheckIn('online', scheduledStart);
-                    return;
-                } else if (existingDoc.data().status === 'rejected') {
-                    closeModal('modal-pending-approval');
-                    openModal('modal-request-rejected'); // إظهار نافذة الرفض فوراً
                     return;
                 }
             } else {
+                // إنشاء طلب جديد لأول مرة
                 const reqRef = await db.collection('work_mode_requests').add({
                     userId: email,
                     date: today,
@@ -915,25 +911,68 @@ async function submitAttendance(mode) {
                 sendTelegramNotification(`⚠️ <b>طلب عمل أونلاين استثنائي</b>\nالموظف: ${userProfile.name}\nيطلب العمل أونلاين اليوم رغم أن جدوله (مقر).`);
             }
 
-            // الاستماع للقرار اللحظي
+            // تخزين المعرف في النافذة لاستخدامه عند الحاجة لإعادة الإرسال
+            document.getElementById('rejected-request-id').value = reqId;
+
+            // نظام الاستماع اللحظي للحالات الثلاث (انتظار، قبول، رفض)
             const unsubscribe = db.collection('work_mode_requests').doc(reqId).onSnapshot(async (doc) => {
-                if(doc.exists && doc.data().status === 'approved') {
+                if(!doc.exists) return;
+                const status = doc.data().status;
+
+                if(status === 'approved') {
                     unsubscribe();
                     closeModal('modal-pending-approval');
+                    closeModal('modal-request-rejected');
+                    showToast('تمت الموافقة', 'وافق المدير على عملك أونلاين اليوم.', 'success');
                     await finalizeCheckIn('online', scheduledStart);
-                } else if (doc.exists && doc.data().status === 'rejected') {
-                    unsubscribe();
+                } else if (status === 'rejected') {
                     closeModal('modal-pending-approval');
-                    openModal('modal-request-rejected'); // 👈 هنا يتم فتح نافذة الرفض عند قرار المدير
+                    openModal('modal-request-rejected');
+                } else if (status === 'pending') {
+                    // في حال تمت إعادة إرسال الطلب أو كان قيد الانتظار
+                    closeModal('modal-request-rejected');
+                    openModal('modal-pending-approval');
                 }
             });
-        } catch(e) { console.error(e); closeModal('modal-pending-approval'); }
+
+        } catch(e) { 
+            console.error(e); 
+            alert("حدث خطأ أثناء معالجة الطلب، تأكد من الاتصال بالإنترنت.");
+        }
         return;
     }
 
     await finalizeCheckIn(mode, scheduledStart);
 }
 
+// دالة إعادة إرسال الطلب المرفوض للمدير مرة أخرى
+async function resendWorkRequest() {
+    const reqId = document.getElementById('rejected-request-id').value;
+    if(!reqId) return;
+
+    const btn = document.querySelector('[onclick="resendWorkRequest()"]');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري إعادة الإرسال...';
+
+    try {
+        // تحديث حالة الطلب نفسه إلى قيد الانتظار وتحديث وقت الطلب
+        await db.collection('work_mode_requests').doc(reqId).update({
+            status: 'pending',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // إشعار تليجرام جديد للإدارة
+        sendTelegramNotification(`🔄 <b>تكرار طلب أونلاين</b>\nالموظف: ${userProfile.name}\nقام بإعادة إرسال طلب العمل أونلاين مرة أخرى للمراجعة.`);
+        
+        // ملاحظة: لا نحتاج لفتح نافذة الانتظار يدوياً هنا لأن المستمع (onSnapshot) سيكتشف التغيير ويفتحها تلقائياً
+    } catch (e) {
+        console.error("خطأ في إعادة الإرسال:", e);
+        alert("فشل في إعادة إرسال الطلب، يرجى المحاولة لاحقاً.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'إرسال الطلب مرة أخرى للمراجعة';
+    }
+}
 // دالة العودة للمحاولة مرة أخرى (التي طلبتها)
 function retryAttendance() {
     closeModal('modal-request-rejected'); // إغلاق نافذة الرفض
@@ -1652,22 +1691,30 @@ function listenToScreenshotRequests() {
         </div>
     </div>
 </div>
-    <div id="modal-request-rejected" class="fixed inset-0 z-[550] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+   <div id="modal-request-rejected" class="fixed inset-0 z-[550] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="bg-dark-900 w-full max-w-md rounded-[2.5rem] p-10 border-2 border-red-500/30 shadow-2xl text-center">
         <div class="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <i class="fas fa-user-times text-3xl"></i>
         </div>
         <h3 class="text-xl font-black text-white mb-2">تم رفض طلب العمل أونلاين</h3>
-        <p class="text-xs text-slate-400 mb-8 leading-relaxed">
+        <p class="text-xs text-slate-400 mb-6 leading-relaxed">
             نعتذر، لقد تم رفض طلبك للعمل عن بُعد لهذا اليوم من قبل الإدارة. 
-            <br><span class="text-white font-bold">يرجى التواصل مع المسؤول المباشر أو الحضور لمقر الشركة.</span>
+            <br><span class="text-white font-bold">يرجى التواصل مع المسؤول المباشر أو المحاولة مرة أخرى إذا حصلت على إذن استثنائي.</span>
         </p>
         
-        <button onclick="retryAttendance()" class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black shadow-xl active:scale-95 transition-all mb-3">
-            العودة لصفحة الاختيار
-        </button>
-        <p class="text-[9px] text-slate-600 font-bold uppercase tracking-widest">ALMASTER HR SYSTEM</p>
+        <input type="hidden" id="rejected-request-id">
+
+        <div class="flex flex-col gap-3">
+            <button onclick="resendWorkRequest()" class="w-full py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-2xl font-black shadow-xl active:scale-95 transition-all">
+                إرسال الطلب مرة أخرى للمراجعة
+            </button>
+            <button onclick="closeModal('modal-request-rejected'); openModal('modal-attendance-mode');" class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black shadow-xl active:scale-95 transition-all">
+                العودة لصفحة الاختيار
+            </button>
+        </div>
+        <p class="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-4">ALMASTER HR SYSTEM</p>
     </div>
+</div>
 </div>
 </body>
 </html>
