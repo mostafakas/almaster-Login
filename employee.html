@@ -860,6 +860,7 @@ async function handleStatusClick(s) {
 
 // 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
 // 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
+// 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
 async function submitAttendance(mode) {
     closeModal('modal-attendance-mode');
     const email = currentUser.email.toLowerCase().trim();
@@ -870,13 +871,12 @@ async function submitAttendance(mode) {
     let scheduledStart = '09:00'; // الافتراضي
 
     try {
-        // 1. جلب الجدول المخصص للموظف لليوم الحالي من لوحة الإدارة
+        // 1. جلب الجدول المخصص للموظف لليوم الحالي
         const schedRef = await db.collection('monthly_schedules').doc(`${email}_${monthId}`).get();
         if (schedRef.exists && schedRef.data().days && schedRef.data().days[today]) {
             scheduledMode = schedRef.data().days[today].mode;
             scheduledStart = schedRef.data().days[today].start;
         } else if (userProfile.hrProfile) {
-            // لو لم يقم المدير بوضع جدول لهذا اليوم، نعتمد على الإعدادات الافتراضية
             scheduledStart = userProfile.hrProfile.workStartTime || '09:00';
             scheduledMode = userProfile.hrProfile.defaultWorkMode || 'office';
         }
@@ -884,27 +884,59 @@ async function submitAttendance(mode) {
         console.error("خطأ في جلب الجدول:", e);
     }
 
-    // 2. التحقق من الاختيار: لو اختار (أونلاين) ولكن جدوله في النظام (مقر) -> يحتاج موافقة
+    // 2. التحقق من الاختيار: لو اختار (أونلاين) وجدوله (مقر) -> يحتاج موافقة
     if(mode === 'online' && scheduledMode === 'office') {
         openModal('modal-pending-approval');
+        
         try {
-            const reqRef = await db.collection('work_mode_requests').add({
-                userId: email,
-                date: today,
-                status: 'pending',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            // --- السحر هنا: فحص هل يوجد طلب سابق لليوم منعاً للتكرار ---
+            const existingReqs = await db.collection('work_mode_requests')
+                .where('userId', '==', email)
+                .where('date', '==', today)
+                .get();
 
-            sendTelegramNotification(`⚠️ <b>طلب عمل أونلاين استثنائي</b>\nالموظف: ${userProfile.name}\nيطلب العمل أونلاين اليوم رغم أن جدوله (مقر). الرجاء الدخول للوحة التحكم للمراجعة.`);
+            let reqId = null;
 
-            const unsubscribe = db.collection('work_mode_requests').doc(reqRef.id).onSnapshot(async (doc) => {
+            if (!existingReqs.empty) {
+                // يوجد طلب مسبق (الموظف ضغط مرتين أو عمل ريفريش)
+                const existingDoc = existingReqs.docs[0];
+                reqId = existingDoc.id;
+                
+                if (existingDoc.data().status === 'approved') {
+                    // المدير وافق عليه بالفعل أثناء ما الموظف كان قافل الصفحة
+                    closeModal('modal-pending-approval');
+                    await finalizeCheckIn('online', scheduledStart);
+                    return;
+                } else if (existingDoc.data().status === 'rejected') {
+                    // المدير رفضه بالفعل
+                    closeModal('modal-pending-approval');
+                    showToast('تم الرفض', 'رفض المدير الطلب سابقاً. يجب الحضور لمقر الشركة.', 'danger');
+                    return;
+                }
+                // لو الطلب لسه Pending، هنكمل لتحت عشان نتصل بيه من غير ما نعمل طلب جديد
+            } else {
+                // لا يوجد طلب، إذن ننشئ طلباً جديداً لأول مرة
+                const reqRef = await db.collection('work_mode_requests').add({
+                    userId: email,
+                    date: today,
+                    status: 'pending',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                reqId = reqRef.id;
+                
+                // إرسال تنبيه تليجرام مرة واحدة فقط
+                sendTelegramNotification(`⚠️ <b>طلب عمل أونلاين استثنائي</b>\nالموظف: ${userProfile.name}\nيطلب العمل أونلاين اليوم رغم أن جدوله (مقر). الرجاء الدخول للوحة التحكم للمراجعة.`);
+            }
+
+            // --- الاستماع لقرار المدير على الطلب (سواء كان قديماً أو جديداً) ---
+            const unsubscribe = db.collection('work_mode_requests').doc(reqId).onSnapshot(async (doc) => {
                 if(doc.exists && doc.data().status === 'approved') {
-                    unsubscribe();
+                    unsubscribe(); // إيقاف الاستماع
                     closeModal('modal-pending-approval');
                     showToast('تمت الموافقة', 'وافق المدير على عملك أونلاين اليوم، تم تسجيل الحضور.', 'success');
                     await finalizeCheckIn('online', scheduledStart);
                 } else if (doc.exists && doc.data().status === 'rejected') {
-                    unsubscribe();
+                    unsubscribe(); // إيقاف الاستماع
                     closeModal('modal-pending-approval');
                     showToast('تم الرفض', 'رفض المدير الطلب. يجب الحضور لمقر الشركة.', 'danger');
                 }
@@ -917,10 +949,10 @@ async function submitAttendance(mode) {
         return;
     }
 
-    // 3. لو اختار (مقر) وجدوله (مقر)، أو اختار (أونلاين) وجدوله أصلاً (أونلاين) -> دخول مباشر دون إذن
+    // 3. لو اختار (مقر) وجدوله (مقر)، أو اختار (أونلاين) وجدوله أصلاً (أونلاين) -> دخول مباشر
     await finalizeCheckIn(mode, scheduledStart);
 }
-// 3. دالة تسجيل الحضور الفعلية وحساب التأخير
+        // 3. دالة تسجيل الحضور الفعلية وحساب التأخير
 async function finalizeCheckIn(mode, startTimeStr) {
     const email = currentUser.email.toLowerCase().trim();
     const today = moment().format('YYYY-MM-DD');
