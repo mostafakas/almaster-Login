@@ -861,35 +861,29 @@ async function handleStatusClick(s) {
 // 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
 // 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
 // 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
+// 2. دالة معالجة اختيار الموظف (أونلاين أو مقر)
 async function submitAttendance(mode) {
     closeModal('modal-attendance-mode');
     const email = currentUser.email.toLowerCase().trim();
     const today = moment().format('YYYY-MM-DD');
     const monthId = moment().format('YYYY-MM');
 
-    let scheduledMode = 'office'; // الافتراضي
-    let scheduledStart = '09:00'; // الافتراضي
+    let scheduledMode = 'office'; 
+    let scheduledStart = '09:00'; 
 
     try {
-        // 1. جلب الجدول المخصص للموظف لليوم الحالي
         const schedRef = await db.collection('monthly_schedules').doc(`${email}_${monthId}`).get();
         if (schedRef.exists && schedRef.data().days && schedRef.data().days[today]) {
             scheduledMode = schedRef.data().days[today].mode;
             scheduledStart = schedRef.data().days[today].start;
-        } else if (userProfile.hrProfile) {
-            scheduledStart = userProfile.hrProfile.workStartTime || '09:00';
-            scheduledMode = userProfile.hrProfile.defaultWorkMode || 'office';
         }
-    } catch (e) {
-        console.error("خطأ في جلب الجدول:", e);
-    }
+    } catch (e) { console.error(e); }
 
-    // 2. التحقق من الاختيار: لو اختار (أونلاين) وجدوله (مقر) -> يحتاج موافقة
+    // لو طلب أونلاين وهو جدول مقر
     if(mode === 'online' && scheduledMode === 'office') {
         openModal('modal-pending-approval');
         
         try {
-            // --- السحر هنا: فحص هل يوجد طلب سابق لليوم منعاً للتكرار ---
             const existingReqs = await db.collection('work_mode_requests')
                 .where('userId', '==', email)
                 .where('date', '==', today)
@@ -898,24 +892,19 @@ async function submitAttendance(mode) {
             let reqId = null;
 
             if (!existingReqs.empty) {
-                // يوجد طلب مسبق (الموظف ضغط مرتين أو عمل ريفريش)
                 const existingDoc = existingReqs.docs[0];
                 reqId = existingDoc.id;
                 
                 if (existingDoc.data().status === 'approved') {
-                    // المدير وافق عليه بالفعل أثناء ما الموظف كان قافل الصفحة
                     closeModal('modal-pending-approval');
                     await finalizeCheckIn('online', scheduledStart);
                     return;
                 } else if (existingDoc.data().status === 'rejected') {
-                    // المدير رفضه بالفعل
                     closeModal('modal-pending-approval');
-                    showToast('تم الرفض', 'رفض المدير الطلب سابقاً. يجب الحضور لمقر الشركة.', 'danger');
+                    openModal('modal-request-rejected'); // إظهار نافذة الرفض فوراً
                     return;
                 }
-                // لو الطلب لسه Pending، هنكمل لتحت عشان نتصل بيه من غير ما نعمل طلب جديد
             } else {
-                // لا يوجد طلب، إذن ننشئ طلباً جديداً لأول مرة
                 const reqRef = await db.collection('work_mode_requests').add({
                     userId: email,
                     date: today,
@@ -923,34 +912,32 @@ async function submitAttendance(mode) {
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 reqId = reqRef.id;
-                
-                // إرسال تنبيه تليجرام مرة واحدة فقط
-                sendTelegramNotification(`⚠️ <b>طلب عمل أونلاين استثنائي</b>\nالموظف: ${userProfile.name}\nيطلب العمل أونلاين اليوم رغم أن جدوله (مقر). الرجاء الدخول للوحة التحكم للمراجعة.`);
+                sendTelegramNotification(`⚠️ <b>طلب عمل أونلاين استثنائي</b>\nالموظف: ${userProfile.name}\nيطلب العمل أونلاين اليوم رغم أن جدوله (مقر).`);
             }
 
-            // --- الاستماع لقرار المدير على الطلب (سواء كان قديماً أو جديداً) ---
+            // الاستماع للقرار اللحظي
             const unsubscribe = db.collection('work_mode_requests').doc(reqId).onSnapshot(async (doc) => {
                 if(doc.exists && doc.data().status === 'approved') {
-                    unsubscribe(); // إيقاف الاستماع
+                    unsubscribe();
                     closeModal('modal-pending-approval');
-                    showToast('تمت الموافقة', 'وافق المدير على عملك أونلاين اليوم، تم تسجيل الحضور.', 'success');
                     await finalizeCheckIn('online', scheduledStart);
                 } else if (doc.exists && doc.data().status === 'rejected') {
-                    unsubscribe(); // إيقاف الاستماع
+                    unsubscribe();
                     closeModal('modal-pending-approval');
-                    showToast('تم الرفض', 'رفض المدير الطلب. يجب الحضور لمقر الشركة.', 'danger');
+                    openModal('modal-request-rejected'); // 👈 هنا يتم فتح نافذة الرفض عند قرار المدير
                 }
             });
-        } catch(e) {
-            console.error(e);
-            alert("حدث خطأ أثناء إرسال الطلب");
-            closeModal('modal-pending-approval');
-        }
+        } catch(e) { console.error(e); closeModal('modal-pending-approval'); }
         return;
     }
 
-    // 3. لو اختار (مقر) وجدوله (مقر)، أو اختار (أونلاين) وجدوله أصلاً (أونلاين) -> دخول مباشر
     await finalizeCheckIn(mode, scheduledStart);
+}
+
+// دالة العودة للمحاولة مرة أخرى (التي طلبتها)
+function retryAttendance() {
+    closeModal('modal-request-rejected'); // إغلاق نافذة الرفض
+    openModal('modal-attendance-mode');   // إعادة فتح نافذة الاختيار (مقر أو أونلاين)
 }
         // 3. دالة تسجيل الحضور الفعلية وحساب التأخير
 async function finalizeCheckIn(mode, startTimeStr) {
@@ -1665,43 +1652,23 @@ function listenToScreenshotRequests() {
         </div>
     </div>
 </div>
+    <div id="modal-request-rejected" class="fixed inset-0 z-[550] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="bg-dark-900 w-full max-w-md rounded-[2.5rem] p-10 border-2 border-red-500/30 shadow-2xl text-center">
+        <div class="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-user-times text-3xl"></i>
+        </div>
+        <h3 class="text-xl font-black text-white mb-2">تم رفض طلب العمل أونلاين</h3>
+        <p class="text-xs text-slate-400 mb-8 leading-relaxed">
+            نعتذر، لقد تم رفض طلبك للعمل عن بُعد لهذا اليوم من قبل الإدارة. 
+            <br><span class="text-white font-bold">يرجى التواصل مع المسؤول المباشر أو الحضور لمقر الشركة.</span>
+        </p>
+        
+        <button onclick="retryAttendance()" class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black shadow-xl active:scale-95 transition-all mb-3">
+            العودة لصفحة الاختيار
+        </button>
+        <p class="text-[9px] text-slate-600 font-bold uppercase tracking-widest">ALMASTER HR SYSTEM</p>
+    </div>
+</div>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
