@@ -462,23 +462,29 @@ function playSystemSound(type) {
                 currentSessionId: newSessionId,
                 deviceInfo: detailedInfo 
             });
+// --- 📅 فحص وتسجيل الحضور المباشر والتلقائي لليوم الجديد ---
+const today = moment().format('YYYY-MM-DD');
+const attendanceSnap = await db.collection('attendance_records')
+    .where('userId', '==', userEmail)
+    .where('date', '==', today)
+    .get();
 
-            // --- 📅 فحص تسجيل الحضور قبل الدخول (التعديل هنا) ---
-            const today = moment().format('YYYY-MM-DD');
-            const attendanceSnap = await db.collection('attendance_records')
-                .where('userId', '==', userEmail)
-                .where('date', '==', today)
-                .get();
+// إذا كان الموظف لم يسجل حضوراً بعد لليوم الحالي، سجل له حضوراً فورياً دون سؤاله
+if (attendanceSnap.empty) {
+    await db.collection('attendance_records').add({
+        userId: userEmail,
+        name: userProfile.name,
+        date: today,
+        time: moment().format('hh:mm:ss A'),
+        mode: 'Auto-Login', 
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+}
 
-            // لو مسجل حضور قبل كدا النهاردة، دخله Online علطول
-            if (!attendanceSnap.empty) {
-                if (userProfile.status !== 'Online') {
-                    await setStatus(userEmail, 'Online', true);
-                }
-            } else {
-                // لو أول مرة النهاردة، افتحله البوب أب وميدخلش Online غير لما يختار
-                openModal('modal-attendance-mode');
-            }
+// توجيهه فوراً لوضع النشاط للبدء المباشر للعدادات
+if (userProfile.status !== 'Online') {
+    await setStatus(userEmail, 'Online', true);
+}
 
             initWorkspace();
             
