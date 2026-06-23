@@ -588,7 +588,7 @@
         // --- نظام الأداة المشتركة للموظف ---
        let sharedToolWindow = null;
 
-        function listenToSharedTool() {
+       function listenToSharedTool() {
             db.collection('system_settings').doc('shared_tool').onSnapshot(async (snapshot) => {
                 const data = snapshot.exists ? snapshot.data() : { status: 'idle' };
                 const btn = document.getElementById('btn-request-tool');
@@ -596,15 +596,22 @@
 
                 if (!btn) return;
 
+                // 🛡️ صمام الأمان الفوري: لو المدير سحب الأداة أو الجلسة لم تعد للموظف الحالي، اقفل النافذة فوراً
+                if (data.status === 'idle' || data.userEmail !== userProfile.email) {
+                    if (sharedToolWindow && !sharedToolWindow.closed) {
+                        sharedToolWindow.close();
+                        sharedToolWindow = null; // تصفير المرجع
+                        if (typeof showToast === "function" && data.status === 'idle') {
+                            showToast('انتهت الجلسة', 'قام المدير بسحب صلاحية الأداة وإغلاقها يدوياً.', 'error');
+                        }
+                    }
+                }
+
+                // --- إدارة مظهر وحالة الأزرار بناءً على السيرفر ---
                 if (data.status === 'idle') {
                     btn.innerHTML = '<i class="fas fa-shield-alt ml-2"></i> طلب استخدام الأداة';
                     btn.className = "flex-1 py-4 rounded-2xl bg-gray-900 text-white font-black text-sm shadow-lg hover:bg-gray-800 transition-all mini-btn";
                     btn.disabled = false;
-                    
-                    if(sharedToolWindow && !sharedToolWindow.closed) {
-                        sharedToolWindow.close();
-                        if(typeof showToast === "function") showToast('انتهت الجلسة', 'قام المدير بسحب صلاحية الأداة وإغلاقها يدوياً.', 'error');
-                    }
                 } 
                 else if (data.status === 'pending') {
                     if (data.userEmail === userProfile.email) {
@@ -626,10 +633,9 @@
                         if (!sharedToolWindow || sharedToolWindow.closed) {
                             sharedToolWindow = window.open("https://member.digitavision.com/login", "ALMASTER_SECURE_SESSION", "width=1200,height=800,scrollbars=yes");
                             
-                            // 🚀 السحر البرمجي: حقن تلقائي آمن لبيانات الدخول 🚀
+                            // محاولة الحقن التلقائي
                             sharedToolWindow.onload = function() {
                                 try {
-                                    // السيستم يبحث عن حقول الإدخال في صفحة الأداة ويضع القيم المرسلة من المدير
                                     const doc = sharedToolWindow.document;
                                     const emailInput = doc.querySelector('input[type="email"]') || doc.querySelector('input[name="email"]');
                                     const passInput = doc.querySelector('input[type="password"]') || doc.querySelector('input[name="password"]');
@@ -638,17 +644,14 @@
                                     if(emailInput && passInput && data.toolUser && data.toolPass) {
                                         emailInput.value = data.toolUser;
                                         passInput.value = data.toolPass;
-                                        
-                                        // الضغط التلقائي على زر الدخول بالنيابة عن الموظف
                                         if(submitBtn) submitBtn.click();
                                     }
                                 } catch(e) {
-                                    // إذا منع المتصفح الحقن المباشر بسبب الـ CORS، يظهر تنبيه ذكي للموظف لنسخ البيانات بضغطة زر دون رؤيتها
-                                    console.log("CORS Restriction Active. Falling back to secure clipboard proxy.");
+                                    console.log("CORS Restrictions block auto-fill. Waiting for user input.");
                                 }
                             };
 
-                            // مراقبة إذا الموظف قفل النافذة بنفسه يعيد إتاحتها للسيستم فوراً
+                            // مراقبة إذا أغلق الموظف النافذة يدوياً بنفسه
                             const tracker = setInterval(async () => {
                                 if (sharedToolWindow && sharedToolWindow.closed) {
                                     clearInterval(tracker);
