@@ -590,30 +590,28 @@
 
         let toolWindowReference = null; // متغير لمراقبة النافذة المفتوحة
 
+        let rtcPeerConnection = null;
+        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
         function listenToSharedTool() {
-            db.collection('system_settings').doc('shared_tool').onSnapshot(doc => {
+            db.collection('system_settings').doc('shared_tool').onSnapshot(async (doc) => {
                 const data = doc.exists ? doc.data() : { status: 'idle' };
                 const btn = document.getElementById('btn-request-tool');
+                const modal = document.getElementById('modal-shared-tool');
                 currentToolState = data.status;
 
                 if (!btn) return;
 
-                // 1. الأداة متاحة
                 if (data.status === 'idle') {
                     btn.innerHTML = '<i class="fas fa-shield-alt ml-2"></i> طلب استخدام الأداة';
                     btn.className = "flex-1 py-4 rounded-2xl bg-gray-900 text-white font-black text-sm shadow-lg hover:bg-gray-800 transition-all mini-btn";
                     btn.disabled = false;
-                    
-                    // لو النافذة مفتوحة عند الموظف والمدير سحب الصلاحية، نقفلها له فوراً
-                    if(toolWindowReference && !toolWindowReference.closed) {
-                        toolWindowReference.close();
-                        showToast('انتهت الجلسة', 'قام المدير بسحب صلاحية استخدام الأداة.', 'error');
-                    }
+                    modal.classList.add('hidden');
+                    closeClientRTC();
                 } 
-                // 2. الطلب معلق
                 else if (data.status === 'pending') {
                     if (data.userEmail === userProfile.email) {
-                        btn.innerHTML = '<i class="fas fa-hourglass-half animate-spin ml-2"></i> في انتظار موافقة الإدارة...';
+                        btn.innerHTML = '<i class="fas fa-hourglass-half animate-spin ml-2"></i> جاري ربط الجلسة مع المدير...';
                         btn.className = "flex-1 py-4 rounded-2xl bg-orange-100 text-orange-600 font-black text-sm cursor-wait";
                     } else {
                         btn.innerHTML = `<i class="fas fa-lock ml-2"></i> الأداة محجوزة بواسطة: ${data.userName}`;
@@ -621,24 +619,18 @@
                     }
                     btn.disabled = true;
                 }
-                // 3. تمت الموافقة للموظف للبدء
                 else if (data.status === 'in_use') {
                     if (data.userEmail === userProfile.email) {
-                        btn.innerHTML = '<i class="fas fa-door-open ml-2"></i> الأداة نشطة الآن (اضغط للمتابعة)';
-                        btn.className = "flex-1 py-4 rounded-2xl bg-green-600 text-white font-black text-sm animate-pulse";
+                        btn.innerHTML = '<i class="fas fa-compress animate-pulse ml-2"></i> شاشة التحكم نشطة الآن';
+                        btn.className = "flex-1 py-4 rounded-2xl bg-green-600 text-white font-black text-sm";
                         btn.disabled = false;
-
-                        // 🚀 السحر البرمجي: فتح النافذة أوتوماتيك للموظف فور موافقة المدير 🚀
-                        if(!toolWindowReference || toolWindowReference.closed) {
-                            toolWindowReference = window.open("https://member.digitavision.com/login", "DigitavisionSharedTool", "width=1200,height=800,scrollbars=yes");
-                            
-                            // مراقبة لو الموظف قفل النافذة بنفسه يرجع الأداة متاحة للسيستم
-                            const checkWindowClosed = setInterval(async () => {
-                                if (toolWindowReference && toolWindowReference.closed) {
-                                    clearInterval(checkWindowClosed);
-                                    await releaseSharedTool();
-                                }
-                            }, 2000);
+                        
+                        // فتح نافذة البث للموظف أوتوماتيكياً
+                        if(modal.classList.contains('hidden')) {
+                            modal.classList.remove('hidden');
+                            if(data.offer && !rtcPeerConnection) {
+                                connectToAdminRTC(data.offer); // بدء استقبال شاشة المدير
+                            }
                         }
                     } else {
                         btn.innerHTML = `<i class="fas fa-lock ml-2"></i> يستخدمها الآن: ${data.userName}`;
@@ -646,6 +638,83 @@
                         btn.disabled = true;
                     }
                 }
+            });
+        }
+
+        // إنشاء اتصال مرئي حي عبر بروتوكول WebRTC لاستقبال شاشة المدير
+        async function connectToAdminRTC(offerData) {
+            rtcPeerConnection = new RTCPeerConnection(rtcConfig);
+            
+            // استقبال مسار الفيديو وعرضه في عنصر الـ video
+            rtcPeerConnection.ontrack = (event) => {
+                const video = document.getElementById('remote-tool-video');
+                if (video && event.streams && event.streams[0]) {
+                    video.srcObject = event.streams[0];
+                }
+            };
+
+            // إرسال الـ ICE Candidates الخاصة بالموظف للمدير
+            rtcPeerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    db.collection('system_settings').doc('shared_tool')
+                      .collection('ice_candidates').add(event.candidate.toJSON());
+                }
+            };
+
+            // تعيين وصف المدير (Offer)
+            await rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
+            
+            // إنشاء الإجابة (Answer)
+            const answer = await rtcPeerConnection.createAnswer();
+            await rtcPeerConnection.setLocalDescription(answer);
+
+            await db.collection('system_settings').doc('shared_tool').update({
+                answer: { type: answer.type, sdp: answer.sdp }
+            });
+
+            // الاستماع للـ Candidates القادمة من المدير وتطبيقها
+            db.collection('system_settings').doc('shared_tool').collection('ice_candidates')
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(async (change) => {
+                        if (change.type === 'added' && rtcPeerConnection) {
+                            try {
+                                await rtcPeerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                            } catch(e) { }
+                        }
+                    });
+                });
+        }
+
+        // 3. التقاط نقرات الموظف على الفيديو وتحويلها لنسب مئوية وإرسالها للمدير لحظياً
+        async function sendClickToAdmin(event) {
+            const video = document.getElementById('remote-tool-video');
+            if(!video || !rtcPeerConnection) return;
+
+            const rect = video.getBoundingClientRect();
+            // حساب مكان الضغطة بالنسبة المئوية الدقيقة لضمان تطابق الأبعاد بين الشاشتين
+            const clickXPercentage = (event.clientX - rect.left) / rect.width;
+            const clickYPercentage = (event.clientY - rect.top) / rect.height;
+
+            // دفع الإحداثيات لفايربيز ليقوم متصفح المدير بتنفيذها فوراً
+            await db.collection('system_settings').doc('shared_tool').collection('mouse_stream').add({
+                type: 'click',
+                pctX: clickXPercentage,
+                pctY: clickYPercentage,
+                time: Date.now()
+            });
+        }
+
+        function closeClientRTC() {
+            if(rtcPeerConnection) { rtcPeerConnection.close(); rtcPeerConnection = null; }
+            const video = document.getElementById('remote-tool-video');
+            if(video) video.srcObject = null;
+        }
+
+        async function releaseSharedTool() {
+            document.getElementById('modal-shared-tool').classList.add('hidden');
+            closeClientRTC();
+            await db.collection('system_settings').doc('shared_tool').set({
+                status: 'idle', userEmail: null, userName: null, offer: null, answer: null 
             });
         }
         async function requestSharedTool() {
@@ -664,5 +733,20 @@
             });
         }
     </script>
+    <div id="modal-shared-tool" class="fixed inset-0 z-[700] hidden bg-gray-900/95 backdrop-blur-md flex flex-col p-6">
+        <div class="bg-white w-full h-full rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-gray-100 bg-surface flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                    <h3 class="font-black text-xs text-textMain uppercase">شاشة التحكم الآمنة عن بُعد</h3>
+                </div>
+                <button onclick="releaseSharedTool()" class="px-5 py-2 bg-red-50 text-red-600 font-black text-xs rounded-xl hover:bg-red-100 transition shadow-sm">إنهاء التحكم وتسليم الأداة 👋</button>
+            </div>
+            
+            <div class="flex-1 w-full h-full bg-black relative flex items-center justify-center overflow-hidden">
+                <video id="remote-tool-video" autoplay playsinline onclick="sendClickToAdmin(event)" class="max-w-full max-h-full object-contain cursor-crosshair bg-black"></video>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
