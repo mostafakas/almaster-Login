@@ -93,6 +93,7 @@
             <div class="flex gap-2">
                 <a href="payroll.html" target="_blank" class="px-4 py-2.5 border border-gray-200 hover:border-gray-900 rounded-xl font-bold text-xs text-textMain transition-all mini-btn"><i class="fas fa-money-bill-wave ml-1 text-green-500"></i> نظام المرتبات</a>
                 <a href="crm.html" target="_blank" class="px-4 py-2.5 border border-gray-200 hover:border-gray-900 rounded-xl font-bold text-xs text-textMain transition-all mini-btn"><i class="fas fa-project-diagram ml-1 text-primary-500"></i> المشاريع</a>
+                <button onclick="openModal('modal-admin-shared-tool')" class="px-4 py-2.5 border border-primary-200 bg-primary-50 hover:bg-primary-100 rounded-xl font-bold text-xs text-primary-700 transition-all mini-btn"><i class="fas fa-shield-alt ml-1"></i> الأداة المشتركة</button>
             </div>
             <div class="text-right border-r border-gray-200 pr-6 hidden md:block">
                 <div id="header-time" class="text-lg font-black text-textMain">00:00:00</div>
@@ -301,6 +302,7 @@
 
         // --- التهيئة الشاملة ---
         function initAdminConsole() {
+            listenToSharedTool();
             startClock();
             document.getElementById('admin-name').innerText = userProfile.name;
             document.getElementById('admin-avatar').src = userProfile.photo || DEFAULT_PHOTO + 'Admin';
@@ -751,6 +753,80 @@
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         async function logout() { await auth.signOut(); window.location.replace('index.html'); }
+        // --- نظام الأداة المشتركة للمدير ---
+        function listenToSharedTool() {
+            db.collection('system_settings').doc('shared_tool').onSnapshot(doc => {
+                // لو الدوكيومنت مش موجود هيعمل قراءة افتراضية
+                const data = doc.exists ? doc.data() : { status: 'idle', userEmail: null, userName: null };
+                const badge = document.getElementById('tool-status-badge');
+                const actionArea = document.getElementById('tool-action-area');
+                const overlay = document.getElementById('tool-lock-overlay');
+                const lockText = document.getElementById('tool-lock-text');
+
+                if (!badge || !actionArea || !overlay) return; // حماية من الأخطاء
+
+                if (data.status === 'idle') {
+                    badge.className = 'px-4 py-2 rounded-xl text-xs font-black bg-green-50 text-green-600';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> الأداة متاحة';
+                    actionArea.innerHTML = '';
+                    overlay.classList.add('hidden');
+                } 
+                else if (data.status === 'pending') {
+                    badge.className = 'px-4 py-2 rounded-xl text-xs font-black bg-orange-50 text-orange-600';
+                    badge.innerHTML = `<i class="fas fa-bell animate-pulse"></i> طلب معلق من: ${data.userName}`;
+                    actionArea.innerHTML = `
+                        <button onclick="approveToolAccess()" class="px-4 py-2 bg-green-600 text-white rounded-lg text-[10px] font-black hover:bg-green-500 active:scale-95 transition-all">موافق وتمرير ✅</button>
+                        <button onclick="revokeToolAccess()" class="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-[10px] font-black hover:bg-red-100 active:scale-95 transition-all">رفض ❌</button>
+                    `;
+                    overlay.classList.add('hidden');
+                    
+                    // تنبيه عشان المدير ياخد باله
+                    if (typeof showToast === "function") showToast("طلب أداة", `يطلب ${data.userName} استخدام الأداة`, "info");
+                }
+                else if (data.status === 'in_use') {
+                    badge.className = 'px-4 py-2 rounded-xl text-xs font-black bg-blue-50 text-blue-600';
+                    badge.innerHTML = `<i class="fas fa-user-lock"></i> يستخدمها الآن: ${data.userName}`;
+                    actionArea.innerHTML = `<button onclick="revokeToolAccess()" class="px-4 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black shadow-lg hover:bg-red-500 active:scale-95 transition-all">سحب الصلاحية</button>`;
+                    
+                    lockText.innerText = `يتم استخدام الأداة حالياً بواسطة: ${data.userName}`;
+                    overlay.classList.remove('hidden'); // إظهار البلوك الرمادي
+                }
+            });
+        }
+
+        async function approveToolAccess() {
+            await db.collection('system_settings').doc('shared_tool').set({ status: 'in_use' }, { merge: true });
+        }
+
+        async function revokeToolAccess() {
+            await db.collection('system_settings').doc('shared_tool').set({ 
+                status: 'idle', userEmail: null, userName: null 
+            }, { merge: true });
+        }
     </script>
+    <div id="modal-admin-shared-tool" class="fixed inset-0 z-[700] hidden bg-textMain/50 backdrop-blur-sm flex items-center justify-center p-6" onclick="closeModal('modal-admin-shared-tool')">
+        <div class="bg-white w-full h-full max-w-6xl rounded-[2rem] flex flex-col shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <div class="p-5 border-b border-gray-100 bg-surface flex justify-between items-center shrink-0">
+                <div>
+                    <h2 class="text-xl font-black text-textMain"><i class="fas fa-shield-alt text-primary-500 ml-2"></i> مركز التحكم في الأداة المشتركة</h2>
+                    <p class="text-xs text-textMuted font-bold mt-1">إدارة الجلسات وحماية الأداة من التعدد.</p>
+                </div>
+                <div id="tool-admin-controls" class="flex items-center gap-4 bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
+                    <div id="tool-status-badge" class="px-4 py-2 rounded-xl text-xs font-black bg-gray-100 text-gray-500">جاري فحص الحالة...</div>
+                    <div id="tool-action-area" class="flex gap-2"></div>
+                </div>
+                <button onclick="closeModal('modal-admin-shared-tool')" class="text-gray-400 hover:text-red-500 text-xl transition mr-4"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex-1 bg-gray-100 relative">
+                <div id="tool-lock-overlay" class="absolute inset-0 z-10 bg-gray-900/70 backdrop-blur-sm hidden flex flex-col items-center justify-center text-white">
+                    <i class="fas fa-lock text-5xl mb-4 text-primary-500 animate-pulse"></i>
+                    <h3 class="text-2xl font-black mb-2">الأداة قيد الاستخدام</h3>
+                    <p id="tool-lock-text" class="text-sm font-bold">يتم استخدام الأداة حالياً من قبل موظف.</p>
+                    <button onclick="revokeToolAccess()" class="mt-6 px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black shadow-lg transition-all active:scale-95">سحب الصلاحية الفوري وإغلاقها</button>
+                </div>
+                <iframe id="admin-tool-iframe" src="https://www.wikipedia.org/" class="w-full h-full border-none"></iframe>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
