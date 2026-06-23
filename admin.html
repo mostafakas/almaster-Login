@@ -125,10 +125,10 @@
             </div>
         </section>
 
-        <aside class="w-[420px] bg-white h-full flex flex-col shrink-0 overflow-hidden shadow-xl shadow-gray-200/30">
+       <aside class="w-[420px] bg-white h-full flex flex-col shrink-0 overflow-hidden shadow-xl shadow-gray-200/30">
             
-            <div class="h-1/2 border-b border-gray-100 flex flex-col overflow-hidden">
-                <div class="p-5 bg-surface border-b border-gray-100 shrink-0 flex justify-between items-center">
+            <div class="h-1/3 border-b border-gray-100 flex flex-col overflow-hidden">
+                <div class="p-4 bg-surface border-b border-gray-100 shrink-0 flex justify-between items-center">
                     <h3 class="font-black text-xs text-textMain uppercase tracking-widest"><i class="fas fa-envelope-open-text text-orange-500 ml-2"></i> طلبات الإجازات والأذونات المعلقة</h3>
                 </div>
                 <div id="requests-queue-container" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-gray-50/50">
@@ -136,8 +136,34 @@
                 </div>
             </div>
 
-            <div class="h-1/2 flex flex-col overflow-hidden">
-                <div class="p-5 bg-surface border-b border-gray-100 shrink-0 flex justify-between items-center">
+            <div class="h-auto border-b border-gray-100 bg-white p-4 space-y-3 shrink-0">
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <h3 class="font-black text-xs text-textMain uppercase"><i class="fas fa-sliders-h text-primary-500 ml-2"></i> إدارة الأداة المشتركة المركزية</h3>
+                    <div id="tool-status-badge" class="px-2 py-1 rounded-lg text-[9px] font-black bg-gray-100 text-gray-500">جاري الفحص...</div>
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded-2xl border border-gray-100 flex justify-between items-center text-right shadow-sm">
+                    <div class="leading-tight">
+                        <p class="text-[9px] text-textMuted font-black uppercase mb-1">المستخدم النشط حالياً</p>
+                        <p id="tool-current-user-text" class="text-xs font-black text-textMain">لا أحد (متاحة) 🟢</p>
+                    </div>
+                    <div id="tool-action-area" class="flex gap-1.5"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div class="bg-surface p-3 rounded-xl border border-gray-200/60 h-28 flex flex-col">
+                        <h4 class="text-[9px] font-black text-orange-600 uppercase border-b border-gray-200 pb-1 mb-1.5"><i class="fas fa-hourglass-half ml-1"></i> قائمة الهولد (الانتظار)</h4>
+                        <div id="tool-hold-queue" class="flex-1 overflow-y-auto custom-scrollbar space-y-1 text-[10px] font-bold text-textMain"></div>
+                    </div>
+                    <div class="bg-surface p-3 rounded-xl border border-gray-200/60 h-28 flex flex-col">
+                        <h4 class="text-[9px] font-black text-textMuted uppercase border-b border-gray-200 pb-1 mb-1.5"><i class="fas fa-history ml-1"></i> سجل من استخدمها اليوم</h4>
+                        <div id="tool-history-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-1 text-[9px] font-bold text-textMuted"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <div class="p-4 bg-surface border-b border-gray-100 shrink-0 flex justify-between items-center">
                     <h3 class="font-black text-xs text-textMain uppercase tracking-widest"><i class="fas fa-users-cog text-primary-500 ml-2"></i> شؤون الموظفين والصلاحيات</h3>
                     <button onclick="openUserModal('new')" class="px-3 py-1.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-[10px] font-black shadow-sm transition-all mini-btn"><i class="fas fa-user-plus ml-1"></i> إضافة حساب</button>
                 </div>
@@ -149,10 +175,14 @@
             <div class="p-4 border-t border-gray-100 bg-surface shrink-0 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <img id="admin-avatar" src="" class="w-8 h-8 rounded-xl object-cover bg-gray-200">
-                    <div class="leading-none"><p id="admin-name" class="text-xs font-black text-textMain">---</p><p class="text-[8px] font-bold text-primary-500 mt-1 uppercase">رتبة: مدير النظام الأعلى</p></div>
+                    <div class="leading-none">
+                        <p id="admin-name" class="text-xs font-black text-textMain">---</p>
+                        <p class="text-[8px] font-bold text-primary-500 mt-1 uppercase">رتبة: مدير النظام الأعلى</p>
+                    </div>
                 </div>
                 <button onclick="logout()" class="text-xs font-black text-red-500 hover:text-red-600 flex items-center gap-1.5 mini-btn"><i class="fas fa-power-off text-[10px]"></i> خروج</button>
             </div>
+
         </aside>
     </main>
 
@@ -754,78 +784,135 @@
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         async function logout() { await auth.signOut(); window.location.replace('index.html'); }
         // --- نظام الأداة المشتركة للمدير ---
-       // --- الرابط اللحظي المستقر للأداة المشتركة (نسخة الأدمن المحدثة) ---
+let activeToolUserEmail = null;
+
         function listenToSharedTool() {
+            // 1. الاستماع للحالة العامة ومن يستخدمها الآن
             db.collection('system_settings').doc('shared_tool').onSnapshot(doc => {
                 const data = doc.exists ? doc.data() : { status: 'idle', userEmail: null, userName: null };
                 const badge = document.getElementById('tool-status-badge');
+                const userText = document.getElementById('tool-current-user-text');
                 const actionArea = document.getElementById('tool-action-area');
-                const overlay = document.getElementById('tool-lock-overlay');
-                const lockText = document.getElementById('tool-lock-text');
-
-                // حماية أمنية: إذا لم تكن الواجهة قد تحميلها بالكامل بعد لمنع الـ Freeze
-                if (!badge || !actionArea) return; 
+                
+                if (!badge || !userText || !actionArea) return;
+                activeToolUserEmail = data.userEmail;
 
                 if (data.status === 'idle') {
-                    badge.className = 'px-4 py-2 rounded-xl text-xs font-black bg-green-50 text-green-600 border border-green-100';
-                    badge.innerHTML = '<i class="fas fa-check-circle ml-1"></i> الأداة متاحة الآن للطلب';
+                    badge.className = 'px-2 py-1 rounded-lg text-[9px] font-black bg-green-50 text-green-600 border border-green-100';
+                    badge.innerText = 'متاحة';
+                    userText.className = "text-xs font-black text-green-600";
+                    userText.innerHTML = 'لا أحد (جاهزة للاستخدام) 🟢';
                     actionArea.innerHTML = '';
-                    if(overlay) overlay.classList.add('hidden');
                 } 
-                else if (data.status === 'pending') {
-                    badge.className = 'px-4 py-2 rounded-xl text-xs font-black bg-orange-50 text-orange-600 border border-orange-100 animate-pulse';
-                    badge.innerHTML = `<i class="fas fa-bell ml-1"></i> طلب معلق من: ${data.userName}`;
-                    
-                    // إعادة بناء حقن الأزرار بروابط استدعاء قاطعة ومباشرة ومكشوفة للمتصفح window
-                    actionArea.innerHTML = `
-                        <button onclick="window.approveToolAccess()" class="px-4 py-2 bg-green-600 text-white rounded-xl text-[11px] font-black hover:bg-green-500 shadow-md transition-all cursor-pointer">موافق وتمرير الجلسة ✅</button>
-                        <button onclick="window.revokeToolAccess()" class="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[11px] font-black hover:bg-red-100 border border-red-200 transition-all cursor-pointer">رفض وإلغاء الطلب ❌</button>
-                    `;
-                    if(overlay) overlay.classList.add('hidden');
-                }
                 else if (data.status === 'in_use') {
-                    badge.className = 'px-4 py-2 rounded-xl text-xs font-black bg-blue-50 text-blue-600 border border-blue-100';
-                    badge.innerHTML = `<i class="fas fa-user-lock ml-1"></i> يستخدمها الآن: ${data.userName}`;
-                    
+                    badge.className = 'px-2 py-1 rounded-lg text-[9px] font-black bg-blue-50 text-blue-600 border border-blue-100';
+                    badge.innerText = 'قيد الاستخدام';
+                    userText.className = "text-xs font-black text-textMain";
+                    userText.innerHTML = `<i class="fas fa-user text-primary-500 ml-1"></i> ${data.userName}`;
                     actionArea.innerHTML = `
-                        <button onclick="window.revokeToolAccess()" class="px-4 py-2 bg-red-600 text-white rounded-xl text-[11px] font-black shadow-md hover:bg-red-500 transition-all">سحب الصلاحية الفورية</button>
+                        <button onclick="window.revokeToolAccess()" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-[10px] font-black hover:bg-red-500 shadow-sm mini-btn transition-all">سحب وقفل 🛑</button>
                     `;
-                    
-                    if(lockText) lockText.innerText = `يتم استخدام الأداة حالياً بواسطة: ${data.userName}`;
-                    if(overlay) overlay.classList.remove('hidden');
                 }
-            }, err => {
-                console.error("Firestore Core Sync Error: ", err);
             });
+
+            // 2. الاستماع اللحظي لطابور الهولد وترتيبهم زمنيًا حسب الأقدمية
+            db.collection('tool_requests')
+                .where('status', '==', 'pending')
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(snap => {
+                    const holdQueue = document.getElementById('tool-hold-queue');
+                    const badgeCount = document.getElementById('stat-pending-requests'); // ربط العداد بالهيدر
+                    if(!holdQueue) return;
+                    
+                    if(badgeCount) badgeCount.innerText = `${snap.size} في قائمة الانتظار`;
+                    if(snap.empty) { holdQueue.innerHTML = '<p class="text-textMuted italic text-center py-4 text-[9px]">لا أحد في الانتظار</p>'; return; }
+                    
+                    holdQueue.innerHTML = '';
+                    let isFirst = true;
+                    
+                    snap.forEach(doc => {
+                        const r = doc.data();
+                        const id = doc.id;
+                        
+                        // الموظف الأول في الطابور يظهر أمامه زر التمرير فوراً
+                        let actionBtn = '';
+                        if(isFirst && !activeToolUserEmail) { 
+                            actionBtn = `<button onclick="window.approveToolRequest('${id}', '${r.userEmail}', '${r.userName}')" class="px-2 py-0.5 bg-green-600 text-white text-[9px] font-black rounded hover:bg-green-500 transition-all">تمرير ✅</button>`;
+                        } else if (isFirst && activeToolUserEmail) {
+                            actionBtn = `<span class="text-[8px] text-orange-500 font-black animate-pulse">انتظار المخلص...</span>`;
+                        }
+                        
+                        holdQueue.innerHTML += `
+                            <div class="flex justify-between items-center bg-white p-1.5 rounded-lg border border-gray-100 shadow-sm">
+                                <span class="truncate max-w-[70px] text-right" title="${r.userName}">${r.userName.split(' ')[0]}</span>
+                                ${actionBtn}
+                            </div>
+                        `;
+                        isFirst = false;
+                    });
+                });
+
+            // 3. الاستماع لهيستوري الاستخدام لليوم الحالي فقط
+            const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+            db.collection('tool_requests')
+                .where('status', '==', 'completed')
+                .where('ended_at', '>=', startOfDay)
+                .orderBy('ended_at', 'desc')
+                .limit(5)
+                .onSnapshot(snap => {
+                    const historyBox = document.getElementById('tool-history-list');
+                    if(!historyBox) return;
+                    if(snap.empty) { historyBox.innerHTML = '<p class="text-textMuted italic text-center py-4 text-[9px]">لا توجد جلسات سابقة اليوم</p>'; return; }
+                    
+                    historyBox.innerHTML = '';
+                    snap.forEach(doc => {
+                        const h = doc.data();
+                        const endStr = h.ended_at ? moment(h.ended_at.toDate()).format('hh:mm A') : '';
+                        historyBox.innerHTML += `
+                            <div class="flex justify-between items-center bg-gray-50/60 p-1 rounded border border-gray-100 text-right leading-tight">
+                                <span>${h.userName.split(' ')[0]}</span>
+                                <span class="font-mono text-[8px] text-textMuted">خلص ${endStr}</span>
+                            </div>
+                        `;
+                    });
+                });
         }
 
-        // إشهار الدوال عالمياً للمتصفح لتخطي قفل الـ Scope وحل مشكلة الأزرار التي لا تستجيب
-        window.approveToolAccess = async function() {
+        // دالة تمرير وقبول الطلب الأول في الطابور وحقن البيانات المشفرة
+        window.approveToolRequest = async function(requestId, email, name) {
             try {
+                // تحديث الطلب الفردي في الكوليكشن الفرعي ليتحول إلى مقيد بالاستخدام
+                await db.collection('tool_requests').doc(requestId).update({ status: 'active', started_at: firebase.firestore.FieldValue.serverTimestamp() });
+                
+                // تحديث الغرفة الرئيسية ليعرف كل الموظفين من المستحوذ حالياً على الجلسة
                 await db.collection('system_settings').doc('shared_tool').update({ 
                     status: 'in_use',
+                    userEmail: email,
+                    userName: name,
+                    activeRequestId: requestId,
                     toolUser: "ALMasterIo", 
                     toolPass: "AL Master@2050"
                 });
-            } catch (error) {
-                console.error(error);
-            }
+            } catch(e) { console.error(e); }
         };
 
+        // دالة السحب المركزي للمدير (تقفل عند الموظف وتفرغ الحساب)
         window.revokeToolAccess = async function() {
             try {
+                const doc = await db.collection('system_settings').doc('shared_tool').get();
+                if(doc.exists && doc.data().activeRequestId) {
+                    // تحديث حالة الطلب الفردي في الهيستوري كـ مكتمل ومسحوب
+                    await db.collection('tool_requests').doc(doc.data().activeRequestId).update({ 
+                        status: 'completed', 
+                        ended_at: firebase.firestore.FieldValue.serverTimestamp() 
+                    });
+                }
+
                 await db.collection('system_settings').doc('shared_tool').update({ 
-                    status: 'idle', 
-                    userEmail: null, 
-                    userName: null, 
-                    toolUser: null, 
-                    toolPass: null
+                    status: 'idle', userEmail: null, userName: null, activeRequestId: null, toolUser: null, toolPass: null
                 });
-            } catch (error) {
-                console.error(error);
-            }
-        };
-        // --- نظام الإدارة والتحكم الذكي في الأداة المشتركة (نسخة مستقرة قسرية) ---
+            } catch (error) { console.error(error); }
+        };        // --- نظام الإدارة والتحكم الذكي في الأداة المشتركة (نسخة مستقرة قسرية) ---
         async function approveToolAccess() {
             try {
                 await db.collection('system_settings').doc('shared_tool').update({ 
@@ -923,36 +1010,5 @@
             });
         }
     </script>
-    <div id="modal-admin-shared-tool" class="fixed inset-0 z-[700] hidden bg-textMain/50 backdrop-blur-sm flex items-center justify-center p-6" onclick="closeModal('modal-admin-shared-tool')">
-        <div class="bg-white w-full h-full max-w-6xl rounded-[2rem] flex flex-col shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
-            <div class="p-5 border-b border-gray-100 bg-surface flex justify-between items-center shrink-0">
-                <div>
-                    <h2 class="text-xl font-black text-textMain"><i class="fas fa-shield-alt text-primary-500 ml-2"></i> مركز التحكم في الأداة المشتركة</h2>
-                    <p class="text-xs text-textMuted font-bold mt-1">إدارة الجلسات وحماية الأداة من التعدد.</p>
-                </div>
-                <div id="tool-admin-controls" class="flex items-center gap-4 bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
-                    <div id="tool-status-badge" class="px-4 py-2 rounded-xl text-xs font-black bg-gray-100 text-gray-500">جاري فحص الحالة...</div>
-                    <div id="tool-action-area" class="flex gap-2"></div>
-                </div>
-                <button onclick="closeModal('modal-admin-shared-tool')" class="text-gray-400 hover:text-red-500 text-xl transition mr-4"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="flex-1 bg-gray-50 relative flex flex-col items-center justify-center p-8 text-center">
-                <div id="tool-lock-overlay" class="absolute inset-0 z-10 bg-gray-900/60 backdrop-blur-sm hidden flex flex-col items-center justify-center text-white">
-                    <i class="fas fa-lock text-5xl mb-4 text-primary-500 animate-pulse"></i>
-                    <h3 class="text-2xl font-black mb-2">الأداة قيد الاستخدام</h3>
-                    <p id="tool-lock-text" class="text-sm font-bold">يتم استخدام الأداة حالياً من قبل موظف مأذون له.</p>
-                    <button onclick="revokeToolAccess()" class="mt-6 px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black shadow-lg">سحب الصلاحية الفوري وإغلاقها</button>
-                </div>
-                
-                <div class="space-y-4">
-                    <div class="w-16 h-16 bg-primary-50 text-primary-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
-                        <i class="fas fa-shield-alt text-2xl"></i>
-                    </div>
-                    <h4 class="font-black text-textMain text-base">منصة التحكم في الأداة المشتركة</h4>
-                    <p class="text-xs text-textMuted max-w-sm">السيستم يدير الآن طابور الطلبات ويقوم بحقن البيانات وتأمين الجلسة للموظف المقبول أوتوماتيكياً دون كشف الباسوورد.</p>
-                </div>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
