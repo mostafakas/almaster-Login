@@ -586,9 +586,10 @@
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.remove(), 300); }, 5000);
         }
         // --- نظام الأداة المشتركة للموظف ---
-       let sharedToolWindow = null;
+     let sharedToolWindow = null;
+        let myActiveRequestRefId = null; // حفظ معرف الطلب الخاص بي
 
-       function listenToSharedTool() {
+        function listenToSharedTool() {
             db.collection('system_settings').doc('shared_tool').onSnapshot(async (snapshot) => {
                 const data = snapshot.exists ? snapshot.data() : { status: 'idle' };
                 const btn = document.getElementById('btn-request-tool');
@@ -596,75 +597,102 @@
 
                 if (!btn) return;
 
-                // 🛡️ صمام الأمان الفوري: لو المدير سحب الأداة أو الجلسة لم تعد للموظف الحالي، اقفل النافذة فوراً
+                // 🛡️ صمام الأمان: لو الجلسة انتهت أو المدير سحبها، اقفل نافذة المتصفح فوراً
                 if (data.status === 'idle' || data.userEmail !== userProfile.email) {
                     if (sharedToolWindow && !sharedToolWindow.closed) {
                         sharedToolWindow.close();
-                        sharedToolWindow = null; // تصفير المرجع
-                        if (typeof showToast === "function" && data.status === 'idle') {
-                            showToast('انتهت الجلسة', 'قام المدير بسحب صلاحية الأداة وإغلاقها يدوياً.', 'error');
-                        }
+                        sharedToolWindow = null;
                     }
                 }
 
-                // --- إدارة مظهر وحالة الأزرار بناءً على السيرفر ---
+                // --- معالجة الحالات الذكية للموظف ---
                 if (data.status === 'idle') {
                     btn.innerHTML = '<i class="fas fa-shield-alt ml-2"></i> طلب استخدام الأداة';
-                    btn.className = "flex-1 py-4 rounded-2xl bg-gray-900 text-white font-black text-sm shadow-lg hover:bg-gray-800 transition-all mini-btn";
+                    btn.className = "w-full py-4 rounded-2xl bg-gray-900 text-white font-black text-sm shadow-lg hover:bg-gray-800 transition-all mini-btn";
                     btn.disabled = false;
+                    myActiveRequestRefId = null; // تفريغ
                 } 
-                else if (data.status === 'pending') {
-                    if (data.userEmail === userProfile.email) {
-                        btn.innerHTML = '<i class="fas fa-hourglass-half animate-spin ml-2"></i> في انتظار موافقة الإدارة...';
-                        btn.className = "flex-1 py-4 rounded-2xl bg-orange-100 text-orange-600 font-black text-sm cursor-wait";
-                    } else {
-                        btn.innerHTML = `<i class="fas fa-lock ml-2"></i> محجوزة بواسطة: ${data.userName}`;
-                        btn.className = "flex-1 py-4 rounded-2xl bg-gray-200 text-gray-400 font-black text-sm cursor-not-allowed";
-                    }
-                    btn.disabled = true;
-                }
-                else if (data.status === 'in_use') {
-                    if (data.userEmail === userProfile.email) {
-                        btn.innerHTML = '<i class="fas fa-door-open ml-2"></i> الجلسة نشطة ومؤمنة';
-                        btn.className = "flex-1 py-4 rounded-2xl bg-green-600 text-white font-black text-sm";
+                else if (data.status === 'pending' || data.status === 'in_use') {
+                    // أ. إذا كنت أنا صاحب الجلسة المقبولة حالياً
+                    if (data.status === 'in_use' && data.userEmail === userProfile.email) {
+                        btn.innerHTML = '<i class="fas fa-door-open ml-2"></i> الجلسة نشطة ومؤمنة إدارياً';
+                        btn.className = "w-full py-4 rounded-2xl bg-green-600 text-white font-black text-sm animate-pulse";
                         btn.disabled = false;
 
-                        // فتح نافذة مستقلة أوتوماتيكياً فور موافقة المدير
                         if (!sharedToolWindow || sharedToolWindow.closed) {
                             sharedToolWindow = window.open("https://member.digitavision.com/login", "ALMASTER_SECURE_SESSION", "width=1200,height=800,scrollbars=yes");
                             
-                            // محاولة الحقن التلقائي
-                            sharedToolWindow.onload = function() {
-                                try {
-                                    const doc = sharedToolWindow.document;
-                                    const emailInput = doc.querySelector('input[type="email"]') || doc.querySelector('input[name="email"]');
-                                    const passInput = doc.querySelector('input[type="password"]') || doc.querySelector('input[name="password"]');
-                                    const submitBtn = doc.querySelector('button[type="submit"]') || doc.querySelector('form').querySelector('button');
-
-                                    if(emailInput && passInput && data.toolUser && data.toolPass) {
-                                        emailInput.value = data.toolUser;
-                                        passInput.value = data.toolPass;
-                                        if(submitBtn) submitBtn.click();
-                                    }
-                                } catch(e) {
-                                    console.log("CORS Restrictions block auto-fill. Waiting for user input.");
-                                }
-                            };
-
-                            // مراقبة إذا أغلق الموظف النافذة يدوياً بنفسه
+                            // مراقبة إغلاق الموظف للنافذة بنفسه
                             const tracker = setInterval(async () => {
                                 if (sharedToolWindow && sharedToolWindow.closed) {
                                     clearInterval(tracker);
-                                    await releaseSharedTool();
+                                    await releaseSharedTool(data.activeRequestId);
                                 }
                             }, 2000);
                         }
-                    } else {
-                        btn.innerHTML = `<i class="fas fa-lock ml-2"></i> يستخدمها الآن: ${data.userName}`;
-                        btn.className = "flex-1 py-4 rounded-2xl bg-gray-200 text-gray-400 font-black text-sm cursor-not-allowed";
+                    } 
+                    // ب. إذا كنت أنا الذي أرسل الطلب وهو حالياً في قائمة الانتظار (Hold)
+                    else if (myActiveRequestRefId) {
+                        btn.innerHTML = `<i class="fas fa-hourglass-half animate-spin ml-2"></i> أنت في قائمة الانتظار (هولد)..`;
+                        btn.className = "w-full py-4 rounded-2xl bg-orange-100 text-orange-600 font-black text-sm cursor-wait";
                         btn.disabled = true;
                     }
+                    // ج. إذا كان هناك زميل آخر يستخدمها حالياً ولم أطلبها أنا بعد
+                    else {
+                        const currentUserLabel = data.userName ? data.userName.split(' ')[0] : 'زميل';
+                        btn.innerHTML = `<i class="fas fa-lock ml-2"></i> مشغولة مع ${currentUserLabel} (إضغط لدخول الهولد)`;
+                        btn.className = "w-full py-4 rounded-2xl bg-gray-100 text-textMuted border border-gray-200 font-black text-sm hover:bg-orange-50 hover:text-orange-600 transition-all";
+                        btn.disabled = false;
+                    }
                 }
+            });
+        }
+
+        // دالة الموظف لطلب الدخول في قائمة الانتظار والـ Hold
+        async function requestSharedTool() {
+            if (currentToolState === 'in_use' && document.getElementById('btn-request-tool').classList.contains('bg-green-600')) return; // إذا كانت مفتوحة عندي بالفعل لا تكرر الطلب
+            
+            const btn = document.getElementById('btn-request-tool');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري حجز دورك في الطابور...';
+
+            // 1. إنشاء وثيقة طلب فرعية رسمية في كوليكشن الطابور لكي يراها المدير في الهولد
+            const reqRef = await db.collection('tool_requests').add({
+                userEmail: userProfile.email,
+                userName: userProfile.name,
+                status: 'pending', // pending, active, completed
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            myActiveRequestRefId = reqRef.id; // حفظ المعرف محلياً لتثبيت حالة الهولد للموظف
+
+            // 2. تحديث الغرفة الرئيسية بالطلب فقط إذا كانت فارغة تماماً (idle)
+            const masterDoc = await db.collection('system_settings').doc('shared_tool').get();
+            if (!masterDoc.exists || masterDoc.data().status === 'idle') {
+                await db.collection('system_settings').doc('shared_tool').update({
+                    status: 'pending',
+                    userEmail: userProfile.email,
+                    userName: userProfile.name
+                });
+            }
+        }
+
+        // دالة إنهاء الاستخدام الطوعي من قبل الموظف عند إغلاق النافذة
+        async function releaseSharedTool(activeRequestId) {
+            if (sharedToolWindow && !sharedToolWindow.closed) sharedToolWindow.close();
+            myActiveRequestRefId = null;
+
+            if(activeRequestId) {
+                // تحديث حالة الطلب الفردي المكتمل في السجل التاريخي
+                await db.collection('tool_requests').doc(activeRequestId).update({ 
+                    status: 'completed', 
+                    ended_at: firebase.firestore.FieldValue.serverTimestamp() 
+                });
+            }
+
+            // إرجاع الغرفة للحالة المتاحة فوراً لكي يتمكن المدير من تمرير الجلسة للشخص التالي في الهولد
+            await db.collection('system_settings').doc('shared_tool').update({
+                status: 'idle', userEmail: null, userName: null, activeRequestId: null, toolUser: null, toolPass: null
             });
         }
         // إنشاء اتصال مرئي حي عبر بروتوكول WebRTC لاستقبال شاشة المدير
