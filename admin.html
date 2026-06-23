@@ -803,6 +803,130 @@
                 status: 'idle', userEmail: null, userName: null 
             }, { merge: true });
         }
+        let localStream = null;
+        let peerConnection = null;
+        let mouseListenerUnsubscribe = null;
+
+        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+        // 1. بدء التقاط الشاشة للأداة من جهاز المدير
+        async function startAdminToolStream() {
+            const btn = document.getElementById('btn-start-stream');
+            try {
+                localStream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: { width: 1280, height: 720, frameRate: 24 }, 
+                    audio: false 
+                });
+                
+                document.getElementById('setup-stream-zone').classList.add('hidden');
+                showToast('تم تشغيل البث', 'جسر الأداة جاهز الآن لاستقبال اتصالات الموظفين بأمان.', 'success');
+                
+                // إذا انقطع البث يدوياً من شريط كروم
+                localStream.getVideoTracks()[0].onended = () => {
+                    stopAdminToolStream();
+                };
+            } catch (err) {
+                console.error(err);
+                alert("يجب الموافقة على مشاركة نافذة الأداة لتفعيل النظام التفاعلي.");
+            }
+        }
+
+        function stopAdminToolStream() {
+            if(localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            if(peerConnection) { peerConnection.close(); peerConnection = null; }
+            if(mouseListenerUnsubscribe) { mouseListenerUnsubscribe(); mouseListenerUnsubscribe = null; }
+            
+            const setupZone = document.getElementById('setup-stream-zone');
+            if(setupZone) setupZone.classList.remove('hidden');
+            revokeToolAccess();
+        }
+
+        // تحديث دالة الموافقة لتشمل إنشاء اتصال الـ WebRTC وتمريره للموظف عبر فايربيز
+        async function approveToolAccess() {
+            if(!localStream) { alert("من فضلك قم بتشغيل وبث نافذة الأداة أولاً عبر الزر المخصص قبل قبول الموظف."); return; }
+            
+            peerConnection = new RTCPeerConnection(rtcConfig);
+            
+            // إضافة مسار الفيديو للاتصال
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            // تجميع الـ ICE Candidates وإرسالها
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    db.collection('system_settings').doc('shared_tool')
+                      .collection('ice_candidates').add(event.candidate.toJSON());
+                }
+            };
+
+            // إنشاء العرض (Offer)
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+
+            await db.collection('system_settings').doc('shared_tool').update({
+                status: 'in_use',
+                offer: { type: offer.type, sdp: offer.sdp }
+            });
+
+            // الاستماع للإجابة (Answer) القادمة من الموظف
+            db.collection('system_settings').doc('shared_tool').onSnapshot(async (snapshot) => {
+                const data = snapshot.data();
+                if (data && data.answer && peerConnection.signalingState === "have-local-offer") {
+                    const rtcAnswer = new RTCSessionDescription(data.answer);
+                    await peerConnection.setRemoteDescription(rtcAnswer);
+                    startRemoteMouseListener(); // بدء استقبال حركات الموظف
+                }
+            });
+        }
+
+        // 3. استقبال إحداثيات الماوس والضغطات من الموظف ومحاكاتها فوق الأداة عند المدير
+        function startRemoteMouseListener() {
+            if(mouseListenerUnsubscribe) mouseListenerUnsubscribe();
+
+            mouseListenerUnsubscribe = db.collection('system_settings').doc('shared_tool')
+                .collection('mouse_stream').orderBy('time', 'desc').limit(1)
+                .onSnapshot(snap => {
+                    if(snap.empty) return;
+                    const mouseEvent = snap.docs[0].data();
+                    
+                    // منع تكرار تنفيذ الحدث القديم
+                    if(mouseEvent.time < adminSessionStartTime) return; 
+
+                    const iframe = document.getElementById('admin-tool-iframe');
+                    if(!iframe) return;
+
+                    // حساب الأبعاد الحقيقية للأيفريم وتحويل النسب المئوية لنقاط حقيقية
+                    const rect = iframe.getBoundingClientRect();
+                    const realX = mouseEvent.pctX * rect.width;
+                    const realY = mouseEvent.pctY * rect.height;
+
+                    // محاكاة النقرات داخل الأيفريم (بشرط أن يكون نفس النطاق أو مدعوم من المتصفح)
+                    const el = document.elementFromPoint(rect.left + realX, rect.top + realY);
+                    if(el && mouseEvent.type === 'click') {
+                        el.click();
+                        if(el.focus) el.focus();
+                    }
+                });
+        }
+
+        // تعديل دالة السحب لتنظيف قنوات الإشارة
+        async function revokeToolAccess() {
+            if(peerConnection) { peerConnection.close(); peerConnection = null; }
+            if(mouseListenerUnsubscribe) { mouseListenerUnsubscribe(); mouseListenerUnsubscribe = null; }
+            
+            // تنظيف الكوليكشنز الفرعية في فايربيز لجعلها جاهزة للطلب القادم
+            const iceRef = db.collection('system_settings').doc('shared_tool').collection('ice_candidates');
+            const iceSnap = await iceRef.get(); iceSnap.forEach(doc => doc.ref.delete());
+            
+            const mouseRef = db.collection('system_settings').doc('shared_tool').collection('mouse_stream');
+            const mouseSnap = await mouseRef.get(); mouseSnap.forEach(doc => doc.ref.delete());
+
+            await db.collection('system_settings').doc('shared_tool').set({ 
+                status: 'idle', userEmail: null, userName: null, offer: null, answer: null 
+            });
+        }
     </script>
     <div id="modal-admin-shared-tool" class="fixed inset-0 z-[700] hidden bg-textMain/50 backdrop-blur-sm flex items-center justify-center p-6" onclick="closeModal('modal-admin-shared-tool')">
         <div class="bg-white w-full h-full max-w-6xl rounded-[2rem] flex flex-col shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
@@ -817,21 +941,24 @@
                 </div>
                 <button onclick="closeModal('modal-admin-shared-tool')" class="text-gray-400 hover:text-red-500 text-xl transition mr-4"><i class="fas fa-times"></i></button>
             </div>
-            <div class="flex-1 bg-gray-100 relative flex flex-col items-center justify-center p-8 text-center">
-                <div id="tool-lock-overlay" class="absolute inset-0 z-10 bg-gray-900/70 backdrop-blur-sm hidden flex flex-col items-center justify-center text-white">
+            <div class="flex-1 bg-gray-100 relative flex flex-col items-center justify-center overflow-hidden">
+                <div id="tool-lock-overlay" class="absolute inset-0 z-10 bg-gray-900/60 backdrop-blur-sm hidden flex flex-col items-center justify-center text-white">
                     <i class="fas fa-lock text-5xl mb-4 text-primary-500 animate-pulse"></i>
-                    <h3 class="text-2xl font-black mb-2">الأداة قيد الاستخدام</h3>
-                    <p id="tool-lock-text" class="text-sm font-bold">يتم استخدام الأداة حالياً من قبل موظف.</p>
-                    <button onclick="revokeToolAccess()" class="mt-6 px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black shadow-lg transition-all active:scale-95">سحب الصلاحية الفوري وإغلاقها</button>
+                    <h3 class="text-2xl font-black mb-2">الأداة قيد الاستخدام التفاعلي</h3>
+                    <p id="tool-lock-text" class="text-sm font-bold">الموظف يتحكم بالأداة الآن عن بُعد. يمكنك المشاهدة أدناه.</p>
+                    <button onclick="revokeToolAccess()" class="mt-6 px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black shadow-lg">قطع الاتصال وسحب الصلاحية فوراً</button>
                 </div>
                 
-                <div class="space-y-4">
-                    <div class="w-16 h-16 bg-primary-50 text-primary-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
-                        <i class="fas fa-external-link-alt text-2xl"></i>
+                <div id="admin-tool-container" class="w-full h-full relative bg-white">
+                    <div id="setup-stream-zone" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-20 p-6 text-center">
+                        <div class="w-16 h-16 bg-primary-50 text-primary-500 rounded-full flex items-center justify-center mb-4"><i class="fas fa-broadcast-tower text-2xl"></i></div>
+                        <h4 class="font-black text-textMain mb-2">تفعيل جسر البث الآمن</h4>
+                        <p class="text-xs text-textMuted max-w-sm mb-4">اضغط على الزر واختر "نافذة الأداة" أو "التبويب" الخاص بـ Digitavision لبدء نظام مشاركة التحكم عن بُعد.</p>
+                        <button onclick="startAdminToolStream()" id="btn-start-stream" class="px-6 py-3 bg-primary-600 text-white font-black text-xs rounded-xl shadow-md hover:bg-primary-500 transition-all mini-btn">تشغيل وبث نافذة الأداة 📡</button>
                     </div>
-                    <h4 class="font-black text-textMain text-base">بوابة الأداة المشتركة للمدير</h4>
-                    <p class="text-xs text-textMuted max-w-sm">الموقع يمنع العرض الداخلي لحمايتك. اضغط على الزر أدناه لفتح الجلسة التنفيذية في نافذة مستقلة مع الحفاظ على الرقابة.</p>
-                    <a href="https://member.digitavision.com/login" target="_blank" class="inline-block px-8 py-3 bg-textMain text-white font-black text-xs rounded-xl shadow-md hover:bg-gray-800 transition-all mini-btn">فتح الأداة في نافذة مستقلة 🚀</a>
+                    
+                    <iframe id="admin-tool-iframe" src="https://member.digitavision.com/login" class="w-full h-full border-none"></iframe>
+                    <div id="admin-click-mirror" class="absolute inset-0 pointer-events-none hidden bg-transparent"></div>
                 </div>
             </div>
         </div>
