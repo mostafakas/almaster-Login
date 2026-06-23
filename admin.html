@@ -754,16 +754,15 @@
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         async function logout() { await auth.signOut(); window.location.replace('index.html'); }
         // --- نظام الأداة المشتركة للمدير ---
-        function listenToSharedTool() {
+       function listenToSharedTool() {
             db.collection('system_settings').doc('shared_tool').onSnapshot(doc => {
-                // لو الدوكيومنت مش موجود هيعمل قراءة افتراضية
                 const data = doc.exists ? doc.data() : { status: 'idle', userEmail: null, userName: null };
                 const badge = document.getElementById('tool-status-badge');
                 const actionArea = document.getElementById('tool-action-area');
                 const overlay = document.getElementById('tool-lock-overlay');
                 const lockText = document.getElementById('tool-lock-text');
 
-                if (!badge || !actionArea || !overlay) return; // حماية من الأخطاء
+                if (!badge || !actionArea || !overlay) return;
 
                 if (data.status === 'idle') {
                     badge.className = 'px-4 py-2 rounded-xl text-xs font-black bg-green-50 text-green-600';
@@ -775,77 +774,66 @@
                     badge.className = 'px-4 py-2 rounded-xl text-xs font-black bg-orange-50 text-orange-600';
                     badge.innerHTML = `<i class="fas fa-bell animate-pulse"></i> طلب معلق من: ${data.userName}`;
                     actionArea.innerHTML = `
-                        <button onclick="approveToolAccess()" class="px-4 py-2 bg-green-600 text-white rounded-lg text-[10px] font-black hover:bg-green-500 active:scale-95 transition-all">موافق وتمرير ✅</button>
-                        <button onclick="revokeToolAccess()" class="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-[10px] font-black hover:bg-red-100 active:scale-95 transition-all">رفض ❌</button>
-                    `;
+                        <button onclick="approveToolAccess()" class="px-4 py-2 bg-green-600 text-white rounded-lg text-[10px] font-black hover:bg-green-500">موافق وتمرير الجلسة ✅</button>
+                        <button onclick="revokeToolAccess()" class="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-[10px] font-black hover:bg-red-100">رفض الطلب ❌</button>
+`;
                     overlay.classList.add('hidden');
-                    
-                    // تنبيه عشان المدير ياخد باله
-                    if (typeof showToast === "function") showToast("طلب أداة", `يطلب ${data.userName} استخدام الأداة`, "info");
                 }
                 else if (data.status === 'in_use') {
                     badge.className = 'px-4 py-2 rounded-xl text-xs font-black bg-blue-50 text-blue-600';
                     badge.innerHTML = `<i class="fas fa-user-lock"></i> يستخدمها الآن: ${data.userName}`;
-                    actionArea.innerHTML = `<button onclick="revokeToolAccess()" class="px-4 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black shadow-lg hover:bg-red-500 active:scale-95 transition-all">سحب الصلاحية</button>`;
-                    
+                    actionArea.innerHTML = `<button onclick="revokeToolAccess()" class="px-4 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black">سحب الصلاحية</button>`;
                     lockText.innerText = `يتم استخدام الأداة حالياً بواسطة: ${data.userName}`;
-                    overlay.classList.remove('hidden'); // إظهار البلوك الرمادي
+                    overlay.classList.remove('hidden');
                 }
             });
         }
-
+        // --- نظام الإدارة والتحكم الذكي في الأداة المشتركة (نسخة مستقرة قسرية) ---
         async function approveToolAccess() {
-            await db.collection('system_settings').doc('shared_tool').set({ status: 'in_use' }, { merge: true });
+            try {
+                await db.collection('system_settings').doc('shared_tool').update({ 
+                    status: 'in_use',
+                    toolUser: "ALMasterIo", 
+                    toolPass: "AL Master@2050"
+                });
+                showToast('تمت الموافقة', 'تم تمرير الصلاحية للموظف بنجاح.', 'success');
+            } catch (error) {
+                console.error("Error approving access:", error);
+                // إذا لم يكن المستند منشأ مسبقاً، نستخدم set كخيار احتياطي أمن
+                await db.collection('system_settings').doc('shared_tool').set({ 
+                    status: 'in_use',
+                    toolUser: "ALMasterIo", 
+                    toolPass: "AL Master@2050"
+                }, { merge: true });
+            }
         }
 
         async function revokeToolAccess() {
-            await db.collection('system_settings').doc('shared_tool').set({ 
-                status: 'idle', userEmail: null, userName: null 
-            }, { merge: true });
-        }
-        let localStream = null;
-        let peerConnection = null;
-        let mouseListenerUnsubscribe = null;
-
-        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-
-        // 1. بدء التقاط الشاشة للأداة من جهاز المدير
-        async function startAdminToolStream() {
-            const btn = document.getElementById('btn-start-stream');
             try {
-                localStream = await navigator.mediaDevices.getDisplayMedia({ 
-                    video: { width: 1280, height: 720, frameRate: 24 }, 
-                    audio: false 
+                // إجبار السيرفر على محو حقول البيانات وتغيير الحالة فوراً باستخدام update وتمرير قيم فارغة
+                await db.collection('system_settings').doc('shared_tool').update({ 
+                    status: 'idle', 
+                    userEmail: null, 
+                    userName: null, 
+                    toolUser: null, 
+                    toolPass: null
                 });
                 
-                document.getElementById('setup-stream-zone').classList.add('hidden');
-                showToast('تم تشغيل البث', 'جسر الأداة جاهز الآن لاستقبال اتصالات الموظفين بأمان.', 'success');
-                
-                // إذا انقطع البث يدوياً من شريط كروم
-                localStream.getVideoTracks()[0].onended = () => {
-                    stopAdminToolStream();
-                };
-            } catch (err) {
-                console.error(err);
-                alert("يجب الموافقة على مشاركة نافذة الأداة لتفعيل النظام التفاعلي.");
+                if (typeof showToast === "function") {
+                    showToast('تم سحب الصلاحية', 'تم إغلاق الأداة عند الموظف بنجاح وتصفير الجلسة.', 'warning');
+                } else {
+                    alert("🛑 تم سحب الصلاحية وتصفير بيانات الجلسة بنجاح.");
+                }
+            } catch (error) {
+                console.error("Error revoking access:", error);
+                // خيار قسري أخير في حال فشل الـ update بسبب الصلاحيات
+                await db.collection('system_settings').doc('shared_tool').set({ 
+                    status: 'idle', userEmail: null, userName: null, toolUser: null, toolPass: null
+                }, { merge: true });
             }
         }
-
-        function stopAdminToolStream() {
-            if(localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            if(peerConnection) { peerConnection.close(); peerConnection = null; }
-            if(mouseListenerUnsubscribe) { mouseListenerUnsubscribe(); mouseListenerUnsubscribe = null; }
-            
-            const setupZone = document.getElementById('setup-stream-zone');
-            if(setupZone) setupZone.classList.remove('hidden');
-            revokeToolAccess();
-        }
-
-        // تحديث دالة الموافقة لتشمل إنشاء اتصال الـ WebRTC وتمريره للموظف عبر فايربيز
-        async function approveToolAccess() {
+        // 1. بدء التقاط الشاشة للأداة من جهاز المدير
+               async function approveToolAccess() {
             if(!localStream) { alert("من فضلك قم بتشغيل وبث نافذة الأداة أولاً عبر الزر المخصص قبل قبول الموظف."); return; }
             
             peerConnection = new RTCPeerConnection(rtcConfig);
@@ -881,36 +869,6 @@
             });
         }
 
-        // 3. استقبال إحداثيات الماوس والضغطات من الموظف ومحاكاتها فوق الأداة عند المدير
-        function startRemoteMouseListener() {
-            if(mouseListenerUnsubscribe) mouseListenerUnsubscribe();
-
-            mouseListenerUnsubscribe = db.collection('system_settings').doc('shared_tool')
-                .collection('mouse_stream').orderBy('time', 'desc').limit(1)
-                .onSnapshot(snap => {
-                    if(snap.empty) return;
-                    const mouseEvent = snap.docs[0].data();
-                    
-                    // منع تكرار تنفيذ الحدث القديم
-                    if(mouseEvent.time < adminSessionStartTime) return; 
-
-                    const iframe = document.getElementById('admin-tool-iframe');
-                    if(!iframe) return;
-
-                    // حساب الأبعاد الحقيقية للأيفريم وتحويل النسب المئوية لنقاط حقيقية
-                    const rect = iframe.getBoundingClientRect();
-                    const realX = mouseEvent.pctX * rect.width;
-                    const realY = mouseEvent.pctY * rect.height;
-
-                    // محاكاة النقرات داخل الأيفريم (بشرط أن يكون نفس النطاق أو مدعوم من المتصفح)
-                    const el = document.elementFromPoint(rect.left + realX, rect.top + realY);
-                    if(el && mouseEvent.type === 'click') {
-                        el.click();
-                        if(el.focus) el.focus();
-                    }
-                });
-        }
-
         // تعديل دالة السحب لتنظيف قنوات الإشارة
         async function revokeToolAccess() {
             if(peerConnection) { peerConnection.close(); peerConnection = null; }
@@ -941,24 +899,20 @@
                 </div>
                 <button onclick="closeModal('modal-admin-shared-tool')" class="text-gray-400 hover:text-red-500 text-xl transition mr-4"><i class="fas fa-times"></i></button>
             </div>
-            <div class="flex-1 bg-gray-100 relative flex flex-col items-center justify-center overflow-hidden">
+            <div class="flex-1 bg-gray-50 relative flex flex-col items-center justify-center p-8 text-center">
                 <div id="tool-lock-overlay" class="absolute inset-0 z-10 bg-gray-900/60 backdrop-blur-sm hidden flex flex-col items-center justify-center text-white">
                     <i class="fas fa-lock text-5xl mb-4 text-primary-500 animate-pulse"></i>
-                    <h3 class="text-2xl font-black mb-2">الأداة قيد الاستخدام التفاعلي</h3>
-                    <p id="tool-lock-text" class="text-sm font-bold">الموظف يتحكم بالأداة الآن عن بُعد. يمكنك المشاهدة أدناه.</p>
-                    <button onclick="revokeToolAccess()" class="mt-6 px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black shadow-lg">قطع الاتصال وسحب الصلاحية فوراً</button>
+                    <h3 class="text-2xl font-black mb-2">الأداة قيد الاستخدام</h3>
+                    <p id="tool-lock-text" class="text-sm font-bold">يتم استخدام الأداة حالياً من قبل موظف مأذون له.</p>
+                    <button onclick="revokeToolAccess()" class="mt-6 px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black shadow-lg">سحب الصلاحية الفوري وإغلاقها</button>
                 </div>
                 
-                <div id="admin-tool-container" class="w-full h-full relative bg-white">
-                    <div id="setup-stream-zone" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-20 p-6 text-center">
-                        <div class="w-16 h-16 bg-primary-50 text-primary-500 rounded-full flex items-center justify-center mb-4"><i class="fas fa-broadcast-tower text-2xl"></i></div>
-                        <h4 class="font-black text-textMain mb-2">تفعيل جسر البث الآمن</h4>
-                        <p class="text-xs text-textMuted max-w-sm mb-4">اضغط على الزر واختر "نافذة الأداة" أو "التبويب" الخاص بـ Digitavision لبدء نظام مشاركة التحكم عن بُعد.</p>
-                        <button onclick="startAdminToolStream()" id="btn-start-stream" class="px-6 py-3 bg-primary-600 text-white font-black text-xs rounded-xl shadow-md hover:bg-primary-500 transition-all mini-btn">تشغيل وبث نافذة الأداة 📡</button>
+                <div class="space-y-4">
+                    <div class="w-16 h-16 bg-primary-50 text-primary-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                        <i class="fas fa-shield-alt text-2xl"></i>
                     </div>
-                    
-                    <iframe id="admin-tool-iframe" src="https://member.digitavision.com/login" class="w-full h-full border-none"></iframe>
-                    <div id="admin-click-mirror" class="absolute inset-0 pointer-events-none hidden bg-transparent"></div>
+                    <h4 class="font-black text-textMain text-base">منصة التحكم في الأداة المشتركة</h4>
+                    <p class="text-xs text-textMuted max-w-sm">السيستم يدير الآن طابور الطلبات ويقوم بحقن البيانات وتأمين الجلسة للموظف المقبول أوتوماتيكياً دون كشف الباسوورد.</p>
                 </div>
             </div>
         </div>
