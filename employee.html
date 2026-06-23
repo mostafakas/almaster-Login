@@ -588,21 +588,29 @@
         // --- نظام الأداة المشتركة للموظف ---
         let currentToolState = 'idle';
 
+        let toolWindowReference = null; // متغير لمراقبة النافذة المفتوحة
+
         function listenToSharedTool() {
             db.collection('system_settings').doc('shared_tool').onSnapshot(doc => {
                 const data = doc.exists ? doc.data() : { status: 'idle' };
                 const btn = document.getElementById('btn-request-tool');
-                const modal = document.getElementById('modal-shared-tool');
                 currentToolState = data.status;
 
-                // 1. الأداة متاحة (الحالة الطبيعية)
+                if (!btn) return;
+
+                // 1. الأداة متاحة
                 if (data.status === 'idle') {
                     btn.innerHTML = '<i class="fas fa-shield-alt ml-2"></i> طلب استخدام الأداة';
                     btn.className = "flex-1 py-4 rounded-2xl bg-gray-900 text-white font-black text-sm shadow-lg hover:bg-gray-800 transition-all mini-btn";
                     btn.disabled = false;
-                    modal.classList.add('hidden');
+                    
+                    // لو النافذة مفتوحة عند الموظف والمدير سحب الصلاحية، نقفلها له فوراً
+                    if(toolWindowReference && !toolWindowReference.closed) {
+                        toolWindowReference.close();
+                        showToast('انتهت الجلسة', 'قام المدير بسحب صلاحية استخدام الأداة.', 'error');
+                    }
                 } 
-                // 2. طلب معلق (مستني المدير)
+                // 2. الطلب معلق
                 else if (data.status === 'pending') {
                     if (data.userEmail === userProfile.email) {
                         btn.innerHTML = '<i class="fas fa-hourglass-half animate-spin ml-2"></i> في انتظار موافقة الإدارة...';
@@ -613,23 +621,33 @@
                     }
                     btn.disabled = true;
                 }
-                // 3. الأداة تُستخدم الآن (لو المدير وافق)
+                // 3. تمت الموافقة للموظف للبدء
                 else if (data.status === 'in_use') {
                     if (data.userEmail === userProfile.email) {
-                        btn.innerHTML = '<i class="fas fa-door-open ml-2"></i> العودة لجلسة الأداة';
-                        btn.className = "flex-1 py-4 rounded-2xl bg-green-600 text-white font-black text-sm";
+                        btn.innerHTML = '<i class="fas fa-door-open ml-2"></i> الأداة نشطة الآن (اضغط للمتابعة)';
+                        btn.className = "flex-1 py-4 rounded-2xl bg-green-600 text-white font-black text-sm animate-pulse";
                         btn.disabled = false;
-                        modal.classList.remove('hidden'); // تفتح النافذة أوتوماتيك
+
+                        // 🚀 السحر البرمجي: فتح النافذة أوتوماتيك للموظف فور موافقة المدير 🚀
+                        if(!toolWindowReference || toolWindowReference.closed) {
+                            toolWindowReference = window.open("https://member.digitavision.com/login", "DigitavisionSharedTool", "width=1200,height=800,scrollbars=yes");
+                            
+                            // مراقبة لو الموظف قفل النافذة بنفسه يرجع الأداة متاحة للسيستم
+                            const checkWindowClosed = setInterval(async () => {
+                                if (toolWindowReference && toolWindowReference.closed) {
+                                    clearInterval(checkWindowClosed);
+                                    await releaseSharedTool();
+                                }
+                            }, 2000);
+                        }
                     } else {
                         btn.innerHTML = `<i class="fas fa-lock ml-2"></i> يستخدمها الآن: ${data.userName}`;
                         btn.className = "flex-1 py-4 rounded-2xl bg-gray-200 text-gray-400 font-black text-sm cursor-not-allowed";
                         btn.disabled = true;
-                        modal.classList.add('hidden');
                     }
                 }
             });
         }
-
         async function requestSharedTool() {
             if (currentToolState !== 'idle') return;
             await db.collection('system_settings').doc('shared_tool').set({
@@ -646,19 +664,5 @@
             });
         }
     </script>
-    <div id="modal-shared-tool" class="fixed inset-0 z-[700] hidden bg-gray-900/90 backdrop-blur-md flex flex-col p-8">
-    <div class="bg-white w-full h-full rounded-[2rem] shadow-2xl overflow-hidden flex flex-col">
-        <div class="p-4 border-b border-gray-100 bg-surface flex justify-between items-center shrink-0">
-            <div class="flex items-center gap-3">
-                <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-                <h3 class="font-black text-xs text-textMain uppercase tracking-widest">جلسة الأداة المشتركة نشطة الآن</h3>
-            </div>
-            <button onclick="releaseSharedTool()" class="px-6 py-2 bg-red-50 text-red-600 font-black text-[10px] rounded-xl hover:bg-red-100 transition">إنهاء الجلسة وإغلاق الأداة 👋</button>
-        </div>
-        <div class="flex-1 w-full h-full bg-gray-100">
-            <iframe src="https://member.digitavision.com/login" class="w-full h-full border-none"></iframe>
-        </div>
-    </div>
-</div>
 </body>
 </html>
