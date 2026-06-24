@@ -159,90 +159,75 @@
         <div class="absolute bottom-[-10%] right-[-5%] w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
     </main>
 
-    <footer class="bg-white border-t border-gray-200 p-6 shrink-0 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] flex justify-between items-end gap-10">
+    <!-- لوحة الأزرار السفلية (المنسقة والاحترافية) -->
+    <footer class="bg-white border-t border-gray-200 p-5 shrink-0 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] flex flex-wrap lg:flex-nowrap justify-between items-center gap-6">
         
-        <div class="flex-1 flex gap-4 max-w-3xl">
-            <button onclick="handleStatusChange('Online')" class="btn-action flex-1 py-4 rounded-2xl bg-green-50 text-green-600 hover:bg-green-100 font-black text-sm border-green-200 flex flex-col items-center gap-2">
-                <i class="fas fa-laptop-code text-xl"></i> بدء العمل
-            </button>
-            <button onclick="handleStatusChange('Break')" class="btn-action flex-1 py-4 rounded-2xl bg-orange-50 text-orange-600 hover:bg-orange-100 font-black text-sm border-orange-200 flex flex-col items-center gap-2">
-                <i class="fas fa-mug-hot text-xl"></i> أخذ راحة
-            </button>
-            <button onclick="handleStatusChange('Meeting')" class="btn-action flex-1 py-4 rounded-2xl bg-blue-50 text-blue-600 hover:bg-blue-100 font-black text-sm border-blue-200 flex flex-col items-center gap-2">
-                <i class="fas fa-users text-xl"></i> اجتماع
-            </button>
-            <button onclick="logout()" class="btn-action flex-1 py-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 font-black text-sm border-red-200 flex flex-col items-center gap-2">
-                <i class="fas fa-sign-out-alt text-xl"></i> إنهاء اليوم
-            </button>
-            <button id="btn-request-tool" onclick="requestSharedTool()" class="flex-1 py-4 rounded-2xl bg-gray-900 text-white font-black text-sm shadow-lg hover:bg-gray-800 transition-all mini-btn">
-                <i class="fas fa-shield-alt ml-2"></i> طلب الأداة المشتركة
-            </button>
+        <!-- الجانب الأيمن: أزرار الحالة -->
+        <div class="flex flex-1 gap-3 max-w-2xl">
+            <button onclick="handleStatusChange('Online')" class="btn-action flex-1 py-3.5 rounded-xl bg-green-50 text-green-600 font-black text-xs border border-green-100 shadow-sm hover:bg-green-100 transition-all"><i class="fas fa-laptop-code mr-1"></i> بدء العمل</button>
+            <button onclick="handleStatusChange('Break')" class="btn-action flex-1 py-3.5 rounded-xl bg-orange-50 text-orange-600 font-black text-xs border border-orange-100 shadow-sm hover:bg-orange-100 transition-all"><i class="fas fa-mug-hot mr-1"></i> أخذ راحة</button>
+            <button onclick="handleStatusChange('Meeting')" class="btn-action flex-1 py-3.5 rounded-xl bg-blue-50 text-blue-600 font-black text-xs border border-blue-100 shadow-sm hover:bg-blue-100 transition-all"><i class="fas fa-users mr-1"></i> اجتماع</button>
+            <button onclick="logout()" class="btn-action flex-1 py-3.5 rounded-xl bg-red-50 text-red-600 font-black text-xs border border-red-100 shadow-sm hover:bg-red-100 transition-all"><i class="fas fa-sign-out-alt mr-1"></i> إنهاء اليوم</button>
         </div>
 
-        <div class="flex flex-col gap-4 w-80 shrink-0">
-            <button onclick="openModal('modal-leave-request')" class="w-full py-4 rounded-2xl bg-textMain text-white hover:bg-gray-800 font-black text-sm flex items-center justify-center gap-3 shadow-lg btn-action">
-                <i class="fas fa-file-signature"></i> تقديم إجازة / إذن
+        <!-- الجانب الأيسر: الإجراءات والسجل والأداة -->
+        <div class="flex gap-3 min-w-[450px]">
+            <button onclick="openModal('modal-employee-logs')" class="flex-1 py-3.5 rounded-xl bg-surface border border-gray-200 text-textMain hover:bg-gray-100 font-black text-xs shadow-sm transition-all btn-action">
+                <i class="fas fa-history text-primary-500 mr-1"></i> سجل حركاتي
             </button>
-            
-            <div class="bg-surfaceDark p-4 rounded-2xl border border-gray-200">
-                <h4 class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-3 border-b border-gray-300 pb-2">آخر الحركات</h4>
-                <div id="mini-log-container" class="space-y-2 flex flex-col">
-                    <p class="text-xs text-textMuted italic text-center py-2">لا توجد حركات اليوم</p>
-                </div>
-            </div>
+            <button onclick="openModal('modal-leave-request')" class="flex-1 py-3.5 rounded-xl bg-surface border border-gray-200 text-textMain hover:bg-gray-100 font-black text-xs shadow-sm transition-all btn-action">
+                <i class="fas fa-file-signature text-orange-500 mr-1"></i> طلب إجازة/إذن
+            </button>
+            <button id="btn-request-tool" onclick="requestSharedTool()" class="flex-1 py-3.5 rounded-xl bg-gray-900 text-white font-black text-xs shadow-lg hover:bg-gray-800 transition-all btn-action">
+                <i class="fas fa-shield-alt mr-1"></i> طلب الأداة
+            </button>
         </div>
     </footer>
-
-    <div id="modal-leave-request" class="fixed inset-0 z-[700] hidden bg-textMain/40 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-leave-request')">
-        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden flex flex-col" onclick="event.stopPropagation()">
-            <div class="p-6 border-b border-gray-100 bg-surface flex justify-between items-center">
-                <h3 class="font-black text-lg text-textMain"><i class="fas fa-file-alt text-primary-500 mr-2"></i> نموذج طلب إداري</h3>
-                <button onclick="closeModal('modal-leave-request')" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+   <!-- نافذة طلب إجازة / إذن -->
+    <div id="modal-leave-request" class="fixed inset-0 z-[700] hidden bg-textMain/50 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-leave-request')">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+            <div class="p-5 border-b border-gray-100 bg-surface flex justify-between items-center">
+                <h3 class="font-black text-sm text-textMain"><i class="fas fa-file-alt text-orange-500 ml-2"></i> نموذج طلب إداري</h3>
+                <button onclick="closeModal('modal-leave-request')" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
             </div>
             
-            <form id="leave-form" onsubmit="submitLeaveRequest(event)" class="p-8 space-y-5 flex-1 overflow-y-auto custom-scrollbar max-h-[70vh]">
+            <form id="leave-form" onsubmit="submitLeaveRequest(event)" class="p-6 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
                 <div>
-                    <label class="block text-[11px] font-black text-textMuted mb-2 uppercase tracking-widest">نوع الطلب</label>
-                    <select id="leave-type" required class="w-full bg-surface border border-gray-200 rounded-xl px-4 py-3 text-sm text-textMain outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition">
+                    <label class="block text-[10px] font-black text-textMuted mb-2 uppercase">نوع الطلب</label>
+                    <select id="leave-type" required class="w-full bg-surface border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-primary-500">
                         <option value="sick">إجازة مرضية</option>
                         <option value="annual">إجازة اعتيادية</option>
                         <option value="excuse_late">إذن تأخير</option>
                         <option value="excuse_early">إذن انصراف مبكر</option>
                     </select>
                 </div>
-
                 <div>
-                    <label class="block text-[11px] font-black text-textMuted mb-2 uppercase tracking-widest">تاريخ الطلب</label>
-                    <input type="date" id="leave-date" required class="w-full bg-surface border border-gray-200 rounded-xl px-4 py-3 text-sm text-textMain outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition">
+                    <label class="block text-[10px] font-black text-textMuted mb-2 uppercase">تاريخ الطلب</label>
+                    <input type="date" id="leave-date" required class="w-full bg-surface border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-primary-500">
                 </div>
-
                 <div>
-                    <label class="block text-[11px] font-black text-textMuted mb-2 uppercase tracking-widest">السبب / المبرر</label>
-                    <textarea id="leave-reason" required rows="3" class="w-full bg-surface border border-gray-200 rounded-xl px-4 py-3 text-sm text-textMain outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition resize-none" placeholder="اكتب تفاصيل العذر هنا..."></textarea>
+                    <label class="block text-[10px] font-black text-textMuted mb-2 uppercase">السبب / المبرر</label>
+                    <textarea id="leave-reason" required rows="3" class="w-full bg-surface border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-primary-500 resize-none" placeholder="اكتب تفاصيل العذر هنا..."></textarea>
                 </div>
-
-                <div>
-                    <label class="block text-[11px] font-black text-textMuted mb-2 uppercase tracking-widest">المرفقات (اختياري)</label>
-                    <div class="relative">
-                        <input type="file" id="leave-file" class="w-full opacity-0 absolute inset-0 cursor-pointer z-10" onchange="document.getElementById('file-name').innerText = this.files[0] ? this.files[0].name : 'اضغط لإرفاق ملف (صورة، PDF)'">
-                        <div class="w-full bg-surface border border-dashed border-gray-300 rounded-xl px-4 py-4 text-center flex flex-col items-center justify-center gap-2">
-                            <i class="fas fa-cloud-upload-alt text-gray-400 text-2xl"></i>
-                            <span id="file-name" class="text-xs text-textMuted font-bold">اضغط لإرفاق ملف (صورة، PDF)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="pt-4">
-                    <button type="submit" id="btn-submit-leave" class="w-full py-4 bg-primary-600 text-white rounded-2xl font-black shadow-lg hover:bg-primary-500 transition-all btn-action">
-                        إرسال الطلب للإدارة
-                    </button>
+                <div class="pt-2">
+                    <button type="submit" id="btn-submit-leave" class="w-full py-3 bg-primary-600 text-white rounded-xl font-black text-xs shadow-md hover:bg-primary-500 transition-all btn-action">إرسال الطلب للإدارة</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="toast-container" class="fixed top-5 right-5 z-[800] flex flex-col gap-3 w-80 pointer-events-none"></div>
-
+    <!-- نافذة سجل الحركات للموظف -->
+    <div id="modal-employee-logs" class="fixed inset-0 z-[700] hidden bg-textMain/50 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-employee-logs')">
+        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" onclick="event.stopPropagation()">
+            <div class="p-5 border-b border-gray-100 bg-surface flex justify-between items-center">
+                <h3 class="font-black text-sm text-textMain"><i class="fas fa-history text-primary-500 ml-2"></i> السجل الحركي لليوم</h3>
+                <button onclick="closeModal('modal-employee-logs')" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 bg-white custom-scrollbar space-y-3" id="employee-logs-container">
+                <p class="text-xs text-textMuted italic text-center py-10">جاري تحميل السجل...</p>
+            </div>
+        </div>
+    </div>
     <script>
         // --- 1. الإعدادات والتهيئة ---
         const firebaseConfig = {
@@ -482,34 +467,31 @@
         }
 
         // --- 8. السجل المصغر (Mini Logs) ---
-        function listenToLogs() {
+       function listenToLogs() {
             const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
-            db.collection('logs')
-                .where('user', '==', currentUser.email.toLowerCase())
-                .where('timestamp', '>=', startOfDay)
-                .orderBy('timestamp', 'desc')
-                .limit(3)
-                .onSnapshot(snap => {
-                    const container = document.getElementById('mini-log-container');
-                    container.innerHTML = '';
-                    if(snap.empty) {
-                        container.innerHTML = '<p class="text-xs text-textMuted italic text-center py-2">لا توجد حركات اليوم</p>';
-                        return;
-                    }
-
-                    snap.forEach(doc => {
-                        const l = doc.data();
-                        const timeStr = moment(l.timestamp.toDate()).format('hh:mm A');
-                        container.innerHTML += `
-                            <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-gray-100">
-                                <span class="text-[10px] font-bold text-textMain">${translateStatus(l.to_status)}</span>
-                                <span class="text-[9px] text-textMuted">${timeStr}</span>
-                            </div>
-                        `;
-                    });
+            db.collection('logs').where('user', '==', currentUser.email.toLowerCase()).where('timestamp', '>=', startOfDay).orderBy('timestamp', 'desc')
+              .onSnapshot(snap => {
+                const box = document.getElementById('employee-logs-container');
+                if(!box) return;
+                
+                if(snap.empty) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-10">لا توجد حركات اليوم</p>'; return; }
+                
+                box.innerHTML = '';
+                snap.forEach(doc => {
+                    const l = doc.data();
+                    const timeStr = moment(l.timestamp.toDate()).format('hh:mm A');
+                    box.innerHTML += `
+                        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <span class="text-xs font-black text-textMain">${translateStatus(l.to_status)}</span>
+                            <span class="text-[10px] font-bold text-textMuted font-mono">${timeStr}</span>
+                        </div>`;
                 });
+            });
         }
 
+        // --- 9. الأداة المشتركة للموظف (نظام الطابور والنافذة المستقلة) ---
+        let sharedToolWindow = null;
+        let myActiveRequestRefId = null;
         // جلب الإحصائيات الثابتة (مثل رصيد الإجازات)
         async function fetchStaticStats() {
             try {
@@ -545,22 +527,9 @@
         }
 
         // --- 10. أدوات مساعدة (Helpers) ---
-        function startClock() {
-            setInterval(() => {
-                const now = moment();
-                document.getElementById('clock-time').innerText = now.format('HH:mm:ss');
-                document.getElementById('clock-date').innerText = now.format('dddd, DD MMMM YYYY');
-            }, 1000);
-        }
+       function startClock() { setInterval(() => { const now = moment(); document.getElementById('clock-time').innerText = now.format('HH:mm:ss'); document.getElementById('clock-date').innerText = now.format('dddd, DD MMMM YYYY'); }, 1000); }
 
-        function updateTimersUI() {
-            const now = Date.now();
-            document.querySelectorAll('.stat-timer').forEach(t => { 
-                const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; 
-                const active = t.dataset.active === 'true';
-                t.innerText = formatDuration(active ? b+(now-s) : b); 
-            });
-        }
+       function updateTimersUI() { const now = Date.now(); document.querySelectorAll('.stat-timer').forEach(t => { const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; const active = t.dataset.active === 'true'; t.innerText = formatDuration(active ? b+(now-s) : b); }); }
 
         const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : v) : Date.now();
         const formatDuration = (ms) => {
@@ -593,36 +562,45 @@
             db.collection('system_settings').doc('shared_tool').onSnapshot(async (snapshot) => {
                 const data = snapshot.exists ? snapshot.data() : { status: 'idle' };
                 const btn = document.getElementById('btn-request-tool');
-                currentToolState = data.status;
-
                 if (!btn) return;
 
-                // 🛡️ صمام الأمان: لو الجلسة انتهت أو المدير سحبها، اقفل نافذة المتصفح فوراً
+                // 🛡️ صمام الأمان الفوري لإغلاق النافذة عند سحب الصلاحية
                 if (data.status === 'idle' || data.userEmail !== userProfile.email) {
                     if (sharedToolWindow && !sharedToolWindow.closed) {
                         sharedToolWindow.close();
                         sharedToolWindow = null;
+                        showToast('انتهت الجلسة', 'تم إغلاق الأداة وإعادتها للسيستم.', 'error');
                     }
                 }
 
-                // --- معالجة الحالات الذكية للموظف ---
                 if (data.status === 'idle') {
-                    btn.innerHTML = '<i class="fas fa-shield-alt ml-2"></i> طلب استخدام الأداة';
-                    btn.className = "w-full py-4 rounded-2xl bg-gray-900 text-white font-black text-sm shadow-lg hover:bg-gray-800 transition-all mini-btn";
+                    btn.innerHTML = '<i class="fas fa-shield-alt ml-1"></i> طلب الأداة';
+                    btn.className = "flex-1 py-3.5 rounded-xl bg-gray-900 text-white font-black text-xs shadow-lg hover:bg-gray-800 transition-all btn-action";
                     btn.disabled = false;
-                    myActiveRequestRefId = null; // تفريغ
+                    myActiveRequestRefId = null;
                 } 
                 else if (data.status === 'pending' || data.status === 'in_use') {
-                    // أ. إذا كنت أنا صاحب الجلسة المقبولة حالياً
                     if (data.status === 'in_use' && data.userEmail === userProfile.email) {
-                        btn.innerHTML = '<i class="fas fa-door-open ml-2"></i> الجلسة نشطة ومؤمنة إدارياً';
-                        btn.className = "w-full py-4 rounded-2xl bg-green-600 text-white font-black text-sm animate-pulse";
+                        btn.innerHTML = '<i class="fas fa-door-open ml-1"></i> الجلسة نشطة ومؤمنة';
+                        btn.className = "flex-1 py-3.5 rounded-xl bg-green-600 text-white font-black text-xs animate-pulse";
                         btn.disabled = false;
 
                         if (!sharedToolWindow || sharedToolWindow.closed) {
-                            sharedToolWindow = window.open("https://member.digitavision.com/login", "ALMASTER_SECURE_SESSION", "width=1200,height=800,scrollbars=yes");
+                            sharedToolWindow = window.open("https://member.digitavision.com/login", "ALMASTER_SECURE", "width=1100,height=750");
                             
-                            // مراقبة إغلاق الموظف للنافذة بنفسه
+                            sharedToolWindow.onload = function() {
+                                try {
+                                    const doc = sharedToolWindow.document;
+                                    const emailInput = doc.querySelector('input[type="email"]') || doc.querySelector('input[name="email"]');
+                                    const passInput = doc.querySelector('input[type="password"]') || doc.querySelector('input[name="password"]');
+                                    const submitBtn = doc.querySelector('button[type="submit"]') || doc.querySelector('form button');
+                                    if(emailInput && passInput && data.toolUser && data.toolPass) {
+                                        emailInput.value = data.toolUser; passInput.value = data.toolPass;
+                                        if(submitBtn) submitBtn.click();
+                                    }
+                                } catch(e) { console.log("CORS Active."); }
+                            };
+
                             const tracker = setInterval(async () => {
                                 if (sharedToolWindow && sharedToolWindow.closed) {
                                     clearInterval(tracker);
@@ -630,18 +608,14 @@
                                 }
                             }, 2000);
                         }
-                    } 
-                    // ب. إذا كنت أنا الذي أرسل الطلب وهو حالياً في قائمة الانتظار (Hold)
-                    else if (myActiveRequestRefId) {
-                        btn.innerHTML = `<i class="fas fa-hourglass-half animate-spin ml-2"></i> أنت في قائمة الانتظار (هولد)..`;
-                        btn.className = "w-full py-4 rounded-2xl bg-orange-100 text-orange-600 font-black text-sm cursor-wait";
+                    } else if (myActiveRequestRefId) {
+                        btn.innerHTML = `<i class="fas fa-hourglass-half animate-spin ml-1"></i> في الانتظار...`;
+                        btn.className = "flex-1 py-3.5 rounded-xl bg-orange-100 text-orange-600 font-black text-xs cursor-wait";
                         btn.disabled = true;
-                    }
-                    // ج. إذا كان هناك زميل آخر يستخدمها حالياً ولم أطلبها أنا بعد
-                    else {
+                    } else {
                         const currentUserLabel = data.userName ? data.userName.split(' ')[0] : 'زميل';
-                        btn.innerHTML = `<i class="fas fa-lock ml-2"></i> مشغولة مع ${currentUserLabel} (إضغط لدخول الهولد)`;
-                        btn.className = "w-full py-4 rounded-2xl bg-gray-100 text-textMuted border border-gray-200 font-black text-sm hover:bg-orange-50 hover:text-orange-600 transition-all";
+                        btn.innerHTML = `<i class="fas fa-lock ml-1"></i> مشغولة مع ${currentUserLabel} (اضغط للحجز)`;
+                        btn.className = "flex-1 py-3.5 rounded-xl bg-gray-100 text-textMuted border border-gray-200 font-black text-xs hover:bg-orange-50 hover:text-orange-600 transition-all";
                         btn.disabled = false;
                     }
                 }
@@ -649,31 +623,20 @@
         }
 
         // دالة الموظف لطلب الدخول في قائمة الانتظار والـ Hold
-        async function requestSharedTool() {
-            if (currentToolState === 'in_use' && document.getElementById('btn-request-tool').classList.contains('bg-green-600')) return; // إذا كانت مفتوحة عندي بالفعل لا تكرر الطلب
-            
+       async function requestSharedTool() {
             const btn = document.getElementById('btn-request-tool');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري حجز دورك في الطابور...';
+            if(btn.classList.contains('bg-green-600')) return; // لمنع تكرار الطلب
 
-            // 1. إنشاء وثيقة طلب فرعية رسمية في كوليكشن الطابور لكي يراها المدير في الهولد
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري حجز دورك...';
+
             const reqRef = await db.collection('tool_requests').add({
-                userEmail: userProfile.email,
-                userName: userProfile.name,
-                status: 'pending', // pending, active, completed
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                userEmail: userProfile.email, userName: userProfile.name, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+            myActiveRequestRefId = reqRef.id;
 
-            myActiveRequestRefId = reqRef.id; // حفظ المعرف محلياً لتثبيت حالة الهولد للموظف
-
-            // 2. تحديث الغرفة الرئيسية بالطلب فقط إذا كانت فارغة تماماً (idle)
             const masterDoc = await db.collection('system_settings').doc('shared_tool').get();
             if (!masterDoc.exists || masterDoc.data().status === 'idle') {
-                await db.collection('system_settings').doc('shared_tool').update({
-                    status: 'pending',
-                    userEmail: userProfile.email,
-                    userName: userProfile.name
-                });
+                await db.collection('system_settings').doc('shared_tool').set({ status: 'pending', userEmail: userProfile.email, userName: userProfile.name }, { merge:true });
             }
         }
 
@@ -683,17 +646,9 @@
             myActiveRequestRefId = null;
 
             if(activeRequestId) {
-                // تحديث حالة الطلب الفردي المكتمل في السجل التاريخي
-                await db.collection('tool_requests').doc(activeRequestId).update({ 
-                    status: 'completed', 
-                    ended_at: firebase.firestore.FieldValue.serverTimestamp() 
-                });
+                await db.collection('tool_requests').doc(activeRequestId).update({ status: 'completed', ended_at: firebase.firestore.FieldValue.serverTimestamp() });
             }
-
-            // إرجاع الغرفة للحالة المتاحة فوراً لكي يتمكن المدير من تمرير الجلسة للشخص التالي في الهولد
-            await db.collection('system_settings').doc('shared_tool').update({
-                status: 'idle', userEmail: null, userName: null, activeRequestId: null, toolUser: null, toolPass: null
-            });
+            await db.collection('system_settings').doc('shared_tool').update({ status: 'idle', userEmail: null, userName: null, activeRequestId: null, toolUser: null, toolPass: null });
         }
         // إنشاء اتصال مرئي حي عبر بروتوكول WebRTC لاستقبال شاشة المدير
         async function connectToAdminRTC(offerData) {
