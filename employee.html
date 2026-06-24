@@ -528,6 +528,7 @@
 
         function showToast(title, msg, type='info') {
             const container = document.getElementById('toast-container');
+            if(!container) return; // 🛡️ هذا السطر يحمي الكود من التوقف تماماً لو الصندوق مفقود
             const toast = document.createElement('div');
             const bg = type==='error'?'bg-red-50 border-red-200 text-red-600':(type==='success'?'bg-green-50 border-green-200 text-green-600':'bg-white border-gray-200 text-textMain');
             
@@ -721,6 +722,7 @@
                 status: 'idle', userEmail: null, userName: null
             });
         }
+        <div id="toast-container" class="fixed top-5 right-5 z-[800] flex flex-col gap-3 w-80 pointer-events-none"></div>
     </script>
 </body>
 </html>
