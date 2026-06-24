@@ -416,56 +416,38 @@
         }
 
         // --- 7. مركز الطلبات (الإجازات والأذونات) ---
+        // --- مركز الطلبات المصحح (الإجازات والأذونات) ---
         async function submitLeaveRequest(e) {
             e.preventDefault();
-            if(!isOnline) { alert("تحتاج للإنترنت لتقديم الطلب."); return; }
-
             const btn = document.getElementById('btn-submit-leave');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
-
-            const type = document.getElementById('leave-type').value;
-            const date = document.getElementById('leave-date').value;
-            const reason = document.getElementById('leave-reason').value;
-            const fileInput = document.getElementById('leave-file');
+            if(!btn) return;
             
-            let fileUrl = null;
+            btn.disabled = true; 
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري الإرسال...';
 
             try {
-                // رفع الملف إن وجد
-                if (fileInput.files.length > 0) {
-                    const file = fileInput.files[0];
-                    const storageRef = storage.ref(`leave_requests/${currentUser.email}/${Date.now()}_${file.name}`);
-                    await storageRef.put(file);
-                    fileUrl = await storageRef.getDownloadURL();
-                }
-
-                // حفظ الطلب في Firestore
+                // حفظ الطلب مباشرة في Firestore بدون البحث عن مرفقات مفقودة
                 await db.collection('leave_requests').add({
-                    user: currentUser.email.toLowerCase(),
+                    user: currentUser.email.toLowerCase().trim(),
                     name: userProfile.name,
-                    type: type,
-                    target_date: date,
-                    reason: reason,
-                    attachment: fileUrl,
-                    status: 'pending', // pending, approved, rejected
+                    type: document.getElementById('leave-type').value,
+                    target_date: document.getElementById('leave-date').value,
+                    reason: document.getElementById('leave-reason').value,
+                    status: 'pending',
                     submitted_at: firebase.firestore.FieldValue.serverTimestamp()
                 });
-
+                
                 closeModal('modal-leave-request');
                 document.getElementById('leave-form').reset();
-                document.getElementById('file-name').innerText = 'اضغط لإرفاق ملف (صورة، PDF)';
                 showToast('تم الإرسال', 'تم إرسال طلبك للإدارة بنجاح وهو قيد المراجعة.', 'success');
-
-            } catch(err) {
-                console.error(err);
-                alert('حدث خطأ أثناء إرسال الطلب.');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'إرسال الطلب للإدارة';
+            } catch(err) { 
+                console.error("Error submitting leave:", err);
+                alert('حدث خطأ أثناء الإرسال. تأكد من إعدادات فايربيز للـ Rules.'); 
+            } finally { 
+                btn.disabled = false; 
+                btn.innerHTML = 'إرسال الطلب للإدارة'; 
             }
         }
-
         // --- 8. السجل المصغر (Mini Logs) ---
        function listenToLogs() {
             const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
