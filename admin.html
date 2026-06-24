@@ -616,26 +616,23 @@
                         if(data.type === 'excuse_late') { typeLabel = 'إذن تأخير'; typeIcon = 'fa-clock'; typeColor = 'text-orange-600 bg-orange-50'; }
                         if(data.type === 'excuse_early') { typeLabel = 'انصراف مبكر'; typeIcon = 'fa-running'; typeColor = 'text-blue-600 bg-blue-50'; }
 
-                        // 👈 هنا قمنا بإصلاح الاستدعاء من window.handleLeaveDecision إلى window.processRequest
-                        container.innerHTML += `
-                            <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-3 text-right w-full transition-all hover:border-primary-300 relative overflow-hidden">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <h4 class="font-black text-sm text-textMain">${data.name}</h4>
-                                        <span class="text-[10px] text-textMuted font-bold mt-0.5 block"><i class="fas fa-history ml-1"></i> أُرسل ${timeStr}</span>
-                                    </div>
-                                </div>
-                                <div class="text-[11px] font-black ${typeColor} px-3 py-1.5 rounded-lg inline-flex items-center gap-2 border border-current border-opacity-10">
-                                    <i class="fas ${typeIcon}"></i> ${typeLabel} - ${data.target_date}
-                                </div>
-                                <p class="text-[11px] text-textMain bg-surface p-3 rounded-xl border border-gray-100 font-medium leading-relaxed shadow-inner">"${data.reason}"</p>
-                                <div class="flex gap-2 pt-2 border-t border-gray-50">
-                                    <button onclick="window.processRequest('${data.id}', 'approved')" class="flex-1 py-2 bg-green-500 text-white rounded-xl text-[11px] font-black hover:bg-green-600 transition-all shadow-sm shadow-green-500/20"><i class="fas fa-check ml-1"></i> موافقة</button>
-                                    <button onclick="window.processRequest('${data.id}', 'rejected')" class="flex-1 py-2 bg-white border border-red-200 text-red-500 rounded-xl text-[11px] font-black hover:bg-red-50 transition-all"><i class="fas fa-times ml-1"></i> رفض</button>
-                                </div>
+container.innerHTML += `
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3 text-right w-full">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] text-textMuted font-bold font-mono">${timeStr}</span>
+                                <h4 class="font-black text-xs text-textMain">${data.name}</h4>
                             </div>
-                        `;
-                    });
+                            <div class="text-xs font-bold text-primary-600 bg-primary-50/50 px-3 py-1.5 rounded-xl inline-block">
+                                ${typeLabel} - تاريخ: ${data.target_date}
+                            </div>
+                            <p class="text-xs text-textMuted bg-gray-50 p-2.5 rounded-xl font-medium leading-relaxed">${data.reason}</p>
+                            <div class="flex gap-2 pt-1">
+                                <button onclick="processRequest('${data.id}', 'approved')" class="flex-1 py-2 bg-green-600 text-white rounded-xl text-[10px] font-black hover:bg-green-500 transition-all shadow-sm">موافقة ✅</button>
+                                <button onclick="processRequest('${data.id}', 'rejected')" class="flex-1 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black hover:bg-red-100 border border-red-100 transition-all">رفض ❌</button>
+                            </div>
+                        </div>
+                    `;
+                });
                 }, error => {
                     console.error("Core Leave Sync Error: ", error);
                 });
