@@ -175,11 +175,11 @@
                     <p id="lbl-card-Meeting" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">الاجتماعات</p>
                     <p id="timer-Meeting" data-status="Meeting" class="stat-timer text-xl sm:text-2xl font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
                 </div>
-                <div id="card-Exception" data-card class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
-                    <div id="ic-card-Exception" class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-star"></i></div>
-                    <p id="lbl-card-Exception" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">الاستثناءات</p>
-                    <p id="timer-Exception" data-status="Exception" class="stat-timer text-xl sm:text-2xl font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
-                </div>
+                     <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
+                        <div class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-star"></i></div>
+                        <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">رصيد الاستثناءات</p>
+                        <p id="stat-exceptions" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">— <span class="text-xs text-textMuted font-bold">مرات</span></p>
+                    </div>
                 <!-- عدّادات ثابتة -->
                 <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
                     <div class="w-11 h-11 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-clock"></i></div>
@@ -206,9 +206,6 @@
             </button>
             <button id="btn-status-Meeting" onclick="handleStatusChange('Meeting')" class="status-btn btn-action py-3 sm:py-3.5 rounded-xl bg-indigo-50 text-indigo-600 font-black text-xs border border-indigo-100 shadow-sm hover:bg-indigo-100">
                 <i id="ic-btn-Meeting" class="fas fa-users ms-1"></i> <span id="lbl-btn-Meeting">اجتماع</span>
-            </button>
-            <button id="btn-status-Exception" onclick="handleStatusChange('Exception')" class="status-btn btn-action py-3 sm:py-3.5 rounded-xl bg-violet-50 text-violet-600 font-black text-xs border border-violet-100 shadow-sm hover:bg-violet-100">
-                <i id="ic-btn-Exception" class="fas fa-star ms-1"></i> <span id="lbl-btn-Exception">استثناء</span>
             </button>
         </div>
 
@@ -325,7 +322,6 @@
         Online:    { label: 'عمل',      btnLabel: 'بدء العمل', color: 'emerald', icon: 'fa-laptop-code', counted: true,  enabled: true },
         Break:     { label: 'راحة',     btnLabel: 'راحة',      color: 'amber',   icon: 'fa-mug-hot',     counted: true,  enabled: true },
         Meeting:   { label: 'اجتماع',   btnLabel: 'اجتماع',    color: 'indigo',  icon: 'fa-users',       counted: true,  enabled: true },
-        Exception: { label: 'استثناء',  btnLabel: 'استثناء',   color: 'violet',  icon: 'fa-star',        counted: true,  enabled: true },
         Offline:   { label: 'غير متصل', btnLabel: '',          color: 'slate',   icon: 'fa-power-off',   counted: false, enabled: true },
     };
 
@@ -462,17 +458,27 @@
             scheduleDailyReset();
         }, err => console.warn('config:', err.message));
     }
+        let exceptionBalanceVal = null; // متغير جديد لحفظ رصيد الاستثناءات
 
     function listenToHrStats() {
         db.collection('hr_stats').doc(EMAIL).onSnapshot(doc => {
-            hrBalance = (doc.exists && typeof doc.data().annualLeavesLeft === 'number')
-                ? doc.data().annualLeavesLeft : null;
-            renderLeaveBalance();
+            if (doc.exists) {
+                hrBalance = typeof doc.data().annualLeavesLeft === 'number' ? doc.data().annualLeavesLeft : null;
+                exceptionBalanceVal = typeof doc.data().exceptionBalance === 'number' ? doc.data().exceptionBalance : null;
+            }
+            renderHrBalances();
         }, err => console.warn('hr_stats:', err.message));
     }
-    function renderLeaveBalance() {
+    
+    function renderHrBalances() {
+        // تحديث الإجازات
         const bal = (hrBalance === null) ? ANNUAL_LEAVE_DEFAULT : hrBalance;
         document.getElementById('stat-leaves').innerHTML = `${bal} <span class="text-xs text-textMuted font-bold">يوم</span>`;
+        
+        // تحديث الاستثناءات
+        const exc = (exceptionBalanceVal === null) ? 3 : exceptionBalanceVal; // 3 هو الافتراضي
+        const statExcEl = document.getElementById('stat-exceptions');
+        if(statExcEl) statExcEl.innerHTML = `${exc} <span class="text-xs text-textMuted font-bold">مرات</span>`;
     }
 
     // --- 8) تطبيق تعريفات الحالات على الأزرار والبطاقات ---
