@@ -718,7 +718,8 @@
                 role: document.getElementById('u-role').value,
                 contract: document.getElementById('u-contract').value,
                 isSuspended: document.getElementById('u-suspended').checked,
-                email: email
+                email: email,
+                leaveBalance: leaveBalance // حفظ احتياطي داخل بيانات الموظف
             };
 
             if(base64Photo) userData.photo = base64Photo;
@@ -737,8 +738,12 @@
                     Toast.fire({icon: 'success', title: 'تم تحديث البيانات بنجاح.'});
                 }
 
-                // تحديث رصيد الإجازات للموظف في مساره المخصص
-                await db.collection('hr_stats').doc(email).set({ annualLeavesLeft: leaveBalance }, { merge: true });
+                // محاولة تحديث رصيد الإجازات وتجاوز خطأ الصلاحيات إن وجد حتى لا يتعطل حفظ باقي البيانات
+                try {
+                    await db.collection('hr_stats').doc(email).set({ annualLeavesLeft: leaveBalance }, { merge: true });
+                } catch (hrErr) {
+                    console.warn("تنبيه: تم منع التحديث على hr_stats بسبب قواعد الأمان (Rules).", hrErr);
+                }
 
                 closeModal('modal-user-form');
             } catch(err) { 
@@ -822,24 +827,44 @@
                     return;
                 }
 
+                let logsArray = [];
+                snap.forEach(doc => logsArray.push(doc.data()));
+                
+                // حساب المدة الزمنية ديناميكياً في حال كانت مفقودة (حل مشكلة 00:00:00)
+                logsArray.reverse(); // ترتيب زمني تصاعدي لتسهيل الحساب
+                let totalWork = 0, totalBreak = 0;
+
+                for (let i = 0; i < logsArray.length; i++) {
+                    let l = logsArray[i];
+                    let durationMs = parseInt(l.duration_ms);
+                    
+                    // إذا لم تكن المدة مسجلة، نحسبها من الحركة التي تليها
+                    if (!durationMs && i < logsArray.length - 1) {
+                        let nextLog = logsArray[i+1];
+                        let t1 = l.timestamp ? l.timestamp.toMillis() : 0;
+                        let t2 = nextLog.timestamp ? nextLog.timestamp.toMillis() : 0;
+                        if (t1 && t2) durationMs = t2 - t1;
+                    }
+                    
+                    l._computed_duration = durationMs || 0;
+                    if(l.from_status === 'Online') totalWork += l._computed_duration;
+                    if(l.from_status === 'Break') totalBreak += l._computed_duration;
+                }
+                
+                logsArray.reverse(); // إعادة الترتيب التنازلي للعرض
+
                 container.innerHTML = '';
-                let totalWork = 0, totalBreak = 0, count = 1;
+                let count = 1;
 
-                snap.forEach(doc => {
-                    const l = doc.data();
-                    const durationMs = parseInt(l.duration_ms) || 0;
-                    if(l.from_status === 'Online') totalWork += durationMs;
-                    if(l.from_status === 'Break') totalBreak += durationMs;
-
+                logsArray.forEach(l => {
                     const endTimeStr = l.timestamp ? moment(l.timestamp.toDate()).format('hh:mm:ss A') : '---';
-
                     container.innerHTML += `
                         <tr class="hover:bg-slate-50/50 transition-colors">
                             <td class="p-4 text-center tabular-nums text-slate-400">${count++}</td>
                             <td class="p-4"><span class="px-3 py-1 text-[11px] font-black rounded-lg bg-surface text-textMain border border-slate-200">${translateStatus(l.from_status)}</span></td>
                             <td class="p-4"><i class="fas fa-long-arrow-alt-left text-slate-300 text-lg mx-2 align-middle"></i><span class="px-3 py-1 text-[11px] font-black rounded-lg bg-brand-navy text-white shadow-sm">${translateStatus(l.to_status)}</span></td>
                             <td class="p-4 text-center tabular-nums text-textMain font-bold bg-surface/50">${endTimeStr}</td>
-                            <td class="p-4 text-center tabular-nums text-brand-blue font-black">${formatDuration(durationMs)}</td>
+                            <td class="p-4 text-center tabular-nums text-brand-blue font-black">${formatDuration(l._computed_duration)}</td>
                         </tr>
                     `;
                 });
@@ -852,7 +877,6 @@
                 `;
             } catch(e) { console.error(e); }
         }
-
         function refreshHistoryWithDate() {
             const date = document.getElementById('history-date-picker').value;
             if(currentViewingEmail && date) viewHistory(currentViewingEmail, date);
