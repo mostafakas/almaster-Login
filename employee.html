@@ -1,728 +1,778 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="light">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALMASTER | HR Workspace</title>
+    <title>ALMASTER | مساحة عمل الموظف</title>
     <meta name="theme-color" content="#ffffff">
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Firebase (نستخدم App + Firestore + Auth فقط) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        primary: { 500: '#0ea5e9', 600: '#0284c7' },
-                        surface: '#f9fafb',
-                        surfaceDark: '#f3f4f6',
-                        textMain: '#1f2937',
-                        textMuted: '#6b7280',
+                        primary: { 50:'#f0f9ff', 100:'#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 700:'#0369a1' },
+                        surface: '#f8fafc',
+                        textMain: '#0f172a',
+                        textMuted: '#64748b',
                     },
-                    fontFamily: { sans: ['Cairo', 'Outfit', 'sans-serif'] }
+                    fontFamily: { sans: ['Cairo', 'sans-serif'] }
                 }
             }
         }
     </script>
 
     <style>
-        body { background-color: #ffffff; color: #1f2937; height: 100vh; overflow: hidden; display: flex; flex-direction: column; margin: 0; }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 20px; }
+        html, body { height: 100%; }
+        body {
+            background-color: #f8fafc; color: #0f172a; margin: 0;
+            min-height: 100vh; display: flex; flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
 
-        /* تأثير النبض المركزي بناءً على الحالة */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; }
+
+        /* حلقة النبض حسب الحالة */
         .status-ring { position: relative; }
         .status-ring::before {
-            content: ''; position: absolute; inset: -15px; border-radius: 50%;
-            z-index: 0;
-            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            content: ''; position: absolute; inset: -14px; border-radius: 50%;
+            z-index: 0; opacity: 0;
         }
-        
-        .status-Online .status-ring::before { background: rgba(16, 185, 129, 0.2); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); animation-name: pulse-green; }
-        .status-Break .status-ring::before { background: rgba(245, 158, 11, 0.2); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); animation-name: pulse-orange; }
-        .status-Meeting .status-ring::before { background: rgba(59, 130, 246, 0.2); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); animation-name: pulse-blue; }
-        .status-Offline .status-ring::before { background: rgba(107, 114, 128, 0.1); animation: none; } /* لا يوجد نبض للأوفلاين */
+        .status-Online  .status-ring::before { animation: pulse-green 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+        .status-Break   .status-ring::before { animation: pulse-orange 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+        .status-Offline .status-ring::before { animation: none; }
 
-        @keyframes pulse-green { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-        @keyframes pulse-orange { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
-        @keyframes pulse-blue { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        @keyframes pulse-green  { 0%{opacity:1; box-shadow:0 0 0 0 rgba(16,185,129,.45)} 70%{opacity:.4; box-shadow:0 0 0 22px rgba(16,185,129,0)} 100%{opacity:1; box-shadow:0 0 0 0 rgba(16,185,129,0)} }
+        @keyframes pulse-orange { 0%{opacity:1; box-shadow:0 0 0 0 rgba(245,158,11,.45)} 70%{opacity:.4; box-shadow:0 0 0 22px rgba(245,158,11,0)} 100%{opacity:1; box-shadow:0 0 0 0 rgba(245,158,11,0)} }
 
-        /* الكروت الطافية */
         .stat-card {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-            transition: transform 0.3s ease;
+            background: #ffffff; border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px -8px rgba(15,23,42,.08);
+            transition: transform .25s ease, box-shadow .25s ease;
         }
-        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px -12px rgba(15,23,42,.16); }
 
-        .btn-action { transition: all 0.2s; border: 1px solid transparent; }
-        .btn-action:active { transform: scale(0.95); }
+        .btn-action { transition: all .18s ease; border: 1px solid transparent; }
+        .btn-action:active { transform: scale(.97); }
+        .btn-action:disabled { opacity: .5; cursor: not-allowed; }
+
+        @keyframes fade-in { from { opacity:0; transform: translateY(-8px);} to { opacity:1; transform: translateY(0);} }
+        .animate-fade-in { animation: fade-in .3s ease; }
+
+        :focus-visible { outline: 2px solid #0ea5e9; outline-offset: 2px; border-radius: 6px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+        }
     </style>
 </head>
 
-<body class="selection:bg-primary-500/30 font-sans" id="app-body">
+<body class="font-sans selection:bg-primary-500/30 status-Offline" id="app-body">
 
+    <!-- شاشة التحميل -->
     <div id="loader" class="fixed inset-0 z-[600] bg-white flex flex-col items-center justify-center">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-primary-500 border-r-2 border-r-transparent mb-4"></div>
-        <h2 class="text-xs font-black tracking-widest text-textMuted uppercase animate-pulse">جاري تهيئة مساحة العمل...</h2>
+        <h2 class="text-xs font-black tracking-widest text-textMuted uppercase animate-pulse">جارٍ تجهيز مساحة العمل…</h2>
     </div>
 
-    <div id="offline-overlay" class="fixed inset-0 z-[550] bg-white/90 backdrop-blur-md hidden flex flex-col items-center justify-center transition-all duration-300">
-        <div class="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-red-500/20 animate-bounce">
-            <i class="fas fa-wifi text-4xl line-through"></i>
-        </div>
-        <h2 class="text-3xl font-black text-textMain mb-3">فقدان الاتصال بالإنترنت</h2>
-        <p class="text-sm text-textMuted font-bold max-w-md text-center leading-relaxed">
-            تم إيقاف النظام مؤقتاً لحماية بياناتك. جاري محاولة الاسترداد التلقائي...<br>
-            <span class="text-red-500 text-xs mt-2 block">يرجى التحقق من جهاز الراوتر أو شبكة الواي فاي.</span>
-        </p>
+    <!-- شاشة تعذّر تحميل الملف الشخصي -->
+    <div id="profile-error" class="fixed inset-0 z-[590] bg-white hidden flex-col items-center justify-center text-center px-6">
+        <div class="w-20 h-20 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-5"><i class="fas fa-user-slash text-3xl"></i></div>
+        <h2 class="text-xl font-black text-textMain mb-2">تعذّر فتح حسابك</h2>
+        <p class="text-sm text-textMuted font-bold max-w-sm leading-relaxed mb-6">حسابك غير مُفعّل على النظام بعد. تواصل مع إدارة الموارد البشرية لتفعيله.</p>
+        <button onclick="logout(true)" class="px-6 py-3 rounded-xl bg-textMain text-white font-black text-xs">تسجيل الخروج</button>
     </div>
 
-    <header class="h-20 border-b border-gray-100 flex items-center justify-between px-10 shrink-0 bg-white z-10 relative shadow-sm">
-        <div class="flex items-center gap-4">
-            <h1 class="text-2xl font-black text-textMain tracking-tighter">AL<span class="text-primary-500">MASTER</span></h1>
-            <span class="px-3 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-full uppercase tracking-widest">HR Portal</span>
+    <!-- الهيدر -->
+    <header class="h-16 sm:h-20 border-b border-slate-200 flex items-center justify-between px-4 sm:px-10 shrink-0 bg-white z-30 sticky top-0 shadow-sm">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl sm:text-2xl font-black text-textMain tracking-tight">AL<span class="text-primary-500">MASTER</span></h1>
+            <span class="hidden sm:inline px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-full uppercase tracking-widest">بوابة الموظف</span>
         </div>
-        
-        <div class="flex items-center gap-6">
-            <div id="connection-status" class="hidden items-center gap-2 text-xs font-bold text-red-500 bg-red-50 px-4 py-2 rounded-full border border-red-100">
-                <i class="fas fa-exclamation-circle animate-pulse"></i> غير متصل
+
+        <div class="flex items-center gap-4 sm:gap-6">
+            <div id="connection-status" class="hidden items-center gap-2 text-[11px] font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-full border border-red-100">
+                <i class="fas fa-wifi-slash"></i> غير متصل
             </div>
-            <div class="text-right border-l border-gray-200 pl-6">
-                <div id="clock-time" class="text-xl font-black text-textMain">00:00:00</div>
-                <div id="clock-date" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mt-0.5">---</div>
+            <div class="text-left sm:text-right sm:border-r border-slate-200 sm:pr-6">
+                <div id="clock-time" class="text-lg sm:text-xl font-black text-textMain tabular-nums">00:00:00</div>
+                <div id="clock-date" class="text-[10px] font-bold text-textMuted tracking-wide mt-0.5">—</div>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 relative flex items-center justify-center bg-surface overflow-hidden">
-        
-        <div class="grid grid-cols-3 gap-12 w-full max-w-6xl px-8 items-center">
-            
-            <div class="flex flex-col gap-6 items-end">
-                <div class="stat-card w-64 p-6 rounded-3xl flex flex-col items-center text-center">
-                    <div class="w-12 h-12 rounded-2xl bg-green-50 text-green-500 flex items-center justify-center text-xl mb-4"><i class="fas fa-briefcase"></i></div>
+    <!-- شريط انقطاع الاتصال -->
+    <div id="offline-banner" class="hidden bg-red-50 border-b border-red-100 text-red-700 text-xs font-bold text-center py-2 px-4 z-20">
+        <i class="fas fa-triangle-exclamation ml-1"></i> لا يوجد اتصال بالإنترنت. تغيير الحالة متوقّف حتى عودة الاتصال.
+    </div>
+
+    <!-- المحتوى -->
+    <main class="flex-1 relative flex items-center justify-center bg-surface overflow-hidden py-8">
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 w-full max-w-6xl px-5 items-center">
+
+            <!-- عمود الإحصائيات الأيمن -->
+            <div class="order-2 lg:order-1 grid grid-cols-2 lg:flex lg:flex-col gap-4 sm:gap-6 lg:items-end">
+                <div class="stat-card w-full lg:w-64 p-5 sm:p-6 rounded-3xl flex flex-col items-center text-center">
+                    <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-briefcase"></i></div>
                     <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">إجمالي العمل اليوم</p>
-                    <p id="timer-online" class="text-2xl font-black text-textMain stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p>
+                    <p id="timer-online" class="text-2xl font-black text-textMain tabular-nums stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p>
                 </div>
-                
-                <div class="stat-card w-64 p-6 rounded-3xl flex flex-col items-center text-center">
-                    <div class="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-xl mb-4"><i class="fas fa-clock"></i></div>
+
+                <div class="stat-card w-full lg:w-64 p-5 sm:p-6 rounded-3xl flex flex-col items-center text-center">
+                    <div class="w-11 h-11 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-clock"></i></div>
                     <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">تأخير الصباح</p>
-                    <p id="stat-late" class="text-2xl font-black text-textMain">0 <span class="text-xs text-textMuted">دقيقة</span></p>
+                    <p id="stat-late" class="text-2xl font-black text-textMain tabular-nums">0 <span class="text-xs text-textMuted font-bold">دقيقة</span></p>
                 </div>
             </div>
 
-            <div class="flex flex-col items-center justify-center relative z-10">
-                <div class="status-ring mb-8">
-                    <img id="user-avatar" src="" class="w-48 h-48 rounded-full object-cover border-4 border-white shadow-2xl relative z-10 bg-gray-100">
-                    <div id="status-icon-badge" class="absolute bottom-2 right-2 w-12 h-12 rounded-full border-4 border-white flex items-center justify-center text-white text-lg z-20 shadow-lg bg-gray-400">
+            <!-- المركز: الموظف والحالة -->
+            <div class="order-1 lg:order-2 flex flex-col items-center justify-center relative z-10">
+                <div class="status-ring mb-6 sm:mb-8">
+                    <img id="user-avatar" src="" alt="صورة الموظف" class="w-36 h-36 sm:w-48 sm:h-48 rounded-full object-cover border-4 border-white shadow-2xl relative z-10 bg-slate-100">
+                    <div id="status-icon-badge" class="absolute bottom-2 right-2 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-4 border-white flex items-center justify-center text-white text-lg z-20 shadow-lg bg-slate-400">
                         <i class="fas fa-power-off"></i>
                     </div>
                 </div>
-                <h2 id="user-name" class="text-3xl font-black text-textMain mb-1">جاري التحميل...</h2>
-                <p id="user-title" class="text-xs font-bold text-primary-500 uppercase tracking-widest">---</p>
-                <div class="mt-4 px-6 py-2 rounded-full bg-white border border-gray-200 shadow-sm text-xs font-bold text-textMuted flex items-center gap-2">
+                <h2 id="user-name" class="text-2xl sm:text-3xl font-black text-textMain mb-1 text-center">جارٍ التحميل…</h2>
+                <p id="user-title" class="text-xs font-bold text-primary-500 uppercase tracking-widest">—</p>
+                <div class="mt-4 px-5 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-xs font-bold text-textMuted flex items-center gap-2">
                     الحالة الحالية: <span id="current-status-text" class="text-textMain font-black">غير متصل</span>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-6 items-start">
-                <div class="stat-card w-64 p-6 rounded-3xl flex flex-col items-center text-center">
-                    <div class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center text-xl mb-4"><i class="fas fa-coffee"></i></div>
+            <!-- عمود الإحصائيات الأيسر -->
+            <div class="order-3 grid grid-cols-2 lg:flex lg:flex-col gap-4 sm:gap-6 lg:items-start">
+                <div class="stat-card w-full lg:w-64 p-5 sm:p-6 rounded-3xl flex flex-col items-center text-center">
+                    <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-mug-hot"></i></div>
                     <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">الراحة المستهلكة</p>
-                    <p id="timer-break" class="text-2xl font-black text-textMain stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p>
+                    <p id="timer-break" class="text-2xl font-black text-textMain tabular-nums stat-timer" data-val="0" data-active="false" data-start="0">00:00:00</p>
                 </div>
-                
-                <div class="stat-card w-64 p-6 rounded-3xl flex flex-col items-center text-center">
-                    <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center text-xl mb-4"><i class="fas fa-umbrella-beach"></i></div>
-                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">رصيد الإجازات</p>
-                    <p id="stat-leaves" class="text-2xl font-black text-textMain">-- <span class="text-xs text-textMuted">يوم</span></p>
+
+                <div class="stat-card w-full lg:w-64 p-5 sm:p-6 rounded-3xl flex flex-col items-center text-center">
+                    <div class="w-11 h-11 rounded-2xl bg-primary-50 text-primary-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-umbrella-beach"></i></div>
+                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">رصيد الإجازات السنوية</p>
+                    <p id="stat-leaves" class="text-2xl font-black text-textMain tabular-nums">— <span class="text-xs text-textMuted font-bold">يوم</span></p>
                 </div>
             </div>
 
         </div>
 
         <div class="absolute top-[-10%] left-[-5%] w-96 h-96 bg-primary-500/5 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute bottom-[-10%] right-[-5%] w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-[-10%] right-[-5%] w-96 h-96 bg-primary-500/5 rounded-full blur-3xl pointer-events-none"></div>
     </main>
 
-    <!-- لوحة الأزرار السفلية (المنسقة والاحترافية) -->
-    <footer class="bg-white border-t border-gray-200 p-5 shrink-0 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] flex flex-wrap lg:flex-nowrap justify-between items-center gap-6">
-        
-        <!-- الجانب الأيمن: أزرار الحالة -->
-        <div class="flex flex-1 gap-3 max-w-2xl">
-            <button onclick="handleStatusChange('Online')" class="btn-action flex-1 py-3.5 rounded-xl bg-green-50 text-green-600 font-black text-xs border border-green-100 shadow-sm hover:bg-green-100 transition-all"><i class="fas fa-laptop-code mr-1"></i> بدء العمل</button>
-            <button onclick="handleStatusChange('Break')" class="btn-action flex-1 py-3.5 rounded-xl bg-orange-50 text-orange-600 font-black text-xs border border-orange-100 shadow-sm hover:bg-orange-100 transition-all"><i class="fas fa-mug-hot mr-1"></i> أخذ راحة</button>
-            <button onclick="handleStatusChange('Meeting')" class="btn-action flex-1 py-3.5 rounded-xl bg-blue-50 text-blue-600 font-black text-xs border border-blue-100 shadow-sm hover:bg-blue-100 transition-all"><i class="fas fa-users mr-1"></i> اجتماع</button>
-            <button onclick="logout()" class="btn-action flex-1 py-3.5 rounded-xl bg-red-50 text-red-600 font-black text-xs border border-red-100 shadow-sm hover:bg-red-100 transition-all"><i class="fas fa-sign-out-alt mr-1"></i> إنهاء اليوم</button>
+    <!-- شريط الإجراءات السفلي -->
+    <footer class="bg-white border-t border-slate-200 p-4 sm:p-5 shrink-0 z-20 shadow-[0_-10px_40px_rgba(15,23,42,.04)] flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
+        <div class="flex flex-1 gap-2.5 sm:gap-3 max-w-2xl">
+            <button onclick="handleStatusChange('Online')" class="status-btn btn-action flex-1 py-3 sm:py-3.5 rounded-xl bg-emerald-50 text-emerald-600 font-black text-xs border border-emerald-100 shadow-sm hover:bg-emerald-100"><i class="fas fa-laptop-code ms-1"></i> <span class="hidden sm:inline">بدء العمل</span><span class="sm:hidden">عمل</span></button>
+            <button onclick="handleStatusChange('Break')" class="status-btn btn-action flex-1 py-3 sm:py-3.5 rounded-xl bg-amber-50 text-amber-600 font-black text-xs border border-amber-100 shadow-sm hover:bg-amber-100"><i class="fas fa-mug-hot ms-1"></i> <span class="hidden sm:inline">أخذ راحة</span><span class="sm:hidden">راحة</span></button>
+            <button onclick="confirmLogout()" class="btn-action flex-1 py-3 sm:py-3.5 rounded-xl bg-red-50 text-red-600 font-black text-xs border border-red-100 shadow-sm hover:bg-red-100"><i class="fas fa-right-from-bracket ms-1"></i> <span class="hidden sm:inline">إنهاء اليوم</span><span class="sm:hidden">إنهاء</span></button>
         </div>
 
-        <!-- الجانب الأيسر: الإجراءات والسجل والأداة -->
-        <div class="flex gap-3 min-w-[450px]">
-            <button onclick="openModal('modal-employee-logs')" class="flex-1 py-3.5 rounded-xl bg-surface border border-gray-200 text-textMain hover:bg-gray-100 font-black text-xs shadow-sm transition-all btn-action">
-                <i class="fas fa-history text-primary-500 mr-1"></i> سجل حركاتي
+        <div class="flex gap-2.5 sm:gap-3 lg:min-w-[360px]">
+            <button onclick="openModal('modal-employee-logs')" class="flex-1 py-3 sm:py-3.5 rounded-xl bg-surface border border-slate-200 text-textMain hover:bg-slate-100 font-black text-xs shadow-sm btn-action">
+                <i class="fas fa-clock-rotate-left text-primary-500 ms-1"></i> سجلّي اليوم
             </button>
-            <button onclick="openModal('modal-leave-request')" class="flex-1 py-3.5 rounded-xl bg-surface border border-gray-200 text-textMain hover:bg-gray-100 font-black text-xs shadow-sm transition-all btn-action">
-                <i class="fas fa-file-signature text-orange-500 mr-1"></i> طلب إجازة/إذن
-            </button>
-            <button id="btn-request-tool" onclick="requestSharedTool()" class="flex-1 py-3.5 rounded-xl bg-gray-900 text-white font-black text-xs shadow-lg hover:bg-gray-800 transition-all btn-action">
-                <i class="fas fa-shield-alt mr-1"></i> طلب الأداة
+            <button onclick="openModal('modal-leave-request')" class="flex-1 py-3 sm:py-3.5 rounded-xl bg-surface border border-slate-200 text-textMain hover:bg-slate-100 font-black text-xs shadow-sm btn-action">
+                <i class="fas fa-file-signature text-amber-500 ms-1"></i> طلب إجازة / إذن
             </button>
         </div>
     </footer>
-   <!-- نافذة طلب إجازة / إذن -->
-    <div id="modal-leave-request" class="fixed inset-0 z-[700] hidden bg-textMain/50 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-leave-request')">
-        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col" onclick="event.stopPropagation()">
-            <div class="p-5 border-b border-gray-100 bg-surface flex justify-between items-center">
-                <h3 class="font-black text-sm text-textMain"><i class="fas fa-file-alt text-orange-500 ml-2"></i> نموذج طلب إداري</h3>
-                <button onclick="closeModal('modal-leave-request')" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+
+    <!-- نافذة طلب إجازة / إذن + طلباتي -->
+    <div id="modal-leave-request" class="fixed inset-0 z-[700] hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="leave-title" onclick="closeModal('modal-leave-request')">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[88vh]" onclick="event.stopPropagation()">
+            <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
+                <h3 id="leave-title" class="font-black text-sm text-textMain"><i class="fas fa-file-lines text-amber-500 ml-2"></i> طلب إجازة أو إذن</h3>
+                <button onclick="closeModal('modal-leave-request')" aria-label="إغلاق" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
             </div>
-            
-            <form id="leave-form" onsubmit="submitLeaveRequest(event)" class="p-6 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
-                <div>
-                    <label class="block text-[10px] font-black text-textMuted mb-2 uppercase">نوع الطلب</label>
-                    <select id="leave-type" required class="w-full bg-surface border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-primary-500">
-                        <option value="sick">إجازة مرضية</option>
-                        <option value="annual">إجازة اعتيادية</option>
-                        <option value="excuse_late">إذن تأخير</option>
-                        <option value="excuse_early">إذن انصراف مبكر</option>
-                    </select>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <form id="leave-form" onsubmit="submitLeaveRequest(event)" class="p-6 space-y-4 border-b border-slate-100">
+                    <div>
+                        <label for="leave-type" class="block text-[10px] font-black text-textMuted mb-2 uppercase">نوع الطلب</label>
+                        <select id="leave-type" required class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-primary-500">
+                            <option value="sick">إجازة مرضية</option>
+                            <option value="annual">إجازة اعتيادية</option>
+                            <option value="excuse_late">إذن تأخير</option>
+                            <option value="excuse_early">إذن انصراف مبكر</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="leave-date" class="block text-[10px] font-black text-textMuted mb-2 uppercase">تاريخ الطلب</label>
+                        <input type="date" id="leave-date" required class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-primary-500">
+                    </div>
+                    <div>
+                        <label for="leave-reason" class="block text-[10px] font-black text-textMuted mb-2 uppercase">السبب / المبرر</label>
+                        <textarea id="leave-reason" required rows="3" class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-primary-500 resize-none" placeholder="اكتب تفاصيل الطلب هنا…"></textarea>
+                    </div>
+                    <button type="submit" id="btn-submit-leave" class="w-full py-3 bg-primary-600 text-white rounded-xl font-black text-xs shadow-md hover:bg-primary-500 btn-action">إرسال الطلب</button>
+                </form>
+
+                <div class="p-6">
+                    <h4 class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-3">طلباتي السابقة</h4>
+                    <div id="my-leaves-container" class="space-y-2.5">
+                        <p class="text-xs text-textMuted italic text-center py-6">جارٍ تحميل الطلبات…</p>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-[10px] font-black text-textMuted mb-2 uppercase">تاريخ الطلب</label>
-                    <input type="date" id="leave-date" required class="w-full bg-surface border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-primary-500">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black text-textMuted mb-2 uppercase">السبب / المبرر</label>
-                    <textarea id="leave-reason" required rows="3" class="w-full bg-surface border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-primary-500 resize-none" placeholder="اكتب تفاصيل العذر هنا..."></textarea>
-                </div>
-                <div class="pt-2">
-                    <button type="submit" id="btn-submit-leave" class="w-full py-3 bg-primary-600 text-white rounded-xl font-black text-xs shadow-md hover:bg-primary-500 transition-all btn-action">إرسال الطلب للإدارة</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
-    <!-- نافذة سجل الحركات للموظف -->
-    <div id="modal-employee-logs" class="fixed inset-0 z-[700] hidden bg-textMain/50 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-employee-logs')">
+    <!-- نافذة سجل الحركات -->
+    <div id="modal-employee-logs" class="fixed inset-0 z-[700] hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="logs-title" onclick="closeModal('modal-employee-logs')">
         <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" onclick="event.stopPropagation()">
-            <div class="p-5 border-b border-gray-100 bg-surface flex justify-between items-center">
-                <h3 class="font-black text-sm text-textMain"><i class="fas fa-history text-primary-500 ml-2"></i> السجل الحركي لليوم</h3>
-                <button onclick="closeModal('modal-employee-logs')" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
+                <h3 id="logs-title" class="font-black text-sm text-textMain"><i class="fas fa-clock-rotate-left text-primary-500 ml-2"></i> سجل حركات اليوم</h3>
+                <button onclick="closeModal('modal-employee-logs')" aria-label="إغلاق" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
             </div>
             <div class="flex-1 overflow-y-auto p-6 bg-white custom-scrollbar space-y-3" id="employee-logs-container">
-                <p class="text-xs text-textMuted italic text-center py-10">جاري تحميل السجل...</p>
+                <p class="text-xs text-textMuted italic text-center py-10">جارٍ تحميل السجل…</p>
             </div>
         </div>
     </div>
+
+    <!-- نافذة تأكيد إنهاء اليوم -->
+    <div id="modal-logout" class="fixed inset-0 z-[720] hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" onclick="closeModal('modal-logout')">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden text-center p-7" onclick="event.stopPropagation()">
+            <div class="w-16 h-16 mx-auto bg-red-50 text-red-500 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fas fa-right-from-bracket"></i></div>
+            <h3 class="font-black text-lg text-textMain mb-2">إنهاء يوم العمل</h3>
+            <p class="text-xs text-textMuted font-bold leading-relaxed mb-6">سيتم تحويل حالتك إلى «غير متصل» وتسجيل خروجك. هل تريد المتابعة؟</p>
+            <div class="flex gap-3">
+                <button onclick="closeModal('modal-logout')" class="flex-1 py-3 rounded-xl bg-surface border border-slate-200 text-textMain font-black text-xs btn-action">تراجع</button>
+                <button onclick="logout()" class="flex-1 py-3 rounded-xl bg-red-600 text-white font-black text-xs btn-action hover:bg-red-500">نعم، إنهاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-5 left-5 z-[800] flex flex-col gap-3 w-80 max-w-[calc(100vw-2.5rem)] pointer-events-none"></div>
+
     <script>
-        // --- 1. الإعدادات والتهيئة ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM", 
-            authDomain: "almaster-b8c18.firebaseapp.com", 
-            projectId: "almaster-b8c18", 
-            storageBucket: "almaster-b8c18.firebasestorage.app", 
-            messagingSenderId: "884142036232", 
-            appId: "1:884142036232:web:eeb6677d988565653a08bd"
-        };
-        
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const storage = firebase.storage();
+    /* =========================================================================
+       ALMASTER — مساحة عمل الموظف
+       - كل الأوقات مرجعها توقيت السيرفر (serverTimestamp) + تصحيح فرق ساعة الجهاز
+       - بدون Cloud Functions (يعمل على Firebase المجاني + استضافة مجانية)
+       - التصفير اليومي الساعة 11 مساءً بتوقيت الشركة
+       ========================================================================= */
 
-        let currentUser = null;
-        let userProfile = null;
-        const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=f3f4f6&color=1f2937&bold=true&size=200&name=';
-        let isOnline = navigator.onLine;
+    // --- 1) الإعدادات ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM",
+        authDomain: "almaster-b8c18.firebaseapp.com",
+        projectId: "almaster-b8c18",
+        storageBucket: "almaster-b8c18.firebasestorage.app",
+        messagingSenderId: "884142036232",
+        appId: "1:884142036232:web:eeb6677d988565653a08bd"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db   = firebase.firestore();
+    const auth = firebase.auth();
+    const serverTs = () => firebase.firestore.FieldValue.serverTimestamp();
 
-        // --- 2. التحقق من الهوية (Auth) ---
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                const userEmail = user.email.toLowerCase().trim();
-                const docRef = db.collection('users').doc(userEmail);
-                const doc = await docRef.get();
-                
-                if(doc.exists) {
-                    userProfile = doc.data();
-                    // طرد الإدمن من هذه الشاشة
-                    if (userProfile.role === 'admin') { window.location.replace('admin.html'); return; }
-                    
-                    initWorkspace();
-                } else {
-                    auth.signOut();
-                }
-            } else {
-                window.location.replace('index.html');
+    // إعدادات قابلة للتعديل لاحقاً من صفحة الأدمن (system_settings/work_config)
+    const COMPANY_TZ = 'Africa/Cairo';   // توقيت الشركة المرجعي
+    let   RESET_HOUR = 23;               // ساعة تصفير اليوم (11 مساءً)
+    let   WORK_START = '09:00';          // بداية الدوام لحساب التأخير
+    let   ANNUAL_LEAVE_DEFAULT = 21;     // رصيد الإجازات الافتراضي قبل تحديد الأدمن
+
+    const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=e2e8f0&color=0f172a&bold=true&size=200&name=';
+
+    let currentUser = null;
+    let userProfile = null;
+    let EMAIL = null;
+    let isOnline = navigator.onLine;
+    let serverOffset = 0;      // ms تُضاف إلى ساعة الجهاز للوصول لتوقيت السيرفر
+    let timeReady = false;     // هل تمّت مزامنة التوقيت مع السيرفر؟
+    let resetInProgress = false;
+    let resetTimer = null;
+    let lastFocusedEl = null;
+
+    const serverNow = () => Date.now() + serverOffset;
+
+    // --- 2) مزامنة توقيت السيرفر (مرة عند البدء ثم كل 10 دقائق) ---
+    async function syncServerTime() {
+        try {
+            const probe = db.collection('_serverTime').doc(currentUser.uid);
+            const t0 = Date.now();
+            await probe.set({ ts: serverTs() });
+            const snap = await probe.get({ source: 'server' });
+            const t1 = Date.now();
+            const serverMs = snap.data().ts.toMillis();
+            serverOffset = serverMs - (t0 + (t1 - t0) / 2); // منتصف زمن الرحلة
+        } catch (e) {
+            serverOffset = 0; // في أسوأ الحالات نعود لساعة الجهاز
+            console.warn('تعذّرت مزامنة توقيت السيرفر، سيُستخدم توقيت الجهاز مؤقتاً.', e);
+        }
+        timeReady = true;
+    }
+
+    // --- 3) أدوات التوقيت الزمني حسب توقيت الشركة ---
+    function zonedParts(ms) {
+        const dtf = new Intl.DateTimeFormat('en-GB', {
+            timeZone: COMPANY_TZ, year:'numeric', month:'2-digit', day:'2-digit',
+            hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+        });
+        const p = {};
+        dtf.formatToParts(new Date(ms)).forEach(x => { if (x.type !== 'literal') p[x.type] = x.value; });
+        if (p.hour === '24') p.hour = '00';
+        return { y:+p.year, mo:+p.month, d:+p.day, h:+p.hour, mi:+p.minute, s:+p.second };
+    }
+    function zonedYMD(ms) { const p = zonedParts(ms); return `${p.y}-${pad(p.mo)}-${pad(p.d)}`; }
+
+    // مفتاح "يوم العمل": يبدأ يوماً جديداً عند ساعة التصفير (11م)
+    function getDayKey(ms) {
+        const shift = (24 - RESET_HOUR) * 3600 * 1000; // إزاحة تجعل 11م بداية اليوم التالي
+        return zonedYMD(ms + shift);
+    }
+
+    // بقية الوقت (ms) حتى ساعة التصفير القادمة بتوقيت الشركة
+    function msUntilReset() {
+        const p = zonedParts(serverNow());
+        const nowSec = p.h * 3600 + p.mi * 60 + p.s;
+        const target = RESET_HOUR * 3600;
+        let delta = (nowSec < target) ? (target - nowSec) : (86400 - nowSec + target);
+        return (delta + 2) * 1000; // هامش أمان ثانيتين
+    }
+
+    // --- 4) التحقق من الهوية ---
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) { window.location.replace('index.html'); return; }
+        currentUser = user;
+        EMAIL = user.email.toLowerCase().trim();
+
+        try {
+            const ref = db.collection('users').doc(EMAIL);
+            let doc = await ref.get();
+
+            if (doc.exists && doc.data().role === 'admin') { window.location.replace('admin.html'); return; }
+
+            // إنشاء ملف الموظف تلقائياً إذا لم يكن موجوداً (يحل مشكلة عدم ظهور البيانات)
+            if (!doc.exists) {
+                await ref.set({
+                    name: user.displayName || EMAIL.split('@')[0],
+                    title: 'Team Member',
+                    role: 'employee',
+                    status: 'Offline',
+                    timeBank: { Online: 0, Break: 0 },
+                    firstOnlineAt: null,
+                    dayKey: '',
+                    lastChange: serverTs(),
+                    createdAt: serverTs()
+                });
+                doc = await ref.get();
             }
+
+            userProfile = doc.data();
+            await syncServerTime();
+            initWorkspace();
+        } catch (e) {
+            console.error(e);
+            document.getElementById('loader').classList.add('hidden');
+            const errEl = document.getElementById('profile-error');
+            errEl.classList.remove('hidden'); errEl.classList.add('flex');
+        }
+    });
+
+    // --- 5) تهيئة بيئة العمل ---
+    function initWorkspace() {
+        startClock();
+        setupOfflineListener();
+        listenToConfig();
+        listenToHrStats();
+        listenToProfile();
+        listenToLogs();
+        listenToMyLeaves();
+
+        setInterval(tick, 1000);      // تحديث العدّادات + فحص حدود اليوم
+        scheduleDailyReset();         // جدولة التصفير الساعة 11م
+
+        // ضبط تاريخ افتراضي لنموذج الإجازة = اليوم (توقيت الشركة)
+        document.getElementById('leave-date').value = zonedYMD(serverNow());
+
+        document.getElementById('loader').classList.add('hidden');
+    }
+
+    // --- 6) مراقبة الاتصال ---
+    function setupOfflineListener() {
+        const apply = (online) => {
+            isOnline = online;
+            document.getElementById('offline-banner').classList.toggle('hidden', online);
+            document.getElementById('connection-status').classList.toggle('hidden', online);
+            document.getElementById('connection-status').classList.toggle('flex', !online);
+            document.querySelectorAll('.status-btn').forEach(b => b.disabled = !online);
+        };
+        window.addEventListener('online', () => { apply(true); showToast('عاد الاتصال', 'تم استئناف العمل.', 'success'); });
+        window.addEventListener('offline', () => { apply(false); showToast('انقطع الاتصال', 'تغيير الحالة متوقّف مؤقتاً.', 'error'); });
+        apply(navigator.onLine);
+    }
+
+    // --- 7) الإعدادات العامة (قابلة للتعديل من الأدمن لاحقاً) ---
+    function listenToConfig() {
+        db.collection('system_settings').doc('work_config').onSnapshot(doc => {
+            if (!doc.exists) return; // نُبقي القيم الافتراضية
+            const c = doc.data();
+            if (typeof c.resetHour === 'number') RESET_HOUR = c.resetHour;
+            if (typeof c.workStart === 'string') WORK_START = c.workStart;
+            if (typeof c.annualLeaveDefault === 'number') ANNUAL_LEAVE_DEFAULT = c.annualLeaveDefault;
+            scheduleDailyReset();
+            if (userProfile) updateCentralUI(userProfile);
+        }, err => console.warn('config listener:', err.message));
+    }
+
+    function listenToHrStats() {
+        db.collection('hr_stats').doc(EMAIL).onSnapshot(doc => {
+            const bal = doc.exists && typeof doc.data().annualLeavesLeft === 'number'
+                ? doc.data().annualLeavesLeft : ANNUAL_LEAVE_DEFAULT;
+            document.getElementById('stat-leaves').innerHTML =
+                `${bal} <span class="text-xs text-textMuted font-bold">يوم</span>`;
+        }, err => console.warn('hr_stats listener:', err.message));
+    }
+
+    // --- 8) مراقبة الملف الشخصي ---
+    function listenToProfile() {
+        db.collection('users').doc(EMAIL).onSnapshot(doc => {
+            if (!doc.exists) return;
+            userProfile = doc.data();
+
+            // فحص حدود اليوم: إن اختلف مفتاح اليوم → تصفير
+            if (timeReady && !resetInProgress) {
+                const currentKey = getDayKey(serverNow());
+                if (userProfile.dayKey && userProfile.dayKey !== currentKey) {
+                    performReset('boundary');
+                    return;
+                }
+                if (!userProfile.dayKey) {
+                    // تهيئة المفتاح لأول مرة دون تصفير فعلي
+                    db.collection('users').doc(EMAIL).update({ dayKey: currentKey }).catch(()=>{});
+                }
+            }
+
+            updateCentralUI(userProfile);
+        }, err => {
+            console.error('profile listener:', err);
+            showToast('خطأ في المزامنة', 'تعذّر تحديث بياناتك.', 'error');
+        });
+    }
+
+    function updateCentralUI(data) {
+        const name = data.name || (EMAIL ? EMAIL.split('@')[0] : 'موظف');
+        document.getElementById('user-name').innerText  = name;
+        document.getElementById('user-title').innerText = data.title || 'Team Member';
+        document.getElementById('user-avatar').src = data.photo || (DEFAULT_PHOTO + encodeURIComponent(name));
+
+        const status = data.status || 'Offline';
+        document.getElementById('current-status-text').innerText = translateStatus(status);
+
+        // فئة الـ body للنبض
+        document.getElementById('app-body').className = `font-sans selection:bg-primary-500/30 status-${status}`;
+
+        // الأيقونة المصغّرة
+        const iconMap = {
+            Online:  { icon: 'fa-laptop-code', bg: 'bg-emerald-500' },
+            Break:   { icon: 'fa-mug-hot',     bg: 'bg-amber-500'   },
+            Offline: { icon: 'fa-power-off',   bg: 'bg-slate-400'   }
+        };
+        const iData = iconMap[status] || iconMap.Offline;
+        const badge = document.getElementById('status-icon-badge');
+        badge.className = `absolute bottom-2 right-2 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-4 border-white flex items-center justify-center text-white text-lg z-20 shadow-lg ${iData.bg}`;
+        badge.innerHTML = `<i class="fas ${iData.icon}"></i>`;
+
+        // تغذية العدّادات (البداية = آخر تغيير من السيرفر)
+        const tb = data.timeBank || {};
+        const startMs = getMillis(data.lastChange);
+        [['Online','timer-online'], ['Break','timer-break']].forEach(([key, id]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.dataset.val = tb[key] || 0;
+            el.dataset.active = (status === key);
+            el.dataset.start = startMs;
         });
 
-        // --- 3. تهيئة بيئة العمل ---
-        function initWorkspace() {
-            listenToSharedTool();
-            startClock();
-            setupOfflineListener();
-            listenToProfile();
-            listenToLogs();
-            fetchStaticStats(); // جلب الإجازات والتأخير
-            setInterval(updateTimersUI, 1000);
-            
-            // إخفاء التحميل
-            document.getElementById('loader').classList.add('hidden');
+        // حساب تأخير الصباح من أول دخول فعلي (توقيت السيرفر)
+        renderLateMinutes(data);
+    }
+
+    function renderLateMinutes(data) {
+        let lateMin = 0;
+        const fo = data.firstOnlineAt ? getMillis(data.firstOnlineAt) : null;
+        if (fo && getDayKey(fo) === getDayKey(serverNow())) {
+            const p = zonedParts(fo);
+            const onlineSec = p.h * 3600 + p.mi * 60 + p.s;
+            const [wh, wm] = WORK_START.split(':').map(Number);
+            const startSec = (wh * 3600) + (wm * 60);
+            lateMin = Math.max(0, Math.round((onlineSec - startSec) / 60));
+        }
+        document.getElementById('stat-late').innerHTML =
+            `${lateMin} <span class="text-xs text-textMuted font-bold">دقيقة</span>`;
+    }
+
+    function translateStatus(s) {
+        return ({ Online:'يعمل الآن', Break:'في فترة راحة', Offline:'غير متصل' })[s] || 'غير متصل';
+    }
+
+    // --- 9) تغيير الحالة ---
+    async function handleStatusChange(newStatus) {
+        if (!isOnline)  { showToast('لا يوجد اتصال', 'تعذّر تغيير الحالة.', 'error'); return; }
+        if (!timeReady) { showToast('لحظة من فضلك', 'جارٍ مزامنة التوقيت…', 'info'); return; }
+        if (userProfile.status === newStatus) return;
+
+        const now = serverNow();
+        const oldStatus = userProfile.status || 'Offline';
+        const last = getMillis(userProfile.lastChange);
+        const dur  = Math.max(0, now - last);
+
+        const bank = Object.assign({ Online: 0, Break: 0 }, userProfile.timeBank || {});
+        if (oldStatus === 'Online' || oldStatus === 'Break') bank[oldStatus] += dur;
+
+        const updates = { status: newStatus, lastChange: serverTs(), timeBank: bank };
+
+        // تسجيل أول دخول عمل لهذا اليوم (لحساب التأخير)
+        if (newStatus === 'Online') {
+            const fo = userProfile.firstOnlineAt ? getMillis(userProfile.firstOnlineAt) : null;
+            if (!fo || getDayKey(fo) !== getDayKey(now)) updates.firstOnlineAt = serverTs();
         }
 
-        // --- 4. مراقبة الاتصال بالإنترنت ---
-        function setupOfflineListener() {
-            window.addEventListener('offline', () => {
-                isOnline = false;
-                document.getElementById('offline-overlay').classList.remove('hidden');
-                document.getElementById('connection-status').classList.remove('hidden');
-                showToast('تنبيه أمني', 'انقطع الاتصال. تم إيقاف النظام مؤقتاً.', 'error');
+        try {
+            await db.collection('users').doc(EMAIL).update(updates);
+            await db.collection('logs').add({
+                user: EMAIL, name: userProfile.name || EMAIL,
+                from_status: oldStatus, to_status: newStatus,
+                dayKey: getDayKey(now), timestamp: serverTs()
             });
-
-            window.addEventListener('online', () => {
-                isOnline = true;
-                document.getElementById('offline-overlay').classList.add('hidden');
-                document.getElementById('connection-status').classList.add('hidden');
-                showToast('تم الاسترداد', 'عاد الاتصال بالإنترنت. جاري استئناف العمل.', 'success');
-                // إعادة جلب البيانات لضمان المزامنة
-                if(currentUser) listenToProfile();
-            });
+            showToast('تم تحديث الحالة', `أنت الآن: ${translateStatus(newStatus)}`, 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('خطأ', 'فشل تحديث الحالة، حاول مجدداً.', 'error');
         }
+    }
 
-        // --- 5. مراقبة الملف الشخصي (المركز وتحديث الواجهة) ---
-        function listenToProfile() {
-            if(!isOnline) return;
-            const userEmail = currentUser.email.toLowerCase().trim();
-            
-            db.collection('users').doc(userEmail).onSnapshot(doc => {
-                if (!doc.exists) return;
-                const data = doc.data();
-                userProfile = data;
+    // --- 10) الإجازات والأذونات ---
+    async function submitLeaveRequest(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-leave');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin ms-1"></i> جارٍ الإرسال…';
 
-                // تصفير العدادات لو يوم جديد
-                const lastDate = data.lastChange ? moment(getMillis(data.lastChange)).format('YYYY-MM-DD') : '';
-                const today = moment().format('YYYY-MM-DD');
-                if (lastDate !== today && lastDate !== '') {
-                    executeDailyReset(); 
-                    return; 
-                }
-
-                updateCentralUI(data);
-            });
-        }
-
-        function updateCentralUI(data) {
-            // تحديث النصوص
-            document.getElementById('user-name').innerText = data.name;
-            document.getElementById('user-title').innerText = data.title || 'Team Member';
-            document.getElementById('user-avatar').src = data.photo || DEFAULT_PHOTO + encodeURIComponent(data.name);
-            
-            const status = data.status || 'Offline';
-            document.getElementById('current-status-text').innerText = translateStatus(status);
-            
-            // تحديث فئة الـ Body للنبض المداري
-            const bodyEl = document.getElementById('app-body');
-            bodyEl.className = `font-sans bg-white selection:bg-primary-500/30 status-${status}`;
-
-            // تحديث الأيقونة المصغرة
-            const iconMap = {
-                'Online': { icon: 'fa-laptop-code', bg: 'bg-green-500' },
-                'Break': { icon: 'fa-coffee', bg: 'bg-orange-500' },
-                'Meeting': { icon: 'fa-users', bg: 'bg-blue-500' },
-                'Offline': { icon: 'fa-power-off', bg: 'bg-gray-400' }
-            };
-            const iData = iconMap[status] || iconMap['Offline'];
-            document.getElementById('status-icon-badge').className = `absolute bottom-2 right-2 w-12 h-12 rounded-full border-4 border-white flex items-center justify-center text-white text-lg z-20 shadow-lg ${iData.bg}`;
-            document.getElementById('status-icon-badge').innerHTML = `<i class="fas ${iData.icon}"></i>`;
-
-            // تحديث العدادات للبطاقات
-            const tb = data.timeBank || {};
-            const safeStart = getMillis(data.lastChange);
-
-            const map = { 'Online': 'timer-online', 'Break': 'timer-break' };
-            Object.keys(map).forEach(key => {
-                const el = document.getElementById(map[key]);
-                if(el) {
-                    el.dataset.val = tb[key] || 0;
-                    el.dataset.active = (status === key);
-                    el.dataset.start = safeStart;
-                }
-            });
-        }
-
-        function translateStatus(s) {
-            switch(s) {
-                case 'Online': return 'يعمل الآن';
-                case 'Break': return 'في فترة راحة';
-                case 'Meeting': return 'في اجتماع';
-                default: return 'غير متصل';
-            }
-        }
-
-        // --- 6. العمليات وتغيير الحالة ---
-        async function handleStatusChange(newStatus) {
-            if(!isOnline) { alert("لا يمكن تغيير الحالة دون إنترنت."); return; }
-            if(userProfile.status === newStatus) return;
-
-            const target = currentUser.email.toLowerCase().trim();
-            const nowMillis = Date.now();
-            const ts = firebase.firestore.Timestamp.fromMillis(nowMillis); 
-            
-            const duration = nowMillis - getMillis(userProfile.lastChange);
-            let tb = userProfile.timeBank || {};
-            const oldStatus = userProfile.status || 'Offline';
-
-            if (oldStatus !== 'Offline') {
-                tb[oldStatus] = (tb[oldStatus] || 0) + duration;
-            }
-
-            try {
-                await db.collection('users').doc(target).update({
-                    status: newStatus,
-                    lastChange: ts,
-                    timeBank: tb
-                });
-
-                // تسجيل الحركة
-                await db.collection('logs').add({
-                    user: target,
-                    name: userProfile.name,
-                    from_status: oldStatus,
-                    to_status: newStatus,
-                    timestamp: ts
-                });
-
-                showToast('تم تحديث الحالة', `أنت الآن: ${translateStatus(newStatus)}`, 'success');
-
-            } catch(e) {
-                console.error(e);
-                showToast('خطأ', 'فشل في تحديث الحالة.', 'error');
-            }
-        }
-
-        // --- 7. مركز الطلبات (الإجازات والأذونات) ---
-        // --- مركز الطلبات المصحح (الإجازات والأذونات) ---
-        async function submitLeaveRequest(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btn-submit-leave');
-            if(!btn) return;
-            
-            btn.disabled = true; 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري الإرسال...';
-
-            try {
-                // حفظ الطلب مباشرة في Firestore بدون البحث عن مرفقات مفقودة
-                await db.collection('leave_requests').add({
-                    user: currentUser.email.toLowerCase().trim(),
-                    name: userProfile.name,
-                    type: document.getElementById('leave-type').value,
-                    target_date: document.getElementById('leave-date').value,
-                    reason: document.getElementById('leave-reason').value,
-                    status: 'pending',
-                    submitted_at: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                closeModal('modal-leave-request');
-                document.getElementById('leave-form').reset();
-                showToast('تم الإرسال', 'تم إرسال طلبك للإدارة بنجاح وهو قيد المراجعة.', 'success');
-            } catch(err) { 
-                console.error("Error submitting leave:", err);
-                alert('حدث خطأ أثناء الإرسال. تأكد من إعدادات فايربيز للـ Rules.'); 
-            } finally { 
-                btn.disabled = false; 
-                btn.innerHTML = 'إرسال الطلب للإدارة'; 
-            }
-        }
-        // --- 8. السجل المصغر (Mini Logs) ---
-       function listenToLogs() {
-            const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
-            db.collection('logs').where('user', '==', currentUser.email.toLowerCase()).where('timestamp', '>=', startOfDay).orderBy('timestamp', 'desc')
-              .onSnapshot(snap => {
-                const box = document.getElementById('employee-logs-container');
-                if(!box) return;
-                
-                if(snap.empty) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-10">لا توجد حركات اليوم</p>'; return; }
-                
-                box.innerHTML = '';
-                snap.forEach(doc => {
-                    const l = doc.data();
-                    const timeStr = moment(l.timestamp.toDate()).format('hh:mm A');
-                    box.innerHTML += `
-                        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
-                            <span class="text-xs font-black text-textMain">${translateStatus(l.to_status)}</span>
-                            <span class="text-[10px] font-bold text-textMuted font-mono">${timeStr}</span>
-                        </div>`;
-                });
-            });
-        }
-
-        // --- 9. الأداة المشتركة للموظف (نظام الطابور والنافذة المستقلة) ---
-        let sharedToolWindow = null;
-        let myActiveRequestRefId = null;
-        let currentToolState = 'idle'; // 👈 هذا هو السطر الناقص الذي يحل المشكلة
-        // جلب الإحصائيات الثابتة (مثل رصيد الإجازات)
-        async function fetchStaticStats() {
-            try {
-                // افتراض وجود كوليكشن HR للموظف
-                const hrDoc = await db.collection('hr_stats').doc(currentUser.email.toLowerCase()).get();
-                if(hrDoc.exists) {
-                    const hrData = hrDoc.data();
-                    document.getElementById('stat-leaves').innerHTML = `${hrData.annualLeavesLeft || 0} <span class="text-xs text-textMuted">يوم</span>`;
-                    document.getElementById('stat-late').innerHTML = `${hrData.totalLateMinsToday || 0} <span class="text-xs text-textMuted">دقيقة</span>`;
-                }
-            } catch(e) { console.log("لا يوجد سجل HR מخصص بعد."); }
-        }
-
-        // --- 9. تسجيل الخروج والتصفير ---
-        async function logout() {
-            if(!confirm("هل أنت متأكد من إنهاء اليوم وتسجيل الخروج؟")) return;
-            try {
-                await handleStatusChange('Offline');
-                await auth.signOut();
-                window.location.replace('index.html');
-            } catch(e) { console.error(e); }
-        }
-
-        async function executeDailyReset() {
-            const userRef = db.collection('users').doc(currentUser.email.toLowerCase());
-            await userRef.update({
-                timeBank: { 'Online': 0, 'Break': 0, 'Meeting': 0 },
-                status: 'Offline',
-                lastChange: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("بدأ يوم جديد، تم تصفير العدادات.");
-            window.location.reload();
-        }
-
-        // --- 10. أدوات مساعدة (Helpers) ---
-       function startClock() { setInterval(() => { const now = moment(); document.getElementById('clock-time').innerText = now.format('HH:mm:ss'); document.getElementById('clock-date').innerText = now.format('dddd, DD MMMM YYYY'); }, 1000); }
-
-       function updateTimersUI() { const now = Date.now(); document.querySelectorAll('.stat-timer').forEach(t => { const b = parseInt(t.dataset.val)||0; const s = parseInt(t.dataset.start)||0; const active = t.dataset.active === 'true'; t.innerText = formatDuration(active ? b+(now-s) : b); }); }
-
-        const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : v) : Date.now();
-        const formatDuration = (ms) => {
-            if(ms < 0) ms = 0;
-            const s = Math.floor((ms/1000)%60).toString().padStart(2,'0');
-            const m = Math.floor((ms/1000/60)%60).toString().padStart(2,'0');
-            const h = Math.floor((ms/1000/60/60)).toString().padStart(2,'0');
-            return `${h}:${m}:${s}`;
-        }
-
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-        function showToast(title, msg, type='info') {
-            const container = document.getElementById('toast-container');
-            if(!container) return; // 🛡️ هذا السطر يحمي الكود من التوقف تماماً لو الصندوق مفقود
-            const toast = document.createElement('div');
-            const bg = type==='error'?'bg-red-50 border-red-200 text-red-600':(type==='success'?'bg-green-50 border-green-200 text-green-600':'bg-white border-gray-200 text-textMain');
-            
-            toast.className = `p-4 rounded-2xl border ${bg} shadow-xl animate-fade-in flex items-start gap-3 transition-all duration-300`;
-            toast.innerHTML = `<div class="flex-1 text-right"><h4 class="font-black text-xs uppercase mb-1">${title}</h4><p class="text-[10px] opacity-80 leading-relaxed">${msg}</p></div>`;
-            
-            container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.remove(), 300); }, 5000);
-        }
-        // --- نظام الأداة المشتركة للموظف ---
-        function listenToSharedTool() {
-            db.collection('system_settings').doc('shared_tool').onSnapshot(async (snapshot) => {
-                const data = snapshot.exists ? snapshot.data() : { status: 'idle' };
-                const btn = document.getElementById('btn-request-tool');
-                if (!btn) return;
-
-                // 🛡️ صمام الأمان الفوري لإغلاق النافذة عند سحب الصلاحية
-                if (data.status === 'idle' || data.userEmail !== userProfile.email) {
-                    if (sharedToolWindow && !sharedToolWindow.closed) {
-                        sharedToolWindow.close();
-                        sharedToolWindow = null;
-                        showToast('انتهت الجلسة', 'تم إغلاق الأداة وإعادتها للسيستم.', 'error');
-                    }
-                }
-
-                if (data.status === 'idle') {
-                    btn.innerHTML = '<i class="fas fa-shield-alt ml-1"></i> طلب الأداة';
-                    btn.className = "flex-1 py-3.5 rounded-xl bg-gray-900 text-white font-black text-xs shadow-lg hover:bg-gray-800 transition-all btn-action";
-                    btn.disabled = false;
-                    myActiveRequestRefId = null;
-                } 
-                else if (data.status === 'pending' || data.status === 'in_use') {
-                    if (data.status === 'in_use' && data.userEmail === userProfile.email) {
-                        btn.innerHTML = '<i class="fas fa-door-open ml-1"></i> الجلسة نشطة ومؤمنة';
-                        btn.className = "flex-1 py-3.5 rounded-xl bg-green-600 text-white font-black text-xs animate-pulse";
-                        btn.disabled = false;
-
-                        if (!sharedToolWindow || sharedToolWindow.closed) {
-                            sharedToolWindow = window.open("https://member.digitavision.com/login", "ALMASTER_SECURE", "width=1100,height=750");
-                            
-                            sharedToolWindow.onload = function() {
-                                try {
-                                    const doc = sharedToolWindow.document;
-                                    const emailInput = doc.querySelector('input[type="email"]') || doc.querySelector('input[name="email"]');
-                                    const passInput = doc.querySelector('input[type="password"]') || doc.querySelector('input[name="password"]');
-                                    const submitBtn = doc.querySelector('button[type="submit"]') || doc.querySelector('form button');
-                                    if(emailInput && passInput && data.toolUser && data.toolPass) {
-                                        emailInput.value = data.toolUser; passInput.value = data.toolPass;
-                                        if(submitBtn) submitBtn.click();
-                                    }
-                                } catch(e) { console.log("CORS Active."); }
-                            };
-
-                            const tracker = setInterval(async () => {
-                                if (sharedToolWindow && sharedToolWindow.closed) {
-                                    clearInterval(tracker);
-                                    await releaseSharedTool(data.activeRequestId);
-                                }
-                            }, 2000);
-                        }
-                    } else if (myActiveRequestRefId) {
-                        btn.innerHTML = `<i class="fas fa-hourglass-half animate-spin ml-1"></i> في الانتظار...`;
-                        btn.className = "flex-1 py-3.5 rounded-xl bg-orange-100 text-orange-600 font-black text-xs cursor-wait";
-                        btn.disabled = true;
-                    } else {
-                        const currentUserLabel = data.userName ? data.userName.split(' ')[0] : 'زميل';
-                        btn.innerHTML = `<i class="fas fa-lock ml-1"></i> مشغولة مع ${currentUserLabel} (اضغط للحجز)`;
-                        btn.className = "flex-1 py-3.5 rounded-xl bg-gray-100 text-textMuted border border-gray-200 font-black text-xs hover:bg-orange-50 hover:text-orange-600 transition-all";
-                        btn.disabled = false;
-                    }
-                }
-            });
-        }
-
-        // دالة الموظف لطلب الدخول في قائمة الانتظار والـ Hold
-       async function requestSharedTool() {
-            const btn = document.getElementById('btn-request-tool');
-            if(btn.classList.contains('bg-green-600')) return; // لمنع تكرار الطلب
-
-            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري حجز دورك...';
-
-            const reqRef = await db.collection('tool_requests').add({
-                userEmail: userProfile.email, userName: userProfile.name, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            myActiveRequestRefId = reqRef.id;
-
-            const masterDoc = await db.collection('system_settings').doc('shared_tool').get();
-            if (!masterDoc.exists || masterDoc.data().status === 'idle') {
-                await db.collection('system_settings').doc('shared_tool').set({ status: 'pending', userEmail: userProfile.email, userName: userProfile.name }, { merge:true });
-            }
-        }
-
-        // دالة إنهاء الاستخدام الطوعي من قبل الموظف عند إغلاق النافذة
-        async function releaseSharedTool(activeRequestId) {
-            if (sharedToolWindow && !sharedToolWindow.closed) sharedToolWindow.close();
-            myActiveRequestRefId = null;
-
-            if(activeRequestId) {
-                await db.collection('tool_requests').doc(activeRequestId).update({ status: 'completed', ended_at: firebase.firestore.FieldValue.serverTimestamp() });
-            }
-            await db.collection('system_settings').doc('shared_tool').update({ status: 'idle', userEmail: null, userName: null, activeRequestId: null, toolUser: null, toolPass: null });
-        }
-        // إنشاء اتصال مرئي حي عبر بروتوكول WebRTC لاستقبال شاشة المدير
-        async function connectToAdminRTC(offerData) {
-            rtcPeerConnection = new RTCPeerConnection(rtcConfig);
-            
-            // استقبال مسار الفيديو وعرضه في عنصر الـ video
-            rtcPeerConnection.ontrack = (event) => {
-                const video = document.getElementById('remote-tool-video');
-                if (video && event.streams && event.streams[0]) {
-                    video.srcObject = event.streams[0];
-                }
-            };
-
-            // إرسال الـ ICE Candidates الخاصة بالموظف للمدير
-            rtcPeerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    db.collection('system_settings').doc('shared_tool')
-                      .collection('ice_candidates').add(event.candidate.toJSON());
-                }
-            };
-
-            // تعيين وصف المدير (Offer)
-            await rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
-            
-            // إنشاء الإجابة (Answer)
-            const answer = await rtcPeerConnection.createAnswer();
-            await rtcPeerConnection.setLocalDescription(answer);
-
-            await db.collection('system_settings').doc('shared_tool').update({
-                answer: { type: answer.type, sdp: answer.sdp }
-            });
-
-            // الاستماع للـ Candidates القادمة من المدير وتطبيقها
-            db.collection('system_settings').doc('shared_tool').collection('ice_candidates')
-                .onSnapshot(snapshot => {
-                    snapshot.docChanges().forEach(async (change) => {
-                        if (change.type === 'added' && rtcPeerConnection) {
-                            try {
-                                await rtcPeerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                            } catch(e) { }
-                        }
-                    });
-                });
-        }
-
-        // 3. التقاط نقرات الموظف على الفيديو وتحويلها لنسب مئوية وإرسالها للمدير لحظياً
-        async function sendClickToAdmin(event) {
-            const video = document.getElementById('remote-tool-video');
-            if(!video || !rtcPeerConnection) return;
-
-            const rect = video.getBoundingClientRect();
-            // حساب مكان الضغطة بالنسبة المئوية الدقيقة لضمان تطابق الأبعاد بين الشاشتين
-            const clickXPercentage = (event.clientX - rect.left) / rect.width;
-            const clickYPercentage = (event.clientY - rect.top) / rect.height;
-
-            // دفع الإحداثيات لفايربيز ليقوم متصفح المدير بتنفيذها فوراً
-            await db.collection('system_settings').doc('shared_tool').collection('mouse_stream').add({
-                type: 'click',
-                pctX: clickXPercentage,
-                pctY: clickYPercentage,
-                time: Date.now()
-            });
-        }
-
-        function closeClientRTC() {
-            if(rtcPeerConnection) { rtcPeerConnection.close(); rtcPeerConnection = null; }
-            const video = document.getElementById('remote-tool-video');
-            if(video) video.srcObject = null;
-        }
-
-        async function releaseSharedTool() {
-            document.getElementById('modal-shared-tool').classList.add('hidden');
-            closeClientRTC();
-            await db.collection('system_settings').doc('shared_tool').set({
-                status: 'idle', userEmail: null, userName: null, offer: null, answer: null 
-            });
-        }
-        async function requestSharedTool() {
-            if (currentToolState !== 'idle') return;
-            await db.collection('system_settings').doc('shared_tool').set({
+        try {
+            await db.collection('leave_requests').add({
+                user: EMAIL,
+                name: userProfile.name || EMAIL,
+                type: document.getElementById('leave-type').value,
+                target_date: document.getElementById('leave-date').value,
+                reason: document.getElementById('leave-reason').value.trim(),
                 status: 'pending',
-                userEmail: userProfile.email,
-                userName: userProfile.name
-            }, { merge: true });
-        }
-
-        async function releaseSharedTool() {
-            document.getElementById('modal-shared-tool').classList.add('hidden');
-            await db.collection('system_settings').doc('shared_tool').update({
-                status: 'idle', userEmail: null, userName: null
+                submitted_at: serverTs()
             });
+            document.getElementById('leave-form').reset();
+            document.getElementById('leave-date').value = zonedYMD(serverNow());
+            showToast('تم الإرسال', 'طلبك قيد المراجعة من الإدارة.', 'success');
+        } catch (err) {
+            console.error(err);
+            showToast('تعذّر الإرسال', 'حدث خطأ أثناء إرسال الطلب.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'إرسال الطلب';
         }
+    }
+
+    const LEAVE_LABELS = { sick:'إجازة مرضية', annual:'إجازة اعتيادية', excuse_late:'إذن تأخير', excuse_early:'إذن انصراف مبكر' };
+    const LEAVE_STATUS = {
+        pending:  { t:'قيد المراجعة', c:'bg-amber-50 text-amber-600 border-amber-100' },
+        approved: { t:'مقبول',       c:'bg-emerald-50 text-emerald-600 border-emerald-100' },
+        rejected: { t:'مرفوض',       c:'bg-red-50 text-red-600 border-red-100' }
+    };
+
+    function listenToMyLeaves() {
+        // فلترة بمساواة واحدة فقط (بدون فهرس مركّب) ثم ترتيب في المتصفح
+        db.collection('leave_requests').where('user', '==', EMAIL).onSnapshot(snap => {
+            const box = document.getElementById('my-leaves-container');
+            if (!box) return;
+            if (snap.empty) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-6">لا توجد طلبات بعد.</p>'; return; }
+
+            const rows = [];
+            snap.forEach(d => rows.push(d.data()));
+            rows.sort((a, b) => getMillis(b.submitted_at) - getMillis(a.submitted_at));
+
+            box.innerHTML = rows.slice(0, 15).map(l => {
+                const st = LEAVE_STATUS[l.status] || LEAVE_STATUS.pending;
+                return `
+                  <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="text-right">
+                      <p class="text-xs font-black text-textMain">${LEAVE_LABELS[l.type] || l.type}</p>
+                      <p class="text-[10px] font-bold text-textMuted mt-0.5">${l.target_date || ''}</p>
+                    </div>
+                    <span class="text-[10px] font-black px-2.5 py-1 rounded-full border ${st.c}">${st.t}</span>
+                  </div>`;
+            }).join('');
+        }, err => {
+            const box = document.getElementById('my-leaves-container');
+            if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center py-6">تعذّر تحميل الطلبات.</p>';
+            console.warn('leaves listener:', err.message);
+        });
+    }
+
+    // --- 11) سجل حركات اليوم ---
+    function listenToLogs() {
+        db.collection('logs').where('user', '==', EMAIL).onSnapshot(snap => {
+            const box = document.getElementById('employee-logs-container');
+            if (!box) return;
+
+            const todayKey = getDayKey(serverNow());
+            const rows = [];
+            snap.forEach(d => { const l = d.data(); if ((l.dayKey || getDayKey(getMillis(l.timestamp))) === todayKey) rows.push(l); });
+            rows.sort((a, b) => getMillis(b.timestamp) - getMillis(a.timestamp));
+
+            if (!rows.length) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-10">لا توجد حركات اليوم.</p>'; return; }
+
+            box.innerHTML = rows.map(l => `
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <span class="text-xs font-black text-textMain">${translateStatus(l.to_status)}</span>
+                    <span class="text-[10px] font-bold text-textMuted tabular-nums">${fmtTime(getMillis(l.timestamp))}</span>
+                </div>`).join('');
+        }, err => {
+            const box = document.getElementById('employee-logs-container');
+            if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center py-10">تعذّر تحميل السجل.</p>';
+            console.warn('logs listener:', err.message);
+        });
+    }
+
+    // --- 12) التصفير اليومي (الساعة 11 مساءً بتوقيت الشركة) ---
+    function scheduleDailyReset() {
+        if (resetTimer) clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => {
+            performReset('scheduled');
+            scheduleDailyReset(); // إعادة الجدولة لليوم التالي
+        }, msUntilReset());
+    }
+
+    async function performReset(reason) {
+        if (resetInProgress || !EMAIL) return;
+        resetInProgress = true;
+        try {
+            await db.collection('users').doc(EMAIL).update({
+                status: 'Offline',
+                timeBank: { Online: 0, Break: 0 },
+                firstOnlineAt: null,
+                dayKey: getDayKey(serverNow()),
+                lastChange: serverTs()
+            });
+            if (reason === 'scheduled') showToast('يوم جديد', 'تم تصفير العدّادات لبدء يوم عمل جديد.', 'info');
+        } catch (e) {
+            console.error('reset:', e);
+        } finally {
+            setTimeout(() => { resetInProgress = false; }, 1500);
+        }
+    }
+
+    // --- 13) الساعة والعدّادات الحيّة ---
+    function startClock() {
+        const upd = () => {
+            const ms = serverNow();
+            document.getElementById('clock-time').innerText = fmtClock(ms);
+            document.getElementById('clock-date').innerText = fmtDate(ms);
+        };
+        upd(); setInterval(upd, 1000);
+    }
+
+    function tick() {
+        const now = serverNow();
+        document.querySelectorAll('.stat-timer').forEach(t => {
+            const base   = parseInt(t.dataset.val) || 0;
+            const start  = parseInt(t.dataset.start) || 0;
+            const active = t.dataset.active === 'true';
+            t.innerText = fmtDuration(active ? base + (now - start) : base);
+        });
+
+        // شبكة أمان لحدود اليوم أثناء فتح الصفحة
+        if (timeReady && !resetInProgress && userProfile && userProfile.dayKey
+            && userProfile.dayKey !== getDayKey(now)) {
+            performReset('boundary');
+        }
+    }
+
+    // --- 14) الخروج ---
+    function confirmLogout() { openModal('modal-logout'); }
+
+    async function logout(force) {
+        closeModal('modal-logout');
+        try {
+            if (!force && userProfile && isOnline && timeReady) await handleStatusChange('Offline');
+        } catch (e) { console.error(e); }
+        try { await auth.signOut(); } catch (e) {}
+        window.location.replace('index.html');
+    }
+
+    // --- 15) أدوات مساعدة ---
+    function pad(n) { return String(n).padStart(2, '0'); }
+    const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : (typeof v === 'number' ? v : serverNow())) : serverNow();
+
+    function fmtDuration(ms) {
+        if (ms < 0) ms = 0;
+        const s = Math.floor(ms / 1000);
+        return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+    }
+    function fmtClock(ms) {
+        const p = zonedParts(ms);
+        return `${pad(p.h)}:${pad(p.mi)}:${pad(p.s)}`;
+    }
+    function fmtDate(ms) {
+        return new Intl.DateTimeFormat('ar-EG', {
+            timeZone: COMPANY_TZ, weekday:'long', day:'numeric', month:'long', year:'numeric'
+        }).format(new Date(ms));
+    }
+    function fmtTime(ms) {
+        return new Intl.DateTimeFormat('ar-EG', {
+            timeZone: COMPANY_TZ, hour:'2-digit', minute:'2-digit', hour12:true
+        }).format(new Date(ms));
+    }
+
+    // النوافذ (مع إدارة التركيز و Escape)
+    function openModal(id) {
+        lastFocusedEl = document.activeElement;
+        const m = document.getElementById(id);
+        m.classList.remove('hidden');
+        const f = m.querySelector('input,select,textarea,button');
+        if (f) setTimeout(() => f.focus(), 50);
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+        if (lastFocusedEl) { try { lastFocusedEl.focus(); } catch (e) {} }
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        const open = [...document.querySelectorAll('[role="dialog"]')].filter(m => !m.classList.contains('hidden'));
+        if (open.length) open[open.length - 1].classList.add('hidden');
+    });
+
+    function showToast(title, msg, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const styles = {
+            error:   'bg-red-50 border-red-200 text-red-700',
+            success: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+            info:    'bg-white border-slate-200 text-textMain'
+        };
+        const icons = { error:'fa-circle-exclamation', success:'fa-circle-check', info:'fa-circle-info' };
+        const toast = document.createElement('div');
+        toast.className = `p-4 rounded-2xl border ${styles[type] || styles.info} shadow-xl animate-fade-in flex items-start gap-3 transition-opacity duration-300 pointer-events-auto`;
+        toast.innerHTML = `<i class="fas ${icons[type] || icons.info} mt-0.5"></i>
+            <div class="flex-1 text-right"><h4 class="font-black text-xs mb-0.5">${title}</h4>
+            <p class="text-[11px] opacity-80 leading-relaxed">${msg}</p></div>`;
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4500);
+    }
     </script>
-            <div id="toast-container" class="fixed top-5 right-5 z-[800] flex flex-col gap-3 w-80 pointer-events-none"></div>
 </body>
 </html>
