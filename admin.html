@@ -208,7 +208,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label class="text-[11px] font-black text-textMuted mb-1 block uppercase">الرتبة الإدارية</label>
                         <select id="u-role" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold text-textMain outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-soft cursor-pointer">
@@ -225,8 +225,12 @@
                         </select>
                     </div>
                     <div>
-                        <label class="text-[11px] font-black text-textMuted mb-1 block uppercase">رصيد الإجازات (أيام)</label>
+                        <label class="text-[11px] font-black text-textMuted mb-1 block uppercase">رصيد الإجازات</label>
                         <input type="number" id="u-leave-balance" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold text-textMain outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-soft transition-all" min="0" value="21">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-black text-textMuted mb-1 block uppercase">رصيد الاستثناءات</label>
+                        <input type="number" id="u-exception-balance" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold text-textMain outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-soft transition-all" min="0" value="3">
                     </div>
                 </div>
 
@@ -688,10 +692,15 @@
                         document.getElementById('user-photo-b64').value = u.photo;
                     }
                     
-                    // جلب رصيد الإجازات للموظف
+                // جلب رصيد الإجازات والاستثناءات للموظف
                     db.collection('hr_stats').doc(email).get().then(doc => {
-                        if (doc.exists && typeof doc.data().annualLeavesLeft === 'number') {
-                            document.getElementById('u-leave-balance').value = doc.data().annualLeavesLeft;
+                        if (doc.exists) {
+                            if (typeof doc.data().annualLeavesLeft === 'number') {
+                                document.getElementById('u-leave-balance').value = doc.data().annualLeavesLeft;
+                            }
+                            if (typeof doc.data().exceptionBalance === 'number') {
+                                document.getElementById('u-exception-balance').value = doc.data().exceptionBalance;
+                            }
                         }
                     });
                 }
@@ -711,7 +720,7 @@
             const pass = document.getElementById('u-password').value;
             const base64Photo = document.getElementById('user-photo-b64').value;
             const leaveBalance = parseInt(document.getElementById('u-leave-balance').value) || 0;
-
+            const exceptionBalance = parseInt(document.getElementById('u-exception-balance').value) || 0;
             const userData = {
                 name: document.getElementById('u-name').value,
                 title: document.getElementById('u-title').value,
@@ -739,12 +748,17 @@
                 }
 
                 // محاولة تحديث رصيد الإجازات وتجاوز خطأ الصلاحيات إن وجد حتى لا يتعطل حفظ باقي البيانات
+               // محاولة تحديث رصيد الإجازات والاستثناءات للموظف
                 try {
-                    await db.collection('hr_stats').doc(email).set({ annualLeavesLeft: leaveBalance }, { merge: true });
+                    await db.collection('hr_stats').doc(email).set({ 
+                        annualLeavesLeft: leaveBalance,
+                        exceptionBalance: exceptionBalance 
+                    }, { merge: true });
                 } catch (hrErr) {
                     console.warn("تنبيه: تم منع التحديث على hr_stats بسبب قواعد الأمان (Rules).", hrErr);
                 }
 
+                
                 closeModal('modal-user-form');
             } catch(err) { 
                 Swal.fire({title: 'خطأ', text: err.message, icon: 'error', confirmButtonColor: '#2563eb'}); 
