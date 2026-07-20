@@ -508,15 +508,21 @@
     }
 
     // --- 9) مراقبة الملف الشخصي ---
+    // --- 9) مراقبة الملف الشخصي ---
     function listenToProfile() {
         db.collection('users').doc(EMAIL).onSnapshot(doc => {
             if (!doc.exists) return;
             userProfile = doc.data();
+            
+            // التعديل: إجبار النظام على التصفير إذا كان اليوم مختلفاً أو الحقل فارغاً
             if (timeReady && !resetInProgress) {
                 const key = getDayKey(serverNow());
-                if (userProfile.dayKey && userProfile.dayKey !== key) { performReset('boundary'); return; }
-                if (!userProfile.dayKey) db.collection('users').doc(EMAIL).update({ dayKey: key }).catch(()=>{});
+                if (userProfile.dayKey !== key) { 
+                    performReset('boundary'); 
+                    return; 
+                }
             }
+            
             updateCentralUI(userProfile);
         }, err => { console.error('profile:', err); showToast('خطأ في المزامنة', 'تعذّر تحديث بياناتك.', 'error'); });
     }
@@ -713,7 +719,11 @@
             const base = parseInt(t.dataset.val) || 0, start = parseInt(t.dataset.start) || 0;
             t.innerText = fmtDuration(t.dataset.active === 'true' ? base + (now - start) : base);
         });
-        if (timeReady && !resetInProgress && userProfile && userProfile.dayKey && userProfile.dayKey !== getDayKey(now)) performReset('boundary');
+        
+        // التعديل: التقاط تغيير اليوم فجأة إذا كان الموظف تاركاً الشاشة مفتوحة لليوم التالي
+        if (timeReady && !resetInProgress && userProfile && userProfile.dayKey !== getDayKey(now)) {
+            performReset('boundary');
+        }
     }
 
     // --- 15) الخروج ---
