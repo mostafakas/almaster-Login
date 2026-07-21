@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AL MASTER | لوحة التحكم المركزية</title>
+    <title>AL MASTER | Central Console</title>
     <meta name="theme-color" content="#0b1b3f">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,234 +28,288 @@
         }
     </script>
     <style>
-        body { background:#f6f8fc; color:#0f1c3a; height:100vh; overflow:hidden; display:flex; flex-direction:column; margin:0; }
+        body { background:#f6f8fc; color:#0f1c3a; height:100vh; overflow:hidden; display:flex; margin:0; }
         .custom-scrollbar::-webkit-scrollbar { width:6px; height:6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:20px; }
-        .monitor-card { background:#fff; border:1px solid #e6ecf6; box-shadow:0 4px 18px -8px rgba(11,27,63,.10); transition:transform .25s, box-shadow .25s, border-color .25s; }
-        .monitor-card:hover { transform:translateY(-3px); box-shadow:0 14px 28px -12px rgba(11,27,63,.18); border-color:#c9d8f5; }
+        .monitor-card { transition:transform .25s, box-shadow .25s, border-color .25s; }
+        .monitor-card:hover { transform:translateY(-3px); box-shadow:0 14px 28px -12px rgba(11,27,63,.18); }
         .mini-btn { transition:all .18s; } .mini-btn:active { transform:scale(.95); }
         .filter-btn.active { background:#0b1b3f; color:#fff; border-color:#0b1b3f; }
-        .pulse-dot { position:relative; width:12px; height:12px; border-radius:50%; }
+        .pulse-dot { position:absolute; width:12px; height:12px; border-radius:50%; }
         .pulse-dot::after { content:''; position:absolute; inset:0; background:inherit; border-radius:50%; animation:p-ring 2s infinite cubic-bezier(.4,0,.2,1); }
         @keyframes p-ring { 0%{transform:scale(.8);opacity:.8} 100%{transform:scale(2.5);opacity:0} }
-        :focus-visible { outline:2px solid #2563eb; outline-offset:2px; border-radius:6px; }
+        .tab-pane { transition: opacity 0.3s ease; }
     </style>
 </head>
 
-<body class="font-sans selection:bg-brand-blue/25">
+<body class="font-sans selection:bg-brand-blue/25 bg-surface text-textMain flex h-screen overflow-hidden">
 
-    <!-- تسخين ألوان لوحة الحالات -->
+    <!-- Tailwind color classes preload (hidden) -->
     <div class="hidden">
-        <span class="bg-emerald-50 bg-emerald-500 text-emerald-600 text-emerald-700 border-emerald-100 hover:bg-emerald-50"></span>
-        <span class="bg-amber-50 bg-amber-500 text-amber-600 text-amber-700 border-amber-100 hover:bg-amber-50"></span>
-        <span class="bg-indigo-50 bg-indigo-500 text-indigo-600 text-indigo-700 border-indigo-100 hover:bg-indigo-50"></span>
-        <span class="bg-violet-50 bg-violet-500 text-violet-600 text-violet-700 border-violet-100 hover:bg-violet-50"></span>
-        <span class="bg-sky-50 bg-sky-500 text-sky-600 text-sky-700 border-sky-100 hover:bg-sky-50"></span>
-        <span class="bg-rose-50 bg-rose-500 text-rose-600 text-rose-700 border-rose-100 hover:bg-rose-50"></span>
-        <span class="bg-teal-50 bg-teal-500 text-teal-600 text-teal-700 border-teal-100 hover:bg-teal-50"></span>
-        <span class="bg-orange-50 bg-orange-500 text-orange-600 text-orange-700 border-orange-100 hover:bg-orange-50"></span>
-        <span class="bg-purple-50 bg-purple-500 text-purple-600 text-purple-700 border-purple-100 hover:bg-purple-50"></span>
-        <span class="bg-cyan-50 bg-cyan-500 text-cyan-600 text-cyan-700 border-cyan-100 hover:bg-cyan-50"></span>
-        <span class="bg-slate-50 bg-slate-500 text-slate-600 text-slate-700 border-slate-100 hover:bg-slate-50"></span>
+        <span class="bg-emerald-50 bg-emerald-100 bg-emerald-500 text-emerald-600 text-emerald-700 border-emerald-100 border-emerald-200 border-emerald-500 hover:bg-emerald-50"></span>
+        <span class="bg-amber-50 bg-amber-100 bg-amber-500 text-amber-600 text-amber-700 border-amber-100 border-amber-200 border-amber-500 hover:bg-amber-50"></span>
+        <span class="bg-indigo-50 bg-indigo-100 bg-indigo-500 text-indigo-600 text-indigo-700 border-indigo-100 border-indigo-200 border-indigo-500 hover:bg-indigo-50"></span>
+        <span class="bg-violet-50 bg-violet-100 bg-violet-500 text-violet-600 text-violet-700 border-violet-100 border-violet-200 border-violet-500 hover:bg-violet-50"></span>
+        <span class="bg-sky-50 bg-sky-100 bg-sky-500 text-sky-600 text-sky-700 border-sky-100 border-sky-200 border-sky-500 hover:bg-sky-50"></span>
+        <span class="bg-rose-50 bg-rose-100 bg-rose-500 text-rose-600 text-rose-700 border-rose-100 border-rose-200 border-rose-500 hover:bg-rose-50"></span>
+        <span class="bg-slate-50 bg-slate-100 bg-slate-500 text-slate-500 text-slate-600 text-slate-700 border-slate-100 border-slate-200 border-slate-500 border-white hover:bg-slate-50"></span>
     </div>
 
-    <!-- شاشة التحميل -->
+    <!-- Loader -->
     <div id="loader" class="fixed inset-0 z-[600] bg-brand-navy flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="animate-spin rounded-full h-14 w-14 border-t-4 border-brand-blueLt border-r-4 border-r-transparent mb-4"></div>
         <h2 class="text-sm font-black tracking-widest text-brand-blueLt uppercase">AL MASTER CONSOLE</h2>
-        <p class="text-xs text-white/50 mt-2 font-bold">جارٍ التحقق من صلاحيات الإدارة والربط اللحظي…</p>
+        <p class="text-xs text-white/50 mt-2 font-bold">Verifying admin credentials and live connection...</p>
     </div>
 
-    <!-- الهيدر -->
-    <header class="h-16 sm:h-20 flex items-center justify-between px-4 sm:px-8 shrink-0 bg-brand-navy text-white z-10 shadow-lg gap-3">
-        <div class="flex items-center gap-3 shrink-0">
-            <svg viewBox="0 0 24 24" class="w-5 h-5 sm:w-6 sm:h-6 text-brand-blueLt" fill="currentColor" aria-hidden="true"><path d="M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z"/></svg>
-            <h1 class="text-lg sm:text-2xl font-black tracking-tight">AL<span class="text-brand-blueLt"> MASTER</span></h1>
-            <span class="hidden lg:inline text-[10px] font-black text-white/70 uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full">لوحة التحكم المركزية</span>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-slate-100 flex flex-col z-20 shadow-xl transition-all shrink-0">
+        <!-- Logo Area -->
+        <div class="h-20 flex items-center justify-center gap-3 px-6 border-b border-slate-50 shrink-0">
+            <svg viewBox="0 0 24 24" class="w-7 h-7 text-brand-blueLt" fill="#2563eb" aria-hidden="true"><path d="M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z"/></svg>
+            <h1 class="text-xl font-black tracking-tight">AL<span class="text-brand-blue"> MASTER</span></h1>
         </div>
+        <!-- Nav Links -->
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-link active bg-brand-soft text-brand-blue w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-black text-xs transition-all hover:bg-brand-soft hover:text-brand-blue">
+                <i class="fas fa-chart-pie w-5 text-center text-lg"></i> Dashboard
+            </button>
+            <button onclick="switchTab('hr')" id="nav-hr" class="nav-link text-textMuted w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-black text-xs transition-all hover:bg-brand-soft hover:text-brand-blue">
+                <i class="fas fa-users-cog w-5 text-center text-lg"></i> HR & Employees
+            </button>
+            <button onclick="switchTab('requests')" id="nav-requests" class="nav-link text-textMuted w-full flex items-center justify-between px-4 py-3.5 rounded-xl font-black text-xs transition-all hover:bg-brand-soft hover:text-brand-blue">
+                <div class="flex items-center gap-3"><i class="fas fa-envelope-open-text w-5 text-center text-lg"></i> Requests</div>
+                <span id="nav-pending-badge" class="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
+            </button>
+            <button onclick="switchTab('attendance')" id="nav-attendance" class="nav-link text-textMuted w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-black text-xs transition-all hover:bg-brand-soft hover:text-brand-blue">
+                <i class="fas fa-user-clock w-5 text-center text-lg"></i> Attendance Control
+            </button>
+        </nav>
+        <!-- Sidebar Footer (Stats/Overview) -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50 shrink-0 text-center">
+            <div class="text-[10px] font-black text-textMuted uppercase mb-2 tracking-widest">Active System</div>
+            <div id="sidebar-counts" class="flex flex-wrap gap-1 justify-center"></div>
+        </div>
+    </aside>
 
-        <div id="header-counts" class="hidden md:flex items-center gap-2"></div>
-
-        <div class="flex items-center gap-3 sm:gap-5 shrink-0">
-            <div class="text-left sm:text-right sm:border-r border-white/15 sm:pr-5 hidden sm:block">
-                <div id="header-time" class="text-base sm:text-xl font-black tabular-nums">00:00:00</div>
-                <div id="header-date" class="text-[10px] font-bold text-white/60 mt-0.5">—</div>
-            </div>
-            <button onclick="openSettings()" class="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center mini-btn" title="الإعدادات العامة"><i class="fas fa-sliders-h"></i></button>
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden relative bg-surface">
+        <!-- Header -->
+        <header class="h-20 bg-white border-b border-slate-100 text-textMain flex items-center justify-between px-6 shadow-sm shrink-0">
             <div class="flex items-center gap-2">
-                <img id="admin-avatar" src="" class="w-9 h-9 rounded-xl object-cover bg-white/10 border border-white/20" alt="">
-                <div class="leading-none hidden sm:block">
-                    <p id="admin-name" class="text-xs font-black">المدير العام</p>
-                    <p class="text-[9px] font-bold text-brand-blueLt mt-0.5 uppercase">System Admin</p>
-                </div>
+                <div id="header-time" class="text-2xl font-black tabular-nums tracking-tighter text-brand-navy">00:00:00</div>
+                <div class="w-px h-8 bg-slate-200 mx-2"></div>
+                <div id="header-date" class="text-xs font-bold text-textMuted hidden sm:block">—</div>
             </div>
-            <button onclick="logoutAdmin()" class="w-10 h-10 bg-red-500/20 text-red-100 hover:bg-red-500 rounded-xl flex items-center justify-center mini-btn" title="تسجيل الخروج"><i class="fas fa-power-off"></i></button>
+            
+            <div class="flex items-center gap-4 shrink-0">
+                <button onclick="openSettings()" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl flex items-center justify-center mini-btn shadow-inner" title="System Settings"><i class="fas fa-sliders-h"></i></button>
+                <div class="flex items-center gap-3 border-l border-slate-200 pl-4">
+                    <div class="text-right hidden sm:block leading-tight">
+                        <p id="admin-name" class="text-sm font-black text-brand-navy">Admin</p>
+                        <p class="text-[10px] font-bold text-brand-blue uppercase">System Manager</p>
+                    </div>
+                    <img id="admin-avatar" src="" class="w-10 h-10 rounded-xl object-cover bg-slate-100 border border-slate-200 shadow-sm" alt="">
+                </div>
+                <button onclick="logoutAdmin()" class="w-10 h-10 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-xl flex items-center justify-center mini-btn transition-colors" title="Logout"><i class="fas fa-power-off"></i></button>
+            </div>
+        </header>
+        
+        <!-- Tabs Container -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar relative" id="tabs-container">
+            
+            <!-- Tab: Dashboard -->
+            <div id="tab-dashboard" class="tab-pane absolute inset-0 p-6 flex flex-col gap-5">
+                <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 shrink-0">
+                    <div id="filter-bar" class="flex flex-wrap gap-2 items-center">
+                        <span class="text-xs font-black text-textMuted mr-2"><i class="fas fa-filter mr-1"></i> Filter:</span>
+                        <button onclick="filterMonitor('all')" id="btn-filter-all" class="filter-btn active px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white mini-btn">All (<span id="count-all">0</span>)</button>
+                        <!-- Other filters injected via JS -->
+                        <div id="dynamic-filters" class="flex flex-wrap gap-2"></div>
+                        <button onclick="filterMonitor('Offline')" id="btn-filter-Offline" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white mini-btn">Offline (<span id="count-Offline">0</span>)</button>
+                    </div>
+                    <div class="relative w-full sm:w-64">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="monitor-search" oninput="renderMonitorGrid()" class="w-full bg-surface border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs font-bold outline-none focus:border-brand-blue" placeholder="Search employee...">
+                    </div>
+                </div>
+                <div id="monitor-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 pb-10"></div>
+            </div>
+            
+            <!-- Tab: HR -->
+            <div id="tab-hr" class="tab-pane absolute inset-0 p-6 hidden flex-col gap-5">
+                <div class="flex flex-wrap justify-between items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-100 shrink-0">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-brand-soft text-brand-blue flex items-center justify-center text-xl"><i class="fas fa-users-cog"></i></div>
+                        <div>
+                            <h2 class="text-lg font-black text-textMain">HR Management</h2>
+                            <p class="text-xs text-textMuted font-bold">Manage employees, permissions and limits</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 items-center mt-4 sm:mt-0">
+                        <div class="relative group z-30">
+                            <button class="px-5 py-2.5 bg-white border border-slate-200 text-textMain rounded-xl text-xs font-black shadow-sm hover:border-brand-blue flex items-center gap-2 transition-colors">
+                                <i class="fas fa-user-edit text-brand-blue"></i> Edit Employee <i class="fas fa-chevron-down text-[10px] ml-1"></i>
+                            </button>
+                            <div class="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 hidden group-hover:flex flex-col gap-1 max-h-72 overflow-y-auto custom-scrollbar" id="hr-edit-dropdown">
+                                <!-- JS Populated -->
+                            </div>
+                        </div>
+                        <button onclick="openUserModal('new')" class="px-5 py-2.5 bg-brand-blue hover:bg-brand-navy2 text-white rounded-xl text-xs font-black shadow-md mini-btn flex items-center gap-2"><i class="fas fa-user-plus"></i> Add New Employee</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-10" id="users-hr-list"></div>
+            </div>
+
+            <!-- Tab: Requests -->
+            <div id="tab-requests" class="tab-pane absolute inset-0 p-6 hidden flex-col gap-5">
+                 <div class="flex items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-100 shrink-0">
+                     <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center text-xl border border-amber-100"><i class="fas fa-envelope-open-text"></i></div>
+                     <div>
+                         <h2 class="text-lg font-black text-textMain">Pending Requests</h2>
+                         <p class="text-xs text-textMuted font-bold">Approve or reject employee leave requests</p>
+                     </div>
+                 </div>
+                 <div id="requests-queue-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-10"></div>
+            </div>
+
+            <!-- Tab: Attendance -->
+            <div id="tab-attendance" class="tab-pane absolute inset-0 p-6 hidden flex-col gap-5">
+                 <div class="flex items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-100 shrink-0">
+                     <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl border border-emerald-100"><i class="fas fa-user-clock"></i></div>
+                     <div>
+                         <h2 class="text-lg font-black text-textMain">Attendance Control</h2>
+                         <p class="text-xs text-textMuted font-bold">Track lateness and manually reset specific timers</p>
+                     </div>
+                 </div>
+                 <div id="attendance-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-10"></div>
+            </div>
+            
         </div>
-    </header>
-
-    <main class="flex-1 flex overflow-hidden w-full bg-surface">
-
-        <!-- المراقبة -->
-        <section class="flex-1 flex flex-col overflow-hidden border-l border-slate-200/60">
-            <div class="p-4 sm:p-5 shrink-0 flex flex-wrap justify-between items-center gap-3 bg-white border-b border-slate-100">
-                <div id="filter-bar" class="flex flex-wrap gap-2 items-center">
-                    <span class="text-xs font-black text-textMuted ml-1"><i class="fas fa-filter ml-1"></i> تصفية:</span>
-                    <button onclick="filterMonitor('all')"       id="btn-filter-all"       class="filter-btn active px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white mini-btn">الكل (<span id="count-all">0</span>)</button>
-                    <button onclick="filterMonitor('Online')"    id="btn-filter-Online"    class="filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white mini-btn"><span id="lbl-filter-Online">عمل</span> (<span id="count-Online">0</span>)</button>
-                    <button onclick="filterMonitor('Break')"     id="btn-filter-Break"     class="filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white mini-btn"><span id="lbl-filter-Break">راحة</span> (<span id="count-Break">0</span>)</button>
-                    <button onclick="filterMonitor('Meeting')"   id="btn-filter-Meeting"   class="filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white mini-btn"><span id="lbl-filter-Meeting">اجتماع</span> (<span id="count-Meeting">0</span>)</button>
-                    <button onclick="filterMonitor('Exception')" id="btn-filter-Exception" class="filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white mini-btn"><span id="lbl-filter-Exception">استثناء</span> (<span id="count-Exception">0</span>)</button>
-                    <button onclick="filterMonitor('Offline')"   id="btn-filter-Offline"   class="filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white mini-btn">غير متصل (<span id="count-Offline">0</span>)</button>
-                </div>
-                <div class="relative">
-                    <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                    <input type="text" id="monitor-search" oninput="renderMonitorGrid()" class="bg-surface border border-slate-200 rounded-xl pr-9 pl-4 py-2 text-xs outline-none focus:border-brand-blue w-56 sm:w-64" placeholder="ابحث بالاسم…">
-                </div>
-            </div>
-            <div class="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6">
-                <div id="monitor-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-10"></div>
-            </div>
-        </section>
-
-        <!-- اللوحة الجانبية -->
-        <aside class="w-[380px] xl:w-[420px] bg-white flex flex-col shrink-0 overflow-hidden shadow-xl z-20 border-r border-slate-100">
-            <div class="flex flex-col overflow-hidden border-b border-slate-100" style="height:42%">
-                <div class="p-4 bg-white shrink-0 flex justify-between items-center border-b border-slate-50">
-                    <h3 class="font-black text-xs text-textMain uppercase tracking-widest"><i class="fas fa-envelope-open-text text-amber-500 ml-2"></i> طلبات الإجازات المعلقة</h3>
-                    <span id="pending-badge" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
-                </div>
-                <div id="requests-queue-container" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-surface/40"></div>
-            </div>
-
-            <div class="flex-1 flex flex-col overflow-hidden bg-surface">
-                <div class="p-4 bg-white border-b border-slate-100 shrink-0 flex justify-between items-center">
-                    <h3 class="font-black text-xs text-textMain uppercase tracking-widest"><i class="fas fa-users-cog text-brand-blue ml-2"></i> شؤون الموظفين</h3>
-                    <button onclick="openUserModal('new')" class="px-4 py-2 bg-brand-blue hover:bg-brand-navy2 text-white rounded-xl text-[10px] font-black shadow-md mini-btn"><i class="fas fa-user-plus ml-1"></i> موظف جديد</button>
-                </div>
-                <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                    <div id="users-hr-list" class="space-y-2.5"></div>
-                </div>
-            </div>
-        </aside>
     </main>
-
-    <!-- نافذة الموظف -->
-    <div id="modal-user-form" class="fixed inset-0 z-[500] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-user-form')">
-        <div class="bg-white w-full max-w-2xl rounded-[2rem] p-7 sm:p-8 flex flex-col max-h-[92vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+    
+    <!-- User Form Modal -->
+    <div id="modal-user-form" class="fixed inset-0 z-[500] hidden bg-brand-navy/60 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-user-form')">
+        <div class="bg-white w-full max-w-3xl rounded-[2rem] p-7 sm:p-8 flex flex-col max-h-[95vh] overflow-hidden shadow-2xl border border-slate-100" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center mb-5 shrink-0 border-b border-slate-100 pb-4">
-                <h3 id="modal-user-title" class="text-lg font-black text-textMain flex items-center gap-2"></h3>
-                <button onclick="closeModal('modal-user-form')" aria-label="إغلاق" class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-full"><i class="fas fa-times"></i></button>
+                <h3 id="modal-user-title" class="text-xl font-black text-brand-navy flex items-center gap-2"></h3>
+                <button onclick="closeModal('modal-user-form')" class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><i class="fas fa-times"></i></button>
             </div>
-            <form id="user-setup-form" onsubmit="saveUserData(event)" class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4 text-right">
+            <form id="user-setup-form" onsubmit="saveUserData(event)" class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-5">
                 <input type="hidden" id="edit-mode-email">
-                <div class="flex items-center gap-5 p-4 bg-surface border border-slate-200 rounded-2xl">
+                
+                <div class="flex flex-col sm:flex-row gap-6 p-5 bg-surface border border-slate-200 rounded-2xl items-start sm:items-center">
                     <div class="relative cursor-pointer group shrink-0" onclick="document.getElementById('user-photo-upload').click()">
-                        <img id="user-photo-preview" src="" class="w-20 h-20 rounded-2xl object-cover border-2 border-dashed border-slate-300 group-hover:border-brand-blue bg-white transition-all" alt="">
-                        <div class="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-camera text-white"></i></div>
+                        <img id="user-photo-preview" src="" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md group-hover:border-brand-blueLt bg-white transition-all" alt="Avatar">
+                        <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-camera text-white"></i></div>
                         <input type="file" id="user-photo-upload" class="hidden" accept="image/*" onchange="previewUserPhoto(this)">
                         <input type="hidden" id="user-photo-b64">
                     </div>
-                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div><label class="text-[11px] font-black text-textMuted mb-1 block uppercase">الاسم الكامل</label><input type="text" id="u-name" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue"></div>
-                        <div><label class="text-[11px] font-black text-textMuted mb-1 block uppercase">المسمى الوظيفي</label><input type="text" id="u-title" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue"></div>
+                    <div class="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Full Name</label><input type="text" id="u-name" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm"></div>
+                        <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Job Title</label><input type="text" id="u-title" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm"></div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div><label class="text-[11px] font-black text-textMuted mb-1 block uppercase">البريد الإلكتروني</label><input type="email" id="u-email" required dir="ltr" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none text-left disabled:bg-slate-100 disabled:text-slate-500 focus:border-brand-blue"></div>
-                    <div id="password-container"><label class="text-[11px] font-black text-textMuted mb-1 block uppercase">كلمة المرور الابتدائية</label><input type="text" id="u-password" dir="ltr" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none text-left font-mono focus:border-brand-blue" placeholder="حد أدنى 6 خانات"></div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Email Address</label><input type="email" id="u-email" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none disabled:bg-slate-50 disabled:text-slate-400 focus:border-brand-blue shadow-sm"></div>
+                    <div id="password-container"><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Initial Password</label><input type="text" id="u-password" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none font-mono focus:border-brand-blue shadow-sm" placeholder="Min 6 chars"></div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div><label class="text-[11px] font-black text-textMuted mb-1 block uppercase">الرتبة (Role)</label>
-                        <select id="u-role" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer">
-                            <option value="employee">موظف</option><option value="leader">قائد فريق</option><option value="admin">مدير نظام</option>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Role</label>
+                        <select id="u-role" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm">
+                            <option value="employee">Employee</option><option value="leader">Team Leader</option><option value="admin">Admin</option>
                         </select></div>
-                    <div><label class="text-[11px] font-black text-textMuted mb-1 block uppercase">نوع العقد</label>
-                        <select id="u-contract" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer">
-                            <option value="employee">دوام كامل</option><option value="freelancer">عقد مستقل</option>
+                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Gender</label>
+                        <select id="u-gender" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm" onchange="updateFallbackPreview()">
+                            <option value="male">Male</option><option value="female">Female</option>
                         </select></div>
-                    <div><label class="text-[11px] font-black text-textMuted mb-1 block uppercase">رصيد الإجازات (يوم)</label>
-                        <input type="number" id="u-leave-balance" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue" placeholder="21"></div>
+                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Vacation (Days)</label>
+                        <input type="number" id="u-leave-balance" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm" placeholder="21"></div>
+                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Online Limit (Days)</label>
+                        <input type="number" id="u-online-limit" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm" placeholder="0"></div>
                 </div>
-                <div class="p-4 border border-slate-200 bg-surface rounded-2xl">
-                    <p class="text-[11px] font-black text-textMain uppercase mb-3 tracking-widest border-b border-slate-200 pb-2"><i class="fas fa-shield-halved text-brand-blue ml-1"></i> الصلاحيات</p>
-                    <div class="grid grid-cols-2 gap-3 text-sm font-bold">
-                        <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl"><input type="checkbox" id="perm-crm" class="w-4 h-4 rounded text-brand-blue"> نظام المشاريع</label>
-                        <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl"><input type="checkbox" id="perm-payroll" class="w-4 h-4 rounded text-brand-blue"> نظام المرتبات</label>
+                
+                <div class="p-5 border border-slate-200 bg-surface rounded-2xl">
+                    <p class="text-[10px] font-black text-textMain uppercase mb-3 tracking-widest border-b border-slate-200 pb-2"><i class="fas fa-shield-halved text-brand-blue mr-1"></i> Permissions & Access</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm font-bold">
+                        <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors"><input type="checkbox" id="perm-crm" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue"> CRM System Access</label>
+                        <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors"><input type="checkbox" id="perm-payroll" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue"> Payroll System Access</label>
                     </div>
                 </div>
-                <div class="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-2xl">
-                    <div class="text-right"><span class="text-sm font-black text-red-700 block"><i class="fas fa-ban ml-1"></i> تعليق الحساب</span><span class="text-[10px] text-red-500/80 font-bold">منع الدخول للنظام فوراً.</span></div>
-                    <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="u-suspended" class="sr-only peer"><div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div></label>
+                
+                <div class="flex items-center justify-between p-5 bg-red-50 border border-red-200 rounded-2xl">
+                    <div><span class="text-sm font-black text-red-700 block"><i class="fas fa-ban mr-1"></i> Suspend Account</span><span class="text-[10px] text-red-500/80 font-bold">Immediately block user from logging in.</span></div>
+                    <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="u-suspended" class="sr-only peer"><div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div></label>
                 </div>
-                <div class="pt-5 flex gap-3 border-t border-slate-100 shrink-0">
-                    <button type="submit" id="save-user-btn" class="flex-1 py-3.5 bg-brand-blue text-white rounded-xl font-black text-sm shadow-lg hover:bg-brand-navy2 mini-btn"><i class="fas fa-save ml-2"></i> حفظ البيانات</button>
-                    <button type="button" id="delete-user-btn" onclick="deleteUser()" class="px-6 py-3.5 border border-red-200 bg-white text-red-500 hover:bg-red-50 rounded-xl font-black text-sm hidden"><i class="fas fa-trash-alt ml-1"></i> حذف</button>
+                
+                <div class="pt-4 flex gap-3 border-t border-slate-100 shrink-0">
+                    <button type="submit" id="save-user-btn" class="flex-1 py-3.5 bg-brand-blue text-white rounded-xl font-black text-sm shadow-lg hover:bg-brand-navy2 mini-btn"><i class="fas fa-save mr-2"></i> Save Employee</button>
+                    <button type="button" id="delete-user-btn" onclick="deleteUser()" class="px-6 py-3.5 border border-red-200 bg-white text-red-500 hover:bg-red-50 rounded-xl font-black text-sm hidden transition-colors"><i class="fas fa-trash-alt mr-1"></i> Delete</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- نافذة السجل -->
-    <div id="modal-logs" class="fixed inset-0 z-[550] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-logs')">
-        <div class="bg-white w-full max-w-4xl rounded-[2rem] flex flex-col max-h-[85vh] shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
-            <div class="p-5 sm:p-6 border-b border-slate-100 bg-surface flex flex-wrap gap-4 justify-between items-center">
+    <!-- Logs Modal -->
+    <div id="modal-logs" class="fixed inset-0 z-[550] hidden bg-brand-navy/60 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-logs')">
+        <div class="bg-white w-full max-w-4xl rounded-[2rem] flex flex-col max-h-[85vh] shadow-2xl overflow-hidden border border-slate-100" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-slate-100 bg-surface flex flex-wrap gap-4 justify-between items-center shrink-0">
                 <div>
-                    <h3 id="log-report-title" class="font-black text-lg text-textMain mb-1"><i class="fas fa-history text-brand-blue ml-2"></i> سجل الحركات</h3>
-                    <p id="log-report-subtitle" class="text-xs text-textMuted font-bold">تتبّع فترات النشاط لليوم المختار</p>
+                    <h3 id="log-report-title" class="font-black text-xl text-brand-navy mb-1"><i class="fas fa-history text-brand-blue mr-2"></i> Activity Log</h3>
+                    <p id="log-report-subtitle" class="text-xs text-textMuted font-bold">Track employee status changes</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <input type="date" id="history-date-picker" onchange="refreshHistoryWithDate()" class="border border-slate-300 rounded-xl px-4 py-2 text-sm font-black outline-none bg-white cursor-pointer focus:border-brand-blue">
-                    <button onclick="closeModal('modal-logs')" aria-label="إغلاق" class="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-red-500 rounded-full"><i class="fas fa-times text-lg"></i></button>
+                    <input type="date" id="history-date-picker" onchange="refreshHistoryWithDate()" class="border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-black outline-none bg-white cursor-pointer focus:border-brand-blue shadow-sm">
+                    <button onclick="closeModal('modal-logs')" class="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><i class="fas fa-times text-lg"></i></button>
                 </div>
             </div>
-            <div class="flex-1 overflow-y-auto p-5 sm:p-6 bg-surface custom-scrollbar">
-                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                    <table class="w-full text-right border-collapse text-sm">
-                        <thead><tr class="bg-slate-50 border-b border-slate-200 text-textMuted font-black uppercase text-[11px]">
-                            <th class="p-3 text-center w-12">#</th><th class="p-3">من</th><th class="p-3">إلى</th>
-                            <th class="p-3 text-center">التاريخ والوقت</th><th class="p-3 text-center">المدة</th><th class="p-3 text-center">التغيير</th>
+            <div class="flex-1 overflow-y-auto p-6 bg-surface custom-scrollbar">
+                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead><tr class="bg-slate-50 border-b border-slate-200 text-textMuted font-black uppercase text-[10px] tracking-wider">
+                            <th class="p-3 text-center w-12">#</th><th class="p-3">From</th><th class="p-3">To</th>
+                            <th class="p-3 text-center">Time</th><th class="p-3 text-center">Duration</th><th class="p-3 text-center">Action By</th>
                         </tr></thead>
                         <tbody id="logs-timeline-body" class="font-bold text-textMain divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
-            <div id="log-report-footer" class="p-4 border-t border-slate-200 bg-white flex justify-center items-center shrink-0"></div>
+            <div id="log-report-footer" class="p-5 border-t border-slate-200 bg-white flex justify-center items-center shrink-0"></div>
         </div>
     </div>
 
-    <!-- نافذة الإعدادات -->
-    <div id="modal-settings" class="fixed inset-0 z-[560] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-settings')">
-        <div class="bg-white w-full max-w-2xl rounded-[2rem] flex flex-col max-h-[92vh] shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
-            <div class="p-5 sm:p-6 border-b border-slate-100 bg-surface flex justify-between items-center">
-                <h3 class="font-black text-lg text-textMain"><i class="fas fa-sliders-h text-brand-blue ml-2"></i> إعدادات النظام</h3>
-                <button onclick="closeModal('modal-settings')" aria-label="إغلاق" class="w-9 h-9 flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-red-500 rounded-full"><i class="fas fa-times"></i></button>
+    <!-- Settings Modal -->
+    <div id="modal-settings" class="fixed inset-0 z-[560] hidden bg-brand-navy/60 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-settings')">
+        <div class="bg-white w-full max-w-2xl rounded-[2rem] flex flex-col max-h-[92vh] shadow-2xl overflow-hidden border border-slate-100" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-slate-100 bg-surface flex justify-between items-center shrink-0">
+                <h3 class="font-black text-xl text-brand-navy"><i class="fas fa-sliders-h text-brand-blue mr-2"></i> System Settings</h3>
+                <button onclick="closeModal('modal-settings')" class="w-9 h-9 flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><i class="fas fa-times"></i></button>
             </div>
-            <div class="flex-1 overflow-y-auto p-5 sm:p-6 custom-scrollbar space-y-6">
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
                 <div>
-                    <h4 class="text-[11px] font-black text-textMuted uppercase tracking-widest mb-3">إعدادات عامة</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div><label class="text-[10px] font-black text-textMuted mb-1 block">ساعة التصفير (0-23)</label><input type="number" id="cfg-reset-hour" min="0" max="23" class="w-full bg-surface border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue"></div>
-                        <div><label class="text-[10px] font-black text-textMuted mb-1 block">بداية الدوام</label><input type="time" id="cfg-work-start" class="w-full bg-surface border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue"></div>
-                        <div><label class="text-[10px] font-black text-textMuted mb-1 block">رصيد الإجازات الافتراضي</label><input type="number" id="cfg-annual-default" min="0" class="w-full bg-surface border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue"></div>
+                    <h4 class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-3">General Configuration</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div><label class="text-[10px] font-black text-textMuted mb-1 block">Reset Hour (0-23)</label><input type="number" id="cfg-reset-hour" min="0" max="23" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm"></div>
+                        <div><label class="text-[10px] font-black text-textMuted mb-1 block">Work Start Time</label><input type="time" id="cfg-work-start" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm"></div>
+                        <div><label class="text-[10px] font-black text-textMuted mb-1 block">Default Annual Leave</label><input type="number" id="cfg-annual-default" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm"></div>
                     </div>
                 </div>
                 <div>
-                    <h4 class="text-[11px] font-black text-textMuted uppercase tracking-widest mb-3">تعريفات الحالات (تظهر للموظف مباشرة)</h4>
+                    <h4 class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-3">Statuses Definition</h4>
                     <div id="status-editor" class="space-y-3"></div>
                 </div>
             </div>
-            <div class="p-4 border-t border-slate-200 bg-white shrink-0">
-                <button onclick="saveSettings()" id="save-settings-btn" class="w-full py-3.5 bg-brand-blue text-white rounded-xl font-black text-sm shadow-lg hover:bg-brand-navy2 mini-btn"><i class="fas fa-save ml-2"></i> حفظ الإعدادات</button>
+            <div class="p-5 border-t border-slate-200 bg-white shrink-0">
+                <button onclick="saveSettings()" id="save-settings-btn" class="w-full py-3.5 bg-brand-blue text-white rounded-xl font-black text-sm shadow-lg hover:bg-brand-navy2 mini-btn"><i class="fas fa-save mr-2"></i> Save Settings</button>
             </div>
         </div>
     </div>
 
+    <!-- MAIN APP SCRIPT -->
     <script>
-    /* =========================================================================
-       AL MASTER — لوحة التحكم المركزية
-       متوافقة مع صفحة الموظف: نفس الحالات/العدّادات/توقيت السيرفر/التصفير 11م
-       ========================================================================= */
-
+    /* AL MASTER Central Console - English Translation & Redesign */
     const firebaseConfig = {
         apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM",
         authDomain: "almaster-b8c18.firebaseapp.com",
@@ -275,19 +329,22 @@
     let RESET_HOUR = 23, WORK_START = '09:00', ANNUAL_LEAVE_DEFAULT = 21;
 
     let STATUSES = {
-        Online:    { label:'عمل',     btnLabel:'بدء العمل', color:'emerald', icon:'fa-laptop-code', counted:true,  enabled:true },
-        Break:     { label:'راحة',    btnLabel:'راحة',      color:'amber',   icon:'fa-mug-hot',     counted:true,  enabled:true },
-        Meeting:   { label:'اجتماع',  btnLabel:'اجتماع',    color:'indigo',  icon:'fa-users',       counted:true,  enabled:true },
-        Exception: { label:'استثناء', btnLabel:'استثناء',   color:'violet',  icon:'fa-star',        counted:true,  enabled:true },
-        Offline:   { label:'غير متصل',btnLabel:'',          color:'slate',   icon:'fa-power-off',   counted:false, enabled:true },
+        Online:    { label:'Working',   btnLabel:'Start Work', color:'emerald', icon:'fa-laptop-code', counted:true,  enabled:true },
+        Break:     { label:'Break',     btnLabel:'Break',      color:'amber',   icon:'fa-mug-hot',     counted:true,  enabled:true },
+        Meeting:   { label:'Meeting',   btnLabel:'Meeting',    color:'indigo',  icon:'fa-users',       counted:true,  enabled:true },
+        Exception: { label:'Exception', btnLabel:'Exception',  color:'violet',  icon:'fa-star',        counted:true,  enabled:true },
+        Offline:   { label:'Offline',   btnLabel:'',           color:'slate',   icon:'fa-power-off',   counted:false, enabled:true },
     };
     const EDITABLE = ['Online','Break','Meeting','Exception'];
     const PALETTE = ['emerald','amber','indigo','violet','sky','rose','teal','orange','purple','cyan','slate'];
 
+    // Cartoonish SVG Avatars Generated by Code
+    const maleSVG = encodeURIComponent(`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#eaf1ff"/><circle cx="50" cy="38" r="18" fill="#2563eb"/><path d="M20,95 Q50,60 80,95 Z" fill="#2563eb"/></svg>`);
+    const femaleSVG = encodeURIComponent(`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#fdf2f8"/><circle cx="50" cy="38" r="16" fill="#db2777"/><path d="M20,95 Q50,60 80,95 Z" fill="#db2777"/><circle cx="34" cy="42" r="8" fill="#db2777"/><circle cx="66" cy="42" r="8" fill="#db2777"/></svg>`);
+
     let currentUser = null, userProfile = null, allUsersData = [], leaveBalances = {};
     let currentMonitorFilter = 'all', currentViewingEmail = '';
     let serverOffset = 0, timeReady = false;
-    const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0b1b3f&color=ffffff&bold=true&size=150&name=';
     const Toast = Swal.mixin({ toast:true, position:'top-end', showConfirmButton:false, timer:3000, timerProgressBar:true });
 
     const serverNow = () => Date.now() + serverOffset;
@@ -295,8 +352,21 @@
     const sLabel = (k) => (STATUSES[k] || {}).label || k || '—';
     const sColor = (k) => (STATUSES[k] || {}).color || 'slate';
     const sIcon  = (k) => (STATUSES[k] || {}).icon  || 'fa-circle';
+    
+    function getAvatar(u) {
+        if (u && u.photo) return u.photo;
+        const gender = (u && u.gender) ? u.gender : 'male';
+        return `data:image/svg+xml;charset=utf-8,${gender === 'female' ? femaleSVG : maleSVG}`;
+    }
+    
+    function updateFallbackPreview() {
+        if (!document.getElementById('user-photo-b64').value) {
+            const gender = document.getElementById('u-gender').value;
+            document.getElementById('user-photo-preview').src = `data:image/svg+xml;charset=utf-8,${gender === 'female' ? femaleSVG : maleSVG}`;
+        }
+    }
 
-    // ---- توقيت ----
+    // Time utils
     async function syncServerTime() {
         try {
             const probe = db.collection('_serverTime').doc(currentUser.uid);
@@ -317,10 +387,10 @@
     function getDayKey(ms){ return zonedYMD(ms + (24 - RESET_HOUR) * 3600 * 1000); }
     const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : (typeof v==='number'? v : serverNow())) : serverNow();
     function fmtDuration(ms){ if(ms<0)ms=0; const s=Math.floor(ms/1000); return `${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`; }
-    function fmtDate(ms){ return new Intl.DateTimeFormat('ar-EG',{timeZone:COMPANY_TZ,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(ms)); }
-    function fmtTime(ms){ return new Intl.DateTimeFormat('ar-EG',{timeZone:COMPANY_TZ,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date(ms)); }
+    function fmtDate(ms){ return new Intl.DateTimeFormat('en-GB',{timeZone:COMPANY_TZ,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(ms)); }
+    function fmtTime(ms){ return new Intl.DateTimeFormat('en-GB',{timeZone:COMPANY_TZ,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date(ms)); }
 
-    // ---- التحقق من الدخول ----
+    // Auth
     auth.onAuthStateChanged(async (user) => {
         if (!user) { window.location.replace('index.html'); return; }
         currentUser = user;
@@ -329,11 +399,11 @@
             if (!doc.exists) { auth.signOut(); return; }
             userProfile = doc.data();
             if (userProfile.role !== 'admin') { window.location.replace('employee.html'); return; }
-            document.getElementById('admin-name').innerText = userProfile.name || 'الإدارة';
-            document.getElementById('admin-avatar').src = userProfile.photo || (DEFAULT_PHOTO + encodeURIComponent(userProfile.name || 'A'));
+            document.getElementById('admin-name').innerText = userProfile.name || 'Admin';
+            document.getElementById('admin-avatar').src = getAvatar(userProfile);
             await syncServerTime();
             initAdminConsole();
-        } catch (e) { console.error(e); Toast.fire({icon:'error', title:'خطأ في الاتصال بقاعدة البيانات'}); }
+        } catch (e) { console.error(e); Toast.fire({icon:'error', title:'Database connection error'}); }
     });
 
     function initAdminConsole() {
@@ -342,18 +412,17 @@
         listenToAllUsers();
         listenToLeaveBalances();
         listenToLeaveRequests();
-        renderHeaderCounts();
         setInterval(updateTimersUI, 1000);
         const loader = document.getElementById('loader');
         loader.style.opacity = '0'; setTimeout(() => loader.classList.add('hidden'), 400);
     }
 
     async function logoutAdmin() {
-        const r = await Swal.fire({ title:'تسجيل الخروج؟', text:'إنهاء الجلسة الإدارية.', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', cancelButtonColor:'#64748b', confirmButtonText:'نعم، خروج', cancelButtonText:'إلغاء' });
+        const r = await Swal.fire({ title:'Logout?', text:'End administrative session.', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', cancelButtonColor:'#64748b', confirmButtonText:'Yes, Logout', cancelButtonText:'Cancel' });
         if (r.isConfirmed) { await auth.signOut(); window.location.replace('index.html'); }
     }
 
-    // ---- الإعدادات العامة (work_config) ----
+    // Config
     function listenToConfig() {
         db.collection('system_settings').doc('work_config').onSnapshot(doc => {
             if (doc.exists) {
@@ -363,12 +432,18 @@
                 if (typeof c.annualLeaveDefault === 'number') ANNUAL_LEAVE_DEFAULT = c.annualLeaveDefault;
                 if (c.statuses) Object.keys(c.statuses).forEach(k => { if (STATUSES[k]) STATUSES[k] = Object.assign({}, STATUSES[k], c.statuses[k]); });
             }
-            EDITABLE.forEach(k => { const el = document.getElementById('lbl-filter-'+k); if (el) el.innerText = sLabel(k); });
+            // Update filter buttons
+            const fBar = document.getElementById('dynamic-filters');
+            if(fBar) {
+                fBar.innerHTML = EDITABLE.map(k => `<button onclick="filterMonitor('${k}')" id="btn-filter-${k}" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white mini-btn">${sLabel(k)} (<span id="count-${k}">0</span>)</button>`).join('');
+                filterMonitor(currentMonitorFilter); // re-apply active class
+            }
             renderMonitorGrid();
+            renderAttendanceTab();
         }, err => console.warn('config:', err.message));
     }
 
-    // ---- أرصدة الإجازات ----
+    // Leaves
     function listenToLeaveBalances() {
         db.collection('hr_stats').onSnapshot(snap => {
             leaveBalances = {};
@@ -378,46 +453,49 @@
     }
     const balanceOf = (email) => (email in leaveBalances) ? leaveBalances[email] : ANNUAL_LEAVE_DEFAULT;
 
-    // ---- مراقبة الموظفين ----
+    // Users
     function listenToAllUsers() {
         db.collection('users').onSnapshot(snap => {
             allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
-            updateCounts(); renderMonitorGrid(); renderHRUsersList();
+            updateCounts(); renderMonitorGrid(); renderHRUsersList(); renderHREditDropdown(); renderAttendanceTab();
         }, err => console.warn('users:', err.message));
     }
 
-    function renderHeaderCounts() {
-        const wrap = document.getElementById('header-counts');
-        wrap.innerHTML = countedKeys().map(k =>
-            `<div class="px-3 py-1.5 rounded-xl bg-white/10 flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-${sColor(k)}-500"></span>
-                <span class="text-[11px] font-black"><span id="hc-${k}">0</span> ${sLabel(k)}</span>
-            </div>`).join('');
-    }
     function updateCounts() {
         const by = (s) => allUsersData.filter(u => (u.status||'Offline') === s).length;
-        document.getElementById('count-all').innerText = allUsersData.length;
+        const eAll = document.getElementById('count-all'); if(eAll) eAll.innerText = allUsersData.length;
         ['Online','Break','Meeting','Exception','Offline'].forEach(k => { const e = document.getElementById('count-'+k); if (e) e.innerText = by(k); });
-        countedKeys().forEach(k => { const e = document.getElementById('hc-'+k); if (e) e.innerText = by(k); });
+        
+        const sb = document.getElementById('sidebar-counts');
+        if(sb) {
+            sb.innerHTML = countedKeys().map(k =>
+                `<div class="px-2 py-1 rounded bg-${sColor(k)}-50 border border-${sColor(k)}-100 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-${sColor(k)}-500"></span>
+                    <span class="text-[9px] font-black text-${sColor(k)}-700">${by(k)} ${sLabel(k)}</span>
+                </div>`
+            ).join('');
+        }
     }
 
     function filterMonitor(status) {
         currentMonitorFilter = status;
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        const b = document.getElementById('btn-filter-'+status); if (b) b.classList.add('active');
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'bg-brand-navy', 'text-white'));
+        const b = document.getElementById('btn-filter-'+status); 
+        if (b) { b.classList.add('active', 'bg-brand-navy', 'text-white'); b.classList.remove('bg-white'); }
         renderMonitorGrid();
     }
 
     function forceButtonsHTML(email) {
         return EDITABLE.filter(k => STATUSES[k].enabled !== false).map(k =>
-            `<button onclick="adminForceStatus('${email}','${k}')" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-${sColor(k)}-600 hover:bg-${sColor(k)}-50 mini-btn text-[10px] font-black">${sLabel(k)}</button>`
+            `<button onclick="adminForceStatus('${email}','${k}')" class="px-2 py-1 rounded-md bg-white border border-slate-200 text-${sColor(k)}-600 hover:bg-${sColor(k)}-50 mini-btn text-[9px] font-black shadow-sm">${sLabel(k)}</button>`
         ).join('');
     }
+    
     function timerCellsHTML(u, start) {
         const tb = u.timeBank || {}, status = u.status || 'Offline';
         return countedKeys().map(k =>
-            `<div class="bg-white p-2 rounded-lg border border-slate-100 text-center">
-                <p class="text-[9px] font-black text-textMuted mb-0.5"><i class="fas ${sIcon(k)} text-${sColor(k)}-500 ml-1"></i>${sLabel(k)}</p>
+            `<div class="bg-white p-2 rounded-xl border border-slate-100 text-center shadow-sm">
+                <p class="text-[9px] font-black text-textMuted mb-0.5 uppercase tracking-wider flex items-center justify-center gap-1"><i class="fas ${sIcon(k)} text-${sColor(k)}-500"></i> ${sLabel(k)}</p>
                 <p class="text-[11px] font-black text-textMain tabular-nums stat-timer" data-val="${tb[k]||0}" data-active="${status===k}" data-start="${start}">00:00:00</p>
             </div>`).join('');
     }
@@ -430,40 +508,54 @@
             return (u.name||'').toLowerCase().includes(term);
         });
         if (!filtered.length) {
-            container.innerHTML = `<div class="col-span-full py-20 flex flex-col items-center justify-center text-slate-400"><i class="fas fa-user-slash text-4xl mb-3"></i><p class="text-sm font-bold">لا توجد نتائج مطابقة.</p></div>`;
+            container.innerHTML = `<div class="col-span-full py-20 flex flex-col items-center justify-center text-slate-400"><i class="fas fa-search text-4xl mb-4 opacity-50"></i><p class="text-sm font-bold">No employees found.</p></div>`;
             return;
         }
         container.innerHTML = filtered.map(u => {
             const status = u.status || 'Offline', s = STATUSES[status] || STATUSES.Offline;
             const start = getMillis(u.lastChange), isOn = status !== 'Offline';
             const late = balanceOf(u.email);
-            return `<div class="monitor-card p-4 sm:p-5 rounded-3xl flex flex-col gap-3.5 relative">
-                ${u.isSuspended ? '<div class="absolute top-3 left-3 bg-red-100 text-red-600 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-red-200">موقوف</div>' : ''}
-                <button onclick="openUserModal('${u.email}')" class="absolute top-3 left-3 ${u.isSuspended?'hidden':''} w-7 h-7 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-blue border border-slate-100 mini-btn" title="تعديل"><i class="fas fa-pen text-[10px]"></i></button>
-                <div class="flex items-center gap-3.5">
+            
+            return `<div class="monitor-card p-5 rounded-3xl flex flex-col gap-3 relative bg-${s.color}-50/30 border border-${s.color}-100">
+                ${u.isSuspended ? '<div class="absolute top-4 left-4 bg-red-100 text-red-600 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-red-200 z-10 shadow-sm">Suspended</div>' : ''}
+                
+                <div class="flex justify-center relative w-full mb-1 mt-2">
                     <div class="relative shrink-0">
-                        <img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name||'?')}" class="w-14 h-14 rounded-2xl object-cover border-2 ${isOn?'border-'+s.color+'-500':'border-slate-200'}" alt="">
-                        <span class="absolute -bottom-1 -right-1 pulse-dot bg-${s.color}-500 border-2 border-white z-10"></span>
-                    </div>
-                    <div class="text-right leading-tight overflow-hidden">
-                        <h4 class="text-sm font-black text-textMain truncate">${u.name||'—'}</h4>
-                        <p class="text-[11px] text-textMuted font-bold mt-0.5 truncate">${u.title||'موظف'}</p>
-                        <span class="inline-block mt-1.5 px-2 py-0.5 rounded text-[9px] font-black text-${s.color}-700 bg-${s.color}-50 border border-${s.color}-100">${s.label}</span>
+                        <img src="${getAvatar(u)}" class="w-20 h-20 rounded-full object-cover border-4 ${isOn?'border-'+s.color+'-500':'border-white'} shadow-md bg-white" alt="">
+                        <span class="absolute bottom-1 right-1 pulse-dot bg-${s.color}-500 border-2 border-white z-10 ${!isOn?'hidden':''}"></span>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">${timerCellsHTML(u, start)}</div>
-                <div class="flex items-center justify-between bg-brand-soft/60 rounded-xl px-3 py-1.5 border border-brand-soft">
-                    <span class="text-[10px] font-black text-textMuted"><i class="fas fa-umbrella-beach text-brand-blue ml-1"></i> رصيد الإجازات</span>
-                    <span class="text-[11px] font-black text-textMain">${late} يوم</span>
+                
+                <div class="text-center">
+                    <h4 class="text-base font-black text-textMain">${u.name||'—'}</h4>
+                    <p class="text-[10px] text-textMuted font-bold uppercase tracking-wider mt-0.5">${u.title||'Employee'}</p>
                 </div>
-                <div class="flex flex-col gap-2 pt-1 border-t border-slate-100 mt-auto">
+                
+                <div class="flex justify-center mb-1">
+                    <span class="px-3 py-1 rounded-full text-[10px] font-black text-${s.color}-700 bg-${s.color}-100 border border-${s.color}-200 shadow-sm"><i class="fas ${s.icon} mr-1"></i> ${s.label}</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 mt-1">${timerCellsHTML(u, start)}</div>
+                
+                <div class="grid grid-cols-2 gap-2 mt-1">
+                     <div class="flex flex-col items-center justify-center bg-white rounded-xl py-2 border border-slate-100 shadow-sm">
+                         <span class="text-[9px] font-black text-textMuted uppercase"><i class="fas fa-plane-departure text-brand-blueLt mr-1"></i> Vacations</span>
+                         <span class="text-[11px] font-black text-brand-blue">${late} Days</span>
+                     </div>
+                     <div class="flex flex-col items-center justify-center bg-white rounded-xl py-2 border border-slate-100 shadow-sm">
+                         <span class="text-[9px] font-black text-textMuted uppercase"><i class="fas fa-wifi text-violet-400 mr-1"></i> Online Limit</span>
+                         <span class="text-[11px] font-black text-violet-600">${u.onlineDaysLimit||0} Days</span>
+                     </div>
+                </div>
+                
+                <div class="flex flex-col gap-2 pt-3 border-t border-${s.color}-100 mt-auto">
                     <div class="flex gap-2">
-                        <button onclick="viewHistory('${u.email}')" class="flex-1 py-2 bg-white border border-slate-200 hover:border-brand-blue hover:text-brand-blue rounded-xl text-[10px] font-black mini-btn"><i class="fas fa-history text-brand-blue ml-1"></i> السجل</button>
-                        <button onclick="adminResetDay('${u.email}')" class="flex-1 py-2 bg-white border border-slate-200 hover:border-amber-400 hover:text-amber-600 rounded-xl text-[10px] font-black mini-btn"><i class="fas fa-rotate-left text-amber-500 ml-1"></i> تصفير</button>
-                        <button onclick="adminForceLogout('${u.email}')" class="flex-1 py-2 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-xl text-[10px] font-black mini-btn"><i class="fas fa-power-off ml-1"></i> طرد</button>
+                        <button onclick="viewHistory('${u.email}')" class="flex-1 py-2 bg-white border border-slate-200 hover:border-brand-blue hover:text-brand-blue rounded-xl text-[10px] font-black mini-btn shadow-sm transition-colors"><i class="fas fa-history mr-1"></i> History</button>
+                        <button onclick="adminResetDay('${u.email}')" class="flex-1 py-2 bg-white border border-slate-200 hover:border-amber-400 hover:text-amber-600 rounded-xl text-[10px] font-black mini-btn shadow-sm transition-colors"><i class="fas fa-rotate-left mr-1"></i> Reset</button>
+                        <button onclick="adminForceLogout('${u.email}')" class="flex-1 py-2 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-xl text-[10px] font-black mini-btn shadow-sm transition-colors border border-red-100"><i class="fas fa-power-off mr-1"></i> Kick</button>
                     </div>
-                    <div class="flex gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200 justify-between items-center">
-                        <span class="text-[9px] font-black text-textMuted pr-1">إجبار:</span>
+                    <div class="flex gap-2 bg-white/60 p-2 rounded-xl border border-${s.color}-100 justify-between items-center">
+                        <span class="text-[9px] font-black text-textMuted pl-1 uppercase tracking-wider">Force:</span>
                         <div class="flex gap-1 flex-wrap justify-end">${forceButtonsHTML(u.email)}</div>
                     </div>
                 </div>
@@ -471,15 +563,14 @@
         }).join('');
     }
 
-    // ---- فرض الحالة (بختم وقت السيرفر + تسجيل بواسطة الإدارة) ----
     async function adminForceStatus(email, status) {
         if (!STATUSES[status]) return;
-        const r = await Swal.fire({ title:'تأكيد التعديل', text:`تغيير حالة الموظف إلى: ${sLabel(status)}؟`, icon:'warning', showCancelButton:true, confirmButtonColor:'#2563eb', cancelButtonColor:'#64748b', confirmButtonText:'تأكيد', cancelButtonText:'إلغاء' });
+        const r = await Swal.fire({ title:'Confirm Action', text:`Force status to: ${sLabel(status)}?`, icon:'warning', showCancelButton:true, confirmButtonColor:'#2563eb', cancelButtonColor:'#64748b', confirmButtonText:'Confirm', cancelButtonText:'Cancel' });
         if (!r.isConfirmed) return;
         try {
             const ref = db.collection('users').doc(email.toLowerCase().trim());
             const u = (await ref.get()).data();
-            if (u.status === status) { Toast.fire({icon:'info', title:'الحالة الحالية بالفعل.'}); return; }
+            if (u.status === status) { Toast.fire({icon:'info', title:'Already in this status.'}); return; }
 
             const now = serverNow();
             const oldStatus = u.status || 'Offline';
@@ -497,53 +588,175 @@
                 user: email.toLowerCase().trim(), name: u.name || email,
                 from_status: oldStatus, to_status: status,
                 duration_ms: (STATUSES[oldStatus] && STATUSES[oldStatus].counted) ? dur : null,
-                changed_by: 'admin', changed_by_name: userProfile.name || 'الإدارة',
+                changed_by: 'admin', changed_by_name: userProfile.name || 'Admin',
                 dayKey: getDayKey(now), timestamp: serverTs()
             });
-            Toast.fire({icon:'success', title:'تم تحديث الحالة.'});
-        } catch (e) { console.error(e); Toast.fire({icon:'error', title:'فشل التحديث.'}); }
+            Toast.fire({icon:'success', title:'Status updated.'});
+        } catch (e) { console.error(e); Toast.fire({icon:'error', title:'Update failed.'}); }
     }
     async function adminForceLogout(email) { await adminForceStatus(email, 'Offline'); }
 
     async function adminResetDay(email) {
-        const r = await Swal.fire({ title:'تصفير عدّادات اليوم؟', text:'ستُصفّر كل العدّادات وتتحوّل الحالة لغير متصل.', icon:'warning', showCancelButton:true, confirmButtonColor:'#f59e0b', cancelButtonColor:'#64748b', confirmButtonText:'نعم، صفّر', cancelButtonText:'إلغاء' });
+        const r = await Swal.fire({ title:'Reset Today Counters?', text:'All timers will reset to 0 and user will be offline.', icon:'warning', showCancelButton:true, confirmButtonColor:'#f59e0b', cancelButtonColor:'#64748b', confirmButtonText:'Yes, Reset', cancelButtonText:'Cancel' });
         if (!r.isConfirmed) return;
         try {
             const zero = {}; countedKeys().forEach(k => zero[k] = 0);
             await db.collection('users').doc(email.toLowerCase().trim()).update({ status:'Offline', timeBank: zero, firstOnlineAt:null, dayKey:getDayKey(serverNow()), lastChange: serverTs() });
-            Toast.fire({icon:'success', title:'تم التصفير.'});
-        } catch (e) { Toast.fire({icon:'error', title:'فشل التصفير.'}); }
+            Toast.fire({icon:'success', title:'Counters reset.'});
+        } catch (e) { Toast.fire({icon:'error', title:'Reset failed.'}); }
     }
 
-    // ---- قائمة HR ----
+    // HR Tab - Grid List
     function renderHRUsersList() {
         const box = document.getElementById('users-hr-list'); if (!box) return;
-        if (!allUsersData.length) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-8">لا يوجد موظفون.</p>'; return; }
+        if (!allUsersData.length) { box.innerHTML = '<div class="col-span-full py-10 text-center text-textMuted text-sm font-bold">No employees found.</div>'; return; }
         box.innerHTML = allUsersData.map(u => `
-            <div class="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-100 hover:border-brand-blue/40 transition cursor-pointer" onclick="openUserModal('${u.email}')">
-                <img src="${u.photo || DEFAULT_PHOTO+encodeURIComponent(u.name||'?')}" class="w-9 h-9 rounded-lg object-cover bg-slate-100" alt="">
-                <div class="flex-1 min-w-0 text-right">
-                    <p class="text-xs font-black text-textMain truncate">${u.name||'—'}</p>
-                    <p class="text-[10px] text-textMuted font-bold truncate">${u.title||'موظف'}${u.role==='admin'?' · مدير':u.role==='leader'?' · قائد':''}</p>
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4 relative">
+                ${u.isSuspended ? '<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" title="Suspended"></span>' : ''}
+                <img src="${getAvatar(u)}" class="w-14 h-14 rounded-full object-cover border-2 border-slate-100 bg-white" alt="">
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-black text-textMain truncate">${u.name||'—'}</h4>
+                    <p class="text-[10px] text-textMuted font-bold uppercase tracking-wider truncate mb-1">${u.title||'Employee'}</p>
+                    <div class="flex gap-2">
+                         <span class="text-[9px] bg-brand-soft text-brand-blue px-2 py-0.5 rounded-md font-bold border border-brand-blue/20">${u.role||'employee'}</span>
+                         <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold border border-slate-200">${u.onlineDaysLimit||0} On. Limit</span>
+                    </div>
                 </div>
-                ${u.isSuspended ? '<span class="text-[9px] font-black text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">موقوف</span>' : '<i class="fas fa-pen text-[10px] text-slate-300"></i>'}
+                <button onclick="openUserModal('${u.email}')" class="w-8 h-8 rounded-full bg-slate-50 hover:bg-brand-blue hover:text-white text-slate-400 border border-slate-100 flex items-center justify-center transition-colors shadow-sm mini-btn">
+                    <i class="fas fa-pen text-[10px]"></i>
+                </button>
             </div>`).join('');
     }
 
-    // ---- الإجازات ----
+    // HR Tab - Dropdown
+    function renderHREditDropdown() {
+        const drop = document.getElementById('hr-edit-dropdown'); if (!drop) return;
+        if (!allUsersData.length) { drop.innerHTML = '<p class="text-xs text-center text-textMuted p-3">No employees</p>'; return; }
+        drop.innerHTML = allUsersData.map(u => `
+            <div onclick="openUserModal('${u.email}')" class="flex items-center gap-3 p-2 hover:bg-brand-soft cursor-pointer rounded-xl transition-colors">
+                <img src="${getAvatar(u)}" class="w-9 h-9 rounded-full object-cover border border-slate-200 bg-white"> 
+                <div class="text-left leading-tight min-w-0 flex-1">
+                    <p class="text-xs font-black text-textMain truncate">${u.name||'—'}</p>
+                    <p class="text-[10px] text-textMuted font-bold uppercase tracking-wider truncate">${u.title||'Employee'}</p>
+                </div>
+                <i class="fas fa-chevron-right text-[10px] text-slate-300"></i>
+            </div>
+        `).join('');
+    }
+
+    // Attendance Tab
+    function renderAttendanceTab() {
+        const box = document.getElementById('attendance-grid');
+        if (!box) return;
+        if (!allUsersData.length) { box.innerHTML = '<div class="col-span-full py-10 text-center text-textMuted text-sm font-bold">No employees found.</div>'; return; }
+        
+        const now = serverNow();
+        const workStartParts = WORK_START.split(':');
+        const startMins = parseInt(workStartParts[0])*60 + parseInt(workStartParts[1]);
+
+        box.innerHTML = allUsersData.map(u => {
+            let latenessStr = 'On Time / Acceptable';
+            let lateClass = 'text-emerald-600 bg-emerald-50 border-emerald-200';
+            let iconLate = 'fa-check-circle';
+            
+            if (u.firstOnlineAt && getDayKey(getMillis(u.firstOnlineAt)) === getDayKey(now)) {
+                const foMillis = getMillis(u.firstOnlineAt);
+                const foParts = zonedParts(foMillis);
+                const foMins = foParts.h*60 + foParts.mi;
+                if (foMins > startMins) {
+                    const diffMins = foMins - startMins;
+                    latenessStr = `Late by ${Math.floor(diffMins/60)}h ${diffMins%60}m`;
+                    lateClass = 'text-red-600 bg-red-50 border-red-200';
+                    iconLate = 'fa-exclamation-circle';
+                }
+            } else if (!u.firstOnlineAt || getDayKey(getMillis(u.firstOnlineAt)) !== getDayKey(now)) {
+                 latenessStr = 'Not started today';
+                 lateClass = 'text-slate-500 bg-slate-100 border-slate-200';
+                 iconLate = 'fa-clock';
+            }
+            
+            const resetOpts = countedKeys().map(k => `<option value="${k}">${sLabel(k)} Timer</option>`).join('');
+
+            return `
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col gap-3 relative hover:border-brand-blue/30 transition-colors">
+                <div class="flex items-center gap-3 mb-2">
+                    <img src="${getAvatar(u)}" class="w-12 h-12 rounded-full border-2 border-slate-100 bg-white object-cover shadow-sm">
+                    <div class="min-w-0">
+                        <h4 class="text-sm font-black text-textMain truncate">${u.name||'—'}</h4>
+                        <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider truncate">${u.title||'Employee'}</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <span class="text-[10px] font-black text-textMuted uppercase tracking-wider">Status:</span>
+                    <span class="text-[10px] font-black px-2.5 py-1 rounded-md border ${lateClass} shadow-sm flex items-center gap-1"><i class="fas ${iconLate}"></i> ${latenessStr}</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    ${countedKeys().map(k => `
+                        <div class="flex justify-between items-center text-[10px] p-2.5 bg-white border border-slate-100 rounded-xl shadow-sm">
+                            <span class="font-black text-textMuted"><i class="fas ${sIcon(k)} text-${sColor(k)}-500 mr-1"></i> ${sLabel(k)}</span>
+                            <span class="font-black tabular-nums stat-timer" data-val="${(u.timeBank||{})[k]||0}" data-active="${u.status===k}" data-start="${getMillis(u.lastChange)}">00:00:00</span>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="flex gap-2 mt-3 pt-4 border-t border-slate-100 items-center">
+                    <select id="reset-sel-${u.email.replace(/[@.]/g,'')}" class="flex-1 bg-surface border border-slate-200 rounded-xl px-3 py-2.5 text-[10px] font-bold outline-none cursor-pointer shadow-inner">
+                        <option value="all">Reset All Timers (New Day)</option>
+                        ${resetOpts}
+                    </select>
+                    <button onclick="adminResetSpecific('${u.email}')" class="px-4 py-2.5 bg-brand-navy text-white rounded-xl text-[10px] font-black hover:bg-brand-navy2 shadow-md mini-btn transition-colors"><i class="fas fa-undo-alt mr-1"></i> Apply</button>
+                </div>
+            </div>
+            `;
+        }).join('');
+    }
+
+    window.adminResetSpecific = async function(email) {
+        const idSafe = email.replace(/[@.]/g,'');
+        const sel = document.getElementById('reset-sel-' + idSafe).value;
+        const isAll = sel === 'all';
+        const label = isAll ? 'All Timers' : sLabel(sel);
+        const r = await Swal.fire({ title:'Confirm Reset', text:`Reset ${label} for this employee?`, icon:'warning', showCancelButton:true, confirmButtonColor:'#f59e0b', cancelButtonColor:'#64748b', confirmButtonText:'Yes, Reset', cancelButtonText:'Cancel' });
+        if (!r.isConfirmed) return;
+        try {
+            const ref = db.collection('users').doc(email.toLowerCase().trim());
+            const doc = await ref.get();
+            if (!doc.exists) return;
+            const u = doc.data();
+            let updates = {};
+            
+            if (isAll) {
+                 const zero = {}; countedKeys().forEach(k => zero[k] = 0);
+                 updates = { status:'Offline', timeBank: zero, firstOnlineAt:null, dayKey:getDayKey(serverNow()), lastChange: serverTs() };
+            } else {
+                 const bank = { ...u.timeBank };
+                 bank[sel] = 0;
+                 updates = { timeBank: bank };
+                 if (u.status === sel) {
+                     updates.lastChange = serverTs();
+                 }
+            }
+            await ref.update(updates);
+            Toast.fire({icon:'success', title:'Reset successful.'});
+        } catch (e) { console.error(e); Toast.fire({icon:'error', title:'Reset failed.'}); }
+    }
+
+    // Leave Requests
     const LEAVE_META = {
-        sick:        { label:'إجازة مرضية', color:'rose'   },
-        annual:      { label:'إجازة اعتيادية', color:'emerald' },
-        excuse_late: { label:'إذن تأخير', color:'amber'  },
-        excuse_early:{ label:'انصراف مبكر', color:'sky'   }
+        sick:        { label:'Sick Leave', color:'rose'   },
+        annual:      { label:'Annual Leave', color:'emerald' },
+        excuse_late: { label:'Late Excuse', color:'amber'  },
+        excuse_early:{ label:'Early Leave', color:'sky'   }
     };
     function listenToLeaveRequests() {
         db.collection('leave_requests').where('status','==','pending').onSnapshot(snap => {
-            const box = document.getElementById('requests-queue-container'), badge = document.getElementById('pending-badge');
+            const box = document.getElementById('requests-queue-container'), badge = document.getElementById('nav-pending-badge');
             if (!box) return;
             if (snap.empty) {
                 badge.classList.add('hidden');
-                box.innerHTML = `<div class="flex flex-col items-center justify-center h-full opacity-50 py-10"><i class="fas fa-check-circle text-4xl text-slate-300 mb-3"></i><p class="text-xs text-textMuted font-bold">لا توجد طلبات معلقة</p></div>`;
+                box.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center opacity-50 py-20"><i class="fas fa-check-circle text-5xl text-slate-300 mb-4"></i><p class="text-sm text-textMuted font-bold">All caught up! No pending requests.</p></div>`;
                 return;
             }
             badge.classList.remove('hidden'); badge.innerText = snap.size;
@@ -551,16 +764,23 @@
             rows.sort((a,b) => getMillis(b.submitted_at) - getMillis(a.submitted_at));
             box.innerHTML = rows.map(d => {
                 const m = LEAVE_META[d.type] || { label:d.type, color:'slate' };
-                return `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-2.5 text-right">
-                    <div class="flex justify-between items-center">
-                        <span class="text-[10px] text-textMuted font-bold">${d.submitted_at ? fmtTime(getMillis(d.submitted_at)) : 'الآن'}</span>
-                        <h4 class="font-black text-xs text-textMain">${d.name||d.user}</h4>
+                const u = allUsersData.find(x => x.email === d.user) || { name: d.name || d.user };
+                return `<div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3 relative hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-3">
+                        <img src="${getAvatar(u)}" class="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 object-cover">
+                        <div>
+                            <h4 class="font-black text-sm text-textMain">${u.name}</h4>
+                            <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider">${fmtDate(getMillis(d.submitted_at))}</p>
+                        </div>
                     </div>
-                    <div class="text-xs font-black text-${m.color}-600 bg-${m.color}-50 px-3 py-1.5 rounded-xl inline-block border border-${m.color}-100">${m.label} · ${d.target_date||''}</div>
-                    <p class="text-xs text-textMuted bg-slate-50 p-2.5 rounded-xl font-medium leading-relaxed">${d.reason||''}</p>
-                    <div class="flex gap-2 pt-1">
-                        <button onclick="processRequest('${d.id}','approved','${d.type}','${d.user}')" class="flex-1 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black hover:bg-emerald-500 mini-btn">موافقة</button>
-                        <button onclick="processRequest('${d.id}','rejected','${d.type}','${d.user}')" class="flex-1 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-[10px] font-black hover:bg-red-100 mini-btn">رفض</button>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-black text-${m.color}-700 bg-${m.color}-50 px-2.5 py-1 rounded-md border border-${m.color}-100 shadow-sm"><i class="fas fa-tag mr-1"></i> ${m.label}</span>
+                        <span class="text-[10px] font-black text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 shadow-sm"><i class="far fa-calendar-alt mr-1"></i> ${d.target_date||'—'}</span>
+                    </div>
+                    <p class="text-xs text-textMain bg-surface p-3 rounded-xl border border-slate-100 font-medium leading-relaxed shadow-inner">"${d.reason||'No reason provided.'}"</p>
+                    <div class="flex gap-2 pt-2 border-t border-slate-100">
+                        <button onclick="processRequest('${d.id}','approved','${d.type}','${d.user}')" class="flex-1 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-black hover:bg-emerald-600 mini-btn shadow-md transition-colors"><i class="fas fa-check mr-1"></i> Approve</button>
+                        <button onclick="processRequest('${d.id}','rejected','${d.type}','${d.user}')" class="flex-1 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-black hover:bg-red-500 hover:text-white mini-btn shadow-sm transition-colors"><i class="fas fa-times mr-1"></i> Reject</button>
                     </div>
                 </div>`;
             }).join('');
@@ -568,46 +788,68 @@
     }
     window.processRequest = async function(id, newStatus, type, userEmail) {
         const isApprove = newStatus === 'approved';
-        const r = await Swal.fire({ title:isApprove?'الموافقة على الطلب؟':'رفض الطلب؟', text:(isApprove && type==='annual')?'سيتم خصم يوم من رصيد الإجازات.':'', icon:isApprove?'question':'warning', showCancelButton:true, confirmButtonColor:isApprove?'#22c55e':'#ef4444', cancelButtonColor:'#64748b', confirmButtonText:'تأكيد', cancelButtonText:'إلغاء' });
+        const r = await Swal.fire({ title:isApprove?'Approve Request?':'Reject Request?', text:(isApprove && type==='annual')?'1 day will be deducted from vacation balance.':'', icon:isApprove?'question':'warning', showCancelButton:true, confirmButtonColor:isApprove?'#10b981':'#ef4444', cancelButtonColor:'#64748b', confirmButtonText:'Confirm', cancelButtonText:'Cancel' });
         if (!r.isConfirmed) return;
         try {
-            await db.collection('leave_requests').doc(id).update({ status:newStatus, reviewed_at: serverTs(), reviewed_by: userProfile.name || 'الإدارة' });
+            await db.collection('leave_requests').doc(id).update({ status:newStatus, reviewed_at: serverTs(), reviewed_by: userProfile.name || 'Admin' });
             if (isApprove && type === 'annual' && userEmail) {
                 const ref = db.collection('hr_stats').doc(userEmail.toLowerCase().trim());
                 const cur = (userEmail in leaveBalances) ? leaveBalances[userEmail] : ANNUAL_LEAVE_DEFAULT;
                 await ref.set({ annualLeavesLeft: Math.max(0, cur - 1) }, { merge:true });
             }
-            Toast.fire({icon:'success', title:'تم تحديث الطلب.'});
-        } catch (e) { console.error(e); Toast.fire({icon:'error', title:'حدث خطأ.'}); }
+            Toast.fire({icon:'success', title:'Request updated.'});
+        } catch (e) { console.error(e); Toast.fire({icon:'error', title:'An error occurred.'}); }
     };
 
-    // ---- نافذة الموظف ----
+    // Tabs navigation
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });
+        document.querySelectorAll('.nav-link').forEach(el => {
+            el.classList.remove('active', 'bg-brand-soft', 'text-brand-blue');
+            el.classList.add('text-textMuted');
+        });
+        
+        const pane = document.getElementById('tab-' + tabId);
+        if(pane) { pane.classList.remove('hidden'); pane.classList.add('flex'); }
+        
+        const nav = document.getElementById('nav-' + tabId);
+        if(nav) {
+            nav.classList.add('active', 'bg-brand-soft', 'text-brand-blue');
+            nav.classList.remove('text-textMuted');
+        }
+    }
+
+    // Modal forms
     async function openUserModal(mode) {
         const isNew = mode === 'new';
         const form = document.getElementById('user-setup-form'); form.reset();
         document.getElementById('user-photo-b64').value = '';
-        document.getElementById('modal-user-title').innerHTML = isNew ? '<i class="fas fa-user-plus text-brand-blue"></i> موظف جديد' : '<i class="fas fa-user-pen text-brand-blue"></i> تعديل موظف';
+        document.getElementById('modal-user-title').innerHTML = isNew ? '<i class="fas fa-user-plus text-brand-blue"></i> Add New Employee' : '<i class="fas fa-user-pen text-brand-blue"></i> Edit Employee';
         document.getElementById('u-email').disabled = !isNew;
         document.getElementById('password-container').style.display = isNew ? '' : 'none';
         document.getElementById('delete-user-btn').classList.toggle('hidden', isNew);
         document.getElementById('edit-mode-email').value = isNew ? '' : mode;
 
         if (isNew) {
-            document.getElementById('user-photo-preview').src = DEFAULT_PHOTO + 'New';
+            document.getElementById('u-gender').value = 'male';
+            updateFallbackPreview();
             document.getElementById('u-leave-balance').value = ANNUAL_LEAVE_DEFAULT;
+            document.getElementById('u-online-limit').value = 0;
         } else {
             const u = allUsersData.find(x => x.email === mode) || {};
             document.getElementById('u-name').value = u.name || '';
             document.getElementById('u-title').value = u.title || '';
             document.getElementById('u-email').value = mode;
             document.getElementById('u-role').value = u.role || 'employee';
+            document.getElementById('u-gender').value = u.gender || 'male';
             document.getElementById('u-contract').value = u.contract || 'employee';
             document.getElementById('u-suspended').checked = !!u.isSuspended;
             document.getElementById('perm-crm').checked = !!(u.permissions && u.permissions.crm);
             document.getElementById('perm-payroll').checked = !!(u.permissions && u.permissions.payroll);
-            document.getElementById('user-photo-preview').src = u.photo || (DEFAULT_PHOTO + encodeURIComponent(u.name || '?'));
+            document.getElementById('user-photo-preview').src = getAvatar(u);
             document.getElementById('user-photo-b64').value = u.photo || '';
             document.getElementById('u-leave-balance').value = balanceOf(mode);
+            document.getElementById('u-online-limit').value = u.onlineDaysLimit || 0;
         }
         openModal('modal-user-form');
     }
@@ -632,17 +874,20 @@
     async function saveUserData(e) {
         e.preventDefault();
         const btn = document.getElementById('save-user-btn'), orig = btn.innerHTML;
-        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جارٍ الحفظ…';
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
         const isNew = !document.getElementById('edit-mode-email').value;
         const email = (isNew ? document.getElementById('u-email').value : document.getElementById('edit-mode-email').value).toLowerCase().trim();
         const pass = document.getElementById('u-password').value;
         const balance = parseInt(document.getElementById('u-leave-balance').value);
+        const onLimit = parseInt(document.getElementById('u-online-limit').value) || 0;
 
         const data = {
             name: document.getElementById('u-name').value.trim(),
             title: document.getElementById('u-title').value.trim(),
             role: document.getElementById('u-role').value,
+            gender: document.getElementById('u-gender').value,
             contract: document.getElementById('u-contract').value,
+            onlineDaysLimit: onLimit,
             isSuspended: document.getElementById('u-suspended').checked,
             permissions: { crm: document.getElementById('perm-crm').checked, payroll: document.getElementById('perm-payroll').checked },
             photo: document.getElementById('user-photo-b64').value || ''
@@ -650,7 +895,7 @@
 
         try {
             if (isNew) {
-                if (!pass || pass.length < 6) throw new Error('كلمة المرور يجب ألا تقل عن 6 خانات.');
+                if (!pass || pass.length < 6) throw new Error('Password must be at least 6 characters.');
                 await secondaryAuth.createUserWithEmailAndPassword(email, pass);
                 await secondaryAuth.signOut();
                 const zero = {}; countedKeys().forEach(k => zero[k] = 0);
@@ -662,24 +907,24 @@
             }
             if (!isNaN(balance)) await db.collection('hr_stats').doc(email).set({ annualLeavesLeft: balance }, { merge:true });
             closeModal('modal-user-form');
-            Toast.fire({icon:'success', title: isNew ? 'تم إنشاء الحساب.' : 'تم تحديث البيانات.'});
-        } catch (err) { Swal.fire('خطأ', err.message, 'error'); }
+            Toast.fire({icon:'success', title: isNew ? 'Account created.' : 'Profile updated.'});
+        } catch (err) { Swal.fire('Error', err.message, 'error'); }
         finally { btn.disabled = false; btn.innerHTML = orig; }
     }
 
     async function deleteUser() {
         const email = document.getElementById('edit-mode-email').value;
-        if (email === currentUser.email.toLowerCase()) { Swal.fire('تنبيه', 'لا يمكن حذف حساب الإدارة النشط.', 'warning'); return; }
-        const r = await Swal.fire({ title:'حذف الموظف؟', text:'سيُحذف من قاعدة البيانات (سجل الدخول يُدار من Firebase Auth).', icon:'error', showCancelButton:true, confirmButtonColor:'#ef4444', cancelButtonColor:'#64748b', confirmButtonText:'نعم، احذف', cancelButtonText:'إلغاء' });
+        if (email === currentUser.email.toLowerCase()) { Swal.fire('Warning', 'Cannot delete active admin account.', 'warning'); return; }
+        const r = await Swal.fire({ title:'Delete Employee?', text:'They will be removed from Firestore database.', icon:'error', showCancelButton:true, confirmButtonColor:'#ef4444', cancelButtonColor:'#64748b', confirmButtonText:'Yes, Delete', cancelButtonText:'Cancel' });
         if (!r.isConfirmed) return;
         try {
             await db.collection('users').doc(email).delete();
             closeModal('modal-user-form');
-            Toast.fire({icon:'success', title:'تم حذف الموظف.'});
-        } catch (e) { Toast.fire({icon:'error', title:'فشل الحذف.'}); }
+            Toast.fire({icon:'success', title:'Employee deleted.'});
+        } catch (e) { Toast.fire({icon:'error', title:'Deletion failed.'}); }
     }
 
-    // ---- سجل الحركات ----
+    // Logs
     async function viewHistory(email, selectedDate) {
         currentViewingEmail = email;
         const body = document.getElementById('logs-timeline-body'), footer = document.getElementById('log-report-footer');
@@ -687,7 +932,7 @@
         document.getElementById('history-date-picker').value = dayStr;
         const u = allUsersData.find(x => x.email === email) || {};
         document.getElementById('log-report-subtitle').innerText = `${u.name || email}`;
-        body.innerHTML = `<tr><td colspan="6" class="py-16 text-center text-textMuted font-bold"><i class="fas fa-spinner fa-spin text-brand-blue text-2xl mb-3 block"></i> جارٍ التحميل…</td></tr>`;
+        body.innerHTML = `<tr><td colspan="6" class="py-16 text-center text-textMuted font-bold"><i class="fas fa-spinner fa-spin text-brand-blue text-3xl mb-3 block"></i> Loading history...</td></tr>`;
         openModal('modal-logs');
         try {
             const snap = await db.collection('logs').where('user','==',email.toLowerCase().trim()).get();
@@ -695,8 +940,8 @@
             snap.forEach(d => { const l = d.data(); if (zonedYMD(getMillis(l.timestamp)) === dayStr) rows.push(l); });
             rows.sort((a,b) => getMillis(b.timestamp) - getMillis(a.timestamp));
             if (!rows.length) {
-                body.innerHTML = `<tr><td colspan="6" class="py-16 text-center text-slate-400 font-bold"><i class="fas fa-folder-open text-4xl mb-3 block opacity-50"></i> لا توجد حركات في هذا اليوم.</td></tr>`;
-                footer.innerHTML = '<span class="text-sm text-slate-400 font-bold">لا توجد بيانات</span>'; return;
+                body.innerHTML = `<tr><td colspan="6" class="py-16 text-center text-slate-400 font-bold"><i class="fas fa-folder-open text-5xl mb-4 block opacity-50"></i> No activity found on this day.</td></tr>`;
+                footer.innerHTML = '<span class="text-sm text-slate-400 font-bold">No Data</span>'; return;
             }
             const totals = {}; countedKeys().forEach(k => totals[k] = 0);
             body.innerHTML = ''; let i = 1;
@@ -705,26 +950,26 @@
                 if (l.from_status && totals.hasOwnProperty(l.from_status)) totals[l.from_status] += dur;
                 const ms = getMillis(l.timestamp);
                 const byAdmin = l.changed_by === 'admin';
-                body.innerHTML += `<tr class="hover:bg-slate-50/60">
+                body.innerHTML += `<tr class="hover:bg-slate-50/60 transition-colors">
                     <td class="p-3 text-center text-slate-400">${i++}</td>
-                    <td class="p-3"><span class="px-2.5 py-1 text-[11px] font-black rounded-lg bg-slate-100 border border-slate-200">${sLabel(l.from_status)}</span></td>
-                    <td class="p-3"><i class="fas fa-arrow-left-long text-slate-300 mx-1"></i><span class="px-2.5 py-1 text-[11px] font-black rounded-lg bg-${sColor(l.to_status)}-500 text-white">${sLabel(l.to_status)}</span></td>
+                    <td class="p-3"><span class="px-2.5 py-1 text-[10px] font-black rounded-lg bg-slate-100 border border-slate-200 uppercase tracking-wider">${sLabel(l.from_status)}</span></td>
+                    <td class="p-3"><i class="fas fa-arrow-right-long text-slate-300 mx-2"></i><span class="px-2.5 py-1 text-[10px] font-black rounded-lg bg-${sColor(l.to_status)}-500 text-white uppercase tracking-wider shadow-sm">${sLabel(l.to_status)}</span></td>
                     <td class="p-3 text-center text-[11px] text-textMuted font-bold">${fmtTime(ms)}</td>
                     <td class="p-3 text-center text-brand-blue font-black tabular-nums">${(typeof l.duration_ms==='number')?fmtDuration(dur):'—'}</td>
-                    <td class="p-3 text-center">${byAdmin?'<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-violet-50 text-violet-600 border border-violet-100">الإدارة</span>':'<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">الموظف</span>'}</td>
+                    <td class="p-3 text-center">${byAdmin?'<span class="text-[9px] font-black px-2 py-0.5 rounded-md bg-violet-50 text-violet-600 border border-violet-100 shadow-sm uppercase">Admin</span>':'<span class="text-[9px] font-black px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200 shadow-sm uppercase">Self</span>'}</td>
                 </tr>`;
             });
-            footer.innerHTML = `<div class="flex flex-wrap gap-3 w-full text-sm font-black">` + countedKeys().map(k =>
-                `<div class="flex-1 min-w-[130px] text-center text-${sColor(k)}-700 bg-${sColor(k)}-50 border border-${sColor(k)}-100 py-2.5 rounded-2xl"><i class="fas ${sIcon(k)} ml-2"></i> ${sLabel(k)}: ${fmtDuration(totals[k])}</div>`
+            footer.innerHTML = `<div class="flex flex-wrap gap-3 w-full text-xs font-black">` + countedKeys().map(k =>
+                `<div class="flex-1 min-w-[130px] text-center text-${sColor(k)}-700 bg-${sColor(k)}-50 border border-${sColor(k)}-100 py-2.5 rounded-xl shadow-sm"><i class="fas ${sIcon(k)} mr-2"></i> ${sLabel(k)}: ${fmtDuration(totals[k])}</div>`
             ).join('') + `</div>`;
-        } catch (e) { console.error(e); body.innerHTML = `<tr><td colspan="6" class="py-16 text-center text-red-500 font-bold">تعذّر تحميل السجل.</td></tr>`; }
+        } catch (e) { console.error(e); body.innerHTML = `<tr><td colspan="6" class="py-16 text-center text-red-500 font-bold">Failed to load history.</td></tr>`; }
     }
     function refreshHistoryWithDate() {
         const d = document.getElementById('history-date-picker').value;
         if (currentViewingEmail && d) viewHistory(currentViewingEmail, d);
     }
 
-    // ---- الإعدادات ----
+    // Settings
     function openSettings() {
         document.getElementById('cfg-reset-hour').value = RESET_HOUR;
         document.getElementById('cfg-work-start').value = WORK_START;
@@ -733,16 +978,16 @@
         box.innerHTML = EDITABLE.map(k => {
             const s = STATUSES[k];
             const opts = PALETTE.map(c => `<option value="${c}" ${c===s.color?'selected':''}>${c}</option>`).join('');
-            return `<div class="p-3 border border-slate-200 rounded-2xl bg-surface" data-status-key="${k}">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-black text-textMain"><i class="fas ${s.icon} text-${s.color}-500 ml-1"></i> ${k}</span>
-                    <label class="flex items-center gap-2 text-[10px] font-black text-textMuted cursor-pointer"><input type="checkbox" class="cfg-enabled w-4 h-4 rounded text-brand-blue" ${s.enabled!==false?'checked':''}> مُفعّلة</label>
+            return `<div class="p-4 border border-slate-200 rounded-2xl bg-white shadow-sm" data-status-key="${k}">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-black text-brand-navy"><i class="fas ${s.icon} text-${s.color}-500 mr-2"></i> ${k}</span>
+                    <label class="flex items-center gap-2 text-[10px] font-black text-textMuted cursor-pointer uppercase tracking-wider"><input type="checkbox" class="cfg-enabled w-4 h-4 rounded text-brand-blue focus:ring-brand-blue" ${s.enabled!==false?'checked':''}> Enabled</label>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <div><label class="text-[9px] font-black text-textMuted block mb-1">الاسم</label><input class="cfg-label w-full bg-white border border-slate-200 h-9 rounded-lg px-2 text-xs font-bold outline-none" value="${s.label}"></div>
-                    <div><label class="text-[9px] font-black text-textMuted block mb-1">نص الزر</label><input class="cfg-btn w-full bg-white border border-slate-200 h-9 rounded-lg px-2 text-xs font-bold outline-none" value="${s.btnLabel||s.label}"></div>
-                    <div><label class="text-[9px] font-black text-textMuted block mb-1">اللون</label><select class="cfg-color w-full bg-white border border-slate-200 h-9 rounded-lg px-2 text-xs font-bold outline-none">${opts}</select></div>
-                    <div><label class="text-[9px] font-black text-textMuted block mb-1">الأيقونة</label><input class="cfg-icon w-full bg-white border border-slate-200 h-9 rounded-lg px-2 text-xs font-bold outline-none text-left" dir="ltr" value="${s.icon}"></div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div><label class="text-[9px] font-black text-textMuted block mb-1 uppercase tracking-wider">Display Name</label><input class="cfg-label w-full bg-surface border border-slate-200 h-10 rounded-xl px-3 text-xs font-bold outline-none focus:border-brand-blue" value="${s.label}"></div>
+                    <div><label class="text-[9px] font-black text-textMuted block mb-1 uppercase tracking-wider">Button Label</label><input class="cfg-btn w-full bg-surface border border-slate-200 h-10 rounded-xl px-3 text-xs font-bold outline-none focus:border-brand-blue" value="${s.btnLabel||s.label}"></div>
+                    <div><label class="text-[9px] font-black text-textMuted block mb-1 uppercase tracking-wider">Color Theme</label><select class="cfg-color w-full bg-surface border border-slate-200 h-10 rounded-xl px-3 text-xs font-bold outline-none focus:border-brand-blue cursor-pointer">${opts}</select></div>
+                    <div><label class="text-[9px] font-black text-textMuted block mb-1 uppercase tracking-wider">Icon Class</label><input class="cfg-icon w-full bg-surface border border-slate-200 h-10 rounded-xl px-3 text-xs font-bold outline-none focus:border-brand-blue" value="${s.icon}"></div>
                 </div>
             </div>`;
         }).join('');
@@ -750,7 +995,7 @@
     }
     async function saveSettings() {
         const btn = document.getElementById('save-settings-btn'), orig = btn.innerHTML;
-        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جارٍ الحفظ…';
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
         try {
             const statuses = {};
             document.querySelectorAll('#status-editor [data-status-key]').forEach(row => {
@@ -772,12 +1017,11 @@
             };
             await db.collection('system_settings').doc('work_config').set(cfg, { merge:true });
             closeModal('modal-settings');
-            Toast.fire({icon:'success', title:'تم حفظ الإعدادات.'});
-        } catch (e) { Swal.fire('خطأ', e.message, 'error'); }
+            Toast.fire({icon:'success', title:'Settings saved successfully.'});
+        } catch (e) { Swal.fire('Error', e.message, 'error'); }
         finally { btn.disabled = false; btn.innerHTML = orig; }
     }
 
-    // ---- الساعة والعدّادات ----
     function startClock() {
         const upd = () => { const ms = serverNow(); document.getElementById('header-time').innerText = (()=>{const p=zonedParts(ms);return `${pad(p.h)}:${pad(p.mi)}:${pad(p.s)}`;})(); document.getElementById('header-date').innerText = fmtDate(ms); };
         upd(); setInterval(upd, 1000);
@@ -790,7 +1034,6 @@
         });
     }
 
-    // ---- نوافذ ----
     function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
     document.addEventListener('keydown', e => {
