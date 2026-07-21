@@ -381,13 +381,10 @@
             const bal = userProfile.onlineDaysLimit || 0;
             document.getElementById('remote-balance-badge').innerText = bal + ' Left';
             const btnRemote = document.getElementById('btn-remote-choice');
-            if (bal <= 0) {
-                btnRemote.classList.add('opacity-50', 'cursor-not-allowed');
-                btnRemote.onclick = () => showToast('Limit Reached', 'You have 0 online days left. Please work from the office.', 'error');
-            } else {
-                btnRemote.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnRemote.onclick = () => submitWorkLocation('remote');
-            }
+            
+            btnRemote.classList.remove('opacity-50', 'cursor-not-allowed');
+            btnRemote.onclick = () => submitWorkLocation('remote');
+            
             document.getElementById('modal-work-location').classList.remove('hidden');
         } else {
             // Already started today
@@ -410,7 +407,9 @@
         };
 
         if (type === 'remote') {
-            if (bal <= 0) { showToast('Limit Reached', 'You have no online days left.', 'error'); return; }
+            if (bal <= 0) { 
+                showToast('Limit Exceeded', 'You have no online days left! Your balance will be negative.', 'error'); 
+            }
             updates.onlineDaysLimit = firebase.firestore.FieldValue.increment(-1);
         }
 
