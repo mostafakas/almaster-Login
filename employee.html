@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Firebase: App + Firestore + Auth -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -145,9 +146,9 @@
                     <p id="timer-Meeting" data-status="Meeting" class="stat-timer text-xl sm:text-2xl font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
                 </div>
                 <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
-                    <div class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-star"></i></div>
-                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Online Days Left</p>
-                    <p id="stat-exceptions" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">— <span class="text-xs text-textMuted font-bold">days</span></p>
+                    <div class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-wifi"></i></div>
+                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Online Limit</p>
+                    <p id="stat-online-limit" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">— <span class="text-xs text-textMuted font-bold">days</span></p>
                 </div>
                 <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
                     <div class="w-11 h-11 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-clock"></i></div>
@@ -182,6 +183,30 @@
             <button onclick="confirmLogout()" class="lg:flex-1 py-3 sm:py-3.5 rounded-xl bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 font-black text-xs shadow-sm btn-action"><i class="fas fa-right-from-bracket me-1"></i> <span class="hidden sm:inline">End Day</span><span class="sm:hidden">End</span></button>
         </div>
     </footer>
+
+    <!-- Work Location Modal (For New Days) -->
+    <div id="modal-work-location" class="fixed inset-0 z-[800] hidden bg-brand-navy/60 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden flex flex-col p-7 text-center">
+            <div class="w-16 h-16 mx-auto bg-brand-soft text-brand-blue rounded-full flex items-center justify-center text-2xl mb-4 shadow-sm border border-brand-blueLt/30"><i class="fas fa-building-user"></i></div>
+            <h3 class="font-black text-lg text-textMain mb-2">Good Morning!</h3>
+            <p class="text-xs text-textMuted font-bold leading-relaxed mb-6">Before you start your day, please tell us where you are working from today.</p>
+            
+            <div class="flex flex-col gap-3">
+                <button onclick="submitWorkLocation('office')" class="w-full py-4 rounded-xl bg-brand-navy text-white font-black text-sm shadow-md hover:bg-brand-navy2 transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-building"></i> Office (On-site)
+                </button>
+                <div class="relative flex items-center py-2">
+                    <div class="flex-grow border-t border-slate-200"></div>
+                    <span class="shrink-0 mx-4 text-textMuted text-[10px] font-black uppercase">OR</span>
+                    <div class="flex-grow border-t border-slate-200"></div>
+                </div>
+                <button onclick="submitWorkLocation('remote')" id="btn-remote-choice" class="w-full py-4 rounded-xl bg-surface border-2 border-slate-200 text-textMain font-black text-sm hover:border-brand-blue hover:text-brand-blue transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-house-laptop"></i> Remote (Online)
+                    <span id="remote-balance-badge" class="ml-1 text-[10px] bg-brand-blue/10 text-brand-blue px-2 py-0.5 rounded-full font-bold"></span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Leave modal -->
     <div id="modal-leave-request" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="leave-title" onclick="closeModal('modal-leave-request')">
@@ -223,7 +248,7 @@
     <div id="modal-employee-logs" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="logs-title" onclick="closeModal('modal-employee-logs')">
         <div class="bg-white w-full max-w-xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[82vh]" onclick="event.stopPropagation()">
             <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
-                <h3 id="logs-title" class="font-black text-sm text-textMain"><i class="fas fa-clock-rotate-left text-brand-blue me-2"></i> Activity Log</h3>
+                <h3 id="logs-title" class="font-black text-sm text-textMain"><i class="fas fa-clock-rotate-left text-brand-blue me-2"></i> Activity Log (Today)</h3>
                 <button onclick="closeModal('modal-employee-logs')" aria-label="Close" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
             </div>
             <div class="flex-1 overflow-y-auto p-5 sm:p-6 bg-white custom-scrollbar space-y-2.5" id="employee-logs-container"><p class="text-xs text-textMuted italic text-center py-10">Loading log…</p></div>
@@ -243,16 +268,11 @@
         </div>
     </div>
 
-    <div id="toast-container" class="fixed top-5 right-5 z-[800] flex flex-col gap-3 w-80 max-w-[calc(100vw-2.5rem)] pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-5 right-5 z-[999] flex flex-col gap-3 w-80 max-w-[calc(100vw-2.5rem)] pointer-events-none"></div>
 
     <script>
     /* =========================================================================
        AL MASTER — Employee Workspace
-       - All times are anchored to Firebase server time (serverTimestamp) + device-clock offset correction
-       - Runs on free Firebase + free hosting (no Cloud Functions)
-       - Login = clock-in (auto "Working" with a fresh timestamp) — no phantom hours
-       - Checkpoints on tab hide/close so real worked time is saved and away-time isn't counted
-       - Daily reset at 11 PM company time (also enforced on the first login of a new day)
        ========================================================================= */
 
     const firebaseConfig = {
@@ -268,9 +288,8 @@
     const auth = firebase.auth();
     const serverTs = () => firebase.firestore.FieldValue.serverTimestamp();
 
-    // Editable from the admin page via: system_settings/work_config
     const COMPANY_TZ = 'Africa/Cairo';
-    let RESET_HOUR = 23, WORK_START = '09:15', ANNUAL_LEAVE_DEFAULT = 21, EXCEPTION_DEFAULT = 3;
+    let RESET_HOUR = 23, WORK_START = '09:15', ANNUAL_LEAVE_DEFAULT = 21;
 
     let STATUSES = {
         Online:  { label:'Working', btnLabel:'Start Work', color:'emerald', icon:'fa-laptop-code', counted:true,  enabled:true },
@@ -281,29 +300,37 @@
 
     const COLOR_RGB = { emerald:'16,185,129', amber:'245,158,11', indigo:'99,102,241', violet:'139,92,246', slate:'100,116,139', sky:'14,165,233', rose:'244,63,94', teal:'20,184,166', orange:'249,115,22', purple:'168,85,247', cyan:'6,182,212' };
     const rgbOf = (c) => COLOR_RGB[c] || COLOR_RGB.slate;
-    const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0b1b3f&color=ffffff&bold=true&size=200&name=';
+    
+    const maleSVG = encodeURIComponent(`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#eaf1ff"/><circle cx="50" cy="38" r="18" fill="#2563eb"/><path d="M20,95 Q50,60 80,95 Z" fill="#2563eb"/></svg>`);
+    const femaleSVG = encodeURIComponent(`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#fdf2f8"/><circle cx="50" cy="38" r="16" fill="#db2777"/><path d="M20,95 Q50,60 80,95 Z" fill="#db2777"/><circle cx="34" cy="42" r="8" fill="#db2777"/><circle cx="66" cy="42" r="8" fill="#db2777"/></svg>`);
+
+    function getAvatar(u) {
+        if (u && u.photo) return u.photo;
+        const gender = (u && u.gender) ? u.gender : 'male';
+        return `data:image/svg+xml;charset=utf-8,${gender === 'female' ? femaleSVG : maleSVG}`;
+    }
 
     let currentUser = null, userProfile = null, EMAIL = null;
     let isOnline = navigator.onLine;
     let serverOffset = 0, timeReady = false;
     let resetInProgress = false, resetTimer = null, lastFocusedEl = null, didInit = false;
-    let hrBalance = null, exceptionBalanceVal = null;
+    let hrBalance = null;
+    let logsUnsubscribe = null;
+    let currentLogsDay = '';
 
     const serverNow = () => Date.now() + serverOffset;
     const countedKeys = () => Object.keys(STATUSES).filter(k => STATUSES[k].counted && k !== 'Offline');
 
-    // ---- Server time sync ----
     async function syncServerTime() {
         try {
             const probe = db.collection('_serverTime').doc(currentUser.uid);
             const t0 = Date.now(); await probe.set({ ts: serverTs() });
             const snap = await probe.get({ source:'server' }); const t1 = Date.now();
             serverOffset = snap.data().ts.toMillis() - (t0 + (t1 - t0) / 2);
-        } catch (e) { serverOffset = 0; console.warn('Server time sync failed; using device clock temporarily.', e); }
+        } catch (e) { serverOffset = 0; console.warn('Server time sync failed.'); }
         timeReady = true;
     }
 
-    // ---- Company-time helpers ----
     function pad(n){ return String(n).padStart(2,'0'); }
     function zonedParts(ms){
         const dtf = new Intl.DateTimeFormat('en-GB',{ timeZone:COMPANY_TZ, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
@@ -320,10 +347,9 @@
     }
     const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : (typeof v==='number' ? v : serverNow())) : serverNow();
 
-    // ---- Auth ----
     auth.onAuthStateChanged(async (user) => {
         if (!user) { window.location.replace('index.html'); return; }
-        if (didInit) return;      // avoid re-running on token refresh
+        if (didInit) return;
         didInit = true;
         currentUser = user;
         EMAIL = user.email.toLowerCase().trim();
@@ -334,13 +360,12 @@
 
             if (!doc.exists) {
                 const zero = {}; countedKeys().forEach(k => zero[k] = 0);
-                await ref.set({ name: user.displayName || EMAIL.split('@')[0], title:'Team Member', role:'employee', status:'Offline', timeBank:zero, firstOnlineAt:null, dayKey:'', lastChange: serverTs(), createdAt: serverTs() });
+                await ref.set({ name: user.displayName || EMAIL.split('@')[0], title:'Team Member', role:'employee', status:'Offline', timeBank:zero, firstOnlineAt:null, dayKey:'', lastChange: serverTs(), createdAt: serverTs(), onlineDaysLimit: 0 });
                 doc = await ref.get();
             }
             userProfile = doc.data();
             await syncServerTime();
-            await clockInOnLogin();   // reset if new day + start Working with a fresh timestamp
-            initWorkspace();
+            await handleNewDayCheck(); 
         } catch (e) {
             console.error(e);
             document.getElementById('loader').classList.add('hidden');
@@ -348,34 +373,72 @@
         }
     });
 
-    // ---- Clock-in on login (fixes phantom timers + starts the work counter) ----
-    async function clockInOnLogin() {
-        const now = serverNow();
-        const todayKey = getDayKey(now);
-        const p = userProfile || {};
-        const newDay = (p.dayKey !== todayKey);
+    // Check if it's a new day and requires location selection
+    async function handleNewDayCheck() {
+        const todayKey = getDayKey(serverNow());
+        if (userProfile.dayKey !== todayKey) {
+            document.getElementById('loader').classList.add('hidden');
+            const bal = userProfile.onlineDaysLimit || 0;
+            document.getElementById('remote-balance-badge').innerText = bal + ' Left';
+            const btnRemote = document.getElementById('btn-remote-choice');
+            if (bal <= 0) {
+                btnRemote.classList.add('opacity-50', 'cursor-not-allowed');
+                btnRemote.onclick = () => showToast('Limit Reached', 'You have 0 online days left. Please work from the office.', 'error');
+            } else {
+                btnRemote.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnRemote.onclick = () => submitWorkLocation('remote');
+            }
+            document.getElementById('modal-work-location').classList.remove('hidden');
+        } else {
+            // Already started today
+            initWorkspace();
+        }
+    }
 
-        const bank = {}; countedKeys().forEach(k => bank[k] = newDay ? 0 : ((p.timeBank && p.timeBank[k]) || 0));
+    // Called when user selects Office or Remote on a new day
+    window.submitWorkLocation = async function(type) {
+        const todayKey = getDayKey(serverNow());
+        const bal = userProfile.onlineDaysLimit || 0;
+        
         const updates = {
             status: 'Online',
-            timeBank: bank,
-            lastChange: serverTs(),        // fresh anchor → no stale hours
+            timeBank: Object.fromEntries(countedKeys().map(k => [k, 0])),
+            lastChange: serverTs(),
             dayKey: todayKey,
-            firstOnlineAt: (newDay || !p.firstOnlineAt) ? serverTs() : p.firstOnlineAt
+            firstOnlineAt: serverTs(),
+            workLocation: type
         };
+
+        if (type === 'remote') {
+            if (bal <= 0) { showToast('Limit Reached', 'You have no online days left.', 'error'); return; }
+            updates.onlineDaysLimit = firebase.firestore.FieldValue.increment(-1);
+        }
+
+        document.getElementById('modal-work-location').classList.add('hidden');
+        document.getElementById('loader').classList.remove('hidden');
+        
         try {
             await db.collection('users').doc(EMAIL).update(updates);
             await db.collection('logs').add({
-                user: EMAIL, name: p.name || EMAIL,
-                from_status: p.status || 'Offline', to_status: 'Online',
-                duration_ms: null, changed_by: 'user', changed_by_name: p.name || EMAIL,
+                user: EMAIL, name: userProfile.name || EMAIL,
+                from_status: userProfile.status || 'Offline', to_status: 'Online',
+                duration_ms: null, changed_by: 'user', changed_by_name: userProfile.name || EMAIL,
                 dayKey: todayKey, timestamp: serverTs()
             });
-            userProfile = Object.assign({}, p, { status:'Online', timeBank:bank, dayKey:todayKey });
-        } catch (e) { console.warn('clock-in:', e); }
+            // Update local profile before init so the UI reflects it immediately
+            userProfile.dayKey = todayKey;
+            userProfile.status = 'Online';
+            if (type === 'remote') userProfile.onlineDaysLimit = bal - 1;
+            
+            initWorkspace();
+        } catch (e) {
+            console.error('submit location error', e);
+            document.getElementById('modal-work-location').classList.remove('hidden');
+            document.getElementById('loader').classList.add('hidden');
+            showToast('Error', 'Failed to start the day. Try again.', 'error');
+        }
     }
 
-    // ---- Init ----
     function initWorkspace() {
         applyStatusConfig();
         startClock();
@@ -384,7 +447,7 @@
         listenToConfig();
         listenToHrStats();
         listenToProfile();
-        listenToLogs();
+        restartLogsListener();
         listenToMyLeaves();
         setInterval(tick, 1000);
         scheduleDailyReset();
@@ -392,11 +455,10 @@
         document.getElementById('loader').classList.add('hidden');
     }
 
-    // ---- Presence checkpoints: save real worked time; don't count away-time ----
     function setupPresenceCheckpoints() {
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) checkpoint();
-            else advanceAnchor();     // returning: discard the away gap
+            else advanceAnchor(); 
         });
         window.addEventListener('pagehide', () => { checkpoint(); });
     }
@@ -417,7 +479,6 @@
         try { await db.collection('users').doc(EMAIL).update({ lastChange: serverTs() }); } catch (e) {}
     }
 
-    // ---- Connection ----
     function setupOfflineListener() {
         const apply = (online) => {
             isOnline = online;
@@ -431,7 +492,6 @@
         apply(navigator.onLine);
     }
 
-    // ---- Config (admin-controlled) ----
     function listenToConfig() {
         db.collection('system_settings').doc('work_config').onSnapshot(doc => {
             if (!doc.exists) return;
@@ -453,7 +513,6 @@
             if (doc.exists) {
                 const d = doc.data();
                 hrBalance = typeof d.annualLeavesLeft === 'number' ? d.annualLeavesLeft : null;
-                exceptionBalanceVal = typeof d.exceptionBalance === 'number' ? d.exceptionBalance : null;
             }
             renderHrBalances();
         }, err => console.warn('hr_stats:', err.message));
@@ -461,12 +520,8 @@
     function renderHrBalances() {
         const bal = (hrBalance === null) ? ANNUAL_LEAVE_DEFAULT : hrBalance;
         document.getElementById('stat-leaves').innerHTML = `${bal} <span class="text-xs text-textMuted font-bold">days</span>`;
-        const exc = (exceptionBalanceVal === null) ? EXCEPTION_DEFAULT : exceptionBalanceVal;
-        const el = document.getElementById('stat-exceptions');
-        if (el) el.innerHTML = `${exc} <span class="text-xs text-textMuted font-bold">days</span>`;
     }
 
-    // ---- Apply status definitions to buttons & cards ----
     function applyStatusConfig() {
         countedKeys().forEach(key => {
             const s = STATUSES[key]; if (!s) return;
@@ -488,7 +543,6 @@
         });
     }
 
-    // ---- Profile listener ----
     function listenToProfile() {
         db.collection('users').doc(EMAIL).onSnapshot(doc => {
             if (!doc.exists) return;
@@ -502,7 +556,7 @@
         const name = data.name || (EMAIL ? EMAIL.split('@')[0] : 'Employee');
         document.getElementById('user-name').innerText  = name;
         document.getElementById('user-title').innerText = data.title || 'Team Member';
-        document.getElementById('user-avatar').src = data.photo || (DEFAULT_PHOTO + encodeURIComponent(name));
+        document.getElementById('user-avatar').src = getAvatar(data);
 
         const status = data.status || 'Offline';
         const s = STATUSES[status] || STATUSES.Offline;
@@ -522,6 +576,8 @@
             el.dataset.active = (status === key);
             el.dataset.start = startMs;
         });
+        
+        document.getElementById('stat-online-limit').innerHTML = `${data.onlineDaysLimit || 0} <span class="text-xs text-textMuted font-bold">days</span>`;
         renderLateMinutes(data);
     }
 
@@ -536,7 +592,6 @@
         document.getElementById('stat-late').innerHTML = `${lateMin} <span class="text-xs text-textMuted font-bold">min</span>`;
     }
 
-    // ---- Status change ----
     async function handleStatusChange(newStatus) {
         if (!isOnline)  { showToast('No connection', 'Could not change status.', 'error'); return; }
         if (!timeReady) { showToast('One moment', 'Syncing time…', 'info'); return; }
@@ -565,7 +620,6 @@
         } catch (e) { console.error(e); showToast('Error', 'Failed to update status. Try again.', 'error'); }
     }
 
-    // ---- Leaves ----
     async function submitLeaveRequest(e) {
         e.preventDefault();
         const btn = document.getElementById('btn-submit-leave');
@@ -607,36 +661,44 @@
         }, err => { const box = document.getElementById('my-leaves-container'); if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center py-6">Could not load requests.</p>'; console.warn('leaves:', err.message); });
     }
 
-    // ---- Activity log ----
-    function listenToLogs() {
-        db.collection('logs').where('user', '==', EMAIL).onSnapshot(snap => {
-            const box = document.getElementById('employee-logs-container'); if (!box) return;
-            const rows = []; snap.forEach(d => rows.push(d.data()));
-            rows.sort((a, b) => getMillis(b.timestamp) - getMillis(a.timestamp));
-            const recent = rows.slice(0, 60);
-            if (!recent.length) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-10">No activity recorded yet.</p>'; return; }
-            box.innerHTML = recent.map(l => {
-                const to = STATUSES[l.to_status] || STATUSES.Offline;
-                const fromLbl = (STATUSES[l.from_status] || {}).label || l.from_status || '—';
-                const ms = getMillis(l.timestamp);
-                const dur = (typeof l.duration_ms === 'number') ? fmtDuration(l.duration_ms) : '—';
-                const byAdmin = l.changed_by === 'admin';
-                const byBadge = byAdmin
-                    ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-violet-50 text-violet-600 border border-violet-100">Admin</span>'
-                    : '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">You</span>';
-                return `<div class="flex items-center gap-3 bg-slate-50 p-3 sm:p-3.5 rounded-2xl border border-slate-100">
-                    <div class="w-10 h-10 rounded-xl bg-${to.color}-50 text-${to.color}-500 flex items-center justify-center text-base shrink-0"><i class="fas ${to.icon}"></i></div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 flex-wrap"><span class="text-xs sm:text-sm font-black text-textMain">${to.label}</span><span class="text-[10px] font-bold text-textMuted">← ${fromLbl}</span></div>
-                        <div class="text-[10px] font-bold text-textMuted mt-0.5">${fmtDate(ms)} · ${fmtTime(ms)}</div>
-                    </div>
-                    <div class="text-right shrink-0"><div class="text-[11px] font-black text-textMain tabular-nums mb-1">${dur === '—' ? '—' : '⏱ ' + dur}</div>${byBadge}</div>
-                </div>`;
-            }).join('');
-        }, err => { const box = document.getElementById('employee-logs-container'); if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center py-10">Could not load the log.</p>'; console.warn('logs:', err.message); });
+    function restartLogsListener() {
+        if (logsUnsubscribe) logsUnsubscribe();
+        const todayKey = getDayKey(serverNow());
+        currentLogsDay = todayKey;
+        
+        logsUnsubscribe = db.collection('logs')
+            .where('user', '==', EMAIL)
+            .where('dayKey', '==', todayKey)
+            .onSnapshot(snap => {
+                const box = document.getElementById('employee-logs-container'); if (!box) return;
+                const rows = []; snap.forEach(d => rows.push(d.data()));
+                rows.sort((a, b) => getMillis(b.timestamp) - getMillis(a.timestamp));
+                if (!rows.length) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-10">No activity recorded yet for today.</p>'; return; }
+                
+                box.innerHTML = rows.map(l => {
+                    const to = STATUSES[l.to_status] || STATUSES.Offline;
+                    const fromLbl = (STATUSES[l.from_status] || {}).label || l.from_status || '—';
+                    const ms = getMillis(l.timestamp);
+                    const dur = (typeof l.duration_ms === 'number') ? fmtDuration(l.duration_ms) : '—';
+                    const byBadge = l.changed_by === 'admin'
+                        ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-violet-50 text-violet-600 border border-violet-100">Admin</span>'
+                        : '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">You</span>';
+                    
+                    return `<div class="flex items-center gap-3 bg-slate-50 p-3 sm:p-3.5 rounded-2xl border border-slate-100">
+                        <div class="w-10 h-10 rounded-xl bg-${to.color}-50 text-${to.color}-500 flex items-center justify-center text-base shrink-0"><i class="fas ${to.icon}"></i></div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap"><span class="text-xs sm:text-sm font-black text-textMain">${to.label}</span><span class="text-[10px] font-bold text-textMuted">← ${fromLbl}</span></div>
+                            <div class="text-[10px] font-bold text-textMuted mt-0.5">${fmtTime(ms)}</div>
+                        </div>
+                        <div class="text-right shrink-0"><div class="text-[11px] font-black text-textMain tabular-nums mb-1">${dur === '—' ? '—' : '⏱ ' + dur}</div>${byBadge}</div>
+                    </div>`;
+                }).join('');
+            }, err => { 
+                const box = document.getElementById('employee-logs-container'); 
+                if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center py-10">Could not load the log.</p>'; 
+            });
     }
 
-    // ---- Daily reset (11 PM company time) ----
     function scheduleDailyReset() {
         if (resetTimer) clearTimeout(resetTimer);
         resetTimer = setTimeout(() => { performReset('scheduled'); scheduleDailyReset(); }, msUntilReset());
@@ -647,16 +709,30 @@
         try {
             const zero = {}; countedKeys().forEach(k => zero[k] = 0);
             await db.collection('users').doc(EMAIL).update({ status:'Offline', timeBank:zero, firstOnlineAt:null, dayKey:getDayKey(serverNow()), lastChange: serverTs() });
-            if (reason === 'scheduled') showToast('New day', 'Counters were reset for a new work day.', 'info');
+            if (reason === 'scheduled') {
+                showToast('New day', 'Counters were reset for a new work day.', 'info');
+                // The profile listener will see a new dayKey and trigger handleNewDayCheck next time they click/refresh
+                // but since they are actively on the page when the schedule hits, we should force the popup immediately:
+                handleNewDayCheck();
+            } else if (reason === 'boundary') {
+                // Detected a boundary change while active, force popup
+                handleNewDayCheck();
+            }
         } catch (e) { console.error('reset:', e); }
         finally { setTimeout(() => { resetInProgress = false; }, 1500); }
     }
 
-    // ---- Clock & live timers ----
     function startClock() {
-        const upd = () => { const ms = serverNow(); document.getElementById('clock-time').innerText = fmtClock(ms); document.getElementById('clock-date').innerText = fmtDate(ms); };
+        const upd = () => { 
+            const ms = serverNow(); 
+            document.getElementById('clock-time').innerText = fmtClock(ms); 
+            document.getElementById('clock-date').innerText = fmtDate(ms); 
+            // Restart logs listener if date boundary crossed organically
+            if (timeReady && currentLogsDay && currentLogsDay !== getDayKey(ms)) restartLogsListener();
+        };
         upd(); setInterval(upd, 1000);
     }
+    
     function tick() {
         const now = serverNow();
         document.querySelectorAll('.stat-timer').forEach(t => {
@@ -666,7 +742,6 @@
         if (timeReady && !resetInProgress && userProfile && userProfile.dayKey && userProfile.dayKey !== getDayKey(now)) performReset('boundary');
     }
 
-    // ---- Logout ----
     function confirmLogout() { openModal('modal-logout'); }
     async function logout(force) {
         closeModal('modal-logout');
@@ -675,18 +750,34 @@
         window.location.replace('index.html');
     }
 
-    // ---- Helpers ----
     function fmtDuration(ms) { if (ms < 0) ms = 0; const s = Math.floor(ms/1000); return `${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`; }
     function fmtClock(ms) { const p = zonedParts(ms); return `${pad(p.h)}:${pad(p.mi)}:${pad(p.s)}`; }
     function fmtDate(ms) { return new Intl.DateTimeFormat('en-GB', { timeZone: COMPANY_TZ, weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(new Date(ms)); }
     function fmtTime(ms) { return new Intl.DateTimeFormat('en-GB', { timeZone: COMPANY_TZ, hour:'2-digit', minute:'2-digit', hour12:true }).format(new Date(ms)); }
 
-    function openModal(id) { lastFocusedEl = document.activeElement; const m = document.getElementById(id); m.classList.remove('hidden'); const f = m.querySelector('input,select,textarea,button'); if (f) setTimeout(() => f.focus(), 50); }
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); if (lastFocusedEl) { try { lastFocusedEl.focus(); } catch (e) {} } }
+    function openModal(id, preventClose = false) { 
+        lastFocusedEl = document.activeElement; 
+        const m = document.getElementById(id); 
+        m.classList.remove('hidden'); 
+        if (preventClose) m.setAttribute('data-prevent-close', 'true');
+        else m.removeAttribute('data-prevent-close');
+        const f = m.querySelector('input,select,textarea,button'); if (f) setTimeout(() => f.focus(), 50); 
+    }
+    
+    function closeModal(id) { 
+        const m = document.getElementById(id);
+        if (m.getAttribute('data-prevent-close') === 'true') return; // Cannot close
+        m.classList.add('hidden'); 
+        if (lastFocusedEl) { try { lastFocusedEl.focus(); } catch (e) {} } 
+    }
+    
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
         const open = [...document.querySelectorAll('[role="dialog"]')].filter(m => !m.classList.contains('hidden'));
-        if (open.length) open[open.length - 1].classList.add('hidden');
+        if (open.length) {
+            const topModal = open[open.length - 1];
+            if (topModal.getAttribute('data-prevent-close') !== 'true') topModal.classList.add('hidden');
+        }
     });
 
     function showToast(title, msg, type = 'info') {
