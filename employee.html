@@ -1,84 +1,60 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AL MASTER | مساحة عمل الموظف</title>
+    <title>AL MASTER | Employee Workspace</title>
     <meta name="theme-color" content="#0b1b3f">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <!-- Firebase: App + Firestore + Auth فقط -->
+    <!-- Firebase: App + Firestore + Auth -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
     <script>
         tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        // ==== هوية AL Master (عدّل هنا لمطابقة ألوانكم بدقة) ====
-                        brand: { navy: '#0b1b3f', navy2: '#122a5c', blue: '#2563eb', blueLt: '#6aa0ff', soft: '#eaf1ff' },
-                        surface: '#f6f8fc',
-                        textMain: '#0f1c3a',
-                        textMuted: '#64748b',
-                    },
-                    fontFamily: { sans: ['Cairo', 'sans-serif'] }
-                }
-            }
+            theme: { extend: {
+                colors: {
+                    brand: { navy:'#0b1b3f', navy2:'#122a5c', blue:'#2563eb', blueLt:'#6aa0ff', soft:'#eaf1ff' },
+                    surface:'#f6f8fc', textMain:'#0f1c3a', textMuted:'#64748b',
+                },
+                fontFamily: { sans: ['Inter','sans-serif'] }
+            }}
         }
     </script>
-
     <style>
-        html, body { height: 100%; }
-        body {
-            background-color: #f6f8fc; color: #0f1c3a; margin: 0;
-            min-height: 100vh; display: flex; flex-direction: column;
-            -webkit-font-smoothing: antialiased;
-            --ring-rgb: 100,116,139;
-        }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; }
+        html, body { height:100%; }
+        body { background:#f6f8fc; color:#0f1c3a; margin:0; min-height:100vh; display:flex; flex-direction:column; -webkit-font-smoothing:antialiased; --ring-rgb:100,116,139; }
+        .custom-scrollbar::-webkit-scrollbar { width:6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:20px; }
 
-        /* حلقة النبض حسب الحالة (اللون عبر متغيّر) */
-        .status-ring { position: relative; }
-        .status-ring::before {
-            content: ''; position: absolute; inset: -14px; border-radius: 50%; z-index: 0; opacity: 0;
-            animation: pulse-ring 2.1s cubic-bezier(.4,0,.6,1) infinite;
-        }
-        body.status-Offline .status-ring::before { animation: none; }
+        .status-ring { position:relative; }
+        .status-ring::before { content:''; position:absolute; inset:-14px; border-radius:50%; z-index:0; opacity:0; animation:pulse-ring 2.1s cubic-bezier(.4,0,.6,1) infinite; }
+        body.status-Offline .status-ring::before { animation:none; }
         @keyframes pulse-ring {
-            0%   { opacity: 1; box-shadow: 0 0 0 0    rgba(var(--ring-rgb), .45); }
-            70%  { opacity: .35; box-shadow: 0 0 0 22px rgba(var(--ring-rgb), 0); }
-            100% { opacity: 1; box-shadow: 0 0 0 0    rgba(var(--ring-rgb), 0); }
+            0%   { opacity:1; box-shadow:0 0 0 0    rgba(var(--ring-rgb),.45); }
+            70%  { opacity:.35; box-shadow:0 0 0 22px rgba(var(--ring-rgb),0); }
+            100% { opacity:1; box-shadow:0 0 0 0    rgba(var(--ring-rgb),0); }
         }
-
-        .stat-card, .hero-panel {
-            background: #fff; border: 1px solid #e6ecf6;
-            box-shadow: 0 6px 24px -12px rgba(11,27,63,.12);
-            transition: transform .25s ease, box-shadow .25s ease;
-        }
-        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px -14px rgba(11,27,63,.20); }
-
-        .btn-action { transition: all .18s ease; border: 1px solid transparent; }
-        .btn-action:active { transform: scale(.97); }
-        .btn-action:disabled { opacity: .5; cursor: not-allowed; }
-
-        @keyframes fade-in { from { opacity: 0; transform: translateY(-8px);} to { opacity: 1; transform: translateY(0);} }
-        .animate-fade-in { animation: fade-in .3s ease; }
-
-        :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 6px; }
-        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+        .stat-card, .hero-panel { background:#fff; border:1px solid #e6ecf6; box-shadow:0 6px 24px -12px rgba(11,27,63,.12); transition:transform .25s, box-shadow .25s; }
+        .stat-card:hover { transform:translateY(-4px); box-shadow:0 16px 32px -14px rgba(11,27,63,.20); }
+        .btn-action { transition:all .18s; border:1px solid transparent; }
+        .btn-action:active { transform:scale(.97); }
+        .btn-action:disabled { opacity:.5; cursor:not-allowed; }
+        @keyframes fade-in { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+        .animate-fade-in { animation:fade-in .3s ease; }
+        :focus-visible { outline:2px solid #2563eb; outline-offset:2px; border-radius:6px; }
+        @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation:none !important; transition:none !important; } }
     </style>
 </head>
 
 <body class="font-sans selection:bg-brand-blue/25 status-Offline" id="app-body">
 
-    <!-- تسخين ألوان لوحة الأدمن (كي تُولّد أصناف Tailwind ديناميكياً) -->
+    <!-- Color warm-up so admin-chosen Tailwind classes render -->
     <div class="hidden">
         <span class="bg-emerald-50 bg-emerald-500 text-emerald-500 text-emerald-600 border-emerald-100 hover:bg-emerald-100"></span>
         <span class="bg-amber-50 bg-amber-500 text-amber-500 text-amber-600 border-amber-100 hover:bg-amber-100"></span>
@@ -92,212 +68,193 @@
         <span class="bg-cyan-50 bg-cyan-500 text-cyan-500 text-cyan-600 border-cyan-100 hover:bg-cyan-100"></span>
     </div>
 
-    <!-- شاشة التحميل -->
+    <!-- Loader -->
     <div id="loader" class="fixed inset-0 z-[600] bg-brand-navy flex flex-col items-center justify-center">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-brand-blueLt border-r-2 border-r-transparent mb-4"></div>
-        <h2 class="text-xs font-black tracking-widest text-brand-blueLt uppercase animate-pulse">جارٍ تجهيز مساحة العمل…</h2>
+        <h2 class="text-xs font-black tracking-widest text-brand-blueLt uppercase animate-pulse">Preparing your workspace…</h2>
     </div>
 
-    <!-- شاشة تعذّر تحميل الحساب -->
+    <!-- Account error -->
     <div id="profile-error" class="fixed inset-0 z-[590] bg-white hidden flex-col items-center justify-center text-center px-6">
         <div class="w-20 h-20 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-5"><i class="fas fa-user-slash text-3xl"></i></div>
-        <h2 class="text-xl font-black text-textMain mb-2">تعذّر فتح حسابك</h2>
-        <p class="text-sm text-textMuted font-bold max-w-sm leading-relaxed mb-6">حسابك غير مُفعّل على النظام بعد. تواصل مع إدارة الموارد البشرية لتفعيله.</p>
-        <button onclick="logout(true)" class="px-6 py-3 rounded-xl bg-brand-navy text-white font-black text-xs">تسجيل الخروج</button>
+        <h2 class="text-xl font-black text-textMain mb-2">Account not activated</h2>
+        <p class="text-sm text-textMuted font-bold max-w-sm leading-relaxed mb-6">Your account isn't set up yet. Please contact HR to activate it.</p>
+        <button onclick="logout(true)" class="px-6 py-3 rounded-xl bg-brand-navy text-white font-black text-xs">Sign out</button>
     </div>
 
-    <!-- الهيدر (كحلي بهوية AL Master) -->
+    <!-- Header -->
     <header class="h-16 sm:h-20 flex items-center justify-between px-4 sm:px-10 shrink-0 bg-brand-navy text-white z-30 sticky top-0 shadow-lg">
         <div class="flex items-center gap-3">
-            <svg viewBox="0 0 24 24" class="w-5 h-5 sm:w-6 sm:h-6 text-brand-blueLt shrink-0" fill="currentColor" aria-hidden="true">
-                <path d="M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z"/>
-            </svg>
+            <svg viewBox="0 0 24 24" class="w-5 h-5 sm:w-6 sm:h-6 text-brand-blueLt shrink-0" fill="currentColor" aria-hidden="true"><path d="M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z"/></svg>
             <h1 class="text-xl sm:text-2xl font-black tracking-tight">AL<span class="text-brand-blueLt"> MASTER</span></h1>
-            <span class="hidden sm:inline px-3 py-1 bg-white/10 text-white/80 text-[10px] font-bold rounded-full uppercase tracking-widest">بوابة الموظف</span>
+            <span class="hidden sm:inline px-3 py-1 bg-white/10 text-white/80 text-[10px] font-bold rounded-full uppercase tracking-widest">Employee Portal</span>
         </div>
-
         <div class="flex items-center gap-4 sm:gap-6">
             <div id="connection-status" class="hidden items-center gap-2 text-[11px] font-bold text-red-100 bg-red-500/30 px-3 py-1.5 rounded-full border border-red-300/30">
-                <i class="fas fa-wifi-slash"></i> غير متصل
+                <i class="fas fa-wifi-slash"></i> Offline
             </div>
-            <div class="text-left sm:text-right sm:border-r border-white/15 sm:pr-6">
+            <div class="text-right sm:border-l border-white/15 sm:pl-6">
                 <div id="clock-time" class="text-lg sm:text-xl font-black tabular-nums">00:00:00</div>
                 <div id="clock-date" class="text-[10px] font-bold text-white/60 tracking-wide mt-0.5">—</div>
             </div>
         </div>
     </header>
 
-    <!-- شريط انقطاع الاتصال -->
+    <!-- Offline banner -->
     <div id="offline-banner" class="hidden bg-red-50 border-b border-red-100 text-red-700 text-xs font-bold text-center py-2 px-4 z-20">
-        <i class="fas fa-triangle-exclamation ml-1"></i> لا يوجد اتصال بالإنترنت. تغيير الحالة متوقّف حتى عودة الاتصال.
+        <i class="fas fa-triangle-exclamation me-1"></i> No internet connection. Status changes are paused until you're back online.
     </div>
 
-    <!-- المحتوى -->
+    <!-- Main -->
     <main class="flex-1 relative overflow-hidden bg-surface py-6 sm:py-8 px-4">
-        <div class="absolute top-[-15%] left-[-8%] w-[28rem] h-[28rem] bg-brand-blue/5 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute bottom-[-15%] right-[-8%] w-[28rem] h-[28rem] bg-brand-navy/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute top-[-15%] right-[-8%] w-[28rem] h-[28rem] bg-brand-blue/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-[-15%] left-[-8%] w-[28rem] h-[28rem] bg-brand-navy/5 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="relative max-w-5xl mx-auto">
-
-            <!-- لوحة الموظف والحالة -->
+            <!-- Hero -->
             <section class="hero-panel rounded-[2rem] p-7 sm:p-9 mb-5 sm:mb-6 relative overflow-hidden">
-                <div class="absolute -top-8 -left-8 w-40 h-40 bg-brand-blue/5 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="absolute -top-8 -right-8 w-40 h-40 bg-brand-blue/5 rounded-full blur-2xl pointer-events-none"></div>
                 <div class="flex flex-col items-center relative z-10">
                     <div class="status-ring mb-5 sm:mb-6">
-                        <img id="user-avatar" src="" alt="صورة الموظف" class="w-28 h-28 sm:w-36 sm:h-36 rounded-full object-cover border-4 border-white shadow-2xl relative z-10 bg-slate-100">
-                        <div id="status-icon-badge" class="absolute bottom-1 right-1 w-10 h-10 sm:w-12 sm:h-12 rounded-full border-4 border-white flex items-center justify-center text-white text-base sm:text-lg z-20 shadow-lg bg-slate-400">
-                            <i class="fas fa-power-off"></i>
-                        </div>
+                        <img id="user-avatar" src="" alt="Employee photo" class="w-28 h-28 sm:w-36 sm:h-36 rounded-full object-cover border-4 border-white shadow-2xl relative z-10 bg-slate-100">
+                        <div id="status-icon-badge" class="absolute bottom-1 right-1 w-10 h-10 sm:w-12 sm:h-12 rounded-full border-4 border-white flex items-center justify-center text-white text-base sm:text-lg z-20 shadow-lg bg-slate-400"><i class="fas fa-power-off"></i></div>
                     </div>
-                    <h2 id="user-name" class="text-2xl sm:text-3xl font-black text-textMain mb-1 text-center">جارٍ التحميل…</h2>
+                    <h2 id="user-name" class="text-2xl sm:text-3xl font-black text-textMain mb-1 text-center">Loading…</h2>
                     <p id="user-title" class="text-xs font-bold text-brand-blue uppercase tracking-widest">—</p>
                     <div class="mt-4 px-5 py-2 rounded-full bg-surface border border-slate-200 text-xs font-bold text-textMuted flex items-center gap-2">
-                        الحالة الحالية: <span id="current-status-text" class="text-textMain font-black">غير متصل</span>
+                        Current status: <span id="current-status-text" class="text-textMain font-black">Offline</span>
                     </div>
                 </div>
             </section>
 
-            <!-- شبكة العدّادات -->
+            <!-- Stats grid -->
             <section class="grid grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-5">
-                <!-- عدّادات الحالات (تُبنى/تُحدّث ديناميكياً) -->
                 <div id="card-Online" data-card class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
                     <div id="ic-card-Online" class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-laptop-code"></i></div>
-                    <p id="lbl-card-Online" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">إجمالي العمل</p>
+                    <p id="lbl-card-Online" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Total Work</p>
                     <p id="timer-Online" data-status="Online" class="stat-timer text-xl sm:text-2xl font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
                 </div>
                 <div id="card-Break" data-card class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
                     <div id="ic-card-Break" class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-mug-hot"></i></div>
-                    <p id="lbl-card-Break" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">الراحة</p>
+                    <p id="lbl-card-Break" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Break</p>
                     <p id="timer-Break" data-status="Break" class="stat-timer text-xl sm:text-2xl font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
                 </div>
                 <div id="card-Meeting" data-card class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
                     <div id="ic-card-Meeting" class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-users"></i></div>
-                    <p id="lbl-card-Meeting" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">الاجتماعات</p>
+                    <p id="lbl-card-Meeting" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Meetings</p>
                     <p id="timer-Meeting" data-status="Meeting" class="stat-timer text-xl sm:text-2xl font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
                 </div>
-                     <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
-                        <div class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-star"></i></div>
-                        <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">رصيد الايام الاونلاين</p>
-                        <p id="stat-exceptions" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">— <span class="text-xs text-textMuted font-bold">مرات</span></p>
-                    </div>
-                <!-- عدّادات ثابتة -->
+                <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
+                    <div class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-star"></i></div>
+                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Online Days Left</p>
+                    <p id="stat-exceptions" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">— <span class="text-xs text-textMuted font-bold">days</span></p>
+                </div>
                 <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
                     <div class="w-11 h-11 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-clock"></i></div>
-                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">تأخير الصباح</p>
-                    <p id="stat-late" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">0 <span class="text-xs text-textMuted font-bold">دقيقة</span></p>
+                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Morning Lateness</p>
+                    <p id="stat-late" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">0 <span class="text-xs text-textMuted font-bold">min</span></p>
                 </div>
                 <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
                     <div class="w-11 h-11 rounded-2xl bg-brand-soft text-brand-blue flex items-center justify-center text-lg mb-3"><i class="fas fa-umbrella-beach"></i></div>
-                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">رصيد الإجازات</p>
-                    <p id="stat-leaves" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">— <span class="text-xs text-textMuted font-bold">يوم</span></p>
+                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Leave Balance</p>
+                    <p id="stat-leaves" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">— <span class="text-xs text-textMuted font-bold">days</span></p>
                 </div>
             </section>
         </div>
     </main>
 
-    <!-- شريط الإجراءات -->
+    <!-- Action bar -->
     <footer class="bg-white border-t border-slate-200 p-3.5 sm:p-5 shrink-0 z-20 shadow-[0_-10px_40px_rgba(11,27,63,.05)] flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3.5 sm:gap-4">
-        <div id="status-buttons" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1 lg:max-w-2xl">
+        <div id="status-buttons" class="grid grid-cols-3 gap-2.5 flex-1 lg:max-w-2xl">
             <button id="btn-status-Online" onclick="handleStatusChange('Online')" class="status-btn btn-action py-3 sm:py-3.5 rounded-xl bg-emerald-50 text-emerald-600 font-black text-xs border border-emerald-100 shadow-sm hover:bg-emerald-100">
-                <i id="ic-btn-Online" class="fas fa-laptop-code ms-1"></i> <span id="lbl-btn-Online">بدء العمل</span>
+                <i id="ic-btn-Online" class="fas fa-laptop-code me-1"></i> <span id="lbl-btn-Online">Start Work</span>
             </button>
             <button id="btn-status-Break" onclick="handleStatusChange('Break')" class="status-btn btn-action py-3 sm:py-3.5 rounded-xl bg-amber-50 text-amber-600 font-black text-xs border border-amber-100 shadow-sm hover:bg-amber-100">
-                <i id="ic-btn-Break" class="fas fa-mug-hot ms-1"></i> <span id="lbl-btn-Break">راحة</span>
+                <i id="ic-btn-Break" class="fas fa-mug-hot me-1"></i> <span id="lbl-btn-Break">Break</span>
             </button>
             <button id="btn-status-Meeting" onclick="handleStatusChange('Meeting')" class="status-btn btn-action py-3 sm:py-3.5 rounded-xl bg-indigo-50 text-indigo-600 font-black text-xs border border-indigo-100 shadow-sm hover:bg-indigo-100">
-                <i id="ic-btn-Meeting" class="fas fa-users ms-1"></i> <span id="lbl-btn-Meeting">اجتماع</span>
+                <i id="ic-btn-Meeting" class="fas fa-users me-1"></i> <span id="lbl-btn-Meeting">Meeting</span>
             </button>
         </div>
-
         <div class="grid grid-cols-3 gap-2.5 lg:flex lg:min-w-[420px]">
-            <button onclick="openModal('modal-employee-logs')" class="lg:flex-1 py-3 sm:py-3.5 rounded-xl bg-surface border border-slate-200 text-textMain hover:bg-slate-100 font-black text-xs shadow-sm btn-action">
-                <i class="fas fa-clock-rotate-left text-brand-blue ms-1"></i> <span class="hidden sm:inline">سجل الحركات</span><span class="sm:hidden">السجل</span>
-            </button>
-            <button onclick="openModal('modal-leave-request')" class="lg:flex-1 py-3 sm:py-3.5 rounded-xl bg-surface border border-slate-200 text-textMain hover:bg-slate-100 font-black text-xs shadow-sm btn-action">
-                <i class="fas fa-file-signature text-amber-500 ms-1"></i> <span class="hidden sm:inline">طلب إجازة</span><span class="sm:hidden">إجازة</span>
-            </button>
-            <button onclick="confirmLogout()" class="lg:flex-1 py-3 sm:py-3.5 rounded-xl bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 font-black text-xs shadow-sm btn-action">
-                <i class="fas fa-right-from-bracket ms-1"></i> <span class="hidden sm:inline">إنهاء اليوم</span><span class="sm:hidden">إنهاء</span>
-            </button>
+            <button onclick="openModal('modal-employee-logs')" class="lg:flex-1 py-3 sm:py-3.5 rounded-xl bg-surface border border-slate-200 text-textMain hover:bg-slate-100 font-black text-xs shadow-sm btn-action"><i class="fas fa-clock-rotate-left text-brand-blue me-1"></i> <span class="hidden sm:inline">Activity Log</span><span class="sm:hidden">Log</span></button>
+            <button onclick="openModal('modal-leave-request')" class="lg:flex-1 py-3 sm:py-3.5 rounded-xl bg-surface border border-slate-200 text-textMain hover:bg-slate-100 font-black text-xs shadow-sm btn-action"><i class="fas fa-file-signature text-amber-500 me-1"></i> <span class="hidden sm:inline">Request Leave</span><span class="sm:hidden">Leave</span></button>
+            <button onclick="confirmLogout()" class="lg:flex-1 py-3 sm:py-3.5 rounded-xl bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 font-black text-xs shadow-sm btn-action"><i class="fas fa-right-from-bracket me-1"></i> <span class="hidden sm:inline">End Day</span><span class="sm:hidden">End</span></button>
         </div>
     </footer>
 
-    <!-- نافذة طلب إجازة / إذن + طلباتي -->
+    <!-- Leave modal -->
     <div id="modal-leave-request" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="leave-title" onclick="closeModal('modal-leave-request')">
         <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[88vh]" onclick="event.stopPropagation()">
             <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
-                <h3 id="leave-title" class="font-black text-sm text-textMain"><i class="fas fa-file-lines text-amber-500 ml-2"></i> طلب إجازة أو إذن</h3>
-                <button onclick="closeModal('modal-leave-request')" aria-label="إغلاق" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+                <h3 id="leave-title" class="font-black text-sm text-textMain"><i class="fas fa-file-lines text-amber-500 me-2"></i> Request Leave / Permission</h3>
+                <button onclick="closeModal('modal-leave-request')" aria-label="Close" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
             </div>
             <div class="flex-1 overflow-y-auto custom-scrollbar">
                 <form id="leave-form" onsubmit="submitLeaveRequest(event)" class="p-6 space-y-4 border-b border-slate-100">
                     <div>
-                        <label for="leave-type" class="block text-[10px] font-black text-textMuted mb-2 uppercase">نوع الطلب</label>
+                        <label for="leave-type" class="block text-[10px] font-black text-textMuted mb-2 uppercase">Request type</label>
                         <select id="leave-type" required class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue">
-                            <option value="sick">إجازة مرضية</option>
-                            <option value="annual">إجازة اعتيادية</option>
-                            <option value="excuse_late">إذن تأخير</option>
-                            <option value="excuse_early">إذن انصراف مبكر</option>
+                            <option value="sick">Sick leave</option>
+                            <option value="annual">Annual leave</option>
+                            <option value="excuse_late">Late permission</option>
+                            <option value="excuse_early">Early leave permission</option>
                         </select>
                     </div>
                     <div>
-                        <label for="leave-date" class="block text-[10px] font-black text-textMuted mb-2 uppercase">تاريخ الطلب</label>
+                        <label for="leave-date" class="block text-[10px] font-black text-textMuted mb-2 uppercase">Date</label>
                         <input type="date" id="leave-date" required class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue">
                     </div>
                     <div>
-                        <label for="leave-reason" class="block text-[10px] font-black text-textMuted mb-2 uppercase">السبب / المبرر</label>
-                        <textarea id="leave-reason" required rows="3" class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue resize-none" placeholder="اكتب تفاصيل الطلب هنا…"></textarea>
+                        <label for="leave-reason" class="block text-[10px] font-black text-textMuted mb-2 uppercase">Reason / Justification</label>
+                        <textarea id="leave-reason" required rows="3" class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue resize-none" placeholder="Write the details here…"></textarea>
                     </div>
-                    <button type="submit" id="btn-submit-leave" class="w-full py-3 bg-brand-blue text-white rounded-xl font-black text-xs shadow-md hover:bg-brand-navy2 btn-action">إرسال الطلب</button>
+                    <button type="submit" id="btn-submit-leave" class="w-full py-3 bg-brand-blue text-white rounded-xl font-black text-xs shadow-md hover:bg-brand-navy2 btn-action">Submit request</button>
                 </form>
                 <div class="p-6">
-                    <h4 class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-3">طلباتي السابقة</h4>
-                    <div id="my-leaves-container" class="space-y-2.5">
-                        <p class="text-xs text-textMuted italic text-center py-6">جارٍ تحميل الطلبات…</p>
-                    </div>
+                    <h4 class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-3">My previous requests</h4>
+                    <div id="my-leaves-container" class="space-y-2.5"><p class="text-xs text-textMuted italic text-center py-6">Loading requests…</p></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- نافذة سجل الحركات -->
+    <!-- Activity log modal -->
     <div id="modal-employee-logs" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="logs-title" onclick="closeModal('modal-employee-logs')">
         <div class="bg-white w-full max-w-xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[82vh]" onclick="event.stopPropagation()">
             <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
-                <h3 id="logs-title" class="font-black text-sm text-textMain"><i class="fas fa-clock-rotate-left text-brand-blue ml-2"></i> سجل الحركات</h3>
-                <button onclick="closeModal('modal-employee-logs')" aria-label="إغلاق" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+                <h3 id="logs-title" class="font-black text-sm text-textMain"><i class="fas fa-clock-rotate-left text-brand-blue me-2"></i> Activity Log</h3>
+                <button onclick="closeModal('modal-employee-logs')" aria-label="Close" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
             </div>
-            <div class="flex-1 overflow-y-auto p-5 sm:p-6 bg-white custom-scrollbar space-y-2.5" id="employee-logs-container">
-                <p class="text-xs text-textMuted italic text-center py-10">جارٍ تحميل السجل…</p>
-            </div>
+            <div class="flex-1 overflow-y-auto p-5 sm:p-6 bg-white custom-scrollbar space-y-2.5" id="employee-logs-container"><p class="text-xs text-textMuted italic text-center py-10">Loading log…</p></div>
         </div>
     </div>
 
-    <!-- نافذة تأكيد إنهاء اليوم -->
+    <!-- Logout modal -->
     <div id="modal-logout" class="fixed inset-0 z-[720] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" onclick="closeModal('modal-logout')">
         <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden text-center p-7" onclick="event.stopPropagation()">
             <div class="w-16 h-16 mx-auto bg-red-50 text-red-500 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fas fa-right-from-bracket"></i></div>
-            <h3 class="font-black text-lg text-textMain mb-2">إنهاء يوم العمل</h3>
-            <p class="text-xs text-textMuted font-bold leading-relaxed mb-6">سيتم تحويل حالتك إلى «غير متصل» وتسجيل خروجك. هل تريد المتابعة؟</p>
+            <h3 class="font-black text-lg text-textMain mb-2">End work day</h3>
+            <p class="text-xs text-textMuted font-bold leading-relaxed mb-6">Your status will switch to "Offline" and you'll be signed out. Continue?</p>
             <div class="flex gap-3">
-                <button onclick="closeModal('modal-logout')" class="flex-1 py-3 rounded-xl bg-surface border border-slate-200 text-textMain font-black text-xs btn-action">تراجع</button>
-                <button onclick="logout()" class="flex-1 py-3 rounded-xl bg-red-600 text-white font-black text-xs btn-action hover:bg-red-500">نعم، إنهاء</button>
+                <button onclick="closeModal('modal-logout')" class="flex-1 py-3 rounded-xl bg-surface border border-slate-200 text-textMain font-black text-xs btn-action">Cancel</button>
+                <button onclick="logout()" class="flex-1 py-3 rounded-xl bg-red-600 text-white font-black text-xs btn-action hover:bg-red-500">Yes, end day</button>
             </div>
         </div>
     </div>
 
-    <div id="toast-container" class="fixed top-5 left-5 z-[800] flex flex-col gap-3 w-80 max-w-[calc(100vw-2.5rem)] pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-5 right-5 z-[800] flex flex-col gap-3 w-80 max-w-[calc(100vw-2.5rem)] pointer-events-none"></div>
 
     <script>
     /* =========================================================================
-       AL MASTER — مساحة عمل الموظف
-       - الأوقات مرجعها توقيت سيرفر Firebase (serverTimestamp) + تصحيح فرق ساعة الجهاز
-       - يعمل على Firebase + استضافة مجانية (بدون Cloud Functions)
-       - الحالات: عمل / راحة / اجتماع / استثناء — قابلة للتعديل من صفحة الأدمن
-       - التصفير اليومي الساعة 11 مساءً بتوقيت الشركة
+       AL MASTER — Employee Workspace
+       - All times are anchored to Firebase server time (serverTimestamp) + device-clock offset correction
+       - Runs on free Firebase + free hosting (no Cloud Functions)
+       - Login = clock-in (auto "Working" with a fresh timestamp) — no phantom hours
+       - Checkpoints on tab hide/close so real worked time is saved and away-time isn't counted
+       - Daily reset at 11 PM company time (also enforced on the first login of a new day)
        ========================================================================= */
 
-    // --- 1) الإعدادات ---
     const firebaseConfig = {
         apiKey: "AIzaSyCXyuT529aGwiS5j_RPxW_zEeAtkYc7JlM",
         authDomain: "almaster-b8c18.firebaseapp.com",
@@ -307,80 +264,67 @@
         appId: "1:884142036232:web:eeb6677d988565653a08bd"
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const db   = firebase.firestore();
+    const db = firebase.firestore();
     const auth = firebase.auth();
     const serverTs = () => firebase.firestore.FieldValue.serverTimestamp();
 
-    // إعدادات قابلة للتعديل من صفحة الأدمن عبر: system_settings/work_config
+    // Editable from the admin page via: system_settings/work_config
     const COMPANY_TZ = 'Africa/Cairo';
-    let   RESET_HOUR = 23;            // ساعة التصفير (11 مساءً)
-    let   WORK_START = '09:15';       // بداية الدوام لحساب التأخير
-    let   ANNUAL_LEAVE_DEFAULT = 21;
+    let RESET_HOUR = 23, WORK_START = '09:15', ANNUAL_LEAVE_DEFAULT = 21, EXCEPTION_DEFAULT = 3;
 
-    // تعريف الحالات (الافتراضي) — يُدمج مع إعدادات الأدمن إن وُجدت
     let STATUSES = {
-        Online:    { label: 'عمل',      btnLabel: 'بدء العمل', color: 'emerald', icon: 'fa-laptop-code', counted: true,  enabled: true },
-        Break:     { label: 'راحة',     btnLabel: 'راحة',      color: 'amber',   icon: 'fa-mug-hot',     counted: true,  enabled: true },
-        Meeting:   { label: 'اجتماع',   btnLabel: 'اجتماع',    color: 'indigo',  icon: 'fa-users',       counted: true,  enabled: true },
-        Offline:   { label: 'غير متصل', btnLabel: '',          color: 'slate',   icon: 'fa-power-off',   counted: false, enabled: true },
+        Online:  { label:'Working', btnLabel:'Start Work', color:'emerald', icon:'fa-laptop-code', counted:true,  enabled:true },
+        Break:   { label:'On Break', btnLabel:'Break',     color:'amber',   icon:'fa-mug-hot',     counted:true,  enabled:true },
+        Meeting: { label:'In Meeting', btnLabel:'Meeting', color:'indigo',  icon:'fa-users',       counted:true,  enabled:true },
+        Offline: { label:'Offline', btnLabel:'',           color:'slate',   icon:'fa-power-off',   counted:false, enabled:true },
     };
 
-    const COLOR_RGB = {
-        emerald:'16,185,129', amber:'245,158,11', indigo:'99,102,241', violet:'139,92,246',
-        slate:'100,116,139', sky:'14,165,233', rose:'244,63,94', teal:'20,184,166',
-        orange:'249,115,22', purple:'168,85,247', cyan:'6,182,212'
-    };
-    const rgbOf   = (c) => COLOR_RGB[c] || COLOR_RGB.slate;
+    const COLOR_RGB = { emerald:'16,185,129', amber:'245,158,11', indigo:'99,102,241', violet:'139,92,246', slate:'100,116,139', sky:'14,165,233', rose:'244,63,94', teal:'20,184,166', orange:'249,115,22', purple:'168,85,247', cyan:'6,182,212' };
+    const rgbOf = (c) => COLOR_RGB[c] || COLOR_RGB.slate;
     const DEFAULT_PHOTO = 'https://ui-avatars.com/api/?background=0b1b3f&color=ffffff&bold=true&size=200&name=';
 
-    // --- الحالة العامة ---
     let currentUser = null, userProfile = null, EMAIL = null;
     let isOnline = navigator.onLine;
     let serverOffset = 0, timeReady = false;
-    let resetInProgress = false, resetTimer = null, lastFocusedEl = null;
-    let hrBalance = null;
+    let resetInProgress = false, resetTimer = null, lastFocusedEl = null, didInit = false;
+    let hrBalance = null, exceptionBalanceVal = null;
 
     const serverNow = () => Date.now() + serverOffset;
     const countedKeys = () => Object.keys(STATUSES).filter(k => STATUSES[k].counted && k !== 'Offline');
 
-    // --- 2) مزامنة توقيت السيرفر ---
+    // ---- Server time sync ----
     async function syncServerTime() {
         try {
             const probe = db.collection('_serverTime').doc(currentUser.uid);
-            const t0 = Date.now();
-            await probe.set({ ts: serverTs() });
-            const snap = await probe.get({ source: 'server' });
-            const t1 = Date.now();
+            const t0 = Date.now(); await probe.set({ ts: serverTs() });
+            const snap = await probe.get({ source:'server' }); const t1 = Date.now();
             serverOffset = snap.data().ts.toMillis() - (t0 + (t1 - t0) / 2);
-        } catch (e) {
-            serverOffset = 0;
-            console.warn('تعذّرت مزامنة توقيت السيرفر، سيُستخدم توقيت الجهاز مؤقتاً.', e);
-        }
+        } catch (e) { serverOffset = 0; console.warn('Server time sync failed; using device clock temporarily.', e); }
         timeReady = true;
     }
 
-    // --- 3) أدوات التوقيت حسب توقيت الشركة ---
-    function zonedParts(ms) {
-        const dtf = new Intl.DateTimeFormat('en-GB', {
-            timeZone: COMPANY_TZ, year:'numeric', month:'2-digit', day:'2-digit',
-            hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
-        });
-        const p = {};
-        dtf.formatToParts(new Date(ms)).forEach(x => { if (x.type !== 'literal') p[x.type] = x.value; });
-        if (p.hour === '24') p.hour = '00';
+    // ---- Company-time helpers ----
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function zonedParts(ms){
+        const dtf = new Intl.DateTimeFormat('en-GB',{ timeZone:COMPANY_TZ, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+        const p={}; dtf.formatToParts(new Date(ms)).forEach(x=>{ if(x.type!=='literal') p[x.type]=x.value; });
+        if(p.hour==='24') p.hour='00';
         return { y:+p.year, mo:+p.month, d:+p.day, h:+p.hour, mi:+p.minute, s:+p.second };
     }
-    function zonedYMD(ms) { const p = zonedParts(ms); return `${p.y}-${pad(p.mo)}-${pad(p.d)}`; }
-    function getDayKey(ms) { return zonedYMD(ms + (24 - RESET_HOUR) * 3600 * 1000); }
-    function msUntilReset() {
+    function zonedYMD(ms){ const p=zonedParts(ms); return `${p.y}-${pad(p.mo)}-${pad(p.d)}`; }
+    function getDayKey(ms){ return zonedYMD(ms + (24 - RESET_HOUR) * 3600 * 1000); }
+    function msUntilReset(){
         const p = zonedParts(serverNow());
-        const nowSec = p.h * 3600 + p.mi * 60 + p.s, target = RESET_HOUR * 3600;
+        const nowSec = p.h*3600 + p.mi*60 + p.s, target = RESET_HOUR*3600;
         return ((nowSec < target ? target - nowSec : 86400 - nowSec + target) + 2) * 1000;
     }
+    const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : (typeof v==='number' ? v : serverNow())) : serverNow();
 
-    // --- 4) التحقق من الهوية ---
+    // ---- Auth ----
     auth.onAuthStateChanged(async (user) => {
         if (!user) { window.location.replace('index.html'); return; }
+        if (didInit) return;      // avoid re-running on token refresh
+        didInit = true;
         currentUser = user;
         EMAIL = user.email.toLowerCase().trim();
         try {
@@ -390,29 +334,53 @@
 
             if (!doc.exists) {
                 const zero = {}; countedKeys().forEach(k => zero[k] = 0);
-                await ref.set({
-                    name: user.displayName || EMAIL.split('@')[0], title: 'Team Member',
-                    role: 'employee', status: 'Offline', timeBank: zero,
-                    firstOnlineAt: null, dayKey: '', lastChange: serverTs(), createdAt: serverTs()
-                });
+                await ref.set({ name: user.displayName || EMAIL.split('@')[0], title:'Team Member', role:'employee', status:'Offline', timeBank:zero, firstOnlineAt:null, dayKey:'', lastChange: serverTs(), createdAt: serverTs() });
                 doc = await ref.get();
             }
             userProfile = doc.data();
             await syncServerTime();
+            await clockInOnLogin();   // reset if new day + start Working with a fresh timestamp
             initWorkspace();
         } catch (e) {
             console.error(e);
             document.getElementById('loader').classList.add('hidden');
-            const el = document.getElementById('profile-error');
-            el.classList.remove('hidden'); el.classList.add('flex');
+            const el = document.getElementById('profile-error'); el.classList.remove('hidden'); el.classList.add('flex');
         }
     });
 
-    // --- 5) التهيئة ---
+    // ---- Clock-in on login (fixes phantom timers + starts the work counter) ----
+    async function clockInOnLogin() {
+        const now = serverNow();
+        const todayKey = getDayKey(now);
+        const p = userProfile || {};
+        const newDay = (p.dayKey !== todayKey);
+
+        const bank = {}; countedKeys().forEach(k => bank[k] = newDay ? 0 : ((p.timeBank && p.timeBank[k]) || 0));
+        const updates = {
+            status: 'Online',
+            timeBank: bank,
+            lastChange: serverTs(),        // fresh anchor → no stale hours
+            dayKey: todayKey,
+            firstOnlineAt: (newDay || !p.firstOnlineAt) ? serverTs() : p.firstOnlineAt
+        };
+        try {
+            await db.collection('users').doc(EMAIL).update(updates);
+            await db.collection('logs').add({
+                user: EMAIL, name: p.name || EMAIL,
+                from_status: p.status || 'Offline', to_status: 'Online',
+                duration_ms: null, changed_by: 'user', changed_by_name: p.name || EMAIL,
+                dayKey: todayKey, timestamp: serverTs()
+            });
+            userProfile = Object.assign({}, p, { status:'Online', timeBank:bank, dayKey:todayKey });
+        } catch (e) { console.warn('clock-in:', e); }
+    }
+
+    // ---- Init ----
     function initWorkspace() {
-        applyStatusConfig();          // تطبيق تعريفات الحالات على الواجهة
+        applyStatusConfig();
         startClock();
         setupOfflineListener();
+        setupPresenceCheckpoints();
         listenToConfig();
         listenToHrStats();
         listenToProfile();
@@ -424,7 +392,32 @@
         document.getElementById('loader').classList.add('hidden');
     }
 
-    // --- 6) الاتصال ---
+    // ---- Presence checkpoints: save real worked time; don't count away-time ----
+    function setupPresenceCheckpoints() {
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) checkpoint();
+            else advanceAnchor();     // returning: discard the away gap
+        });
+        window.addEventListener('pagehide', () => { checkpoint(); });
+    }
+    async function checkpoint() {
+        if (!userProfile || !timeReady) return;
+        const st = userProfile.status;
+        if (!STATUSES[st] || !STATUSES[st].counted) return;
+        const seg = serverNow() - getMillis(userProfile.lastChange);
+        if (seg < 2000) return;
+        const bank = {}; countedKeys().forEach(k => bank[k] = (userProfile.timeBank && userProfile.timeBank[k]) || 0);
+        bank[st] += seg;
+        try { await db.collection('users').doc(EMAIL).update({ timeBank: bank, lastChange: serverTs() }); } catch (e) {}
+    }
+    async function advanceAnchor() {
+        if (!userProfile || !timeReady) return;
+        const st = userProfile.status;
+        if (!STATUSES[st] || !STATUSES[st].counted) return;
+        try { await db.collection('users').doc(EMAIL).update({ lastChange: serverTs() }); } catch (e) {}
+    }
+
+    // ---- Connection ----
     function setupOfflineListener() {
         const apply = (online) => {
             isOnline = online;
@@ -433,12 +426,12 @@
             cs.classList.toggle('hidden', online); cs.classList.toggle('flex', !online);
             document.querySelectorAll('.status-btn').forEach(b => b.disabled = !online);
         };
-        window.addEventListener('online',  () => { apply(true);  showToast('عاد الاتصال', 'تم استئناف العمل.', 'success'); });
-        window.addEventListener('offline', () => { apply(false); showToast('انقطع الاتصال', 'تغيير الحالة متوقّف مؤقتاً.', 'error'); });
+        window.addEventListener('online',  () => { apply(true);  showToast('Back online', 'Work resumed.', 'success'); });
+        window.addEventListener('offline', () => { apply(false); showToast('Connection lost', 'Status changes are paused.', 'error'); });
         apply(navigator.onLine);
     }
 
-    // --- 7) الإعدادات العامة (من الأدمن) ---
+    // ---- Config (admin-controlled) ----
     function listenToConfig() {
         db.collection('system_settings').doc('work_config').onSnapshot(doc => {
             if (!doc.exists) return;
@@ -446,53 +439,43 @@
             if (typeof c.resetHour === 'number') RESET_HOUR = c.resetHour;
             if (typeof c.workStart === 'string') WORK_START = c.workStart;
             if (typeof c.annualLeaveDefault === 'number') ANNUAL_LEAVE_DEFAULT = c.annualLeaveDefault;
-
-            // دمج تعريفات الحالات القادمة من الأدمن (label/btnLabel/color/icon/enabled)
             if (c.statuses && typeof c.statuses === 'object') {
-                Object.keys(c.statuses).forEach(k => {
-                    if (STATUSES[k]) STATUSES[k] = Object.assign({}, STATUSES[k], c.statuses[k]);
-                });
+                Object.keys(c.statuses).forEach(k => { if (STATUSES[k]) STATUSES[k] = Object.assign({}, STATUSES[k], c.statuses[k]); });
             }
             applyStatusConfig();
             if (userProfile) updateCentralUI(userProfile);
             scheduleDailyReset();
         }, err => console.warn('config:', err.message));
     }
-        let exceptionBalanceVal = null; // متغير جديد لحفظ رصيد الاستثناءات
 
     function listenToHrStats() {
         db.collection('hr_stats').doc(EMAIL).onSnapshot(doc => {
             if (doc.exists) {
-                hrBalance = typeof doc.data().annualLeavesLeft === 'number' ? doc.data().annualLeavesLeft : null;
-                exceptionBalanceVal = typeof doc.data().exceptionBalance === 'number' ? doc.data().exceptionBalance : null;
+                const d = doc.data();
+                hrBalance = typeof d.annualLeavesLeft === 'number' ? d.annualLeavesLeft : null;
+                exceptionBalanceVal = typeof d.exceptionBalance === 'number' ? d.exceptionBalance : null;
             }
             renderHrBalances();
         }, err => console.warn('hr_stats:', err.message));
     }
-    
     function renderHrBalances() {
-        // تحديث الإجازات
         const bal = (hrBalance === null) ? ANNUAL_LEAVE_DEFAULT : hrBalance;
-        document.getElementById('stat-leaves').innerHTML = `${bal} <span class="text-xs text-textMuted font-bold">يوم</span>`;
-        
-        // تحديث الاستثناءات
-        const exc = (exceptionBalanceVal === null) ? 3 : exceptionBalanceVal; // 3 هو الافتراضي
-        const statExcEl = document.getElementById('stat-exceptions');
-        if(statExcEl) statExcEl.innerHTML = `${exc} <span class="text-xs text-textMuted font-bold">مرات</span>`;
+        document.getElementById('stat-leaves').innerHTML = `${bal} <span class="text-xs text-textMuted font-bold">days</span>`;
+        const exc = (exceptionBalanceVal === null) ? EXCEPTION_DEFAULT : exceptionBalanceVal;
+        const el = document.getElementById('stat-exceptions');
+        if (el) el.innerHTML = `${exc} <span class="text-xs text-textMuted font-bold">days</span>`;
     }
 
-    // --- 8) تطبيق تعريفات الحالات على الأزرار والبطاقات ---
+    // ---- Apply status definitions to buttons & cards ----
     function applyStatusConfig() {
-        countedKeys().concat([]).forEach(() => {}); // no-op للحفاظ على الترتيب
-        ['Online','Break','Meeting','Exception'].forEach(key => {
+        countedKeys().forEach(key => {
             const s = STATUSES[key]; if (!s) return;
             const show = s.enabled !== false;
-
             const btn = document.getElementById('btn-status-' + key);
             if (btn) {
                 btn.style.display = show ? '' : 'none';
                 btn.className = `status-btn btn-action py-3 sm:py-3.5 rounded-xl bg-${s.color}-50 text-${s.color}-600 font-black text-xs border border-${s.color}-100 shadow-sm hover:bg-${s.color}-100`;
-                const bi = document.getElementById('ic-btn-' + key); if (bi) bi.className = `fas ${s.icon} ms-1`;
+                const bi = document.getElementById('ic-btn-' + key); if (bi) bi.className = `fas ${s.icon} me-1`;
                 const bl = document.getElementById('lbl-btn-' + key); if (bl) bl.innerText = s.btnLabel || s.label;
                 if (!isOnline) btn.disabled = true;
             }
@@ -500,35 +483,23 @@
             if (card) {
                 card.style.display = show ? '' : 'none';
                 const ci = document.getElementById('ic-card-' + key);
-                if (ci) { ci.className = `w-11 h-11 rounded-2xl bg-${s.color}-50 text-${s.color}-500 flex items-center justify-center text-lg mb-3`;
-                          ci.innerHTML = `<i class="fas ${s.icon}"></i>`; }
-                const cl = document.getElementById('lbl-card-' + key); if (cl) cl.innerText = s.label;
+                if (ci) { ci.className = `w-11 h-11 rounded-2xl bg-${s.color}-50 text-${s.color}-500 flex items-center justify-center text-lg mb-3`; ci.innerHTML = `<i class="fas ${s.icon}"></i>`; }
             }
         });
     }
 
-    // --- 9) مراقبة الملف الشخصي ---
-    // --- 9) مراقبة الملف الشخصي ---
+    // ---- Profile listener ----
     function listenToProfile() {
         db.collection('users').doc(EMAIL).onSnapshot(doc => {
             if (!doc.exists) return;
             userProfile = doc.data();
-            
-            // التعديل: إجبار النظام على التصفير إذا كان اليوم مختلفاً أو الحقل فارغاً
-            if (timeReady && !resetInProgress) {
-                const key = getDayKey(serverNow());
-                if (userProfile.dayKey !== key) { 
-                    performReset('boundary'); 
-                    return; 
-                }
-            }
-            
+            if (timeReady && !resetInProgress && userProfile.dayKey && userProfile.dayKey !== getDayKey(serverNow())) { performReset('boundary'); return; }
             updateCentralUI(userProfile);
-        }, err => { console.error('profile:', err); showToast('خطأ في المزامنة', 'تعذّر تحديث بياناتك.', 'error'); });
+        }, err => { console.error('profile:', err); showToast('Sync error', 'Could not update your data.', 'error'); });
     }
 
     function updateCentralUI(data) {
-        const name = data.name || (EMAIL ? EMAIL.split('@')[0] : 'موظف');
+        const name = data.name || (EMAIL ? EMAIL.split('@')[0] : 'Employee');
         document.getElementById('user-name').innerText  = name;
         document.getElementById('user-title').innerText = data.title || 'Team Member';
         document.getElementById('user-avatar').src = data.photo || (DEFAULT_PHOTO + encodeURIComponent(name));
@@ -562,48 +533,43 @@
             const [wh, wm] = WORK_START.split(':').map(Number);
             lateMin = Math.max(0, Math.round(((p.h*3600 + p.mi*60 + p.s) - (wh*3600 + wm*60)) / 60));
         }
-        document.getElementById('stat-late').innerHTML = `${lateMin} <span class="text-xs text-textMuted font-bold">دقيقة</span>`;
+        document.getElementById('stat-late').innerHTML = `${lateMin} <span class="text-xs text-textMuted font-bold">min</span>`;
     }
 
-    // --- 10) تغيير الحالة ---
+    // ---- Status change ----
     async function handleStatusChange(newStatus) {
-        if (!isOnline)  { showToast('لا يوجد اتصال', 'تعذّر تغيير الحالة.', 'error'); return; }
-        if (!timeReady) { showToast('لحظة من فضلك', 'جارٍ مزامنة التوقيت…', 'info'); return; }
+        if (!isOnline)  { showToast('No connection', 'Could not change status.', 'error'); return; }
+        if (!timeReady) { showToast('One moment', 'Syncing time…', 'info'); return; }
         if (!STATUSES[newStatus]) return;
         if (userProfile.status === newStatus) return;
 
         const now = serverNow();
         const oldStatus = userProfile.status || 'Offline';
-        const last = getMillis(userProfile.lastChange);
-        const dur  = Math.max(0, now - last);
-
+        const dur = Math.max(0, now - getMillis(userProfile.lastChange));
         const bank = {}; countedKeys().forEach(k => bank[k] = (userProfile.timeBank && userProfile.timeBank[k]) || 0);
-        if (STATUSES[oldStatus] && STATUSES[oldStatus].counted) bank[oldStatus] = (bank[oldStatus] || 0) + dur;
+        if (STATUSES[oldStatus] && STATUSES[oldStatus].counted) bank[oldStatus] += dur;
 
         const updates = { status: newStatus, lastChange: serverTs(), timeBank: bank };
         if (newStatus === 'Online') {
             const fo = userProfile.firstOnlineAt ? getMillis(userProfile.firstOnlineAt) : null;
             if (!fo || getDayKey(fo) !== getDayKey(now)) updates.firstOnlineAt = serverTs();
         }
-
         try {
             await db.collection('users').doc(EMAIL).update(updates);
             await db.collection('logs').add({
-                user: EMAIL, name: userProfile.name || EMAIL,
-                from_status: oldStatus, to_status: newStatus,
+                user: EMAIL, name: userProfile.name || EMAIL, from_status: oldStatus, to_status: newStatus,
                 duration_ms: (STATUSES[oldStatus] && STATUSES[oldStatus].counted) ? dur : null,
-                changed_by: 'user', changed_by_name: userProfile.name || EMAIL,
-                dayKey: getDayKey(now), timestamp: serverTs()
+                changed_by: 'user', changed_by_name: userProfile.name || EMAIL, dayKey: getDayKey(now), timestamp: serverTs()
             });
-            showToast('تم تحديث الحالة', `أنت الآن: ${STATUSES[newStatus].label}`, 'success');
-        } catch (e) { console.error(e); showToast('خطأ', 'فشل تحديث الحالة، حاول مجدداً.', 'error'); }
+            showToast('Status updated', `You are now: ${STATUSES[newStatus].label}`, 'success');
+        } catch (e) { console.error(e); showToast('Error', 'Failed to update status. Try again.', 'error'); }
     }
 
-    // --- 11) الإجازات ---
+    // ---- Leaves ----
     async function submitLeaveRequest(e) {
         e.preventDefault();
         const btn = document.getElementById('btn-submit-leave');
-        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin ms-1"></i> جارٍ الإرسال…';
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending…';
         try {
             await db.collection('leave_requests').add({
                 user: EMAIL, name: userProfile.name || EMAIL,
@@ -614,46 +580,41 @@
             });
             document.getElementById('leave-form').reset();
             document.getElementById('leave-date').value = zonedYMD(serverNow());
-            showToast('تم الإرسال', 'طلبك قيد المراجعة من الإدارة.', 'success');
-        } catch (err) { console.error(err); showToast('تعذّر الإرسال', 'حدث خطأ أثناء إرسال الطلب.', 'error'); }
-        finally { btn.disabled = false; btn.innerHTML = 'إرسال الطلب'; }
+            showToast('Submitted', 'Your request is pending review.', 'success');
+        } catch (err) { console.error(err); showToast('Could not submit', 'An error occurred.', 'error'); }
+        finally { btn.disabled = false; btn.innerHTML = 'Submit request'; }
     }
 
-    const LEAVE_LABELS = { sick:'إجازة مرضية', annual:'إجازة اعتيادية', excuse_late:'إذن تأخير', excuse_early:'إذن انصراف مبكر' };
+    const LEAVE_LABELS = { sick:'Sick leave', annual:'Annual leave', excuse_late:'Late permission', excuse_early:'Early leave' };
     const LEAVE_STATUS = {
-        pending:  { t:'قيد المراجعة', c:'bg-amber-50 text-amber-600 border-amber-100' },
-        approved: { t:'مقبول',       c:'bg-emerald-50 text-emerald-600 border-emerald-100' },
-        rejected: { t:'مرفوض',       c:'bg-red-50 text-red-600 border-red-100' }
+        pending:  { t:'Pending',  c:'bg-amber-50 text-amber-600 border-amber-100' },
+        approved: { t:'Approved', c:'bg-emerald-50 text-emerald-600 border-emerald-100' },
+        rejected: { t:'Rejected', c:'bg-red-50 text-red-600 border-red-100' }
     };
     function listenToMyLeaves() {
         db.collection('leave_requests').where('user', '==', EMAIL).onSnapshot(snap => {
             const box = document.getElementById('my-leaves-container'); if (!box) return;
-            if (snap.empty) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-6">لا توجد طلبات بعد.</p>'; return; }
+            if (snap.empty) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-6">No requests yet.</p>'; return; }
             const rows = []; snap.forEach(d => rows.push(d.data()));
             rows.sort((a, b) => getMillis(b.submitted_at) - getMillis(a.submitted_at));
             box.innerHTML = rows.slice(0, 15).map(l => {
                 const st = LEAVE_STATUS[l.status] || LEAVE_STATUS.pending;
                 return `<div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <div class="text-right"><p class="text-xs font-black text-textMain">${LEAVE_LABELS[l.type] || l.type}</p>
+                    <div class="text-left"><p class="text-xs font-black text-textMain">${LEAVE_LABELS[l.type] || l.type}</p>
                     <p class="text-[10px] font-bold text-textMuted mt-0.5">${l.target_date || ''}</p></div>
                     <span class="text-[10px] font-black px-2.5 py-1 rounded-full border ${st.c}">${st.t}</span></div>`;
             }).join('');
-        }, err => {
-            const box = document.getElementById('my-leaves-container');
-            if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center py-6">تعذّر تحميل الطلبات.</p>';
-            console.warn('leaves:', err.message);
-        });
+        }, err => { const box = document.getElementById('my-leaves-container'); if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center py-6">Could not load requests.</p>'; console.warn('leaves:', err.message); });
     }
 
-    // --- 12) سجل الحركات (احترافي: النوع + التاريخ + الوقت + المدة + بواسطة مَن) ---
+    // ---- Activity log ----
     function listenToLogs() {
         db.collection('logs').where('user', '==', EMAIL).onSnapshot(snap => {
             const box = document.getElementById('employee-logs-container'); if (!box) return;
             const rows = []; snap.forEach(d => rows.push(d.data()));
             rows.sort((a, b) => getMillis(b.timestamp) - getMillis(a.timestamp));
             const recent = rows.slice(0, 60);
-            if (!recent.length) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-10">لا توجد حركات مسجّلة بعد.</p>'; return; }
-
+            if (!recent.length) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-10">No activity recorded yet.</p>'; return; }
             box.innerHTML = recent.map(l => {
                 const to = STATUSES[l.to_status] || STATUSES.Offline;
                 const fromLbl = (STATUSES[l.from_status] || {}).label || l.from_status || '—';
@@ -661,31 +622,21 @@
                 const dur = (typeof l.duration_ms === 'number') ? fmtDuration(l.duration_ms) : '—';
                 const byAdmin = l.changed_by === 'admin';
                 const byBadge = byAdmin
-                    ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-violet-50 text-violet-600 border border-violet-100">الإدارة</span>'
-                    : '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">بواسطتك</span>';
+                    ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-violet-50 text-violet-600 border border-violet-100">Admin</span>'
+                    : '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">You</span>';
                 return `<div class="flex items-center gap-3 bg-slate-50 p-3 sm:p-3.5 rounded-2xl border border-slate-100">
                     <div class="w-10 h-10 rounded-xl bg-${to.color}-50 text-${to.color}-500 flex items-center justify-center text-base shrink-0"><i class="fas ${to.icon}"></i></div>
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-xs sm:text-sm font-black text-textMain">${to.label}</span>
-                            <span class="text-[10px] font-bold text-textMuted">← ${fromLbl}</span>
-                        </div>
+                        <div class="flex items-center gap-2 flex-wrap"><span class="text-xs sm:text-sm font-black text-textMain">${to.label}</span><span class="text-[10px] font-bold text-textMuted">← ${fromLbl}</span></div>
                         <div class="text-[10px] font-bold text-textMuted mt-0.5">${fmtDate(ms)} · ${fmtTime(ms)}</div>
                     </div>
-                    <div class="text-left shrink-0">
-                        <div class="text-[11px] font-black text-textMain tabular-nums mb-1">${dur === '—' ? '—' : '⏱ ' + dur}</div>
-                        ${byBadge}
-                    </div>
+                    <div class="text-right shrink-0"><div class="text-[11px] font-black text-textMain tabular-nums mb-1">${dur === '—' ? '—' : '⏱ ' + dur}</div>${byBadge}</div>
                 </div>`;
             }).join('');
-        }, err => {
-            const box = document.getElementById('employee-logs-container');
-            if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center py-10">تعذّر تحميل السجل.</p>';
-            console.warn('logs:', err.message);
-        });
+        }, err => { const box = document.getElementById('employee-logs-container'); if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center py-10">Could not load the log.</p>'; console.warn('logs:', err.message); });
     }
 
-    // --- 13) التصفير اليومي (11 مساءً بتوقيت الشركة) ---
+    // ---- Daily reset (11 PM company time) ----
     function scheduleDailyReset() {
         if (resetTimer) clearTimeout(resetTimer);
         resetTimer = setTimeout(() => { performReset('scheduled'); scheduleDailyReset(); }, msUntilReset());
@@ -695,22 +646,15 @@
         resetInProgress = true;
         try {
             const zero = {}; countedKeys().forEach(k => zero[k] = 0);
-            await db.collection('users').doc(EMAIL).update({
-                status: 'Offline', timeBank: zero, firstOnlineAt: null,
-                dayKey: getDayKey(serverNow()), lastChange: serverTs()
-            });
-            if (reason === 'scheduled') showToast('يوم جديد', 'تم تصفير العدّادات لبدء يوم عمل جديد.', 'info');
+            await db.collection('users').doc(EMAIL).update({ status:'Offline', timeBank:zero, firstOnlineAt:null, dayKey:getDayKey(serverNow()), lastChange: serverTs() });
+            if (reason === 'scheduled') showToast('New day', 'Counters were reset for a new work day.', 'info');
         } catch (e) { console.error('reset:', e); }
         finally { setTimeout(() => { resetInProgress = false; }, 1500); }
     }
 
-    // --- 14) الساعة والعدّادات الحيّة ---
+    // ---- Clock & live timers ----
     function startClock() {
-        const upd = () => {
-            const ms = serverNow();
-            document.getElementById('clock-time').innerText = fmtClock(ms);
-            document.getElementById('clock-date').innerText = fmtDate(ms);
-        };
+        const upd = () => { const ms = serverNow(); document.getElementById('clock-time').innerText = fmtClock(ms); document.getElementById('clock-date').innerText = fmtDate(ms); };
         upd(); setInterval(upd, 1000);
     }
     function tick() {
@@ -719,14 +663,10 @@
             const base = parseInt(t.dataset.val) || 0, start = parseInt(t.dataset.start) || 0;
             t.innerText = fmtDuration(t.dataset.active === 'true' ? base + (now - start) : base);
         });
-        
-        // التعديل: التقاط تغيير اليوم فجأة إذا كان الموظف تاركاً الشاشة مفتوحة لليوم التالي
-        if (timeReady && !resetInProgress && userProfile && userProfile.dayKey !== getDayKey(now)) {
-            performReset('boundary');
-        }
+        if (timeReady && !resetInProgress && userProfile && userProfile.dayKey && userProfile.dayKey !== getDayKey(now)) performReset('boundary');
     }
 
-    // --- 15) الخروج ---
+    // ---- Logout ----
     function confirmLogout() { openModal('modal-logout'); }
     async function logout(force) {
         closeModal('modal-logout');
@@ -735,27 +675,14 @@
         window.location.replace('index.html');
     }
 
-    // --- 16) أدوات مساعدة ---
-    function pad(n) { return String(n).padStart(2, '0'); }
-    const getMillis = (v) => v ? (v.toMillis ? v.toMillis() : (typeof v === 'number' ? v : serverNow())) : serverNow();
-    function fmtDuration(ms) {
-        if (ms < 0) ms = 0;
-        const s = Math.floor(ms / 1000);
-        return `${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`;
-    }
+    // ---- Helpers ----
+    function fmtDuration(ms) { if (ms < 0) ms = 0; const s = Math.floor(ms/1000); return `${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`; }
     function fmtClock(ms) { const p = zonedParts(ms); return `${pad(p.h)}:${pad(p.mi)}:${pad(p.s)}`; }
-    function fmtDate(ms)  { return new Intl.DateTimeFormat('ar-EG', { timeZone: COMPANY_TZ, weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(new Date(ms)); }
-    function fmtTime(ms)  { return new Intl.DateTimeFormat('ar-EG', { timeZone: COMPANY_TZ, hour:'2-digit', minute:'2-digit', hour12:true }).format(new Date(ms)); }
+    function fmtDate(ms) { return new Intl.DateTimeFormat('en-GB', { timeZone: COMPANY_TZ, weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(new Date(ms)); }
+    function fmtTime(ms) { return new Intl.DateTimeFormat('en-GB', { timeZone: COMPANY_TZ, hour:'2-digit', minute:'2-digit', hour12:true }).format(new Date(ms)); }
 
-    function openModal(id) {
-        lastFocusedEl = document.activeElement;
-        const m = document.getElementById(id); m.classList.remove('hidden');
-        const f = m.querySelector('input,select,textarea,button'); if (f) setTimeout(() => f.focus(), 50);
-    }
-    function closeModal(id) {
-        document.getElementById(id).classList.add('hidden');
-        if (lastFocusedEl) { try { lastFocusedEl.focus(); } catch (e) {} }
-    }
+    function openModal(id) { lastFocusedEl = document.activeElement; const m = document.getElementById(id); m.classList.remove('hidden'); const f = m.querySelector('input,select,textarea,button'); if (f) setTimeout(() => f.focus(), 50); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); if (lastFocusedEl) { try { lastFocusedEl.focus(); } catch (e) {} } }
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
         const open = [...document.querySelectorAll('[role="dialog"]')].filter(m => !m.classList.contains('hidden'));
@@ -765,12 +692,10 @@
     function showToast(title, msg, type = 'info') {
         const container = document.getElementById('toast-container'); if (!container) return;
         const styles = { error:'bg-red-50 border-red-200 text-red-700', success:'bg-emerald-50 border-emerald-200 text-emerald-700', info:'bg-white border-slate-200 text-textMain' };
-        const icons  = { error:'fa-circle-exclamation', success:'fa-circle-check', info:'fa-circle-info' };
+        const icons = { error:'fa-circle-exclamation', success:'fa-circle-check', info:'fa-circle-info' };
         const toast = document.createElement('div');
         toast.className = `p-4 rounded-2xl border ${styles[type] || styles.info} shadow-xl animate-fade-in flex items-start gap-3 transition-opacity duration-300 pointer-events-auto`;
-        toast.innerHTML = `<i class="fas ${icons[type] || icons.info} mt-0.5"></i>
-            <div class="flex-1 text-right"><h4 class="font-black text-xs mb-0.5">${title}</h4>
-            <p class="text-[11px] opacity-80 leading-relaxed">${msg}</p></div>`;
+        toast.innerHTML = `<i class="fas ${icons[type] || icons.info} mt-0.5"></i><div class="flex-1 text-left"><h4 class="font-black text-xs mb-0.5">${title}</h4><p class="text-[11px] opacity-80 leading-relaxed">${msg}</p></div>`;
         container.appendChild(toast);
         setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4500);
     }
