@@ -377,130 +377,37 @@
                 
                 <div class="flex flex-col gap-2 pt-3 border-t border-${s.color}-100 mt-auto">
                     <button onclick="viewHistory('${u.email}')" class="w-full py-2 bg-white border border-slate-200 hover:border-brand-blue hover:text-brand-blue rounded-xl text-[10px] font-black mini-btn shadow-sm transition-colors"><i class="fas fa-history mr-1"></i> View Activity History</button>
+                    <button onclick="adminForceLogout('${u.email}')" class="w-full py-2 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-xl text-[10px] font-black mini-btn shadow-sm transition-colors border border-red-100"><i class="fas fa-power-off mr-1"></i> Force Logout</button>
                 </div>
             </div>`;
         }).join('');
     }
 
-                <button onclick="openUserModal('${u.email}')" class="w-8 h-8 rounded-full bg-slate-50 hover:bg-brand-blue hover:text-white text-slate-400 border border-slate-100 flex items-center justify-center transition-colors shadow-sm mini-btn">
-                    <i class="fas fa-pen text-[10px]"></i>
-                </button>
-            </div>`).join('');
-    }
-
-    // HR Tab - Dropdown
-    function renderHREditDropdown() {
-        const drop = document.getElementById('hr-edit-dropdown'); if (!drop) return;
-        if (!allUsersData.length) { drop.innerHTML = '<p class="text-xs text-center text-textMuted p-3">No employees</p>'; return; }
-        drop.innerHTML = allUsersData.map(u => `
-            <div onclick="openUserModal('${u.email}')" class="flex items-center gap-3 p-2 hover:bg-brand-soft cursor-pointer rounded-xl transition-colors">
-                <img src="${getAvatar(u)}" class="w-9 h-9 rounded-full object-cover border border-slate-200 bg-white"> 
-                <div class="text-left leading-tight min-w-0 flex-1">
-                    <p class="text-xs font-black text-textMain truncate">${u.name||'—'}</p>
-                    <p class="text-[10px] text-textMuted font-bold uppercase tracking-wider truncate">${u.title||'Employee'}</p>
-                </div>
-                <i class="fas fa-chevron-right text-[10px] text-slate-300"></i>
-            </div>
-        `).join('');
-    }
-
-    // Attendance Tab
-    function renderAttendanceTab() {
-        const box = document.getElementById('attendance-grid');
-        if (!box) return;
-        if (!allUsersData.length) { box.innerHTML = '<div class="col-span-full py-10 text-center text-textMuted text-sm font-bold">No employees found.</div>'; return; }
-        
-        const now = serverNow();
-        const workStartParts = WORK_START.split(':');
-        const startMins = parseInt(workStartParts[0])*60 + parseInt(workStartParts[1]);
-
-        box.innerHTML = allUsersData.map(u => {
-            let latenessStr = 'On Time / Acceptable';
-            let lateClass = 'text-emerald-600 bg-emerald-50 border-emerald-200';
-            let iconLate = 'fa-check-circle';
-            
-            if (u.firstOnlineAt && getDayKey(getMillis(u.firstOnlineAt)) === getDayKey(now)) {
-                const foMillis = getMillis(u.firstOnlineAt);
-                const foParts = zonedParts(foMillis);
-                const foMins = foParts.h*60 + foParts.mi;
-                if (foMins > startMins) {
-                    const diffMins = foMins - startMins;
-                    latenessStr = `Late by ${Math.floor(diffMins/60)}h ${diffMins%60}m`;
-                    lateClass = 'text-red-600 bg-red-50 border-red-200';
-                    iconLate = 'fa-exclamation-circle';
-                }
-            } else if (!u.firstOnlineAt || getDayKey(getMillis(u.firstOnlineAt)) !== getDayKey(now)) {
-                 latenessStr = 'Not started today';
-                 lateClass = 'text-slate-500 bg-slate-100 border-slate-200';
-                 iconLate = 'fa-clock';
-            }
-            
-            const resetOpts = countedKeys().map(k => `<option value="${k}">${sLabel(k)} Timer</option>`).join('');
-
-            return `
-            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col gap-3 relative hover:border-brand-blue/30 transition-colors">
-                <div class="flex items-center gap-3 mb-2">
-                    <img src="${getAvatar(u)}" class="w-12 h-12 rounded-full border-2 border-slate-100 bg-white object-cover shadow-sm">
-                    <div class="min-w-0">
-                        <h4 class="text-sm font-black text-textMain truncate">${u.name||'—'}</h4>
-                        <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider truncate">${u.title||'Employee'}</p>
-                    </div>
-                </div>
-                
-                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <span class="text-[10px] font-black text-textMuted uppercase tracking-wider">Status:</span>
-                    <span class="text-[10px] font-black px-2.5 py-1 rounded-md border ${lateClass} shadow-sm flex items-center gap-1"><i class="fas ${iconLate}"></i> ${latenessStr}</span>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-2 mt-2">
-                    ${countedKeys().map(k => `
-                        <div class="flex justify-between items-center text-[10px] p-2.5 bg-white border border-slate-100 rounded-xl shadow-sm">
-                            <span class="font-black text-textMuted"><i class="fas ${sIcon(k)} text-${sColor(k)}-500 mr-1"></i> ${sLabel(k)}</span>
-                            <span class="font-black tabular-nums stat-timer" data-val="${(u.timeBank||{})[k]||0}" data-active="${u.status===k}" data-start="${getMillis(u.lastChange)}">00:00:00</span>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <div class="flex gap-2 mt-3 pt-4 border-t border-slate-100 items-center">
-                    <select id="reset-sel-${u.email.replace(/[@.]/g,'')}" class="flex-1 bg-surface border border-slate-200 rounded-xl px-3 py-2.5 text-[10px] font-bold outline-none cursor-pointer shadow-inner">
-                        <option value="all">Reset All Timers (New Day)</option>
-                        ${resetOpts}
-                    </select>
-                    <button onclick="adminResetSpecific('${u.email}')" class="px-4 py-2.5 bg-brand-navy text-white rounded-xl text-[10px] font-black hover:bg-brand-navy2 shadow-md mini-btn transition-colors"><i class="fas fa-undo-alt mr-1"></i> Apply</button>
-                </div>
-            </div>
-            `;
-        }).join('');
-    }
-
-    window.adminResetSpecific = async function(email) {
-        const idSafe = email.replace(/[@.]/g,'');
-        const sel = document.getElementById('reset-sel-' + idSafe).value;
-        const isAll = sel === 'all';
-        const label = isAll ? 'All Timers' : sLabel(sel);
-        const r = await Swal.fire({ title:'Confirm Reset', text:`Reset ${label} for this employee?`, icon:'warning', showCancelButton:true, confirmButtonColor:'#f59e0b', cancelButtonColor:'#64748b', confirmButtonText:'Yes, Reset', cancelButtonText:'Cancel' });
+    async function adminForceLogout(email) {
+        const r = await Swal.fire({ title:'Force Logout?', text:'Force status to Offline?', icon:'warning', showCancelButton:true, confirmButtonColor:'#2563eb', cancelButtonColor:'#64748b', confirmButtonText:'Confirm', cancelButtonText:'Cancel' });
         if (!r.isConfirmed) return;
         try {
             const ref = db.collection('users').doc(email.toLowerCase().trim());
-            const doc = await ref.get();
-            if (!doc.exists) return;
-            const u = doc.data();
-            let updates = {};
-            
-            if (isAll) {
-                 const zero = {}; countedKeys().forEach(k => zero[k] = 0);
-                 updates = { status:'Offline', timeBank: zero, firstOnlineAt:null, dayKey:getDayKey(serverNow()), lastChange: serverTs() };
-            } else {
-                 const bank = { ...u.timeBank };
-                 bank[sel] = 0;
-                 updates = { timeBank: bank };
-                 if (u.status === sel) {
-                     updates.lastChange = serverTs();
-                 }
-            }
+            const u = (await ref.get()).data();
+            if (u.status === 'Offline') { Toast.fire({icon:'info', title:'Already Offline.'}); return; }
+
+            const now = serverNow();
+            const oldStatus = u.status || 'Offline';
+            const dur = Math.max(0, now - getMillis(u.lastChange));
+            const bank = {}; countedKeys().forEach(k => bank[k] = (u.timeBank && u.timeBank[k]) || 0);
+            if (STATUSES[oldStatus] && STATUSES[oldStatus].counted) bank[oldStatus] += dur;
+
+            const updates = { status: 'Offline', lastChange: serverTs(), timeBank: bank };
             await ref.update(updates);
-            Toast.fire({icon:'success', title:'Reset successful.'});
-        } catch (e) { console.error(e); Toast.fire({icon:'error', title:'Reset failed.'}); }
+            await db.collection('logs').add({
+                user: email.toLowerCase().trim(), name: u.name || email,
+                from_status: oldStatus, to_status: 'Offline',
+                duration_ms: (STATUSES[oldStatus] && STATUSES[oldStatus].counted) ? dur : null,
+                changed_by: 'admin', changed_by_name: userProfile.name || 'Supervisor',
+                dayKey: getDayKey(now), timestamp: serverTs()
+            });
+            Toast.fire({icon:'success', title:'Forced Logout.'});
+        } catch (e) { console.error(e); Toast.fire({icon:'error', title:'Update failed.'}); }
     }
 
     // Leave Requests
