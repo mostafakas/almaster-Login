@@ -442,7 +442,6 @@
         applyStatusConfig();
         startClock();
         setupOfflineListener();
-        setupPresenceCheckpoints();
         listenToConfig();
         listenToHrStats();
         listenToProfile();
@@ -454,29 +453,6 @@
         document.getElementById('loader').classList.add('hidden');
     }
 
-    function setupPresenceCheckpoints() {
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) checkpoint();
-            else advanceAnchor(); 
-        });
-        window.addEventListener('pagehide', () => { checkpoint(); });
-    }
-    async function checkpoint() {
-        if (!userProfile || !timeReady) return;
-        const st = userProfile.status;
-        if (!STATUSES[st] || !STATUSES[st].counted) return;
-        const seg = serverNow() - getMillis(userProfile.lastChange);
-        if (seg < 2000) return;
-        const bank = {}; countedKeys().forEach(k => bank[k] = (userProfile.timeBank && userProfile.timeBank[k]) || 0);
-        bank[st] += seg;
-        try { await db.collection('users').doc(EMAIL).update({ timeBank: bank, lastChange: serverTs() }); } catch (e) {}
-    }
-    async function advanceAnchor() {
-        if (!userProfile || !timeReady) return;
-        const st = userProfile.status;
-        if (!STATUSES[st] || !STATUSES[st].counted) return;
-        try { await db.collection('users').doc(EMAIL).update({ lastChange: serverTs() }); } catch (e) {}
-    }
 
     function setupOfflineListener() {
         const apply = (online) => {
