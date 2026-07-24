@@ -397,10 +397,12 @@
         const todayKey = getDayKey(serverNow());
         const bal = userProfile.onlineDaysLimit || 0;
         
+        const clientNow = Date.now();
         const updates = {
             status: 'Online',
             timeBank: Object.fromEntries(countedKeys().map(k => [k, 0])),
             lastChange: serverTs(),
+            lastChangeClient: clientNow,
             dayKey: todayKey,
             firstOnlineAt: serverTs(),
             workLocation: type
@@ -544,12 +546,12 @@
         badge.innerHTML = `<i class="fas ${s.icon}"></i>`;
 
         const tb = data.timeBank || {};
-        const startMs = getMillis(data.lastChange);
+        const startClient = data.lastChangeClient || Date.now();
         document.querySelectorAll('.stat-timer').forEach(el => {
             const key = el.dataset.status;
             el.dataset.val = tb[key] || 0;
             el.dataset.active = (status === key);
-            el.dataset.start = startMs;
+            el.dataset.startClient = startClient;
         });
         
         document.getElementById('stat-online-limit').innerHTML = `${data.onlineDaysLimit || 0} <span class="text-xs text-textMuted font-bold">days</span>`;
@@ -573,13 +575,21 @@
         if (!STATUSES[newStatus]) return;
         if (userProfile.status === newStatus) return;
 
-        const now = serverNow();
+        const clientNow = Date.now();
+        const startClient = userProfile.lastChangeClient || clientNow;
+        let dur = Math.max(0, clientNow - startClient);
+        
+        // Anti-cheat fallback: compare with server estimation
+        const sNow = serverNow();
+        const startServer = getMillis(userProfile.lastChange);
+        const serverDur = Math.max(0, sNow - startServer);
+        if (Math.abs(dur - serverDur) > 300000) { dur = serverDur; } // 5 mins tolerance
+
         const oldStatus = userProfile.status || 'Offline';
-        const dur = Math.max(0, now - getMillis(userProfile.lastChange));
         const bank = {}; countedKeys().forEach(k => bank[k] = (userProfile.timeBank && userProfile.timeBank[k]) || 0);
         if (STATUSES[oldStatus] && STATUSES[oldStatus].counted) bank[oldStatus] += dur;
 
-        const updates = { status: newStatus, lastChange: serverTs(), timeBank: bank };
+        const updates = { status: newStatus, lastChange: serverTs(), lastChangeClient: clientNow, timeBank: bank };
         if (newStatus === 'Online') {
             const fo = userProfile.firstOnlineAt ? getMillis(userProfile.firstOnlineAt) : null;
             if (!fo || getDayKey(fo) !== getDayKey(now)) updates.firstOnlineAt = serverTs();
@@ -683,7 +693,7 @@
         resetInProgress = true;
         try {
             const zero = {}; countedKeys().forEach(k => zero[k] = 0);
-            await db.collection('users').doc(EMAIL).update({ status:'Offline', timeBank:zero, firstOnlineAt:null, dayKey:getDayKey(serverNow()), lastChange: serverTs() });
+            await db.collection('users').doc(EMAIL).update({ status:'Offline', timeBank:zero, firstOnlineAt:null, dayKey:getDayKey(serverNow()), lastChange: serverTs(), lastChangeClient: Date.now() });
             if (reason === 'scheduled') {
                 showToast('New day', 'Counters were reset for a new work day.', 'info');
                 // The profile listener will see a new dayKey and trigger handleNewDayCheck next time they click/refresh
@@ -709,12 +719,15 @@
     }
     
     function tick() {
-        const now = serverNow();
+        const clientNow = Date.now();
         document.querySelectorAll('.stat-timer').forEach(t => {
-            const base = parseInt(t.dataset.val) || 0, start = parseInt(t.dataset.start) || 0;
-            t.innerText = fmtDuration(t.dataset.active === 'true' ? base + (now - start) : base);
+            const base = parseInt(t.dataset.val) || 0;
+            const startClient = parseInt(t.dataset.startClient) || clientNow;
+            let elapsed = clientNow - startClient;
+            if (elapsed < 0) elapsed = 0;
+            t.innerText = fmtDuration(t.dataset.active === 'true' ? base + elapsed : base);
         });
-        if (timeReady && !resetInProgress && userProfile && userProfile.dayKey && userProfile.dayKey !== getDayKey(now)) performReset('boundary');
+        if (timeReady && !resetInProgress && userProfile && userProfile.dayKey && userProfile.dayKey !== getDayKey(serverNow())) performReset('boundary');
     }
 
     function confirmLogout() { openModal('modal-logout'); }
