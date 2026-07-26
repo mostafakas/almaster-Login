@@ -592,14 +592,14 @@
         const updates = { status: newStatus, lastChange: serverTs(), lastChangeClient: clientNow, timeBank: bank };
         if (newStatus === 'Online') {
             const fo = userProfile.firstOnlineAt ? getMillis(userProfile.firstOnlineAt) : null;
-            if (!fo || getDayKey(fo) !== getDayKey(now)) updates.firstOnlineAt = serverTs();
+            if (!fo || getDayKey(fo) !== getDayKey(sNow)) updates.firstOnlineAt = serverTs();
         }
         try {
             await db.collection('users').doc(EMAIL).update(updates);
             await db.collection('logs').add({
                 user: EMAIL, name: userProfile.name || EMAIL, from_status: oldStatus, to_status: newStatus,
                 duration_ms: (STATUSES[oldStatus] && STATUSES[oldStatus].counted) ? dur : null,
-                changed_by: 'user', changed_by_name: userProfile.name || EMAIL, dayKey: getDayKey(now), timestamp: serverTs()
+                changed_by: 'user', changed_by_name: userProfile.name || EMAIL, dayKey: getDayKey(sNow), timestamp: serverTs()
             });
             showToast('Status updated', `You are now: ${STATUSES[newStatus].label}`, 'success');
         } catch (e) { console.error(e); showToast('Error', 'Failed to update status. Try again.', 'error'); }
