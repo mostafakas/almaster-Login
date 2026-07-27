@@ -218,8 +218,12 @@
                 
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Role</label>
-                        <select id="u-role" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm">
-                            <option value="employee">Employee</option><option value="supervisor">Supervisor</option><option value="admin">Admin</option>
+                        <select id="u-role" onchange="toggleLeaderSection()" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm">
+                            <option value="employee">Employee</option><option value="leader">Leader</option><option value="supervisor">Supervisor</option><option value="admin">Admin</option>
+                        </select></div>
+                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Assigned Leader</label>
+                        <select id="u-leader-email" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm">
+                            <option value="">None (Direct to Admin/Supervisor)</option>
                         </select></div>
                     <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Gender</label>
                         <select id="u-gender" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm" onchange="updateFallbackPreview()">
@@ -236,6 +240,13 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm font-bold">
                         <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors"><input type="checkbox" id="perm-crm" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue"> CRM System Access</label>
                         <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors"><input type="checkbox" id="perm-payroll" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue"> Payroll System Access</label>
+                    </div>
+                </div>
+
+                <div id="leader-team-section" class="p-5 border border-slate-200 bg-surface rounded-2xl hidden">
+                    <p class="text-[10px] font-black text-textMain uppercase mb-3 tracking-widest border-b border-slate-200 pb-2"><i class="fas fa-users-viewfinder text-brand-blue mr-1"></i> Assigned Team Members (For This Leader)</p>
+                    <div id="leader-team-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto custom-scrollbar text-xs font-bold">
+                        <!-- Checkboxes populated dynamically -->
                     </div>
                 </div>
                 
@@ -639,9 +650,10 @@
                 <div class="flex-1 min-w-0">
                     <h4 class="text-sm font-black text-textMain truncate">${u.name||'—'}</h4>
                     <p class="text-[10px] text-textMuted font-bold uppercase tracking-wider truncate mb-1">${u.title||'Employee'}</p>
-                    <div class="flex gap-2">
+                    <div class="flex gap-1.5 flex-wrap">
                          <span class="text-[9px] bg-brand-soft text-brand-blue px-2 py-0.5 rounded-md font-bold border border-brand-blue/20">${u.role||'employee'}</span>
                          <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold border border-slate-200">${u.onlineDaysLimit||0} On. Limit</span>
+                         ${u.leaderEmail ? `<span class="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-bold border border-emerald-200 flex items-center gap-1" title="Assigned Leader"><i class="fas fa-user-shield"></i>${(allUsersData.find(x => x.email === u.leaderEmail) || {}).name || u.leaderEmail.split('@')[0]}</span>` : ''}
                     </div>
                 </div>
                 <button onclick="openUserModal('${u.email}')" class="w-8 h-8 rounded-full bg-slate-50 hover:bg-brand-blue hover:text-white text-slate-400 border border-slate-100 flex items-center justify-center transition-colors shadow-sm mini-btn">
@@ -841,6 +853,27 @@
         }
     }
 
+    function toggleLeaderSection() {
+        const role = document.getElementById('u-role').value;
+        const sec = document.getElementById('leader-team-section');
+        if (!sec) return;
+        if (role === 'leader') {
+            sec.classList.remove('hidden');
+            const list = document.getElementById('leader-team-list');
+            const currentLeaderEmail = (document.getElementById('edit-mode-email').value || document.getElementById('u-email').value || '').toLowerCase().trim();
+            const employees = allUsersData.filter(x => x.role === 'employee' || x.role === 'leader' || x.role === 'supervisor');
+            list.innerHTML = employees.filter(x => x.email !== currentLeaderEmail).map(x => {
+                const isAssigned = (x.leaderEmail && x.leaderEmail.toLowerCase() === currentLeaderEmail);
+                return `<label class="flex items-center gap-2.5 cursor-pointer bg-white p-2.5 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors">
+                    <input type="checkbox" name="assigned-member-cb" value="${x.email}" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue" ${isAssigned ? 'checked' : ''}>
+                    <span class="truncate">${x.name} <span class="text-[9px] text-textMuted uppercase">(${x.role})</span></span>
+                </label>`;
+            }).join('') || '<p class="text-textMuted italic text-[11px] col-span-2 text-center py-2">No employees available.</p>';
+        } else {
+            sec.classList.add('hidden');
+        }
+    }
+
     // Modal forms
     async function openUserModal(mode) {
         const isNew = mode === 'new';
@@ -852,8 +885,17 @@
         document.getElementById('delete-user-btn').classList.toggle('hidden', isNew);
         document.getElementById('edit-mode-email').value = isNew ? '' : mode;
 
+        const leaderSelect = document.getElementById('u-leader-email');
+        if (leaderSelect) {
+            leaderSelect.innerHTML = '<option value="">None (Direct to Admin/Supervisor)</option>' +
+                allUsersData.filter(x => x.role === 'leader' || x.role === 'supervisor').map(x => 
+                    `<option value="${x.email}">${x.name} (${x.role === 'leader' ? 'Leader' : 'Supervisor'})</option>`
+                ).join('');
+        }
+
         if (isNew) {
             document.getElementById('u-gender').value = 'male';
+            if (leaderSelect) leaderSelect.value = '';
             updateFallbackPreview();
             document.getElementById('u-leave-balance').value = ANNUAL_LEAVE_DEFAULT;
             document.getElementById('u-online-limit').value = 0;
@@ -863,6 +905,7 @@
             document.getElementById('u-title').value = u.title || '';
             document.getElementById('u-email').value = mode;
             document.getElementById('u-role').value = u.role || 'employee';
+            if (leaderSelect) leaderSelect.value = u.leaderEmail || '';
             document.getElementById('u-gender').value = u.gender || 'male';
             document.getElementById('u-suspended').checked = !!u.isSuspended;
             document.getElementById('perm-crm').checked = !!(u.permissions && u.permissions.crm);
@@ -872,6 +915,7 @@
             document.getElementById('u-leave-balance').value = balanceOf(mode);
             document.getElementById('u-online-limit').value = u.onlineDaysLimit || 0;
         }
+        toggleLeaderSection();
         openModal('modal-user-form');
     }
 
@@ -907,6 +951,7 @@
             title: document.getElementById('u-title').value.trim(),
             role: document.getElementById('u-role').value,
             gender: document.getElementById('u-gender').value,
+            leaderEmail: document.getElementById('u-leader-email') ? document.getElementById('u-leader-email').value : '',
             onlineDaysLimit: onLimit,
             isSuspended: document.getElementById('u-suspended').checked,
             permissions: { crm: document.getElementById('perm-crm').checked, payroll: document.getElementById('perm-payroll').checked },
@@ -924,6 +969,26 @@
                 await db.collection('users').doc(email).set(data);
             } else {
                 await db.collection('users').doc(email).update(data);
+            }
+            if (data.role === 'leader') {
+                const checkedBoxes = Array.from(document.querySelectorAll('input[name="assigned-member-cb"]:checked')).map(cb => cb.value);
+                const allMemberBoxes = Array.from(document.querySelectorAll('input[name="assigned-member-cb"]')).map(cb => cb.value);
+                const batch = db.batch();
+                let hasBatch = false;
+                allMemberBoxes.forEach(empEmail => {
+                    const empRef = db.collection('users').doc(empEmail);
+                    if (checkedBoxes.includes(empEmail)) {
+                        batch.update(empRef, { leaderEmail: email });
+                        hasBatch = true;
+                    } else {
+                        const empData = allUsersData.find(x => x.email === empEmail);
+                        if (empData && empData.leaderEmail && empData.leaderEmail.toLowerCase() === email) {
+                            batch.update(empRef, { leaderEmail: '' });
+                            hasBatch = true;
+                        }
+                    }
+                });
+                if (hasBatch) await batch.commit();
             }
             if (!isNaN(balance)) await db.collection('hr_stats').doc(email).set({ annualLeavesLeft: balance }, { merge:true });
             closeModal('modal-user-form');
