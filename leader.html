@@ -111,82 +111,87 @@
         <div class="absolute top-[-15%] right-[-8%] w-[28rem] h-[28rem] bg-brand-blue/5 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute bottom-[-15%] left-[-8%] w-[28rem] h-[28rem] bg-brand-navy/5 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="relative max-w-6xl mx-auto">
-            <!-- Hero -->
-            <section class="hero-panel rounded-[2rem] p-7 sm:p-9 mb-5 sm:mb-6 relative overflow-hidden max-w-5xl mx-auto">
-                <div class="absolute -top-8 -right-8 w-40 h-40 bg-brand-blue/5 rounded-full blur-2xl pointer-events-none"></div>
-                <div class="flex flex-col items-center relative z-10">
-                    <div class="status-ring mb-5 sm:mb-6">
-                        <img id="user-avatar" src="" alt="Leader photo" class="w-28 h-28 sm:w-36 sm:h-36 rounded-full object-cover border-4 border-white shadow-2xl relative z-10 bg-slate-100">
-                        <div id="status-icon-badge" class="absolute bottom-1 right-1 w-10 h-10 sm:w-12 sm:h-12 rounded-full border-4 border-white flex items-center justify-center text-white text-base sm:text-lg z-20 shadow-lg bg-slate-400"><i class="fas fa-power-off"></i></div>
+        <div class="relative max-w-[1400px] w-full mx-auto flex flex-col xl:flex-row gap-6 lg:gap-8 items-start h-full pb-4">
+            
+            <!-- RIGHT SIDE (Visual Left in RTL): Leader Profile & Stats (1/3) -->
+            <div class="w-full xl:w-1/3 order-1 xl:order-2 flex flex-col gap-5 shrink-0 sticky top-0">
+                <!-- Hero -->
+                <section class="hero-panel rounded-[2rem] p-7 mb-0 relative overflow-hidden shadow-sm border border-slate-100">
+                    <div class="absolute -top-8 -right-8 w-40 h-40 bg-brand-blue/5 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="flex flex-col items-center relative z-10">
+                        <div class="status-ring mb-5">
+                            <img id="user-avatar" src="" alt="Leader photo" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-xl relative z-10 bg-slate-100">
+                            <div id="status-icon-badge" class="absolute bottom-0 right-0 w-10 h-10 rounded-full border-[3px] border-white flex items-center justify-center text-white text-base z-20 shadow-lg bg-slate-400"><i class="fas fa-power-off"></i></div>
+                        </div>
+                        <h2 id="user-name" class="text-xl sm:text-2xl font-black text-textMain mb-1 text-center">Loading…</h2>
+                        <p id="user-title" class="text-[11px] font-bold text-brand-blue uppercase tracking-widest">—</p>
+                        <div class="mt-4 px-4 py-2 rounded-full bg-surface border border-slate-200 text-xs font-bold text-textMuted flex items-center gap-2">
+                            Current status: <span id="current-status-text" class="text-textMain font-black">Offline</span>
+                        </div>
                     </div>
-                    <h2 id="user-name" class="text-2xl sm:text-3xl font-black text-textMain mb-1 text-center">Loading…</h2>
-                    <p id="user-title" class="text-xs font-bold text-brand-blue uppercase tracking-widest">—</p>
-                    <div class="mt-4 px-5 py-2 rounded-full bg-surface border border-slate-200 text-xs font-bold text-textMuted flex items-center gap-2">
-                        Current status: <span id="current-status-text" class="text-textMain font-black">Offline</span>
+                </section>
+
+                <!-- Stats grid -->
+                <section class="grid grid-cols-2 gap-3.5 sm:gap-4">
+                    <div id="card-Online" data-card class="stat-card p-4 rounded-3xl flex flex-col items-center text-center bg-white shadow-sm border border-slate-100">
+                        <div id="ic-card-Online" class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-base mb-2"><i class="fas fa-laptop-code"></i></div>
+                        <p id="lbl-card-Online" class="text-[9px] font-bold text-textMuted uppercase tracking-widest mb-1">Total Work</p>
+                        <p id="timer-Online" data-status="Online" class="stat-timer text-lg font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
                     </div>
-                </div>
-            </section>
+                    <div id="card-Break" data-card class="stat-card p-4 rounded-3xl flex flex-col items-center text-center bg-white shadow-sm border border-slate-100">
+                        <div id="ic-card-Break" class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-base mb-2"><i class="fas fa-mug-hot"></i></div>
+                        <p id="lbl-card-Break" class="text-[9px] font-bold text-textMuted uppercase tracking-widest mb-1">Break</p>
+                        <p id="timer-Break" data-status="Break" class="stat-timer text-lg font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
+                    </div>
+                    <div id="card-Meeting" data-card class="stat-card p-4 rounded-3xl flex flex-col items-center text-center bg-white shadow-sm border border-slate-100">
+                        <div id="ic-card-Meeting" class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-base mb-2"><i class="fas fa-users"></i></div>
+                        <p id="lbl-card-Meeting" class="text-[9px] font-bold text-textMuted uppercase tracking-widest mb-1">Meetings</p>
+                        <p id="timer-Meeting" data-status="Meeting" class="stat-timer text-lg font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
+                    </div>
+                    <div class="stat-card p-4 rounded-3xl flex flex-col items-center text-center bg-white shadow-sm border border-slate-100">
+                        <div class="w-10 h-10 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center text-base mb-2"><i class="fas fa-wifi"></i></div>
+                        <p class="text-[9px] font-bold text-textMuted uppercase tracking-widest mb-1">Online Limit</p>
+                        <p id="stat-online-limit" class="text-lg font-black text-textMain tabular-nums">— <span class="text-[10px] text-textMuted font-bold">d</span></p>
+                    </div>
+                    <div class="stat-card p-4 rounded-3xl flex flex-col items-center text-center bg-white shadow-sm border border-slate-100">
+                        <div class="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-base mb-2"><i class="fas fa-clock"></i></div>
+                        <p class="text-[9px] font-bold text-textMuted uppercase tracking-widest mb-1">Lateness</p>
+                        <p id="stat-late" class="text-lg font-black text-textMain tabular-nums">0 <span class="text-[10px] text-textMuted font-bold">m</span></p>
+                    </div>
+                    <div class="stat-card p-4 rounded-3xl flex flex-col items-center text-center bg-white shadow-sm border border-slate-100">
+                        <div class="w-10 h-10 rounded-2xl bg-brand-soft text-brand-blue flex items-center justify-center text-base mb-2"><i class="fas fa-umbrella-beach"></i></div>
+                        <p class="text-[9px] font-bold text-textMuted uppercase tracking-widest mb-1">Leave Bal.</p>
+                        <p id="stat-leaves" class="text-lg font-black text-textMain tabular-nums">— <span class="text-[10px] text-textMuted font-bold">d</span></p>
+                    </div>
+                </section>
+            </div>
 
-            <!-- Stats grid -->
-            <section class="grid grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-5 max-w-5xl mx-auto mb-10">
-                <div id="card-Online" data-card class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
-                    <div id="ic-card-Online" class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-laptop-code"></i></div>
-                    <p id="lbl-card-Online" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Total Work</p>
-                    <p id="timer-Online" data-status="Online" class="stat-timer text-xl sm:text-2xl font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
-                </div>
-                <div id="card-Break" data-card class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
-                    <div id="ic-card-Break" class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-mug-hot"></i></div>
-                    <p id="lbl-card-Break" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Break</p>
-                    <p id="timer-Break" data-status="Break" class="stat-timer text-xl sm:text-2xl font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
-                </div>
-                <div id="card-Meeting" data-card class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
-                    <div id="ic-card-Meeting" class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-users"></i></div>
-                    <p id="lbl-card-Meeting" class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Meetings</p>
-                    <p id="timer-Meeting" data-status="Meeting" class="stat-timer text-xl sm:text-2xl font-black text-textMain tabular-nums" data-val="0" data-active="false" data-start="0">00:00:00</p>
-                </div>
-                <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
-                    <div class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-wifi"></i></div>
-                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Online Limit</p>
-                    <p id="stat-online-limit" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">— <span class="text-xs text-textMuted font-bold">days</span></p>
-                </div>
-                <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
-                    <div class="w-11 h-11 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-lg mb-3"><i class="fas fa-clock"></i></div>
-                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Morning Lateness</p>
-                    <p id="stat-late" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">0 <span class="text-xs text-textMuted font-bold">min</span></p>
-                </div>
-                <div class="stat-card p-4 sm:p-5 rounded-3xl flex flex-col items-center text-center">
-                    <div class="w-11 h-11 rounded-2xl bg-brand-soft text-brand-blue flex items-center justify-center text-lg mb-3"><i class="fas fa-umbrella-beach"></i></div>
-                    <p class="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-1">Leave Balance</p>
-                    <p id="stat-leaves" class="text-xl sm:text-2xl font-black text-textMain tabular-nums">— <span class="text-xs text-textMuted font-bold">days</span></p>
-                </div>
-            </section>
-
-            <!-- Team Dashboard Section -->
-            <section class="mt-8 pt-8 border-t border-slate-200/80">
-                <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+            <!-- LEFT SIDE (Visual Right in RTL): Team Dashboard (2/3) -->
+            <div class="w-full xl:w-2/3 order-2 xl:order-1 flex flex-col h-full bg-white p-5 sm:p-7 rounded-[2rem] shadow-sm border border-slate-100 relative z-10 min-h-[500px]">
+                <div class="flex items-center justify-between mb-6 flex-wrap gap-4 shrink-0">
                     <div>
                         <h3 class="text-lg sm:text-xl font-black text-textMain flex items-center gap-2.5">
-                            <div class="w-9 h-9 rounded-xl bg-brand-soft text-brand-blue flex items-center justify-center text-sm shadow-sm"><i class="fas fa-users-viewfinder"></i></div>
+                            <div class="w-10 h-10 rounded-xl bg-brand-soft text-brand-blue flex items-center justify-center text-base shadow-sm"><i class="fas fa-users-viewfinder"></i></div>
                             My Team Dashboard
                             <span id="team-count-badge" class="bg-brand-blue text-white text-xs font-black px-3 py-0.5 rounded-full shadow-sm">0</span>
                         </h3>
-                        <p class="text-xs text-textMuted font-bold mt-1">Live read-only monitoring of your assigned team members' status and time counters</p>
+                        <p class="text-xs text-textMuted font-bold mt-1">Live read-only monitoring of your assigned team members</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <div class="relative">
-                            <input type="text" id="team-search" oninput="renderTeamCards()" placeholder="Search team member..." class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue shadow-sm w-56 sm:w-64 pl-9">
-                            <i class="fas fa-search absolute left-3 top-3 text-textMuted text-xs"></i>
+                        <div class="relative w-full sm:w-auto">
+                            <input type="text" id="team-search" oninput="renderTeamCards()" placeholder="Search team member..." class="bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue shadow-sm w-full sm:w-64 pl-9">
+                            <i class="fas fa-search absolute left-3 top-3.5 text-textMuted text-xs"></i>
                         </div>
                     </div>
                 </div>
 
-                <div id="team-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div id="team-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-5">
                     <div class="col-span-full py-16 text-center text-textMuted font-bold italic">
                         <i class="fas fa-spinner fa-spin text-2xl mb-2 text-brand-blue block"></i> Loading team members...
                     </div>
                 </div>
-            </section>
+            </div>
+
         </div>
     </main>
 
