@@ -343,30 +343,28 @@
         const status = u.status || 'Offline', s = STATUSES[status] || STATUSES.Offline;
         const start = getMillis(u.lastChange), isOn = status !== 'Offline';
         
-        return `<div class="monitor-card p-5 rounded-3xl flex flex-col gap-3 relative bg-${s.color}-50/30 border border-${s.color}-100">
-            <div class="flex justify-center relative w-full mb-1 mt-2">
+        return `<div class="monitor-card p-3 rounded-2xl flex flex-col gap-2 relative bg-${s.color}-50/30 border border-${s.color}-100">
+            <div class="flex items-center gap-2 relative w-full mb-1">
                 <div class="relative shrink-0">
-                    <img src="${getAvatar(u)}" class="w-20 h-20 rounded-full object-cover border-4 ${isOn?'border-'+s.color+'-500':'border-white'} shadow-md bg-white" alt="">
-                    <span class="absolute bottom-1 right-1 pulse-dot bg-${s.color}-500 border-2 border-white z-10 ${!isOn?'hidden':''}"></span>
+                    <img src="${getAvatar(u)}" class="w-11 h-11 rounded-full object-cover border-2 ${isOn?'border-'+s.color+'-500':'border-white'} shadow-sm bg-white" alt="">
+                    <span class="absolute bottom-0 right-0 pulse-dot bg-${s.color}-500 border-2 border-white z-10 ${!isOn?'hidden':''}"></span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-black text-textMain truncate leading-tight">${u.name||'—'}</h4>
+                    <div class="flex items-center gap-1 mt-0.5">
+                        <span class="text-[9px] text-textMuted font-bold uppercase tracking-wider truncate max-w-[50%]">${u.title||'Employee'}</span>
+                        <span class="px-1.5 py-0.5 rounded text-[8px] font-black text-${s.color}-700 bg-${s.color}-100 border border-${s.color}-200 shadow-sm ml-auto whitespace-nowrap"><i class="fas ${s.icon} mr-0.5"></i> ${s.label}</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="text-center">
-                <h4 class="text-base font-black text-textMain">${u.name||'—'}</h4>
-                <p class="text-[10px] text-textMuted font-bold uppercase tracking-wider mt-0.5">${u.title||'Employee'}</p>
-            </div>
-            
-            <div class="flex justify-center mb-1">
-                <span class="px-3 py-1 rounded-full text-[10px] font-black text-${s.color}-700 bg-${s.color}-100 border border-${s.color}-200 shadow-sm"><i class="fas ${s.icon} mr-1"></i> ${s.label}</span>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-2 mt-1">
+            <div class="grid grid-cols-2 gap-1.5 mt-0.5">
                 ${timerCellsHTML(u, start)}
             </div>
             
-            <div class="flex flex-col gap-2 pt-3 border-t border-${s.color}-100 mt-auto">
-                <button onclick="viewHistory('${u.email}')" class="w-full py-2 bg-white border border-slate-200 hover:border-brand-blue hover:text-brand-blue rounded-xl text-[10px] font-black mini-btn shadow-sm transition-colors"><i class="fas fa-history mr-1"></i> View Activity History</button>
-                <button onclick="adminForceLogout('${u.email}')" class="w-full py-2 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-xl text-[10px] font-black mini-btn shadow-sm transition-colors border border-red-100"><i class="fas fa-power-off mr-1"></i> Force Logout</button>
+            <div class="flex flex-col gap-1.5 pt-2 border-t border-${s.color}-100 mt-auto">
+                <button onclick="viewHistory('${u.email}')" class="w-full py-1.5 bg-white border border-slate-200 hover:border-brand-blue hover:text-brand-blue rounded-lg text-[9px] font-black mini-btn shadow-sm transition-colors"><i class="fas fa-history mr-1"></i> View History</button>
+                <button onclick="adminForceLogout('${u.email}')" class="w-full py-1.5 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-lg text-[9px] font-black mini-btn shadow-sm transition-colors border border-red-100"><i class="fas fa-power-off mr-1"></i> Force Logout</button>
             </div>
         </div>`;
     }
@@ -419,67 +417,69 @@
             if (!leaderMatches && matchingMembers.length === 0) return;
             hasAnyResults = true;
             
-            html += `<div class="mb-4 bg-surface rounded-[2rem] p-5 sm:p-7 shadow-sm border border-slate-100 relative">`;
+            html += `<div class="mb-4 bg-surface rounded-[2rem] p-4 sm:p-5 shadow-sm border border-slate-100 relative">`;
             
             if (group.leader) {
                 const lu = group.leader;
                 const status = lu.status || 'Offline', s = STATUSES[status] || STATUSES.Offline;
                 const start = getMillis(lu.lastChange), isOn = status !== 'Offline';
                 html += `
-                <div class="flex flex-col xl:flex-row items-center justify-between bg-white rounded-3xl p-5 mb-6 shadow-sm border border-${s.color}-200 gap-5 relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-${s.color}-50 rounded-full blur-3xl pointer-events-none"></div>
-                    <div class="flex items-center gap-5 z-10 w-full xl:w-auto">
+                <div class="flex flex-col xl:flex-row items-center justify-between bg-white rounded-2xl p-3 mb-4 shadow-sm border border-${s.color}-200 gap-3 relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-24 h-24 bg-${s.color}-50 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="flex items-center gap-3 z-10 w-full xl:w-auto">
                         <div class="relative shrink-0">
-                            <img src="${getAvatar(lu)}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-[3px] ${isOn?'border-'+s.color+'-500':'border-slate-200'} shadow-md">
-                            <span class="absolute bottom-0 right-0 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px] z-20 shadow-sm bg-${s.color}-500"><i class="fas ${s.icon}"></i></span>
+                            <img src="${getAvatar(lu)}" class="w-12 h-12 rounded-full object-cover border-2 ${isOn?'border-'+s.color+'-500':'border-slate-200'} shadow-sm">
+                            <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border border-white flex items-center justify-center text-white text-[8px] z-20 shadow-sm bg-${s.color}-500"><i class="fas ${s.icon}"></i></span>
                         </div>
                         <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <h4 class="text-lg sm:text-xl font-black text-textMain">${lu.name||'—'}</h4>
-                                <span class="bg-brand-soft text-brand-blue px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border border-brand-blue/20">Leader</span>
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <h4 class="text-base font-black text-textMain leading-none">${lu.name||'—'}</h4>
+                                <span class="bg-brand-soft text-brand-blue px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border border-brand-blue/20">Leader</span>
                             </div>
-                            <p class="text-[11px] text-textMuted font-bold uppercase tracking-wider mb-2">${lu.title||'Leader'}</p>
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black text-${s.color}-700 bg-${s.color}-100 border border-${s.color}-200 shadow-sm"><i class="fas ${s.icon} mr-1"></i> ${s.label}</span>
+                            <div class="flex items-center gap-1.5">
+                                <p class="text-[9px] text-textMuted font-bold uppercase tracking-wider">${lu.title||'Leader'}</p>
+                                <span class="px-1.5 py-0.5 rounded text-[8px] font-black text-${s.color}-700 bg-${s.color}-100 border border-${s.color}-200 shadow-sm"><i class="fas ${s.icon} mr-0.5"></i> ${s.label}</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex items-center justify-end gap-4 w-full xl:w-auto z-10 flex-wrap">
-                        <div class="flex gap-2 bg-surface p-2 rounded-2xl border border-slate-100 shadow-inner">
-                            ${timerCellsHTML(lu, start).replace(/col-span-full/g, 'w-24')}
+                    <div class="flex items-center justify-end gap-2 w-full xl:w-auto z-10 flex-wrap">
+                        <div class="flex gap-1.5 bg-surface p-1.5 rounded-xl border border-slate-100 shadow-inner">
+                            ${timerCellsHTML(lu, start).replace(/col-span-full/g, 'w-20')}
                         </div>
-                        <div class="flex flex-col gap-1 w-full sm:w-auto">
-                            <button onclick="viewHistory('${lu.email}')" class="w-full py-1.5 px-3 bg-white border border-slate-200 hover:border-brand-blue hover:text-brand-blue rounded-xl text-[10px] font-black mini-btn shadow-sm transition-colors"><i class="fas fa-history"></i> History</button>
-                            <button onclick="adminForceLogout('${lu.email}')" class="w-full py-1.5 px-3 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-xl text-[10px] font-black mini-btn shadow-sm transition-colors border border-red-100"><i class="fas fa-power-off"></i> Force Logout</button>
+                        <div class="flex gap-1">
+                            <button onclick="viewHistory('${lu.email}')" class="py-1.5 px-3 bg-white border border-slate-200 hover:border-brand-blue hover:text-brand-blue rounded-lg text-[9px] font-black mini-btn shadow-sm transition-colors"><i class="fas fa-history"></i> History</button>
+                            <button onclick="adminForceLogout('${lu.email}')" class="py-1.5 px-3 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-lg text-[9px] font-black mini-btn shadow-sm transition-colors border border-red-100"><i class="fas fa-power-off"></i> Logout</button>
                         </div>
                     </div>
                 </div>
                 `;
             } else {
                 html += `
-                <div class="flex items-center gap-3 mb-6 px-2">
-                    <div class="w-10 h-10 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 shadow-sm border border-slate-300">
-                        <i class="fas fa-users-cog"></i>
+                <div class="flex items-center gap-2 mb-4 px-2">
+                    <div class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center text-slate-500 shadow-sm border border-slate-300">
+                        <i class="fas fa-users-cog text-xs"></i>
                     </div>
                     <div>
-                        <h4 class="text-lg font-black text-textMain">${group.title}</h4>
-                        <p class="text-[10px] text-textMuted font-bold uppercase tracking-wider">Independent Team Members</p>
+                        <h4 class="text-sm font-black text-textMain">${group.title}</h4>
+                        <p class="text-[9px] text-textMuted font-bold uppercase tracking-wider">Independent Team Members</p>
                     </div>
                 </div>
                 `;
             }
             
             if (matchingMembers.length > 0) {
-                html += `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-5 content-start">`;
+                html += `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 content-start">`;
                 html += matchingMembers.map(generateUserCardHTML).join('');
                 html += `</div>`;
             } else {
-                html += `<div class="py-10 text-center text-textMuted font-bold italic opacity-70 bg-white/50 rounded-2xl border border-dashed border-slate-300">No matching team members in this group.</div>`;
+                html += `<div class="py-6 text-center text-[11px] text-textMuted font-bold italic opacity-70 bg-white/50 rounded-xl border border-dashed border-slate-300">No matching team members in this group.</div>`;
             }
             
             html += `</div>`;
         });
         
         if (!hasAnyResults) {
-            container.innerHTML = `<div class="py-20 flex flex-col items-center justify-center text-slate-400 w-full"><i class="fas fa-search text-4xl mb-4 opacity-50"></i><p class="text-sm font-bold">No employees found.</p></div>`;
+            container.innerHTML = `<div class="py-10 flex flex-col items-center justify-center text-slate-400 w-full"><i class="fas fa-search text-3xl mb-3 opacity-50"></i><p class="text-xs font-bold">No employees found.</p></div>`;
             return;
         }
         
