@@ -84,6 +84,9 @@
             <button onclick="switchTab('attendance')" id="nav-attendance" class="nav-link text-textMuted w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-black text-xs transition-all hover:bg-brand-soft hover:text-brand-blue">
                 <i class="fas fa-user-clock w-5 text-center text-lg"></i> Attendance Control
             </button>
+            <button onclick="window.open('sales_crm.html', '_blank')" class="nav-link text-textMuted w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-black text-xs transition-all hover:bg-brand-soft hover:text-brand-blue border border-transparent hover:border-brand-blueLt mt-4 bg-slate-50">
+                <i class="fas fa-briefcase w-5 text-center text-lg text-brand-blue"></i> Sales CRM
+            </button>
         </nav>
         <!-- Sidebar Footer (Stats/Overview) -->
         <div class="p-4 border-t border-slate-100 bg-slate-50 shrink-0 text-center">
@@ -237,8 +240,15 @@
                 
                 <div class="p-5 border border-slate-200 bg-surface rounded-2xl">
                     <p class="text-[10px] font-black text-textMain uppercase mb-3 tracking-widest border-b border-slate-200 pb-2"><i class="fas fa-shield-halved text-brand-blue mr-1"></i> Permissions & Access</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm font-bold">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-bold items-center">
                         <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors"><input type="checkbox" id="perm-crm" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue"> CRM System Access</label>
+                        <div>
+                            <select id="u-crm-role" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm">
+                                <option value="agent">CRM Role: Agent</option>
+                                <option value="supervisor">CRM Role: Supervisor</option>
+                                <option value="admin">CRM Role: Admin</option>
+                            </select>
+                        </div>
                         <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors"><input type="checkbox" id="perm-payroll" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue"> Payroll System Access</label>
                     </div>
                 </div>
@@ -903,6 +913,7 @@
         if (isNew) {
             document.getElementById('u-gender').value = 'male';
             if (leaderSelect) leaderSelect.value = '';
+            document.getElementById('u-crm-role').value = 'agent';
             updateFallbackPreview();
             document.getElementById('u-leave-balance').value = ANNUAL_LEAVE_DEFAULT;
             document.getElementById('u-online-limit').value = 0;
@@ -916,6 +927,7 @@
             document.getElementById('u-gender').value = u.gender || 'male';
             document.getElementById('u-suspended').checked = !!u.isSuspended;
             document.getElementById('perm-crm').checked = !!(u.permissions && u.permissions.crm);
+            document.getElementById('u-crm-role').value = (u.permissions && u.permissions.crmRole) ? u.permissions.crmRole : 'agent';
             document.getElementById('perm-payroll').checked = !!(u.permissions && u.permissions.payroll);
             document.getElementById('user-photo-preview').src = getAvatar(u);
             document.getElementById('user-photo-b64').value = u.photo || '';
@@ -961,7 +973,11 @@
             leaderEmail: document.getElementById('u-leader-email') ? document.getElementById('u-leader-email').value : '',
             onlineDaysLimit: onLimit,
             isSuspended: document.getElementById('u-suspended').checked,
-            permissions: { crm: document.getElementById('perm-crm').checked, payroll: document.getElementById('perm-payroll').checked },
+            permissions: { 
+                crm: document.getElementById('perm-crm').checked, 
+                crmRole: document.getElementById('u-crm-role').value,
+                payroll: document.getElementById('perm-payroll').checked 
+            },
             photo: document.getElementById('user-photo-b64').value || ''
         };
 

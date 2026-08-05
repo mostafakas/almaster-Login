@@ -91,6 +91,9 @@
             <span class="hidden sm:inline px-3 py-1 bg-white/10 text-white/80 text-[10px] font-bold rounded-full uppercase tracking-widest">Leader Portal</span>
         </div>
         <div class="flex items-center gap-4 sm:gap-6">
+            <button id="btn-nav-crm" onclick="window.open('sales_crm.html', '_blank')" style="display: none;" class="items-center gap-2 px-3 py-1.5 bg-brand-navy2 border border-slate-700 rounded-full text-[11px] font-black text-white shadow-md hover:bg-brand-blueLt transition-colors">
+                <i class="fas fa-briefcase"></i> <span class="hidden sm:inline">CRM</span>
+            </button>
             <div id="connection-status" class="hidden items-center gap-2 text-[11px] font-bold text-red-100 bg-red-500/30 px-3 py-1.5 rounded-full border border-red-300/30">
                 <i class="fas fa-wifi-slash"></i> Offline
             </div>
@@ -568,6 +571,15 @@
         document.getElementById('user-name').innerText  = name;
         document.getElementById('user-title').innerText = data.title || 'Team Leader';
         document.getElementById('user-avatar').src = getAvatar(data);
+
+        const crmBtn = document.getElementById('btn-nav-crm');
+        if (crmBtn) {
+            if (data.permissions && data.permissions.crm) {
+                crmBtn.style.display = 'flex';
+            } else {
+                crmBtn.style.display = 'none';
+            }
+        }
 
         const status = data.status || 'Offline';
         const s = STATUSES[status] || STATUSES.Offline;
