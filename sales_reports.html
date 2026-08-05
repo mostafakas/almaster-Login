@@ -169,22 +169,23 @@
                     <div class="flex flex-wrap items-center gap-4">
                         <div class="flex items-center gap-2">
                             <label class="text-sm font-bold text-slate-400">من:</label>
-                            <input type="date" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:border-brand-blueLt outline-none">
+                            <input type="date" id="filter-date-from" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:border-brand-blueLt outline-none">
                         </div>
                         <div class="flex items-center gap-2">
                             <label class="text-sm font-bold text-slate-400">إلى:</label>
-                            <input type="date" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:border-brand-blueLt outline-none">
+                            <input type="date" id="filter-date-to" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:border-brand-blueLt outline-none">
                         </div>
                         <div class="flex items-center gap-2">
                             <label class="text-sm font-bold text-slate-400">حالة العميل:</label>
-                            <select class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:border-brand-blueLt outline-none min-w-[120px]">
+                            <select id="filter-status" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:border-brand-blueLt outline-none min-w-[120px]">
                                 <option value="all">الكل</option>
-                                <option value="closed">تم الإغلاق</option>
-                                <option value="negotiation">قيد التفاوض</option>
-                                <option value="new">جديد</option>
+                                <option value="مغلق (نجاح)">مغلق (نجاح)</option>
+                                <option value="قيد التفاوض">قيد التفاوض</option>
+                                <option value="مستبعد (خسارة)">مستبعد (خسارة)</option>
+                                <option value="جديد">جديد</option>
                             </select>
                         </div>
-                        <button class="px-4 py-2 bg-brand-blue/20 text-brand-blueLt hover:bg-brand-blue hover:text-white rounded-lg text-sm font-bold transition-colors">
+                        <button onclick="renderReports()" class="px-4 py-2 bg-brand-blue/20 text-brand-blueLt hover:bg-brand-blue hover:text-white rounded-lg text-sm font-bold transition-colors">
                             <i class="fas fa-filter"></i> تصفية
                         </button>
                     </div>
@@ -214,34 +215,7 @@
                             </tr>
                         </thead>
                         <tbody id="reports-table-body">
-                            <!-- Dummy Data -->
-                            <tr class="cursor-pointer transition-colors">
-                                <td>#REP-1029</td>
-                                <td class="font-bold">عيادات الابتسامة</td>
-                                <td>أحمد موظف مبيعات</td>
-                                <td>2023-10-15</td>
-                                <td>10 أيام</td>
-                                <td><span class="chip bg-emerald-500/20 text-emerald-500">رابحة</span></td>
-                                <td class="font-bold text-emerald-500">25,000 ر.س</td>
-                            </tr>
-                            <tr class="cursor-pointer transition-colors">
-                                <td>#REP-1028</td>
-                                <td class="font-bold">مؤسسة البناء الحديث</td>
-                                <td>خالد عبد الله</td>
-                                <td>2023-10-14</td>
-                                <td>5 أيام</td>
-                                <td><span class="chip bg-red-500/20 text-red-500">خاسرة</span></td>
-                                <td class="font-bold">0 ر.س</td>
-                            </tr>
-                            <tr class="cursor-pointer transition-colors">
-                                <td>#REP-1027</td>
-                                <td class="font-bold">شركة الأفق المحدودة</td>
-                                <td>سارة فهد</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td><span class="chip bg-amber-500/20 text-amber-500">مفتوحة</span></td>
-                                <td class="font-bold text-amber-500">متوقعة: 15,000 ر.س</td>
-                            </tr>
+                            <!-- Populated by JS -->
                         </tbody>
                     </table>
                 </div>
@@ -314,38 +288,75 @@
             document.getElementById('page-title').innerText = titles[tabId];
         }
 
-        // Dummy Data Render
-        const dummyLeads = [
-            { company: 'شركة الأفق المحدودة', person: 'أحمد محمد', date: '2023-10-12', phone: '0501234567', status: 'جديد', project: 'تطوير موقع ويب', value: '15,000 ر.س', nextAction: 'مكالمة ترحيبية (غداً)' },
-            { company: 'مؤسسة البناء الحديث', person: 'خالد عبد الله', date: '2023-10-10', phone: '0559876543', status: 'قيد التفاوض', project: 'تطبيق جوال', value: '35,000 ر.س', nextAction: 'إرسال العرض المالي' },
-            { company: 'عيادات الابتسامة', person: 'د. سارة فهد', date: '2023-10-05', phone: '0541112233', status: 'تم الإغلاق', project: 'نظام إدارة حجوزات', value: '25,000 ر.س', nextAction: 'توقيع العقد' },
-        ];
+        // Reports Logic
+        let leadsData = [];
         
-        function renderDummyData() {
-            const isDark = document.documentElement.classList.contains('dark');
+        function initReports() {
+            db.collection('sales_leads').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+                leadsData = [];
+                snapshot.forEach(doc => {
+                    leadsData.push({ id: doc.id, ...doc.data() });
+                });
+                renderReports();
+            }, error => {
+                console.error("Error fetching reports: ", error);
+            });
+        }
+        
+        function renderReports() {
+            const dateFrom = document.getElementById('filter-date-from').value;
+            const dateTo = document.getElementById('filter-date-to').value;
+            const statusFilter = document.getElementById('filter-status').value;
+            
+            const tbody = document.getElementById('reports-table-body');
+            
+            let filtered = leadsData.filter(lead => {
+                if(statusFilter !== 'all' && lead.status !== statusFilter) return false;
+                
+                let contactDateStr = lead.firstContactDate ? lead.firstContactDate.split('T')[0] : null;
+                if(dateFrom && contactDateStr && contactDateStr < dateFrom) return false;
+                if(dateTo && contactDateStr && contactDateStr > dateTo) return false;
+                
+                return true;
+            });
+            
             const statusColors = {
                 'جديد': 'bg-blue-500/20 text-blue-500',
                 'قيد التفاوض': 'bg-amber-500/20 text-amber-500',
-                'تم الإغلاق': 'bg-emerald-500/20 text-emerald-500'
+                'مغلق (نجاح)': 'bg-emerald-500/20 text-emerald-500',
+                'مستبعد (خسارة)': 'bg-red-500/20 text-red-500'
             };
             
-            const tbody = document.getElementById('crm-table-body');
-            tbody.innerHTML = dummyLeads.map(l => `
+            let totalVal = 0;
+            let closedCount = 0;
+            
+            tbody.innerHTML = filtered.map((l, index) => {
+                const isClosed = l.status === 'مغلق (نجاح)';
+                if(isClosed) {
+                    totalVal += Number(l.value || 0);
+                    closedCount++;
+                }
+                
+                const cColor = statusColors[l.status] || 'bg-slate-500/20 text-slate-500';
+                
+                return `
                 <tr class="cursor-pointer transition-colors">
-                    <td class="font-bold">${l.company}</td>
-                    <td>${l.person}</td>
-                    <td>${l.date}</td>
-                    <td dir="ltr" class="text-right">${l.phone}</td>
-                    <td><span class="chip ${statusColors[l.status] || 'bg-slate-500/20 text-slate-500'}">${l.status}</span></td>
-                    <td>${l.project}</td>
-                    <td class="font-bold text-emerald-500">${l.value}</td>
-                    <td class="text-xs font-bold">${l.nextAction}</td>
+                    <td>#REP-${index + 1000}</td>
+                    <td class="font-bold">${l.company || '-'}</td>
+                    <td>${l.assignedEmployee || '-'}</td>
+                    <td><span dir="ltr">${l.lastFollowUp ? new Date(l.lastFollowUp).toLocaleDateString('ar-EG') : '-'}</span></td>
+                    <td>-</td>
+                    <td><span class="chip ${cColor}">${l.status || '-'}</span></td>
+                    <td class="font-bold ${isClosed ? 'text-emerald-500' : ''}">${l.value || 0} ${l.currency || 'ر.س'}</td>
                 </tr>
-            `).join('');
+            `}).join('');
+            
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-500">لا توجد تقارير مطابقة للفترة المحددة</td></tr>';
+            }
         }
         
-        // Initial setup
-        renderDummyData();
+        function renderDummyData() { renderReports(); }
         
         // Authentication Check
         auth.onAuthStateChanged(async (user) => {
@@ -365,6 +376,7 @@
                     if(data.permissions.crmRole === 'admin') {
                         document.getElementById('nav-settings').style.display = 'flex';
                     }
+                    initReports();
                 }
             } catch (e) {
                 console.error(e);

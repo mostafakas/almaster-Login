@@ -124,37 +124,128 @@
             
             <!-- Leads Tab (Notion Table) -->
             <div id="tab-leads" class="h-full flex flex-col">
-                <div class="flex items-center justify-between mb-4 shrink-0">
-                    <div class="flex items-center gap-2">
-                        <button class="px-4 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-sm font-bold hover:bg-slate-700 transition">كل العملاء</button>
-                        <button class="px-4 py-1.5 rounded-lg bg-transparent text-slate-400 text-sm font-bold hover:bg-slate-800 transition">متابعة اليوم</button>
-                        <button class="px-4 py-1.5 rounded-lg bg-transparent text-slate-400 text-sm font-bold hover:bg-slate-800 transition">العملاء الجدد</button>
+                <div class="flex flex-wrap items-center justify-between mb-4 shrink-0 gap-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="applyFilter('all')" id="filter-all" class="filter-btn px-4 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-sm font-bold text-white transition">الكل</button>
+                        <button onclick="applyFilter('status', 'جديد')" id="filter-new" class="filter-btn px-4 py-1.5 rounded-lg bg-transparent text-slate-400 text-sm font-bold hover:bg-slate-800 transition">عملاء جدد</button>
+                        <button onclick="applyFilter('status', 'قيد التفاوض')" id="filter-neg" class="filter-btn px-4 py-1.5 rounded-lg bg-transparent text-slate-400 text-sm font-bold hover:bg-slate-800 transition">قيد التفاوض</button>
+                        <div class="h-6 w-px bg-slate-700 mx-2"></div>
+                        <select id="emp-filter" onchange="applyFilter('employee', this.value)" class="bg-slate-800 border border-slate-700 text-sm font-bold text-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-blueLt">
+                            <option value="all">كل الموظفين</option>
+                            <option value="ماجدة">ماجدة</option>
+                            <option value="محمد">محمد</option>
+                            <option value="خلود">خلود</option>
+                            <option value="مصطفى">مصطفى</option>
+                        </select>
                     </div>
-                    <button class="px-4 py-2 bg-brand-blue hover:bg-brand-blueLt text-white rounded-lg text-sm font-bold shadow-md transition-colors flex items-center gap-2">
+                    <button onclick="openLeadModal()" class="px-4 py-2 bg-brand-blue hover:bg-brand-blueLt text-white rounded-lg text-sm font-bold shadow-md transition-colors flex items-center gap-2">
                         <i class="fas fa-plus"></i> إضافة عميل
                     </button>
                 </div>
                 
-                <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-auto custom-scrollbar flex-1 shadow-sm">
+                <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-auto custom-scrollbar flex-1 shadow-sm relative">
                     <table class="crm-table">
                         <thead>
                             <tr>
-                                <th><i class="fas fa-building ms-1"></i> الشركة</th>
-                                <th><i class="fas fa-user ms-1"></i> شخص التواصل</th>
-                                <th><i class="fas fa-calendar ms-1"></i> تاريخ التواصل الأول</th>
-                                <th><i class="fas fa-phone ms-1"></i> الهاتف</th>
-                                <th><i class="fas fa-tags ms-1"></i> حالة العميل</th>
-                                <th><i class="fas fa-project-diagram ms-1"></i> المشروع المطلوب</th>
-                                <th><i class="fas fa-money-bill ms-1"></i> القيمة</th>
-                                <th><i class="fas fa-calendar-check ms-1"></i> الإجراء التالي</th>
+                                <th class="cursor-pointer hover:bg-slate-700 transition" onclick="sortTable('company')"><i class="fas fa-building ms-1 text-slate-400"></i> الشركة/العميل <i class="fas fa-sort ms-1 opacity-50"></i></th>
+                                <th class="cursor-pointer hover:bg-slate-700 transition" onclick="sortTable('contactPerson')"><i class="fas fa-user ms-1 text-slate-400"></i> شخص التواصل <i class="fas fa-sort ms-1 opacity-50"></i></th>
+                                <th class="cursor-pointer hover:bg-slate-700 transition" onclick="sortTable('firstContactDate')"><i class="fas fa-calendar ms-1 text-slate-400"></i> تاريخ التواصل <i class="fas fa-sort ms-1 opacity-50"></i></th>
+                                <th><i class="fas fa-phone ms-1 text-slate-400"></i> الهاتف</th>
+                                <th class="cursor-pointer hover:bg-slate-700 transition" onclick="sortTable('source')"><i class="fas fa-filter ms-1 text-slate-400"></i> المصدر <i class="fas fa-sort ms-1 opacity-50"></i></th>
+                                <th class="cursor-pointer hover:bg-slate-700 transition" onclick="sortTable('assignedEmployee')"><i class="fas fa-user-tie ms-1 text-slate-400"></i> المسؤول <i class="fas fa-sort ms-1 opacity-50"></i></th>
+                                <th class="cursor-pointer hover:bg-slate-700 transition" onclick="sortTable('status')"><i class="fas fa-tags ms-1 text-slate-400"></i> الحالة <i class="fas fa-sort ms-1 opacity-50"></i></th>
+                                <th class="cursor-pointer hover:bg-slate-700 transition" onclick="sortTable('value')"><i class="fas fa-money-bill ms-1 text-slate-400"></i> القيمة <i class="fas fa-sort ms-1 opacity-50"></i></th>
+                                <th class="cursor-pointer hover:bg-slate-700 transition" onclick="sortTable('nextActionDate')"><i class="fas fa-calendar-check ms-1 text-slate-400"></i> الإجراء التالي <i class="fas fa-sort ms-1 opacity-50"></i></th>
                             </tr>
                         </thead>
                         <tbody id="crm-table-body">
-                            <!-- Dummy Data populated by JS -->
+                            <tr><td colspan="9" class="text-center py-8 text-slate-500">جاري التحميل...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+            
+            <!-- Lead Modal (Add/Edit) -->
+            <div id="leadModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col max-h-[90vh]">
+                    <div class="flex items-center justify-between p-6 border-b border-slate-700 shrink-0">
+                        <h3 id="modalTitle" class="text-xl font-black text-white">إضافة عميل جديد</h3>
+                        <button onclick="closeLeadModal()" class="text-slate-400 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
+                    </div>
+                    <form id="leadForm" class="p-6 overflow-auto custom-scrollbar flex-1" onsubmit="saveLead(event)">
+                        <input type="hidden" id="leadId">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Basic Info -->
+                            <div class="space-y-4">
+                                <h4 class="font-bold text-brand-blueLt border-b border-slate-700 pb-2"><i class="fas fa-info-circle"></i> معلومات أساسية</h4>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">اسم الشركة / العميل *</label><input type="text" id="company" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none"></div>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">اسم مسؤول التواصل</label><input type="text" id="contactPerson" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none"></div>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">المسمى الوظيفي (Title)</label><input type="text" id="contactTitle" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none"></div>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">رقم الهاتف (مع كود الدولة) *</label><input type="tel" id="phone" dir="ltr" placeholder="+966" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none text-right"></div>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">البريد الإلكتروني</label><input type="email" id="email" dir="ltr" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none text-right"></div>
+                            </div>
+                            
+                            <!-- CRM specific -->
+                            <div class="space-y-4">
+                                <h4 class="font-bold text-brand-blueLt border-b border-slate-700 pb-2"><i class="fas fa-chart-line"></i> تصنيف المبيعات</h4>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">الدولة</label>
+                                    <input list="countriesList" id="country" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none" placeholder="ابحث أو اختر دولة">
+                                    <datalist id="countriesList">
+                                        <option value="السعودية"><option value="مصر"><option value="الإمارات"><option value="الكويت"><option value="قطر"><option value="البحرين"><option value="عمان"><option value="الأردن">
+                                    </datalist>
+                                </div>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">القطاع</label><input type="text" id="sector" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none"></div>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">مصدر العميل *</label>
+                                    <select id="source" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none">
+                                        <option value="">اختر المصدر...</option><option value="واتس مصري">واتس مصري</option><option value="ميل">ميل</option><option value="موقع">موقع</option><option value="فورم">فورم</option><option value="واتساب سعودي">واتساب سعودي</option><option value="اتصال">اتصال</option><option value="شخصي">شخصي</option>
+                                    </select>
+                                </div>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">حالة العميل *</label>
+                                    <select id="status" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none">
+                                        <option value="جديد">جديد</option><option value="قيد التفاوض">قيد التفاوض</option><option value="مغلق (نجاح)">مغلق (نجاح)</option><option value="مستبعد (خسارة)">مستبعد (خسارة)</option>
+                                    </select>
+                                </div>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">الموظف المسؤول *</label>
+                                    <select id="assignedEmployee" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none">
+                                        <option value="ماجدة">ماجدة</option><option value="محمد">محمد</option><option value="خلود">خلود</option><option value="مصطفى">مصطفى</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Followup & Financial -->
+                            <div class="space-y-4">
+                                <h4 class="font-bold text-brand-blueLt border-b border-slate-700 pb-2"><i class="fas fa-calendar-alt"></i> المتابعة والمالية</h4>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">تاريخ التواصل الأول</label><input type="datetime-local" id="firstContactDate" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none"></div>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">تاريخ آخر متابعة</label><input type="datetime-local" id="lastFollowUp" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none"></div>
+                                <div><label class="block text-sm font-bold text-slate-400 mb-1">موعد الإجراء التالي</label><input type="datetime-local" id="nextActionDate" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none"></div>
+                                <div class="flex gap-2">
+                                    <div class="flex-1"><label class="block text-sm font-bold text-slate-400 mb-1">القيمة المالية</label><input type="number" id="value" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none"></div>
+                                    <div class="w-24"><label class="block text-sm font-bold text-slate-400 mb-1">العملة</label>
+                                        <select id="currency" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none">
+                                            <option value="ر.س">ر.س</option><option value="EGP">EGP</option><option value="$">$</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Full width details -->
+                        <div class="mt-6 space-y-4">
+                            <div><label class="block text-sm font-bold text-slate-400 mb-1">تفاصيل المشروع المطلوب</label><textarea id="projectDetails" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none custom-scrollbar"></textarea></div>
+                            <div><label class="block text-sm font-bold text-slate-400 mb-1">الفيدباك من آخر إجراء</label><textarea id="lastFeedback" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none custom-scrollbar"></textarea></div>
+                            <div><label class="block text-sm font-bold text-slate-400 mb-1">الإجراء التالي المطلوب (Next Action)</label><input type="text" id="nextAction" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-brand-blueLt outline-none"></div>
+                        </div>
+                    </form>
+                    <div class="p-6 border-t border-slate-700 shrink-0 flex justify-end gap-3 bg-slate-800/50 rounded-b-2xl">
+                        <button type="button" onclick="closeLeadModal()" class="px-6 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 transition">إلغاء</button>
+                        <button type="submit" form="leadForm" id="saveBtn" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                            <i class="fas fa-save"></i> حفظ العميل
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             
             <!-- Other Tabs (Hidden by default) -->
             <div id="tab-analytics" class="hidden h-full flex flex-col items-center justify-center text-slate-500">
@@ -228,38 +319,201 @@
             document.getElementById('page-title').innerText = titles[tabId];
         }
 
-        // Dummy Data Render
-        const dummyLeads = [
-            { company: 'شركة الأفق المحدودة', person: 'أحمد محمد', date: '2023-10-12', phone: '0501234567', status: 'جديد', project: 'تطوير موقع ويب', value: '15,000 ر.س', nextAction: 'مكالمة ترحيبية (غداً)' },
-            { company: 'مؤسسة البناء الحديث', person: 'خالد عبد الله', date: '2023-10-10', phone: '0559876543', status: 'قيد التفاوض', project: 'تطبيق جوال', value: '35,000 ر.س', nextAction: 'إرسال العرض المالي' },
-            { company: 'عيادات الابتسامة', person: 'د. سارة فهد', date: '2023-10-05', phone: '0541112233', status: 'تم الإغلاق', project: 'نظام إدارة حجوزات', value: '25,000 ر.س', nextAction: 'توقيع العقد' },
-        ];
+        // =====================================
+        // Real-time Data & CRUD Logic
+        // =====================================
+        let leadsData = [];
+        let currentSortCol = 'createdAt';
+        let currentSortAsc = false;
+        let currentFilter = { key: 'all', value: 'all' };
         
-        function renderDummyData() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const statusColors = {
-                'جديد': 'bg-blue-500/20 text-blue-500',
-                'قيد التفاوض': 'bg-amber-500/20 text-amber-500',
-                'تم الإغلاق': 'bg-emerald-500/20 text-emerald-500'
-            };
+        const statusColors = {
+            'جديد': 'bg-blue-500/20 text-blue-500',
+            'قيد التفاوض': 'bg-amber-500/20 text-amber-500',
+            'مغلق (نجاح)': 'bg-emerald-500/20 text-emerald-500',
+            'مستبعد (خسارة)': 'bg-slate-500/20 text-slate-500'
+        };
+
+        // Initialize Firebase Listener
+        function initCRM() {
+            db.collection('sales_leads').onSnapshot(snapshot => {
+                leadsData = [];
+                snapshot.forEach(doc => {
+                    leadsData.push({ id: doc.id, ...doc.data() });
+                });
+                renderLeads();
+            }, error => {
+                console.error("Error fetching leads: ", error);
+                Swal.fire('خطأ', 'تعذر جلب البيانات من الخادم', 'error');
+            });
+        }
+
+        // Sorting
+        function sortTable(col) {
+            if (currentSortCol === col) {
+                currentSortAsc = !currentSortAsc;
+            } else {
+                currentSortCol = col;
+                currentSortAsc = true;
+            }
+            renderLeads();
+        }
+
+        // Filtering
+        function applyFilter(key, value = 'all') {
+            currentFilter = { key, value };
             
+            // Update UI buttons if status filter
+            if(key === 'all' || key === 'status') {
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('bg-slate-800', 'text-white', 'border', 'border-slate-600');
+                    btn.classList.add('bg-transparent', 'text-slate-400');
+                });
+                if(key === 'all') {
+                    const btn = document.getElementById('filter-all');
+                    btn.classList.add('bg-slate-800', 'text-white', 'border', 'border-slate-600');
+                    btn.classList.remove('bg-transparent', 'text-slate-400');
+                } else if(value === 'جديد') {
+                    const btn = document.getElementById('filter-new');
+                    btn.classList.add('bg-slate-800', 'text-white', 'border', 'border-slate-600');
+                    btn.classList.remove('bg-transparent', 'text-slate-400');
+                } else if(value === 'قيد التفاوض') {
+                    const btn = document.getElementById('filter-neg');
+                    btn.classList.add('bg-slate-800', 'text-white', 'border', 'border-slate-600');
+                    btn.classList.remove('bg-transparent', 'text-slate-400');
+                }
+            }
+            renderLeads();
+        }
+
+        // Render Table
+        function renderLeads() {
+            let processed = [...leadsData];
+            
+            // Apply Filter
+            if (currentFilter.key !== 'all') {
+                processed = processed.filter(lead => lead[currentFilter.key] === currentFilter.value);
+            }
+            // Employee filter is a separate dropdown, apply it on top if not "all"
+            const empVal = document.getElementById('emp-filter').value;
+            if(empVal !== 'all') {
+                processed = processed.filter(lead => lead.assignedEmployee === empVal);
+            }
+
+            // Apply Sort
+            processed.sort((a, b) => {
+                let valA = a[currentSortCol] || '';
+                let valB = b[currentSortCol] || '';
+                if(currentSortCol === 'value') { valA = Number(valA); valB = Number(valB); }
+                if (valA < valB) return currentSortAsc ? -1 : 1;
+                if (valA > valB) return currentSortAsc ? 1 : -1;
+                return 0;
+            });
+
             const tbody = document.getElementById('crm-table-body');
-            tbody.innerHTML = dummyLeads.map(l => `
-                <tr class="cursor-pointer transition-colors">
-                    <td class="font-bold">${l.company}</td>
-                    <td>${l.person}</td>
-                    <td>${l.date}</td>
-                    <td dir="ltr" class="text-right">${l.phone}</td>
-                    <td><span class="chip ${statusColors[l.status] || 'bg-slate-500/20 text-slate-500'}">${l.status}</span></td>
-                    <td>${l.project}</td>
-                    <td class="font-bold text-emerald-500">${l.value}</td>
-                    <td class="text-xs font-bold">${l.nextAction}</td>
+            if(processed.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-slate-500">لا توجد بيانات مطابقة</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = processed.map(l => {
+                const dateStr = l.firstContactDate ? new Date(l.firstContactDate).toLocaleDateString('ar-EG') : '-';
+                const nextActStr = l.nextActionDate ? new Date(l.nextActionDate).toLocaleDateString('ar-EG') : '-';
+                const colorClass = statusColors[l.status] || 'bg-slate-500/20 text-slate-500';
+                
+                return `
+                <tr class="cursor-pointer transition-colors" onclick="openLeadModal('${l.id}')">
+                    <td class="font-bold">${l.company || '-'}</td>
+                    <td>${l.contactPerson || '-'}</td>
+                    <td><span dir="ltr">${dateStr}</span></td>
+                    <td dir="ltr" class="text-right">${l.phone || '-'}</td>
+                    <td>${l.source || '-'}</td>
+                    <td class="font-bold text-brand-blueLt">${l.assignedEmployee || '-'}</td>
+                    <td><span class="chip ${colorClass}">${l.status || '-'}</span></td>
+                    <td class="font-bold text-emerald-500">${l.value || 0} ${l.currency || 'ر.س'}</td>
+                    <td class="text-xs font-bold">${l.nextAction || '-'} <br><span class="text-[10px] text-slate-400">${nextActStr}</span></td>
                 </tr>
-            `).join('');
+            `}).join('');
+        }
+
+        // Modal Logic
+        function openLeadModal(id = null) {
+            document.getElementById('leadForm').reset();
+            document.getElementById('leadId').value = '';
+            document.getElementById('modalTitle').innerText = 'إضافة عميل جديد';
+            
+            if(id) {
+                const lead = leadsData.find(l => l.id === id);
+                if(lead) {
+                    document.getElementById('modalTitle').innerText = 'تعديل بيانات العميل';
+                    document.getElementById('leadId').value = lead.id;
+                    Object.keys(lead).forEach(key => {
+                        const el = document.getElementById(key);
+                        if(el) el.value = lead[key];
+                    });
+                }
+            } else {
+                // set defaults for new
+                document.getElementById('status').value = 'جديد';
+            }
+            
+            document.getElementById('leadModal').classList.remove('hidden');
+        }
+
+        function closeLeadModal() {
+            document.getElementById('leadModal').classList.add('hidden');
+        }
+
+        async function saveLead(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+
+            const id = document.getElementById('leadId').value;
+            const data = {
+                company: document.getElementById('company').value,
+                contactPerson: document.getElementById('contactPerson').value,
+                contactTitle: document.getElementById('contactTitle').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                country: document.getElementById('country').value,
+                sector: document.getElementById('sector').value,
+                source: document.getElementById('source').value,
+                status: document.getElementById('status').value,
+                assignedEmployee: document.getElementById('assignedEmployee').value,
+                firstContactDate: document.getElementById('firstContactDate').value,
+                lastFollowUp: document.getElementById('lastFollowUp').value,
+                nextActionDate: document.getElementById('nextActionDate').value,
+                value: Number(document.getElementById('value').value || 0),
+                currency: document.getElementById('currency').value,
+                projectDetails: document.getElementById('projectDetails').value,
+                lastFeedback: document.getElementById('lastFeedback').value,
+                nextAction: document.getElementById('nextAction').value,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                if(id) {
+                    await db.collection('sales_leads').doc(id).update(data);
+                    Swal.fire({ icon: 'success', title: 'تم التحديث!', text: 'تم تحديث بيانات العميل بنجاح.', timer: 1500, showConfirmButton: false });
+                } else {
+                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection('sales_leads').add(data);
+                    Swal.fire({ icon: 'success', title: 'تمت الإضافة!', text: 'تمت إضافة العميل بنجاح.', timer: 1500, showConfirmButton: false });
+                }
+                closeLeadModal();
+            } catch (error) {
+                console.error("Error saving document: ", error);
+                Swal.fire('خطأ', 'حدث خطأ أثناء الحفظ', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> حفظ العميل';
+            }
         }
         
-        // Initial setup
-        renderDummyData();
+        // Expose function for toggling theme (to update table if needed)
+        function renderDummyData() { renderLeads(); }
         
         // Authentication Check
         auth.onAuthStateChanged(async (user) => {
@@ -279,6 +533,9 @@
                     if(data.permissions.crmRole === 'admin') {
                         document.getElementById('nav-settings').style.display = 'flex';
                     }
+                    
+                    // Start fetching CRM data
+                    initCRM();
                 }
             } catch (e) {
                 console.error(e);
