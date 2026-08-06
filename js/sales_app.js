@@ -21,6 +21,7 @@ let currentRole = null;
 let currentView = 'leads';
 let leadsViewMode = 'table'; // table or kanban
 let leadsData = [];
+let systemUsers = [];
 let settingsData = { employees: [], sources: [], currencies: [] };
 let chartInstances = { sales: null, status: null };
 let currentLeadFilter = 'all';
@@ -142,6 +143,7 @@ auth.onAuthStateChanged(async (user) => {
             document.getElementById('global-loader').style.display = 'none';
             initTheme();
             initSettings();
+            initUsers();
             initLeads();
             navigate('leads');
         } else {
@@ -188,7 +190,10 @@ function renderSettingsAdmin() {
         if(arr.length === 0) el.innerHTML = '<p class="text-xs text-slate-400 p-2">No items found.</p>';
     };
     
-    renderList('settings-employees-list', settingsData.employees, 'employees');
+    const empCard = document.getElementById('settings-employees-list');
+    if (empCard && empCard.parentElement) empCard.parentElement.style.display = 'none'; // Hide legacy employee settings card
+    
+    // renderList('settings-employees-list', settingsData.employees, 'employees');
     renderList('settings-sources-list', settingsData.sources, 'sources');
     renderList('settings-currencies-list', settingsData.currencies, 'currencies');
 }
@@ -226,12 +231,87 @@ function updateLeadFormDropdowns() {
         if(arr.includes(currentVal)) el.value = currentVal;
     };
     
-    updateSelect('lead-assignedEmployee', settingsData.employees);
     updateSelect('lead-source', settingsData.sources);
     updateSelect('lead-currency', settingsData.currencies);
 }
 
-// --- Data Fetching (Leads) ---
+// --- Data Fetching (Users & Leads) ---
+function initUsers() {
+    db.collection('users').onSnapshot(snapshot => {
+        systemUsers = [];
+        snapshot.forEach(doc => systemUsers.push({ email: doc.id, ...doc.data() }));
+        renderEmployeeDropdown(systemUsers);
+    });
+}
+
+// Custom Employee Dropdown Logic
+let dropdownOpen = false;
+function toggleEmployeeDropdown() {
+    dropdownOpen = !dropdownOpen;
+    const list = document.getElementById('employee-dropdown-list');
+    const icon = document.getElementById('employee-dropdown-icon');
+    if (!list) return;
+    
+    if (dropdownOpen) {
+        list.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+        document.getElementById('employee-search').value = '';
+        renderEmployeeDropdown(systemUsers);
+    } else {
+        list.classList.add('hidden');
+        icon.classList.remove('rotate-180');
+    }
+}
+
+function filterEmployeeList() {
+    const q = document.getElementById('employee-search').value.toLowerCase();
+    const filtered = systemUsers.filter(u => (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q) || (u.title || '').toLowerCase().includes(q));
+    renderEmployeeDropdown(filtered);
+}
+
+function renderEmployeeDropdown(usersArr) {
+    const opts = document.getElementById('employee-options');
+    if (!opts) return;
+    
+    if (usersArr.length === 0) {
+        opts.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">No employees found.</div>';
+        return;
+    }
+    
+    opts.innerHTML = usersArr.map(u => {
+        const photo = u.profileImage || u.photo || (u.gender === 'female' ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent('<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#fdf2f8"/><circle cx="50" cy="38" r="16" fill="#db2777"/><path d="M20,95 Q50,60 80,95 Z" fill="#db2777"/><circle cx="34" cy="42" r="8" fill="#db2777"/><circle cx="66" cy="42" r="8" fill="#db2777"/></svg>')}` : `data:image/svg+xml;charset=utf-8,${encodeURIComponent('<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#eaf1ff"/><circle cx="50" cy="38" r="18" fill="#2563eb"/><path d="M20,95 Q50,60 80,95 Z" fill="#2563eb"/></svg>')}`);
+        
+        return `
+            <div onclick="selectEmployee('${escapeHtml(u.email)}', '${escapeHtml(u.name || u.email)}', '${photo}')" class="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg cursor-pointer transition-colors">
+                <img src="${photo}" class="w-8 h-8 rounded-full object-cover shadow-sm bg-white border border-slate-100 dark:border-slate-600">
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold text-slate-700 dark:text-slate-300">${escapeHtml(u.name || 'Unknown')}</span>
+                    <span class="text-[10px] text-slate-400">${escapeHtml(u.title || 'Employee')}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function selectEmployee(email, name, photo) {
+    document.getElementById('lead-assignedEmployee').value = name; 
+    
+    const content = document.getElementById('selected-employee-content');
+    content.innerHTML = `
+        <img src="${photo}" class="w-6 h-6 rounded-full object-cover shadow-sm border border-slate-100">
+        <span class="font-bold text-slate-700 dark:text-slate-300">${name}</span>
+    `;
+    
+    toggleEmployeeDropdown();
+}
+
+document.addEventListener('click', (e) => {
+    const container = document.getElementById('employee-dropdown-container');
+    if (dropdownOpen && container && !container.contains(e.target)) {
+        toggleEmployeeDropdown();
+    }
+});
+
 function initLeads() {
     db.collection('sales_leads').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
         leadsData = [];
@@ -243,12 +323,75 @@ function initLeads() {
         
         renderLeadsView();
         renderKanban();
+        renderCustomersView();
         renderCharts();
         renderReports();
     }, error => {
         console.error("Error fetching leads:", error);
         Swal.fire('Database Error', 'Could not fetch data. Check Firestore rules.', 'error');
     });
+}
+
+// --- Customers Module ---
+function filterCustomers() {
+    renderCustomersView();
+}
+
+function renderCustomersView() {
+    const tbody = document.getElementById('customers-table-body');
+    if (!tbody) return;
+    
+    const q = (document.getElementById('customers-search') ? document.getElementById('customers-search').value.toLowerCase() : '');
+    
+    let customers = leadsData.filter(l => {
+        let ls = l.status || 'New';
+        if(ls === 'مغلق (نجاح)') ls = 'Closed (Won)';
+        return ls === 'Closed (Won)';
+    });
+    
+    if (q) {
+        customers = customers.filter(l => {
+            const str = `${l.company} ${l.contactName} ${l.phone} ${l.email} ${l.assignedEmployee}`.toLowerCase();
+            return str.includes(q);
+        });
+    }
+    
+    tbody.innerHTML = customers.map(l => {
+        return `
+        <tr class="cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors" onclick="openLeadDrawer('${l.id}')">
+            <td class="p-4">
+                <div class="font-bold text-almaster-royal group-hover:text-almaster-navy dark:group-hover:text-white transition-colors">${escapeHtml(l.company)}</div>
+                <div class="text-xs text-slate-500 mt-1">${escapeHtml(l.sector || 'N/A')}</div>
+            </td>
+            <td class="p-4">
+                <div class="font-bold flex items-center gap-2 text-slate-700 dark:text-slate-300"><i class="fas fa-user text-slate-400"></i> ${escapeHtml(l.contactName)}</div>
+                <div class="text-xs text-slate-500 mt-1"><i class="fas fa-envelope text-slate-400"></i> ${escapeHtml(l.email || '-')}</div>
+            </td>
+            <td class="p-4">
+                <div class="font-bold flex items-center gap-2 text-slate-700 dark:text-slate-300"><i class="fas fa-phone text-slate-400"></i> ${escapeHtml(l.phone)}</div>
+            </td>
+            <td class="p-4">
+                <span class="font-bold text-emerald-500">${escapeHtml(l.value || 0)} <span class="text-xs text-slate-500">${escapeHtml(l.currency)}</span></span>
+            </td>
+            <td class="p-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                        ${(l.assignedEmployee || 'A')[0].toUpperCase()}
+                    </div>
+                    <span class="text-sm font-bold text-slate-700 dark:text-slate-300">${escapeHtml(l.assignedEmployee)}</span>
+                </div>
+            </td>
+            <td class="p-4">
+                <div class="text-sm font-bold text-slate-700 dark:text-slate-300">
+                    ${l.updatedAt ? new Date(l.updatedAt.toDate()).toLocaleDateString() : (l.createdAt ? new Date(l.createdAt.toDate()).toLocaleDateString() : '-')}
+                </div>
+            </td>
+        </tr>
+    `}).join('');
+    
+    if(customers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-slate-500">No customers found. Convert leads to "Closed (Won)" to see them here.</td></tr>';
+    }
 }
 
 // --- Leads Module ---
@@ -529,6 +672,10 @@ function openLeadModal(id = null) {
     document.getElementById('lead-id').value = '';
     document.getElementById('modal-title').innerText = 'Add New Lead';
     
+    // Reset Custom Dropdown
+    document.getElementById('lead-assignedEmployee').value = '';
+    document.getElementById('selected-employee-content').innerHTML = '<span class="text-slate-400">Select an employee...</span>';
+    
     if (id) {
         const l = leadsData.find(x => x.id === id);
         if (l) {
@@ -555,9 +702,17 @@ function openLeadModal(id = null) {
             if(l.source && !Array.from(src.options).map(o=>o.value).includes(l.source)) src.add(new Option(l.source, l.source));
             src.value = l.source || '';
             
-            const emp = document.getElementById('lead-assignedEmployee');
-            if(l.assignedEmployee && !Array.from(emp.options).map(o=>o.value).includes(l.assignedEmployee)) emp.add(new Option(l.assignedEmployee, l.assignedEmployee));
-            emp.value = l.assignedEmployee || '';
+            // Set custom dropdown UI
+            document.getElementById('lead-assignedEmployee').value = l.assignedEmployee || '';
+            const empContent = document.getElementById('selected-employee-content');
+            if (l.assignedEmployee) {
+                const uMatch = systemUsers.find(u => u.name === l.assignedEmployee || u.email === l.assignedEmployee);
+                const uPhoto = uMatch ? (uMatch.profileImage || uMatch.photo) : null;
+                const photoHtml = uPhoto ? `<img src="${uPhoto}" class="w-6 h-6 rounded-full object-cover shadow-sm border border-slate-100">` : `<div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">${l.assignedEmployee[0].toUpperCase()}</div>`;
+                empContent.innerHTML = `${photoHtml} <span class="font-bold text-slate-700 dark:text-slate-300">${escapeHtml(l.assignedEmployee)}</span>`;
+            } else {
+                empContent.innerHTML = '<span class="text-slate-400">Select an employee...</span>';
+            }
             
             const cur = document.getElementById('lead-currency');
             if(l.currency && !Array.from(cur.options).map(o=>o.value).includes(l.currency)) cur.add(new Option(l.currency, l.currency));

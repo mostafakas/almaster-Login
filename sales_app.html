@@ -106,6 +106,9 @@
                 <div class="flex items-center gap-3"><i class="fas fa-users w-5 text-center group-hover:scale-110 transition-transform"></i> Leads</div>
                 <span id="leads-badge" class="bg-almaster-royal/10 text-almaster-royal px-2 py-0.5 rounded-full text-xs hidden">0</span>
             </button>
+            <button onclick="navigate('customers')" id="nav-customers" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-almaster-royal dark:hover:text-white transition-all group">
+                <i class="fas fa-handshake w-5 text-center group-hover:scale-110 transition-transform"></i> Customers
+            </button>
             <button onclick="navigate('analytics')" id="nav-analytics" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-almaster-royal dark:hover:text-white transition-all group">
                 <i class="fas fa-chart-line w-5 text-center group-hover:scale-110 transition-transform"></i> Analytics
             </button>
@@ -215,6 +218,33 @@
                 <!-- Kanban View (Hidden by default) -->
                 <div id="leads-kanban-container" class="hidden flex-1 flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
                     <!-- Columns injected by JS -->
+                </div>
+            </div>
+
+            <!-- VIEW: CUSTOMERS -->
+            <div id="view-customers" class="spa-view flex-col h-full gap-4">
+                <div class="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 shrink-0">
+                    <div class="relative w-full md:w-96">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="customers-search" placeholder="Search customers..." onkeyup="filterCustomers()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-almaster-royal focus:ring-1 focus:ring-almaster-royal outline-none transition-all">
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-2xl overflow-auto custom-scrollbar flex-1 shadow-sm relative">
+                    <table class="crm-table w-full">
+                        <thead class="bg-slate-50 dark:bg-slate-800/80 sticky top-0 z-10 backdrop-blur-sm">
+                            <tr>
+                                <th>Client / Company</th>
+                                <th>Contact Person</th>
+                                <th>Phone</th>
+                                <th>Deal Value</th>
+                                <th>Agent</th>
+                                <th>Close Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-table-body">
+                            <!-- JS Populated -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -502,11 +532,29 @@
                         </div>
                         
                         <!-- Dynamic Lists -->
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1">Assigned Employee</label>
-                            <select id="lead-assignedEmployee" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm focus:border-almaster-royal outline-none">
-                                <!-- Populated dynamically from settings -->
-                            </select>
+                        <div class="relative" id="employee-dropdown-container">
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Assigned Employee *</label>
+                            <!-- Hidden input to store the actual value (email or name) -->
+                            <input type="hidden" id="lead-assignedEmployee" required>
+                            
+                            <!-- Custom Select Button -->
+                            <button type="button" onclick="toggleEmployeeDropdown()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm focus:border-almaster-royal outline-none flex justify-between items-center text-left">
+                                <div id="selected-employee-content" class="flex items-center gap-2 text-slate-400">
+                                    <span>Select an employee...</span>
+                                </div>
+                                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform" id="employee-dropdown-icon"></i>
+                            </button>
+                            
+                            <!-- Dropdown List -->
+                            <div id="employee-dropdown-list" class="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl hidden max-h-48 overflow-y-auto custom-scrollbar">
+                                <div class="p-2 sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                                    <input type="text" id="employee-search" placeholder="Search..." onkeyup="filterEmployeeList()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-1.5 text-xs outline-none focus:border-almaster-royal">
+                                </div>
+                                <div id="employee-options" class="p-1">
+                                    <!-- Populated dynamically -->
+                                    <div class="p-4 text-center text-xs text-slate-400"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-500 mb-1">Status</label>
