@@ -107,6 +107,9 @@
                     </div>
                     <img id="admin-avatar" src="" class="w-10 h-10 rounded-xl object-cover bg-slate-100 border border-slate-200 shadow-sm" alt="">
                 </div>
+                <button onclick="openModal('modal-requests-menu')" class="h-10 px-4 bg-brand-navy2 text-white font-black text-xs hover:bg-brand-blueLt rounded-xl flex items-center justify-center transition-colors shadow-sm gap-2">
+                    <i class="fas fa-envelope-open-text"></i> <span class="hidden sm:inline">الطلبات</span>
+                </button>
                 <button onclick="logoutAdmin()" class="w-10 h-10 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-xl flex items-center justify-center mini-btn transition-colors" title="Logout"><i class="fas fa-power-off"></i></button>
             </div>
         </header>
@@ -172,6 +175,94 @@
                 </div>
             </div>
             <div id="log-report-footer" class="p-5 border-t border-slate-200 bg-white flex justify-center items-center shrink-0"></div>
+        </div>
+    </div>
+
+    
+    <!-- Requests Menu Modal -->
+    <div id="modal-requests-menu" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" onclick="closeModal('modal-requests-menu')">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden flex flex-col p-6 text-center" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-black text-lg text-textMain"><i class="fas fa-envelope-open-text text-brand-blue me-2"></i> الطلبات</h3>
+                <button onclick="closeModal('modal-requests-menu')" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button onclick="closeModal('modal-requests-menu'); openModal('modal-online-request')" class="w-full py-4 rounded-xl bg-surface border border-slate-200 text-textMain font-black text-sm hover:border-brand-blue hover:text-brand-blue transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fas fa-laptop-house text-emerald-500"></i> طلب أونلاين
+                </button>
+                <button onclick="closeModal('modal-requests-menu'); openModal('modal-leave-request')" class="w-full py-4 rounded-xl bg-surface border border-slate-200 text-textMain font-black text-sm hover:border-brand-blue hover:text-brand-blue transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fas fa-file-signature text-amber-500"></i> طلب إجازة / استئذان
+                </button>
+                <button onclick="closeModal('modal-requests-menu'); openModal('modal-previous-requests'); fetchMyRequests();" class="w-full py-4 rounded-xl bg-surface border border-slate-200 text-textMain font-black text-sm hover:border-brand-blue hover:text-brand-blue transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fas fa-history text-slate-500"></i> الطلبات السابقة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Online Request Modal -->
+    <div id="modal-online-request" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" onclick="closeModal('modal-online-request')">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+            <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
+                <h3 class="font-black text-sm text-textMain"><i class="fas fa-laptop-house text-emerald-500 me-2"></i> طلب أونلاين</h3>
+                <button onclick="closeModal('modal-online-request')" aria-label="Close" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <form id="online-form" onsubmit="submitOnlineRequest(event)" class="p-6 space-y-4">
+                <div>
+                    <label for="online-date" class="block text-[10px] font-black text-textMuted mb-2 uppercase">تاريخ الأونلاين (Date)</label>
+                    <input type="date" id="online-date" required class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue">
+                </div>
+                <div>
+                    <label for="online-reason" class="block text-[10px] font-black text-textMuted mb-2 uppercase">التفاصيل / السبب (Details)</label>
+                    <textarea id="online-reason" required rows="3" class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue resize-none" placeholder="تفاصيل الطلب هنا..."></textarea>
+                </div>
+                <button type="submit" id="btn-submit-online" class="w-full py-3 bg-brand-blue text-white rounded-xl font-black text-xs shadow-md hover:bg-brand-navy2 btn-action">إرسال للمدير المباشر</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leave modal -->
+    <div id="modal-leave-request" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="leave-title" onclick="closeModal('modal-leave-request')">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[88vh]" onclick="event.stopPropagation()">
+            <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
+                <h3 id="leave-title" class="font-black text-sm text-textMain"><i class="fas fa-file-lines text-amber-500 me-2"></i> Request Leave / Permission (طلب إجازة)</h3>
+                <button onclick="closeModal('modal-leave-request')" aria-label="Close" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <form id="leave-form" onsubmit="submitLeaveRequest(event)" class="p-6 space-y-4 border-b border-slate-100">
+                    <div>
+                        <label for="leave-type" class="block text-[10px] font-black text-textMuted mb-2 uppercase">Request type</label>
+                        <select id="leave-type" required class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue">
+                            <option value="sick">Sick leave (مرضي)</option>
+                            <option value="annual">Annual leave (سنوي)</option>
+                            <option value="excuse_late">Late permission (إذن تأخير)</option>
+                            <option value="excuse_early">Early leave permission (إذن انصراف مبكر)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="leave-date" class="block text-[10px] font-black text-textMuted mb-2 uppercase">Date</label>
+                        <input type="date" id="leave-date" required class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue">
+                    </div>
+                    <div>
+                        <label for="leave-reason" class="block text-[10px] font-black text-textMuted mb-2 uppercase">Reason / Justification</label>
+                        <textarea id="leave-reason" required rows="3" class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue resize-none" placeholder="Write the details here..."></textarea>
+                    </div>
+                    <button type="submit" id="btn-submit-leave" class="w-full py-3 bg-brand-blue text-white rounded-xl font-black text-xs shadow-md hover:bg-brand-navy2 btn-action">إرسال للمدير المباشر</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Previous Requests Modal -->
+    <div id="modal-previous-requests" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" onclick="closeModal('modal-previous-requests')">
+        <div class="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[88vh]" onclick="event.stopPropagation()">
+            <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
+                <h3 class="font-black text-sm text-textMain"><i class="fas fa-history text-brand-blue me-2"></i> الطلبات السابقة</h3>
+                <button onclick="closeModal('modal-previous-requests')" aria-label="Close" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto custom-scrollbar">
+                <div id="my-requests-container" class="space-y-3"><p class="text-xs text-textMuted italic text-center py-6"><i class="fas fa-spinner fa-spin me-2"></i> جاري التحميل...</p></div>
+            </div>
         </div>
     </div>
 
@@ -310,7 +401,7 @@
     // Users
     function listenToAllUsers() {
         db.collection('users').onSnapshot(snap => {
-            allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
+            allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() })).filter(u => u.leaderEmail === currentUser.email);
             updateCounts(); renderMonitorGrid();
         }, err => console.warn('users:', err.message));
     }
@@ -431,7 +522,7 @@
         excuse_early:{ label:'Early Leave', color:'sky'   }
     };
     function listenToLeaveRequests() {
-        db.collection('leave_requests').where('status','==','pending').onSnapshot(snap => {
+        db.collection('leave_requests').where('managerId','==',EMAIL).where('status','==','pending').onSnapshot(snap => {
             const box = document.getElementById('requests-queue-container'), badge = document.getElementById('nav-pending-badge');
             if (!box) return;
             if (snap.empty) {
@@ -470,11 +561,10 @@
         const r = await Swal.fire({ title:isApprove?'Approve Request?':'Reject Request?', text:(isApprove && type==='annual')?'1 day will be deducted from vacation balance.':'', icon:isApprove?'question':'warning', showCancelButton:true, confirmButtonColor:isApprove?'#10b981':'#ef4444', cancelButtonColor:'#64748b', confirmButtonText:'Confirm', cancelButtonText:'Cancel' });
         if (!r.isConfirmed) return;
         try {
-            await db.collection('leave_requests').doc(id).update({ status:newStatus, reviewed_at: serverTs(), reviewed_by: userProfile.name || 'Admin' });
+            await db.collection('leave_requests').doc(id).update({ status:newStatus, reviewed_at: serverTs(), reviewed_by: document.getElementById('admin-name').innerText || EMAIL });
             if (isApprove && type === 'annual' && userEmail) {
                 const ref = db.collection('hr_stats').doc(userEmail.toLowerCase().trim());
-                const cur = (userEmail in leaveBalances) ? leaveBalances[userEmail] : ANNUAL_LEAVE_DEFAULT;
-                await ref.set({ annualLeavesLeft: Math.max(0, cur - 1) }, { merge:true });
+                await ref.set({ annualLeavesLeft: firebase.firestore.FieldValue.increment(-1) }, { merge:true });
             }
             Toast.fire({icon:'success', title:'Request updated.'});
         } catch (e) { console.error(e); Toast.fire({icon:'error', title:'An error occurred.'}); }

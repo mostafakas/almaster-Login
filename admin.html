@@ -802,12 +802,12 @@
         excuse_early:{ label:'Early Leave', color:'sky'   }
     };
     function listenToLeaveRequests() {
-        db.collection('leave_requests').where('status','==','pending').onSnapshot(snap => {
+        db.collection('leave_requests').where('status','==','approved').onSnapshot(snap => {
             const box = document.getElementById('requests-queue-container'), badge = document.getElementById('nav-pending-badge');
             if (!box) return;
             if (snap.empty) {
                 badge.classList.add('hidden');
-                box.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center opacity-50 py-20"><i class="fas fa-check-circle text-5xl text-slate-300 mb-4"></i><p class="text-sm text-textMuted font-bold">All caught up! No pending requests.</p></div>`;
+                box.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center opacity-50 py-20"><i class="fas fa-check-circle text-5xl text-slate-300 mb-4"></i><p class="text-sm text-textMuted font-bold">No approved requests yet.</p></div>`;
                 return;
             }
             badge.classList.remove('hidden'); badge.innerText = snap.size;

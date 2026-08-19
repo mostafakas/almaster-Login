@@ -91,6 +91,9 @@
             <span class="hidden sm:inline px-3 py-1 bg-white/10 text-white/80 text-[10px] font-bold rounded-full uppercase tracking-widest">Leader Portal</span>
         </div>
         <div class="flex items-center gap-4 sm:gap-6">
+            <button onclick="openModal('modal-requests-menu')" class="flex items-center gap-2 px-3 py-1.5 bg-brand-navy2 border border-slate-700 rounded-full text-[11px] font-black text-white shadow-md hover:bg-brand-blueLt transition-colors">
+                <i class="fas fa-envelope-open-text"></i> <span class="hidden sm:inline">الطلبات</span>
+            </button>
             <button id="btn-nav-crm" onclick="window.open('sales_app.html', '_blank')" style="display: none;" class="items-center gap-2 px-3 py-1.5 bg-brand-navy2 border border-slate-700 rounded-full text-[11px] font-black text-white shadow-md hover:bg-brand-blueLt transition-colors">
                 <i class="fas fa-briefcase"></i> <span class="hidden sm:inline">CRM</span>
             </button>
@@ -245,11 +248,83 @@
         </div>
     </div>
 
+    <!-- Requests Menu Modal -->
+    <div id="modal-requests-menu" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" onclick="closeModal('modal-requests-menu')">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden flex flex-col p-6 text-center" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-black text-lg text-textMain"><i class="fas fa-envelope-open-text text-brand-blue me-2"></i> الطلبات</h3>
+                <button onclick="closeModal('modal-requests-menu')" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button onclick="closeModal('modal-requests-menu'); openModal('modal-online-request')" class="w-full py-4 rounded-xl bg-surface border border-slate-200 text-textMain font-black text-sm hover:border-brand-blue hover:text-brand-blue transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fas fa-laptop-house text-emerald-500"></i> طلب أونلاين
+                </button>
+                <button onclick="closeModal('modal-requests-menu'); openModal('modal-leave-request')" class="w-full py-4 rounded-xl bg-surface border border-slate-200 text-textMain font-black text-sm hover:border-brand-blue hover:text-brand-blue transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fas fa-file-signature text-amber-500"></i> طلب إجازة / استئذان
+                </button>
+                <button onclick="closeModal('modal-requests-menu'); openModal('modal-previous-requests'); fetchMyRequests();" class="w-full py-4 rounded-xl bg-surface border border-slate-200 text-textMain font-black text-sm hover:border-brand-blue hover:text-brand-blue transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fas fa-history text-slate-500"></i> الطلبات السابقة
+                </button>
+                <div class="h-px bg-slate-200 my-2"></div>
+                <button onclick="closeModal('modal-requests-menu'); openModal('modal-team-requests'); fetchTeamRequests();" class="w-full py-4 rounded-xl bg-brand-soft text-brand-blue font-black text-sm hover:bg-brand-blue hover:text-white transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fas fa-users-cog"></i> طلبات فريقي
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Online Request Modal -->
+    <div id="modal-online-request" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" onclick="closeModal('modal-online-request')">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+            <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
+                <h3 class="font-black text-sm text-textMain"><i class="fas fa-laptop-house text-emerald-500 me-2"></i> طلب أونلاين</h3>
+                <button onclick="closeModal('modal-online-request')" aria-label="Close" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <form id="online-form" onsubmit="submitOnlineRequest(event)" class="p-6 space-y-4">
+                <div>
+                    <label for="online-date" class="block text-[10px] font-black text-textMuted mb-2 uppercase">تاريخ الأونلاين (Date)</label>
+                    <input type="date" id="online-date" required class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue">
+                </div>
+                <div>
+                    <label for="online-reason" class="block text-[10px] font-black text-textMuted mb-2 uppercase">التفاصيل / السبب (Details)</label>
+                    <textarea id="online-reason" required rows="3" class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue resize-none" placeholder="تفاصيل الطلب هنا..."></textarea>
+                </div>
+                <button type="submit" id="btn-submit-online" class="w-full py-3 bg-brand-blue text-white rounded-xl font-black text-xs shadow-md hover:bg-brand-navy2 btn-action">إرسال للمدير المباشر</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Previous Requests Modal -->
+    <div id="modal-previous-requests" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" onclick="closeModal('modal-previous-requests')">
+        <div class="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[88vh]" onclick="event.stopPropagation()">
+            <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
+                <h3 class="font-black text-sm text-textMain"><i class="fas fa-history text-brand-blue me-2"></i> الطلبات السابقة</h3>
+                <button onclick="closeModal('modal-previous-requests')" aria-label="Close" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto custom-scrollbar">
+                <div id="my-requests-container" class="space-y-3"><p class="text-xs text-textMuted italic text-center py-6"><i class="fas fa-spinner fa-spin me-2"></i> جاري التحميل...</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Requests Modal -->
+    <div id="modal-team-requests" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" onclick="closeModal('modal-team-requests')">
+        <div class="bg-white w-full max-w-3xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[88vh]" onclick="event.stopPropagation()">
+            <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
+                <h3 class="font-black text-sm text-textMain"><i class="fas fa-users-cog text-brand-blue me-2"></i> طلبات فريقي (Pending Team Requests)</h3>
+                <button onclick="closeModal('modal-team-requests')" aria-label="Close" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto custom-scrollbar">
+                <div id="team-requests-container" class="space-y-3"><p class="text-xs text-textMuted italic text-center py-6"><i class="fas fa-spinner fa-spin me-2"></i> جاري التحميل...</p></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Leave modal -->
     <div id="modal-leave-request" class="fixed inset-0 z-[700] hidden bg-brand-navy/50 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="leave-title" onclick="closeModal('modal-leave-request')">
         <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[88vh]" onclick="event.stopPropagation()">
             <div class="p-5 border-b border-slate-100 bg-surface flex justify-between items-center">
-                <h3 id="leave-title" class="font-black text-sm text-textMain"><i class="fas fa-file-lines text-amber-500 me-2"></i> Request Leave / Permission</h3>
+                <h3 id="leave-title" class="font-black text-sm text-textMain"><i class="fas fa-file-lines text-amber-500 me-2"></i> Request Leave / Permission (طلب إجازة)</h3>
                 <button onclick="closeModal('modal-leave-request')" aria-label="Close" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
             </div>
             <div class="flex-1 overflow-y-auto custom-scrollbar">
@@ -257,10 +332,10 @@
                     <div>
                         <label for="leave-type" class="block text-[10px] font-black text-textMuted mb-2 uppercase">Request type</label>
                         <select id="leave-type" required class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue">
-                            <option value="sick">Sick leave</option>
-                            <option value="annual">Annual leave</option>
-                            <option value="excuse_late">Late permission</option>
-                            <option value="excuse_early">Early leave permission</option>
+                            <option value="sick">Sick leave (مرضي)</option>
+                            <option value="annual">Annual leave (سنوي)</option>
+                            <option value="excuse_late">Late permission (إذن تأخير)</option>
+                            <option value="excuse_early">Early leave permission (إذن انصراف مبكر)</option>
                         </select>
                     </div>
                     <div>
@@ -271,12 +346,8 @@
                         <label for="leave-reason" class="block text-[10px] font-black text-textMuted mb-2 uppercase">Reason / Justification</label>
                         <textarea id="leave-reason" required rows="3" class="w-full bg-surface border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-textMain outline-none focus:border-brand-blue resize-none" placeholder="Write the details here…"></textarea>
                     </div>
-                    <button type="submit" id="btn-submit-leave" class="w-full py-3 bg-brand-blue text-white rounded-xl font-black text-xs shadow-md hover:bg-brand-navy2 btn-action">Submit request</button>
+                    <button type="submit" id="btn-submit-leave" class="w-full py-3 bg-brand-blue text-white rounded-xl font-black text-xs shadow-md hover:bg-brand-navy2 btn-action">إرسال للمدير المباشر</button>
                 </form>
-                <div class="p-6">
-                    <h4 class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-3">My previous requests</h4>
-                    <div id="my-leaves-container" class="space-y-2.5"><p class="text-xs text-textMuted italic text-center py-6">Loading requests…</p></div>
-                </div>
             </div>
         </div>
     </div>
@@ -485,7 +556,7 @@
         listenToHrStats();
         listenToProfile();
         restartLogsListener();
-        listenToMyLeaves();
+        fetchMyRequests();
         listenToTeamMembers();
         setInterval(tick, 1000);
         scheduleDailyReset();
@@ -745,13 +816,15 @@
     /* =========================================================================
        LEAVES & LOGS
        ========================================================================= */
-    async function submitLeaveRequest(e) {
+        async function submitLeaveRequest(e) {
         e.preventDefault();
         const btn = document.getElementById('btn-submit-leave');
-        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending…';
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> جاري الإرسال...';
         try {
             await db.collection('leave_requests').add({
                 user: EMAIL, name: userProfile.name || EMAIL,
+                managerId: userProfile.leaderEmail || '',
+                req_class: 'leave',
                 type: document.getElementById('leave-type').value,
                 target_date: document.getElementById('leave-date').value,
                 reason: document.getElementById('leave-reason').value.trim(),
@@ -761,32 +834,126 @@
             document.getElementById('leave-date').value = zonedYMD(serverNow());
             showToast('Submitted', 'Your request is pending review.', 'success');
         } catch (err) { console.error(err); showToast('Could not submit', 'An error occurred.', 'error'); }
-        finally { btn.disabled = false; btn.innerHTML = 'Submit request'; }
+        btn.disabled = false; btn.innerHTML = 'إرسال للمدير المباشر';
+        closeModal('modal-leave-request');
+    }
+
+    async function submitOnlineRequest(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-online');
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> جاري الإرسال...';
+        try {
+            await db.collection('leave_requests').add({
+                user: EMAIL, name: userProfile.name || EMAIL,
+                managerId: userProfile.leaderEmail || '',
+                req_class: 'online',
+                type: 'online_work',
+                target_date: document.getElementById('online-date').value,
+                reason: document.getElementById('online-reason').value.trim(),
+                status: 'pending', submitted_at: serverTs()
+            });
+            document.getElementById('online-form').reset();
+            document.getElementById('online-date').value = zonedYMD(serverNow());
+            showToast('تم الإرسال', 'تم رفع طلب الأونلاين للمدير المباشر.', 'success');
+        } catch (err) { console.error(err); showToast('خطأ', 'حدث خطأ أثناء الإرسال.', 'error'); }
+        btn.disabled = false; btn.innerHTML = 'إرسال للمدير المباشر';
+        closeModal('modal-online-request');
     }
 
     const LEAVE_LABELS = { sick:'Sick leave', annual:'Annual leave', excuse_late:'Late permission', excuse_early:'Early leave' };
     const LEAVE_STATUS = {
-        pending:  { t:'Pending',  c:'bg-amber-50 text-amber-600 border-amber-100' },
+        pending: { t:'Pending', c:'bg-amber-50 text-amber-600 border-amber-100' },
         approved: { t:'Approved', c:'bg-emerald-50 text-emerald-600 border-emerald-100' },
         rejected: { t:'Rejected', c:'bg-red-50 text-red-600 border-red-100' }
     };
-    function listenToMyLeaves() {
-        db.collection('leave_requests').where('user', '==', EMAIL).onSnapshot(snap => {
-            const box = document.getElementById('my-leaves-container'); if (!box) return;
+
+    function fetchMyRequests() {
+        if(window.unsubscribeMyRequests) { return; }
+        window.unsubscribeMyRequests = db.collection('leave_requests').where('user', '==', EMAIL).onSnapshot(snap => {
+            const box = document.getElementById('my-requests-container'); if (!box) return;
             if (snap.empty) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-6">No requests yet.</p>'; return; }
             const rows = []; snap.forEach(d => rows.push(d.data()));
             rows.sort((a, b) => getMillis(b.submitted_at) - getMillis(a.submitted_at));
-            box.innerHTML = rows.slice(0, 15).map(l => {
+            box.innerHTML = rows.map(l => {
                 const st = LEAVE_STATUS[l.status] || LEAVE_STATUS.pending;
-                return `<div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <div class="text-left"><p class="text-xs font-black text-textMain">${LEAVE_LABELS[l.type] || l.type}</p>
-                    <p class="text-[10px] font-bold text-textMuted mt-0.5">${l.target_date || ''}</p></div>
-                    <span class="text-[10px] font-black px-2.5 py-1 rounded-full border ${st.c}">${st.t}</span></div>`;
+                const reqTitle = (l.req_class === 'online' ? 'طلب أونلاين' : (LEAVE_LABELS[l.type] || l.type));
+                
+                let emailBtnHtml = '';
+                if (l.status === 'approved') {
+                    const subject = encodeURIComponent(`Approved ${reqTitle} Request - ${l.name}`);
+                    const body = encodeURIComponent(`Hello HR,
+
+I have an approved ${reqTitle} for date: ${l.target_date || ''}.
+
+Reason: ${l.reason || ''}
+
+Employee: ${l.name}
+Email: ${l.user}
+
+Best regards.`);
+                    emailBtnHtml = `<a href="mailto:almaster.hr@outlook.com?subject=${subject}&body=${body}" class="mt-2 text-[10px] font-black bg-brand-navy text-white px-3 py-1.5 rounded-full hover:bg-brand-blue transition-colors shadow-sm text-center block w-full"><i class="fas fa-paper-plane me-1"></i> مراسلة الـ HR</a>`;
+                }
+
+                return `<div class="flex flex-col bg-slate-50 p-4 rounded-xl border border-slate-100 mb-3">
+                    <div class="flex justify-between items-start w-full">
+                        <div class="text-left flex-1">
+                            <p class="text-xs font-black text-textMain">${reqTitle}</p>
+                            <p class="text-[10px] font-bold text-textMuted mt-1"><i class="far fa-calendar-alt me-1"></i>${l.target_date || ''}</p>
+                            ${l.reason ? `<p class="text-[10px] font-medium text-slate-500 mt-2 truncate w-48">${l.reason}</p>` : ''}
+                        </div>
+                        <span class="text-[10px] font-black px-2.5 py-1 rounded-full border ${st.c} ml-2 whitespace-nowrap">${st.t}</span>
+                    </div>
+                    ${emailBtnHtml}
+                </div>`;
             }).join('');
-        }, err => { const box = document.getElementById('my-leaves-container'); if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center py-6">Could not load requests.</p>'; console.warn('leaves:', err.message); });
+        }, err => console.warn('my requests:', err.message));
     }
 
-    function restartLogsListener() {
+    function fetchTeamRequests() {
+        if(window.unsubscribeTeamRequests) { return; }
+        window.unsubscribeTeamRequests = db.collection('leave_requests').where('managerId', '==', EMAIL).where('status', '==', 'pending').onSnapshot(snap => {
+            const box = document.getElementById('team-requests-container'); if (!box) return;
+            if (snap.empty) { box.innerHTML = '<p class="text-xs text-textMuted italic text-center py-6">No pending team requests.</p>'; return; }
+            const rows = []; snap.forEach(d => rows.push({id: d.id, ...d.data()}));
+            rows.sort((a, b) => getMillis(b.submitted_at) - getMillis(a.submitted_at));
+            box.innerHTML = rows.map(l => {
+                const reqTitle = (l.req_class === 'online' ? 'طلب أونلاين' : (LEAVE_LABELS[l.type] || l.type));
+                return `<div class="flex flex-col bg-slate-50 p-4 rounded-xl border border-slate-100 mb-3">
+                    <div class="flex justify-between items-start w-full mb-3">
+                        <div class="text-left flex-1">
+                            <p class="text-xs font-black text-brand-navy">${l.name} <span class="text-textMuted font-medium">requested</span> ${reqTitle}</p>
+                            <p class="text-[10px] font-bold text-textMuted mt-1"><i class="far fa-calendar-alt me-1"></i>${l.target_date || ''}</p>
+                            ${l.reason ? `<p class="text-[10px] font-medium text-slate-600 mt-2 p-2 bg-white rounded border border-slate-200">${l.reason}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex gap-2 w-full mt-2 border-t border-slate-200 pt-3">
+                        <button onclick="handleTeamReq('${l.id}', 'approved', '${l.type}', '${l.user}')" class="flex-1 bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold hover:bg-emerald-600 transition"><i class="fas fa-check me-1"></i> Approve</button>
+                        <button onclick="handleTeamReq('${l.id}', 'rejected', '${l.type}', '${l.user}')" class="flex-1 bg-red-500 text-white py-2 rounded-lg text-xs font-bold hover:bg-red-600 transition"><i class="fas fa-times me-1"></i> Reject</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }, err => console.warn('team requests:', err.message));
+    }
+
+    window.handleTeamReq = async (id, newStatus, type, userEmail) => {
+        try {
+            await db.collection('leave_requests').doc(id).update({
+                status: newStatus, reviewed_at: serverTs(), reviewed_by: userProfile.name || EMAIL
+            });
+            
+            if (newStatus === 'approved' && type === 'annual' && userEmail) {
+                const ref = db.collection('hr_stats').doc(userEmail.toLowerCase().trim());
+                await ref.set({ annualLeavesLeft: firebase.firestore.FieldValue.increment(-1) }, { merge:true });
+            }
+            
+            showToast('Success', 'Request ' + newStatus, 'success');
+        } catch(e) {
+            console.error(e);
+            showToast('Error', 'Failed to update request', 'error');
+        }
+    };
+    
+function restartLogsListener() {
         if (logsUnsubscribe) logsUnsubscribe();
         const todayKey = getDayKey(serverNow());
         currentLogsDay = todayKey;
