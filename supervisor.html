@@ -103,7 +103,7 @@
                 <div class="flex items-center gap-3 border-l border-slate-200 pl-4">
                     <div class="text-right hidden sm:block leading-tight">
                         <p id="admin-name" class="text-sm font-black text-brand-navy">Supervisor</p>
-                        <p class="text-[10px] font-bold text-brand-blue uppercase">Team Leader</p>
+                        <p id="admin-role" class="text-[10px] font-bold text-brand-blue uppercase">Supervisor</p>
                     </div>
                     <img id="admin-avatar" src="" class="w-10 h-10 rounded-xl object-cover bg-slate-100 border border-slate-200 shadow-sm" alt="">
                 </div>
@@ -132,7 +132,7 @@
                         <input type="text" id="monitor-search" oninput="renderMonitorGrid()" class="w-full bg-surface border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs font-bold outline-none focus:border-brand-blue" placeholder="Search employee...">
                     </div>
                 </div>
-                <div id="monitor-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 content-start pb-10"></div>
+                <div id="monitor-grid" class="w-full pb-10 flex flex-col gap-6"></div>
             </div>
             
             <!-- Tab: Requests -->
@@ -351,6 +351,7 @@
             userProfile = doc.data();
             // Allow access to supervisor
             document.getElementById('admin-name').innerText = userProfile.name || 'Supervisor';
+            document.getElementById('admin-role').innerText = (userProfile.role || 'Supervisor').toUpperCase();
             document.getElementById('admin-avatar').src = getAvatar(userProfile);
             await syncServerTime();
             initAdminConsole();
@@ -401,7 +402,7 @@
     // Users
     function listenToAllUsers() {
         db.collection('users').onSnapshot(snap => {
-            allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() })).filter(u => u.leaderEmail === currentUser.email);
+            allUsersData = snap.docs.map(d => ({ email: d.id, ...d.data() }));
             updateCounts(); renderMonitorGrid();
         }, err => console.warn('users:', err.message));
     }
@@ -480,11 +481,40 @@
         });
         
         if (filtered.length === 0) {
-            container.innerHTML = `<div class="col-span-full py-10 flex flex-col items-center justify-center text-slate-400 w-full"><i class="fas fa-search text-3xl mb-3 opacity-50"></i><p class="text-xs font-bold">No employees found.</p></div>`;
+            container.innerHTML = `<div class="py-10 flex flex-col items-center justify-center text-slate-400 w-full"><i class="fas fa-search text-3xl mb-3 opacity-50"></i><p class="text-xs font-bold">No employees found.</p></div>`;
             return;
         }
 
-        container.innerHTML = filtered.map(generateUserCardHTML).join('');
+        const leaders = filtered.filter(u => u.role === 'leader' || u.role === 'supervisor' || u.role === 'admin');
+        const employees = filtered.filter(u => u.role !== 'leader' && u.role !== 'supervisor' && u.role !== 'admin');
+
+        let html = '';
+        
+        const gridClasses = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 content-start";
+
+        if (leaders.length > 0) {
+            html += `
+                <div>
+                    <h3 class="text-sm font-black text-brand-navy mb-3 px-1 border-b border-slate-200 pb-2"><i class="fas fa-crown text-amber-500 mr-2"></i> Leaders & Supervisors</h3>
+                    <div class="${gridClasses}">
+                        ${leaders.map(generateUserCardHTML).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (employees.length > 0) {
+            html += `
+                <div>
+                    <h3 class="text-sm font-black text-brand-navy mb-3 px-1 border-b border-slate-200 pb-2"><i class="fas fa-users text-brand-blue mr-2"></i> Team Members</h3>
+                    <div class="${gridClasses}">
+                        ${employees.map(generateUserCardHTML).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
     }
 
     async function adminForceLogout(email) {
