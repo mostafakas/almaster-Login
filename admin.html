@@ -6,15 +6,910 @@
     <title>AL MASTER | Central Console</title>
     <meta name="theme-color" content="#0b1b3f">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+    window.switchUserFormTab = function(tabName) {
+        ['general', 'hr', 'kpi'].forEach(t => {
+            const btn = document.getElementById('tab-btn-' + t);
+            const content = document.getElementById('tab-content-' + t);
+            if (t === tabName) {
+                btn.className = "px-4 py-2 text-xs font-black rounded-xl bg-brand-soft text-brand-blue transition-colors";
+                content.classList.remove('hidden');
+            } else {
+                btn.className = "px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-100 rounded-xl transition-colors";
+                content.classList.add('hidden');
+            }
+        });
+    };
+
+
+    // --- PAYROLL SYSTEM ---
+    function initPayrollDropdown() {
+        const sel = document.getElementById('payroll-employee-select');
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- Choose Employee --</option>';
+        const sorted = [...allUsersData].sort((a,b) => (a.name||'').localeCompare(b.name||''));
+        sorted.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.email;
+            opt.textContent = `${u.name} (${u.role})`;
+            sel.appendChild(opt);
+        });
+        if (currentVal && allUsersData.find(u => u.email === currentVal)) sel.value = currentVal;
+        
+        const mInput = document.getElementById('payroll-month');
+        if (!mInput.value) {
+            const d = new Date();
+            mInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+    }
+    
+    // Call initPayrollDropdown when users are loaded
+    const origRenderMonitorGrid = renderMonitorGrid;
+    renderMonitorGrid = function() {
+        origRenderMonitorGrid();
+        initPayrollDropdown();
+    };
+
+    window.generatePayslip = async function() {
+        const email = document.getElementById('payroll-employee-select').value;
+        const month = document.getElementById('payroll-month').value;
+        
+        if (!email || !month) {
+            showToast('Error', 'Please select an employee and a month.', 'error');
+            return;
+        }
+        
+        const u = allUsersData.find(x => x.email === email);
+        if (!u) return;
+        
+        const baseSalary = parseFloat(u.baseSalary) || 0;
+        let allowance = 0;
+        if (u.allowance && u.allowance.value) {
+            if (u.allowance.type === 'percentage') {
+                allowance = baseSalary * (parseFloat(u.allowance.value) / 100);
+            } else {
+                allowance = parseFloat(u.allowance.value);
+            }
+        }
+        const regularityBonus = parseFloat(u.regularityBonus) || 0;
+        const fixedDeductions = parseFloat(u.fixedDeductions) || 0;
+        
+        // Dynamic Delays / Deductions - Placeholder for future logic
+        // We will add an input for the admin to manually input any delay deductions for this month
+        
+        const totalAdditions = baseSalary + allowance + regularityBonus;
+        const totalDeductions = fixedDeductions;
+        const netSalary = totalAdditions - totalDeductions;
+        
+        const html = `
+            <div class="border-b border-slate-200 pb-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <img src="${getAvatar(u)}" class="w-16 h-16 rounded-full border border-slate-200 object-cover shadow-sm">
+                    <div>
+                        <h3 class="text-xl font-black text-brand-navy">${u.name}</h3>
+                        <p class="text-sm font-bold text-textMuted">${u.title || u.role} &bull; ${u.email}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-black uppercase text-textMuted tracking-widest mb-1">Payslip For</div>
+                    <div class="text-lg font-black text-brand-blue bg-brand-soft px-4 py-1.5 rounded-lg inline-block">${month}</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Additions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-emerald-600 tracking-widest mb-4 flex items-center"><i class="fas fa-plus-circle mr-2"></i> Earnings</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Base Salary</span>
+                            <span class="font-black text-brand-navy">${baseSalary.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Allowances (${u.allowance?.type === 'percentage' ? u.allowance.value+'%' : 'Fixed'})</span>
+                            <span class="font-black text-emerald-600">+ ${allowance.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Regularity Bonus</span>
+                            <span class="font-black text-emerald-600">+ ${regularityBonus.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Earnings</span>
+                        <span class="font-black text-emerald-600 text-lg">${totalAdditions.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <!-- Deductions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-red-500 tracking-widest mb-4 flex items-center"><i class="fas fa-minus-circle mr-2"></i> Deductions</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Fixed Deductions</span>
+                            <span class="font-black text-red-500">- ${fixedDeductions.toFixed(2)}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center bg-orange-50 p-3 rounded-lg border border-orange-100 border-dashed">
+                            <span class="text-xs font-bold text-orange-600">Delay Deductions<br><span class="text-[9px] font-medium">(Awaiting future rules)</span></span>
+                            <span class="font-black text-orange-600">0.00</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Deductions</span>
+                        <span class="font-black text-red-500 text-lg">${totalDeductions.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-brand-navy text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Net Payable Salary</span>
+                    <span class="text-3xl font-black">${netSalary.toFixed(2)} EGP</span>
+                </div>
+                <div class="w-full md:w-auto h-px md:h-12 w-12 md:w-px bg-white/20"></div>
+                <div class="text-center md:text-right w-full md:w-auto">
+                    <p class="text-xs font-bold text-slate-400">Generated On</p>
+                    <p class="text-sm font-bold text-white">${new Date().toLocaleDateString('en-GB')}</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('payslip-content').innerHTML = html;
+        document.getElementById('payslip-result').classList.remove('hidden');
+    }
+
+    window.printPayslip = function() {
+        const content = document.getElementById('payslip-content').innerHTML;
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <html>
+                <head>
+                    <title>Payslip</title>
+                    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                    <style> @media print { body { -webkit-print-color-adjust: exact; } } </style>
+                </head>
+                <body class="p-10 font-sans">
+                    <h1 class="text-center font-black text-3xl mb-8 text-blue-600">AL MASTER - PAYSLIP</h1>
+                    ${content}
+                    <div class="mt-16 pt-8 border-t border-gray-200 flex justify-between">
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">Employee Signature</span></div>
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">HR / Admin Signature</span></div>
+                    </div>
+                </body>
+            </html>
+        `);
+        win.document.close();
+        setTimeout(() => {
+            win.print();
+        }, 500);
+    }
+
+</script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+    window.switchUserFormTab = function(tabName) {
+        ['general', 'hr', 'kpi'].forEach(t => {
+            const btn = document.getElementById('tab-btn-' + t);
+            const content = document.getElementById('tab-content-' + t);
+            if (t === tabName) {
+                btn.className = "px-4 py-2 text-xs font-black rounded-xl bg-brand-soft text-brand-blue transition-colors";
+                content.classList.remove('hidden');
+            } else {
+                btn.className = "px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-100 rounded-xl transition-colors";
+                content.classList.add('hidden');
+            }
+        });
+    };
+
+
+    // --- PAYROLL SYSTEM ---
+    function initPayrollDropdown() {
+        const sel = document.getElementById('payroll-employee-select');
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- Choose Employee --</option>';
+        const sorted = [...allUsersData].sort((a,b) => (a.name||'').localeCompare(b.name||''));
+        sorted.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.email;
+            opt.textContent = `${u.name} (${u.role})`;
+            sel.appendChild(opt);
+        });
+        if (currentVal && allUsersData.find(u => u.email === currentVal)) sel.value = currentVal;
+        
+        const mInput = document.getElementById('payroll-month');
+        if (!mInput.value) {
+            const d = new Date();
+            mInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+    }
+    
+    // Call initPayrollDropdown when users are loaded
+    const origRenderMonitorGrid = renderMonitorGrid;
+    renderMonitorGrid = function() {
+        origRenderMonitorGrid();
+        initPayrollDropdown();
+    };
+
+    window.generatePayslip = async function() {
+        const email = document.getElementById('payroll-employee-select').value;
+        const month = document.getElementById('payroll-month').value;
+        
+        if (!email || !month) {
+            showToast('Error', 'Please select an employee and a month.', 'error');
+            return;
+        }
+        
+        const u = allUsersData.find(x => x.email === email);
+        if (!u) return;
+        
+        const baseSalary = parseFloat(u.baseSalary) || 0;
+        let allowance = 0;
+        if (u.allowance && u.allowance.value) {
+            if (u.allowance.type === 'percentage') {
+                allowance = baseSalary * (parseFloat(u.allowance.value) / 100);
+            } else {
+                allowance = parseFloat(u.allowance.value);
+            }
+        }
+        const regularityBonus = parseFloat(u.regularityBonus) || 0;
+        const fixedDeductions = parseFloat(u.fixedDeductions) || 0;
+        
+        // Dynamic Delays / Deductions - Placeholder for future logic
+        // We will add an input for the admin to manually input any delay deductions for this month
+        
+        const totalAdditions = baseSalary + allowance + regularityBonus;
+        const totalDeductions = fixedDeductions;
+        const netSalary = totalAdditions - totalDeductions;
+        
+        const html = `
+            <div class="border-b border-slate-200 pb-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <img src="${getAvatar(u)}" class="w-16 h-16 rounded-full border border-slate-200 object-cover shadow-sm">
+                    <div>
+                        <h3 class="text-xl font-black text-brand-navy">${u.name}</h3>
+                        <p class="text-sm font-bold text-textMuted">${u.title || u.role} &bull; ${u.email}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-black uppercase text-textMuted tracking-widest mb-1">Payslip For</div>
+                    <div class="text-lg font-black text-brand-blue bg-brand-soft px-4 py-1.5 rounded-lg inline-block">${month}</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Additions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-emerald-600 tracking-widest mb-4 flex items-center"><i class="fas fa-plus-circle mr-2"></i> Earnings</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Base Salary</span>
+                            <span class="font-black text-brand-navy">${baseSalary.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Allowances (${u.allowance?.type === 'percentage' ? u.allowance.value+'%' : 'Fixed'})</span>
+                            <span class="font-black text-emerald-600">+ ${allowance.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Regularity Bonus</span>
+                            <span class="font-black text-emerald-600">+ ${regularityBonus.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Earnings</span>
+                        <span class="font-black text-emerald-600 text-lg">${totalAdditions.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <!-- Deductions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-red-500 tracking-widest mb-4 flex items-center"><i class="fas fa-minus-circle mr-2"></i> Deductions</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Fixed Deductions</span>
+                            <span class="font-black text-red-500">- ${fixedDeductions.toFixed(2)}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center bg-orange-50 p-3 rounded-lg border border-orange-100 border-dashed">
+                            <span class="text-xs font-bold text-orange-600">Delay Deductions<br><span class="text-[9px] font-medium">(Awaiting future rules)</span></span>
+                            <span class="font-black text-orange-600">0.00</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Deductions</span>
+                        <span class="font-black text-red-500 text-lg">${totalDeductions.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-brand-navy text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Net Payable Salary</span>
+                    <span class="text-3xl font-black">${netSalary.toFixed(2)} EGP</span>
+                </div>
+                <div class="w-full md:w-auto h-px md:h-12 w-12 md:w-px bg-white/20"></div>
+                <div class="text-center md:text-right w-full md:w-auto">
+                    <p class="text-xs font-bold text-slate-400">Generated On</p>
+                    <p class="text-sm font-bold text-white">${new Date().toLocaleDateString('en-GB')}</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('payslip-content').innerHTML = html;
+        document.getElementById('payslip-result').classList.remove('hidden');
+    }
+
+    window.printPayslip = function() {
+        const content = document.getElementById('payslip-content').innerHTML;
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <html>
+                <head>
+                    <title>Payslip</title>
+                    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                    <style> @media print { body { -webkit-print-color-adjust: exact; } } </style>
+                </head>
+                <body class="p-10 font-sans">
+                    <h1 class="text-center font-black text-3xl mb-8 text-blue-600">AL MASTER - PAYSLIP</h1>
+                    ${content}
+                    <div class="mt-16 pt-8 border-t border-gray-200 flex justify-between">
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">Employee Signature</span></div>
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">HR / Admin Signature</span></div>
+                    </div>
+                </body>
+            </html>
+        `);
+        win.document.close();
+        setTimeout(() => {
+            win.print();
+        }, 500);
+    }
+
+</script>
 
     <!-- Firebase: App + Firestore + Auth -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+    window.switchUserFormTab = function(tabName) {
+        ['general', 'hr', 'kpi'].forEach(t => {
+            const btn = document.getElementById('tab-btn-' + t);
+            const content = document.getElementById('tab-content-' + t);
+            if (t === tabName) {
+                btn.className = "px-4 py-2 text-xs font-black rounded-xl bg-brand-soft text-brand-blue transition-colors";
+                content.classList.remove('hidden');
+            } else {
+                btn.className = "px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-100 rounded-xl transition-colors";
+                content.classList.add('hidden');
+            }
+        });
+    };
+
+
+    // --- PAYROLL SYSTEM ---
+    function initPayrollDropdown() {
+        const sel = document.getElementById('payroll-employee-select');
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- Choose Employee --</option>';
+        const sorted = [...allUsersData].sort((a,b) => (a.name||'').localeCompare(b.name||''));
+        sorted.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.email;
+            opt.textContent = `${u.name} (${u.role})`;
+            sel.appendChild(opt);
+        });
+        if (currentVal && allUsersData.find(u => u.email === currentVal)) sel.value = currentVal;
+        
+        const mInput = document.getElementById('payroll-month');
+        if (!mInput.value) {
+            const d = new Date();
+            mInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+    }
+    
+    // Call initPayrollDropdown when users are loaded
+    const origRenderMonitorGrid = renderMonitorGrid;
+    renderMonitorGrid = function() {
+        origRenderMonitorGrid();
+        initPayrollDropdown();
+    };
+
+    window.generatePayslip = async function() {
+        const email = document.getElementById('payroll-employee-select').value;
+        const month = document.getElementById('payroll-month').value;
+        
+        if (!email || !month) {
+            showToast('Error', 'Please select an employee and a month.', 'error');
+            return;
+        }
+        
+        const u = allUsersData.find(x => x.email === email);
+        if (!u) return;
+        
+        const baseSalary = parseFloat(u.baseSalary) || 0;
+        let allowance = 0;
+        if (u.allowance && u.allowance.value) {
+            if (u.allowance.type === 'percentage') {
+                allowance = baseSalary * (parseFloat(u.allowance.value) / 100);
+            } else {
+                allowance = parseFloat(u.allowance.value);
+            }
+        }
+        const regularityBonus = parseFloat(u.regularityBonus) || 0;
+        const fixedDeductions = parseFloat(u.fixedDeductions) || 0;
+        
+        // Dynamic Delays / Deductions - Placeholder for future logic
+        // We will add an input for the admin to manually input any delay deductions for this month
+        
+        const totalAdditions = baseSalary + allowance + regularityBonus;
+        const totalDeductions = fixedDeductions;
+        const netSalary = totalAdditions - totalDeductions;
+        
+        const html = `
+            <div class="border-b border-slate-200 pb-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <img src="${getAvatar(u)}" class="w-16 h-16 rounded-full border border-slate-200 object-cover shadow-sm">
+                    <div>
+                        <h3 class="text-xl font-black text-brand-navy">${u.name}</h3>
+                        <p class="text-sm font-bold text-textMuted">${u.title || u.role} &bull; ${u.email}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-black uppercase text-textMuted tracking-widest mb-1">Payslip For</div>
+                    <div class="text-lg font-black text-brand-blue bg-brand-soft px-4 py-1.5 rounded-lg inline-block">${month}</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Additions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-emerald-600 tracking-widest mb-4 flex items-center"><i class="fas fa-plus-circle mr-2"></i> Earnings</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Base Salary</span>
+                            <span class="font-black text-brand-navy">${baseSalary.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Allowances (${u.allowance?.type === 'percentage' ? u.allowance.value+'%' : 'Fixed'})</span>
+                            <span class="font-black text-emerald-600">+ ${allowance.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Regularity Bonus</span>
+                            <span class="font-black text-emerald-600">+ ${regularityBonus.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Earnings</span>
+                        <span class="font-black text-emerald-600 text-lg">${totalAdditions.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <!-- Deductions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-red-500 tracking-widest mb-4 flex items-center"><i class="fas fa-minus-circle mr-2"></i> Deductions</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Fixed Deductions</span>
+                            <span class="font-black text-red-500">- ${fixedDeductions.toFixed(2)}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center bg-orange-50 p-3 rounded-lg border border-orange-100 border-dashed">
+                            <span class="text-xs font-bold text-orange-600">Delay Deductions<br><span class="text-[9px] font-medium">(Awaiting future rules)</span></span>
+                            <span class="font-black text-orange-600">0.00</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Deductions</span>
+                        <span class="font-black text-red-500 text-lg">${totalDeductions.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-brand-navy text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Net Payable Salary</span>
+                    <span class="text-3xl font-black">${netSalary.toFixed(2)} EGP</span>
+                </div>
+                <div class="w-full md:w-auto h-px md:h-12 w-12 md:w-px bg-white/20"></div>
+                <div class="text-center md:text-right w-full md:w-auto">
+                    <p class="text-xs font-bold text-slate-400">Generated On</p>
+                    <p class="text-sm font-bold text-white">${new Date().toLocaleDateString('en-GB')}</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('payslip-content').innerHTML = html;
+        document.getElementById('payslip-result').classList.remove('hidden');
+    }
+
+    window.printPayslip = function() {
+        const content = document.getElementById('payslip-content').innerHTML;
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <html>
+                <head>
+                    <title>Payslip</title>
+                    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                    <style> @media print { body { -webkit-print-color-adjust: exact; } } </style>
+                </head>
+                <body class="p-10 font-sans">
+                    <h1 class="text-center font-black text-3xl mb-8 text-blue-600">AL MASTER - PAYSLIP</h1>
+                    ${content}
+                    <div class="mt-16 pt-8 border-t border-gray-200 flex justify-between">
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">Employee Signature</span></div>
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">HR / Admin Signature</span></div>
+                    </div>
+                </body>
+            </html>
+        `);
+        win.document.close();
+        setTimeout(() => {
+            win.print();
+        }, 500);
+    }
+
+</script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
+    window.switchUserFormTab = function(tabName) {
+        ['general', 'hr', 'kpi'].forEach(t => {
+            const btn = document.getElementById('tab-btn-' + t);
+            const content = document.getElementById('tab-content-' + t);
+            if (t === tabName) {
+                btn.className = "px-4 py-2 text-xs font-black rounded-xl bg-brand-soft text-brand-blue transition-colors";
+                content.classList.remove('hidden');
+            } else {
+                btn.className = "px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-100 rounded-xl transition-colors";
+                content.classList.add('hidden');
+            }
+        });
+    };
+
+
+    // --- PAYROLL SYSTEM ---
+    function initPayrollDropdown() {
+        const sel = document.getElementById('payroll-employee-select');
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- Choose Employee --</option>';
+        const sorted = [...allUsersData].sort((a,b) => (a.name||'').localeCompare(b.name||''));
+        sorted.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.email;
+            opt.textContent = `${u.name} (${u.role})`;
+            sel.appendChild(opt);
+        });
+        if (currentVal && allUsersData.find(u => u.email === currentVal)) sel.value = currentVal;
+        
+        const mInput = document.getElementById('payroll-month');
+        if (!mInput.value) {
+            const d = new Date();
+            mInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+    }
+    
+    // Call initPayrollDropdown when users are loaded
+    const origRenderMonitorGrid = renderMonitorGrid;
+    renderMonitorGrid = function() {
+        origRenderMonitorGrid();
+        initPayrollDropdown();
+    };
+
+    window.generatePayslip = async function() {
+        const email = document.getElementById('payroll-employee-select').value;
+        const month = document.getElementById('payroll-month').value;
+        
+        if (!email || !month) {
+            showToast('Error', 'Please select an employee and a month.', 'error');
+            return;
+        }
+        
+        const u = allUsersData.find(x => x.email === email);
+        if (!u) return;
+        
+        const baseSalary = parseFloat(u.baseSalary) || 0;
+        let allowance = 0;
+        if (u.allowance && u.allowance.value) {
+            if (u.allowance.type === 'percentage') {
+                allowance = baseSalary * (parseFloat(u.allowance.value) / 100);
+            } else {
+                allowance = parseFloat(u.allowance.value);
+            }
+        }
+        const regularityBonus = parseFloat(u.regularityBonus) || 0;
+        const fixedDeductions = parseFloat(u.fixedDeductions) || 0;
+        
+        // Dynamic Delays / Deductions - Placeholder for future logic
+        // We will add an input for the admin to manually input any delay deductions for this month
+        
+        const totalAdditions = baseSalary + allowance + regularityBonus;
+        const totalDeductions = fixedDeductions;
+        const netSalary = totalAdditions - totalDeductions;
+        
+        const html = `
+            <div class="border-b border-slate-200 pb-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <img src="${getAvatar(u)}" class="w-16 h-16 rounded-full border border-slate-200 object-cover shadow-sm">
+                    <div>
+                        <h3 class="text-xl font-black text-brand-navy">${u.name}</h3>
+                        <p class="text-sm font-bold text-textMuted">${u.title || u.role} &bull; ${u.email}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-black uppercase text-textMuted tracking-widest mb-1">Payslip For</div>
+                    <div class="text-lg font-black text-brand-blue bg-brand-soft px-4 py-1.5 rounded-lg inline-block">${month}</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Additions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-emerald-600 tracking-widest mb-4 flex items-center"><i class="fas fa-plus-circle mr-2"></i> Earnings</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Base Salary</span>
+                            <span class="font-black text-brand-navy">${baseSalary.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Allowances (${u.allowance?.type === 'percentage' ? u.allowance.value+'%' : 'Fixed'})</span>
+                            <span class="font-black text-emerald-600">+ ${allowance.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Regularity Bonus</span>
+                            <span class="font-black text-emerald-600">+ ${regularityBonus.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Earnings</span>
+                        <span class="font-black text-emerald-600 text-lg">${totalAdditions.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <!-- Deductions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-red-500 tracking-widest mb-4 flex items-center"><i class="fas fa-minus-circle mr-2"></i> Deductions</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Fixed Deductions</span>
+                            <span class="font-black text-red-500">- ${fixedDeductions.toFixed(2)}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center bg-orange-50 p-3 rounded-lg border border-orange-100 border-dashed">
+                            <span class="text-xs font-bold text-orange-600">Delay Deductions<br><span class="text-[9px] font-medium">(Awaiting future rules)</span></span>
+                            <span class="font-black text-orange-600">0.00</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Deductions</span>
+                        <span class="font-black text-red-500 text-lg">${totalDeductions.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-brand-navy text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Net Payable Salary</span>
+                    <span class="text-3xl font-black">${netSalary.toFixed(2)} EGP</span>
+                </div>
+                <div class="w-full md:w-auto h-px md:h-12 w-12 md:w-px bg-white/20"></div>
+                <div class="text-center md:text-right w-full md:w-auto">
+                    <p class="text-xs font-bold text-slate-400">Generated On</p>
+                    <p class="text-sm font-bold text-white">${new Date().toLocaleDateString('en-GB')}</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('payslip-content').innerHTML = html;
+        document.getElementById('payslip-result').classList.remove('hidden');
+    }
+
+    window.printPayslip = function() {
+        const content = document.getElementById('payslip-content').innerHTML;
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <html>
+                <head>
+                    <title>Payslip</title>
+                    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                    <style> @media print { body { -webkit-print-color-adjust: exact; } } </style>
+                </head>
+                <body class="p-10 font-sans">
+                    <h1 class="text-center font-black text-3xl mb-8 text-blue-600">AL MASTER - PAYSLIP</h1>
+                    ${content}
+                    <div class="mt-16 pt-8 border-t border-gray-200 flex justify-between">
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">Employee Signature</span></div>
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">HR / Admin Signature</span></div>
+                    </div>
+                </body>
+            </html>
+        `);
+        win.document.close();
+        setTimeout(() => {
+            win.print();
+        }, 500);
+    }
+
+</script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js">
+    window.switchUserFormTab = function(tabName) {
+        ['general', 'hr', 'kpi'].forEach(t => {
+            const btn = document.getElementById('tab-btn-' + t);
+            const content = document.getElementById('tab-content-' + t);
+            if (t === tabName) {
+                btn.className = "px-4 py-2 text-xs font-black rounded-xl bg-brand-soft text-brand-blue transition-colors";
+                content.classList.remove('hidden');
+            } else {
+                btn.className = "px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-100 rounded-xl transition-colors";
+                content.classList.add('hidden');
+            }
+        });
+    };
+
+
+    // --- PAYROLL SYSTEM ---
+    function initPayrollDropdown() {
+        const sel = document.getElementById('payroll-employee-select');
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- Choose Employee --</option>';
+        const sorted = [...allUsersData].sort((a,b) => (a.name||'').localeCompare(b.name||''));
+        sorted.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.email;
+            opt.textContent = `${u.name} (${u.role})`;
+            sel.appendChild(opt);
+        });
+        if (currentVal && allUsersData.find(u => u.email === currentVal)) sel.value = currentVal;
+        
+        const mInput = document.getElementById('payroll-month');
+        if (!mInput.value) {
+            const d = new Date();
+            mInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+    }
+    
+    // Call initPayrollDropdown when users are loaded
+    const origRenderMonitorGrid = renderMonitorGrid;
+    renderMonitorGrid = function() {
+        origRenderMonitorGrid();
+        initPayrollDropdown();
+    };
+
+    window.generatePayslip = async function() {
+        const email = document.getElementById('payroll-employee-select').value;
+        const month = document.getElementById('payroll-month').value;
+        
+        if (!email || !month) {
+            showToast('Error', 'Please select an employee and a month.', 'error');
+            return;
+        }
+        
+        const u = allUsersData.find(x => x.email === email);
+        if (!u) return;
+        
+        const baseSalary = parseFloat(u.baseSalary) || 0;
+        let allowance = 0;
+        if (u.allowance && u.allowance.value) {
+            if (u.allowance.type === 'percentage') {
+                allowance = baseSalary * (parseFloat(u.allowance.value) / 100);
+            } else {
+                allowance = parseFloat(u.allowance.value);
+            }
+        }
+        const regularityBonus = parseFloat(u.regularityBonus) || 0;
+        const fixedDeductions = parseFloat(u.fixedDeductions) || 0;
+        
+        // Dynamic Delays / Deductions - Placeholder for future logic
+        // We will add an input for the admin to manually input any delay deductions for this month
+        
+        const totalAdditions = baseSalary + allowance + regularityBonus;
+        const totalDeductions = fixedDeductions;
+        const netSalary = totalAdditions - totalDeductions;
+        
+        const html = `
+            <div class="border-b border-slate-200 pb-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <img src="${getAvatar(u)}" class="w-16 h-16 rounded-full border border-slate-200 object-cover shadow-sm">
+                    <div>
+                        <h3 class="text-xl font-black text-brand-navy">${u.name}</h3>
+                        <p class="text-sm font-bold text-textMuted">${u.title || u.role} &bull; ${u.email}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-black uppercase text-textMuted tracking-widest mb-1">Payslip For</div>
+                    <div class="text-lg font-black text-brand-blue bg-brand-soft px-4 py-1.5 rounded-lg inline-block">${month}</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Additions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-emerald-600 tracking-widest mb-4 flex items-center"><i class="fas fa-plus-circle mr-2"></i> Earnings</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Base Salary</span>
+                            <span class="font-black text-brand-navy">${baseSalary.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Allowances (${u.allowance?.type === 'percentage' ? u.allowance.value+'%' : 'Fixed'})</span>
+                            <span class="font-black text-emerald-600">+ ${allowance.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Regularity Bonus</span>
+                            <span class="font-black text-emerald-600">+ ${regularityBonus.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Earnings</span>
+                        <span class="font-black text-emerald-600 text-lg">${totalAdditions.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <!-- Deductions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-red-500 tracking-widest mb-4 flex items-center"><i class="fas fa-minus-circle mr-2"></i> Deductions</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Fixed Deductions</span>
+                            <span class="font-black text-red-500">- ${fixedDeductions.toFixed(2)}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center bg-orange-50 p-3 rounded-lg border border-orange-100 border-dashed">
+                            <span class="text-xs font-bold text-orange-600">Delay Deductions<br><span class="text-[9px] font-medium">(Awaiting future rules)</span></span>
+                            <span class="font-black text-orange-600">0.00</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Deductions</span>
+                        <span class="font-black text-red-500 text-lg">${totalDeductions.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-brand-navy text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Net Payable Salary</span>
+                    <span class="text-3xl font-black">${netSalary.toFixed(2)} EGP</span>
+                </div>
+                <div class="w-full md:w-auto h-px md:h-12 w-12 md:w-px bg-white/20"></div>
+                <div class="text-center md:text-right w-full md:w-auto">
+                    <p class="text-xs font-bold text-slate-400">Generated On</p>
+                    <p class="text-sm font-bold text-white">${new Date().toLocaleDateString('en-GB')}</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('payslip-content').innerHTML = html;
+        document.getElementById('payslip-result').classList.remove('hidden');
+    }
+
+    window.printPayslip = function() {
+        const content = document.getElementById('payslip-content').innerHTML;
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <html>
+                <head>
+                    <title>Payslip</title>
+                    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                    <style> @media print { body { -webkit-print-color-adjust: exact; } } </style>
+                </head>
+                <body class="p-10 font-sans">
+                    <h1 class="text-center font-black text-3xl mb-8 text-blue-600">AL MASTER - PAYSLIP</h1>
+                    ${content}
+                    <div class="mt-16 pt-8 border-t border-gray-200 flex justify-between">
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">Employee Signature</span></div>
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">HR / Admin Signature</span></div>
+                    </div>
+                </body>
+            </html>
+        `);
+        win.document.close();
+        setTimeout(() => {
+            win.print();
+        }, 500);
+    }
+
+</script>
 
     <script>
         tailwind.config = {
@@ -26,7 +921,186 @@
                 fontFamily: { sans: ['Cairo','sans-serif'] }
             }}
         }
-    </script>
+    
+    window.switchUserFormTab = function(tabName) {
+        ['general', 'hr', 'kpi'].forEach(t => {
+            const btn = document.getElementById('tab-btn-' + t);
+            const content = document.getElementById('tab-content-' + t);
+            if (t === tabName) {
+                btn.className = "px-4 py-2 text-xs font-black rounded-xl bg-brand-soft text-brand-blue transition-colors";
+                content.classList.remove('hidden');
+            } else {
+                btn.className = "px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-100 rounded-xl transition-colors";
+                content.classList.add('hidden');
+            }
+        });
+    };
+
+
+    // --- PAYROLL SYSTEM ---
+    function initPayrollDropdown() {
+        const sel = document.getElementById('payroll-employee-select');
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- Choose Employee --</option>';
+        const sorted = [...allUsersData].sort((a,b) => (a.name||'').localeCompare(b.name||''));
+        sorted.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.email;
+            opt.textContent = `${u.name} (${u.role})`;
+            sel.appendChild(opt);
+        });
+        if (currentVal && allUsersData.find(u => u.email === currentVal)) sel.value = currentVal;
+        
+        const mInput = document.getElementById('payroll-month');
+        if (!mInput.value) {
+            const d = new Date();
+            mInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+    }
+    
+    // Call initPayrollDropdown when users are loaded
+    const origRenderMonitorGrid = renderMonitorGrid;
+    renderMonitorGrid = function() {
+        origRenderMonitorGrid();
+        initPayrollDropdown();
+    };
+
+    window.generatePayslip = async function() {
+        const email = document.getElementById('payroll-employee-select').value;
+        const month = document.getElementById('payroll-month').value;
+        
+        if (!email || !month) {
+            showToast('Error', 'Please select an employee and a month.', 'error');
+            return;
+        }
+        
+        const u = allUsersData.find(x => x.email === email);
+        if (!u) return;
+        
+        const baseSalary = parseFloat(u.baseSalary) || 0;
+        let allowance = 0;
+        if (u.allowance && u.allowance.value) {
+            if (u.allowance.type === 'percentage') {
+                allowance = baseSalary * (parseFloat(u.allowance.value) / 100);
+            } else {
+                allowance = parseFloat(u.allowance.value);
+            }
+        }
+        const regularityBonus = parseFloat(u.regularityBonus) || 0;
+        const fixedDeductions = parseFloat(u.fixedDeductions) || 0;
+        
+        // Dynamic Delays / Deductions - Placeholder for future logic
+        // We will add an input for the admin to manually input any delay deductions for this month
+        
+        const totalAdditions = baseSalary + allowance + regularityBonus;
+        const totalDeductions = fixedDeductions;
+        const netSalary = totalAdditions - totalDeductions;
+        
+        const html = `
+            <div class="border-b border-slate-200 pb-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <img src="${getAvatar(u)}" class="w-16 h-16 rounded-full border border-slate-200 object-cover shadow-sm">
+                    <div>
+                        <h3 class="text-xl font-black text-brand-navy">${u.name}</h3>
+                        <p class="text-sm font-bold text-textMuted">${u.title || u.role} &bull; ${u.email}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-black uppercase text-textMuted tracking-widest mb-1">Payslip For</div>
+                    <div class="text-lg font-black text-brand-blue bg-brand-soft px-4 py-1.5 rounded-lg inline-block">${month}</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Additions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-emerald-600 tracking-widest mb-4 flex items-center"><i class="fas fa-plus-circle mr-2"></i> Earnings</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Base Salary</span>
+                            <span class="font-black text-brand-navy">${baseSalary.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Allowances (${u.allowance?.type === 'percentage' ? u.allowance.value+'%' : 'Fixed'})</span>
+                            <span class="font-black text-emerald-600">+ ${allowance.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Regularity Bonus</span>
+                            <span class="font-black text-emerald-600">+ ${regularityBonus.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Earnings</span>
+                        <span class="font-black text-emerald-600 text-lg">${totalAdditions.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <!-- Deductions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-red-500 tracking-widest mb-4 flex items-center"><i class="fas fa-minus-circle mr-2"></i> Deductions</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Fixed Deductions</span>
+                            <span class="font-black text-red-500">- ${fixedDeductions.toFixed(2)}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center bg-orange-50 p-3 rounded-lg border border-orange-100 border-dashed">
+                            <span class="text-xs font-bold text-orange-600">Delay Deductions<br><span class="text-[9px] font-medium">(Awaiting future rules)</span></span>
+                            <span class="font-black text-orange-600">0.00</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Deductions</span>
+                        <span class="font-black text-red-500 text-lg">${totalDeductions.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-brand-navy text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Net Payable Salary</span>
+                    <span class="text-3xl font-black">${netSalary.toFixed(2)} EGP</span>
+                </div>
+                <div class="w-full md:w-auto h-px md:h-12 w-12 md:w-px bg-white/20"></div>
+                <div class="text-center md:text-right w-full md:w-auto">
+                    <p class="text-xs font-bold text-slate-400">Generated On</p>
+                    <p class="text-sm font-bold text-white">${new Date().toLocaleDateString('en-GB')}</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('payslip-content').innerHTML = html;
+        document.getElementById('payslip-result').classList.remove('hidden');
+    }
+
+    window.printPayslip = function() {
+        const content = document.getElementById('payslip-content').innerHTML;
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <html>
+                <head>
+                    <title>Payslip</title>
+                    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                    <style> @media print { body { -webkit-print-color-adjust: exact; } } </style>
+                </head>
+                <body class="p-10 font-sans">
+                    <h1 class="text-center font-black text-3xl mb-8 text-blue-600">AL MASTER - PAYSLIP</h1>
+                    ${content}
+                    <div class="mt-16 pt-8 border-t border-gray-200 flex justify-between">
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">Employee Signature</span></div>
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">HR / Admin Signature</span></div>
+                    </div>
+                </body>
+            </html>
+        `);
+        win.document.close();
+        setTimeout(() => {
+            win.print();
+        }, 500);
+    }
+
+</script>
     <style>
         body { background:#f6f8fc; color:#0f1c3a; height:100vh; overflow:hidden; display:flex; margin:0; }
         .custom-scrollbar::-webkit-scrollbar { width:6px; height:6px; }
@@ -217,88 +1291,198 @@
                 <h3 id="modal-user-title" class="text-xl font-black text-brand-navy flex items-center gap-2"></h3>
                 <button onclick="closeModal('modal-user-form')" class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><i class="fas fa-times"></i></button>
             </div>
-            <form id="user-setup-form" onsubmit="saveUserData(event)" class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-5">
+            <form id="user-setup-form" onsubmit="saveUserData(event)" class="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col">
                 <input type="hidden" id="edit-mode-email">
                 
-                <div class="flex flex-col sm:flex-row gap-6 p-5 bg-surface border border-slate-200 rounded-2xl items-start sm:items-center">
-                    <div class="relative cursor-pointer group shrink-0" onclick="document.getElementById('user-photo-upload').click()">
-                        <img id="user-photo-preview" src="" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md group-hover:border-brand-blueLt bg-white transition-all" alt="Avatar">
-                        <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-camera text-white"></i></div>
-                        <input type="file" id="user-photo-upload" class="hidden" accept="image/*" onchange="previewUserPhoto(this)">
-                        <input type="hidden" id="user-photo-b64">
-                    </div>
-                    <div class="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Full Name</label><input type="text" id="u-name" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm"></div>
-                        <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Job Title</label><input type="text" id="u-title" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm"></div>
-                    </div>
+                <!-- Tab Headers -->
+                <div class="flex items-center gap-2 border-b border-slate-200 pb-2 mb-5 shrink-0 sticky top-0 bg-white z-10 pt-2">
+                    <button type="button" onclick="switchUserFormTab('general')" id="tab-btn-general" class="px-4 py-2 text-xs font-black rounded-xl bg-brand-soft text-brand-blue transition-colors">General Info</button>
+                    <button type="button" onclick="switchUserFormTab('hr')" id="tab-btn-hr" class="px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">HR & Payroll</button>
+                    <button type="button" onclick="switchUserFormTab('kpi')" id="tab-btn-kpi" class="px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">KPIs & Evaluations</button>
                 </div>
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Email Address</label><input type="email" id="u-email" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none disabled:bg-slate-50 disabled:text-slate-400 focus:border-brand-blue shadow-sm"></div>
-                    <div id="password-container"><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Initial Password</label><input type="text" id="u-password" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none font-mono focus:border-brand-blue shadow-sm" placeholder="Min 6 chars"></div>
-                </div>
-                
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Role</label>
-                        <select id="u-role" onchange="toggleLeaderSection()" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm">
-                            <option value="employee">Employee</option><option value="leader">Leader</option><option value="supervisor">Supervisor</option><option value="admin">Admin</option>
-                        </select></div>
-                    <div class="relative"><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Assigned Leader</label>
-                        <input type="hidden" id="u-leader-email" value="">
-                        <div id="u-leader-select-btn" onclick="toggleLeaderDropdown()" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 flex items-center justify-between text-sm font-bold outline-none focus-within:border-brand-blue cursor-pointer shadow-sm">
-                            <div id="u-leader-selected-content" class="flex items-center gap-2 text-slate-500 text-xs truncate">
-                                None (Direct to Admin/Supervisor)
+                <div class="flex-1 space-y-5 pb-5">
+                    <!-- Tab Content: General -->
+                    <div id="tab-content-general" class="space-y-5">
+                        <div class="flex flex-col sm:flex-row gap-6 p-5 bg-surface border border-slate-200 rounded-2xl items-start sm:items-center">
+                            <div class="relative cursor-pointer group shrink-0" onclick="document.getElementById('user-photo-upload').click()">
+                                <img id="user-photo-preview" src="" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md group-hover:border-brand-blueLt bg-white transition-all" alt="Avatar">
+                                <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-camera text-white"></i></div>
+                                <input type="file" id="user-photo-upload" class="hidden" accept="image/*" onchange="previewUserPhoto(this)">
+                                <input type="hidden" id="user-photo-b64">
                             </div>
-                            <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                            <div class="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Full Name</label><input type="text" id="u-name" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm"></div>
+                                <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Job Title</label><input type="text" id="u-title" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm"></div>
+                            </div>
                         </div>
-                        <div id="u-leader-dropdown" class="absolute z-[100] w-full bg-white border border-slate-200 rounded-2xl shadow-xl mt-2 hidden max-h-60 overflow-y-auto custom-scrollbar p-1.5 flex flex-col gap-1">
-                            <!-- options injected via JS -->
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Email Address</label><input type="email" id="u-email" required class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none disabled:bg-slate-50 disabled:text-slate-400 focus:border-brand-blue shadow-sm"></div>
+                            <div id="password-container"><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Initial Password</label><input type="text" id="u-password" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none font-mono focus:border-brand-blue shadow-sm" placeholder="Min 6 chars"></div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Role</label>
+                                <select id="u-role" onchange="toggleLeaderSection()" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm">
+                                    <option value="employee">Employee</option><option value="leader">Leader</option><option value="supervisor">Supervisor</option><option value="admin">Admin</option>
+                                </select></div>
+                            <div class="relative"><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Assigned Leader</label>
+                                <input type="hidden" id="u-leader-email" value="">
+                                <div id="u-leader-select-btn" onclick="toggleLeaderDropdown()" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 flex items-center justify-between text-sm font-bold outline-none focus-within:border-brand-blue cursor-pointer shadow-sm">
+                                    <div id="u-leader-selected-content" class="flex items-center gap-2 text-slate-500 text-xs truncate">
+                                        None (Direct)
+                                    </div>
+                                    <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                                </div>
+                                <div id="u-leader-dropdown" class="absolute z-[100] w-full bg-white border border-slate-200 rounded-2xl shadow-xl mt-2 hidden max-h-60 overflow-y-auto custom-scrollbar p-1.5 flex flex-col gap-1">
+                                    <!-- options injected via JS -->
+                                </div>
+                            </div>
+                            <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Gender</label>
+                                <select id="u-gender" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm" onchange="updateFallbackPreview()">
+                                    <option value="male">Male</option><option value="female">Female</option>
+                                </select></div>
+                        </div>
+                        
+                        <div class="p-5 border border-slate-200 bg-surface rounded-2xl">
+                            <p class="text-[10px] font-black text-textMain uppercase mb-3 tracking-widest border-b border-slate-200 pb-2"><i class="fas fa-shield-halved text-brand-blue mr-1"></i> Permissions & Access</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-bold items-center">
+                                <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors"><input type="checkbox" id="perm-crm" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue"> CRM System Access</label>
+                                <div>
+                                    <select id="u-crm-role" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm">
+                                        <option value="agent">CRM Role: Agent</option>
+                                        <option value="supervisor">CRM Role: Supervisor</option>
+                                        <option value="admin">CRM Role: Admin</option>
+                                    </select>
+                                </div>
+                                <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors"><input type="checkbox" id="perm-payroll" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue"> Payroll System Access</label>
+                            </div>
+                        </div>
+
+                        <div id="leader-team-section" class="p-5 border border-slate-200 bg-surface rounded-2xl hidden">
+                            <p class="text-[10px] font-black text-textMain uppercase mb-3 tracking-widest border-b border-slate-200 pb-2"><i class="fas fa-users-viewfinder text-brand-blue mr-1"></i> Assigned Team Members (For This Leader)</p>
+                            <div id="leader-team-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto custom-scrollbar text-xs font-bold">
+                                <!-- Checkboxes populated dynamically -->
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-5 bg-red-50 border border-red-200 rounded-2xl">
+                            <div><span class="text-sm font-black text-red-700 block"><i class="fas fa-ban mr-1"></i> Suspend Account</span><span class="text-[10px] text-red-500/80 font-bold">Immediately block user from logging in.</span></div>
+                            <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="u-suspended" class="sr-only peer"><div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div></label>
                         </div>
                     </div>
-                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Gender</label>
-                        <select id="u-gender" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm" onchange="updateFallbackPreview()">
-                            <option value="male">Male</option><option value="female">Female</option>
-                        </select></div>
-                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Vacation (Days)</label>
-                        <input type="number" id="u-leave-balance" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm" placeholder="21"></div>
-                    <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Online Limit (Days)</label>
-                        <input type="number" id="u-online-limit" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm" placeholder="0"></div>
-                </div>
-                
-                <div class="p-5 border border-slate-200 bg-surface rounded-2xl">
-                    <p class="text-[10px] font-black text-textMain uppercase mb-3 tracking-widest border-b border-slate-200 pb-2"><i class="fas fa-shield-halved text-brand-blue mr-1"></i> Permissions & Access</p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-bold items-center">
-                        <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors"><input type="checkbox" id="perm-crm" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue"> CRM System Access</label>
-                        <div>
-                            <select id="u-crm-role" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm">
-                                <option value="agent">CRM Role: Agent</option>
-                                <option value="supervisor">CRM Role: Supervisor</option>
-                                <option value="admin">CRM Role: Admin</option>
-                            </select>
+
+                    <!-- Tab Content: HR & Payroll -->
+                    <div id="tab-content-hr" class="hidden space-y-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Vacation (Days)</label>
+                                <input type="number" id="u-leave-balance" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm" placeholder="21"></div>
+                            <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Online Limit (Days)</label>
+                                <input type="number" id="u-online-limit" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm" placeholder="0"></div>
                         </div>
-                        <label class="flex items-center gap-3 cursor-pointer bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:border-brand-blueLt transition-colors"><input type="checkbox" id="perm-payroll" class="w-4 h-4 rounded text-brand-blue focus:ring-brand-blue"> Payroll System Access</label>
+                        
+                        <div class="p-5 border border-slate-200 bg-surface rounded-2xl space-y-4">
+                            <p class="text-[10px] font-black text-textMain uppercase mb-3 tracking-widest border-b border-slate-200 pb-2"><i class="fas fa-money-bill-wave text-brand-blue mr-1"></i> Salary & Compensation</p>
+                            <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Base Salary</label>
+                                <input type="number" id="u-base-salary" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm" placeholder="e.g. 5000"></div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Regularity Bonus (جزء الانتظام)</label>
+                                    <input type="number" id="u-regularity-bonus" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm" placeholder="e.g. 500"></div>
+                                <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Fixed Deductions (خصومات ثابتة)</label>
+                                    <input type="number" id="u-fixed-deductions" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm" placeholder="e.g. 0"></div>
+                            </div>
+                        </div>
+
+                        <div class="p-5 border border-slate-200 bg-surface rounded-2xl space-y-4">
+                            <p class="text-[10px] font-black text-textMain uppercase mb-3 tracking-widest border-b border-slate-200 pb-2"><i class="fas fa-gift text-brand-blue mr-1"></i> Allowances (البدلات)</p>
+                            <div class="grid grid-cols-3 gap-4 items-end">
+                                <div class="col-span-2"><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Allowance Amount / Percentage</label>
+                                    <input type="number" id="u-allowance-val" min="0" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm" placeholder="Amount"></div>
+                                <div><label class="text-[10px] font-black text-textMuted mb-1 block uppercase tracking-wider">Type</label>
+                                    <select id="u-allowance-type" class="w-full bg-white border border-slate-200 h-11 rounded-xl px-3 text-sm font-bold outline-none focus:border-brand-blue cursor-pointer shadow-sm">
+                                        <option value="fixed">Fixed ($)</option>
+                                        <option value="percentage">Percentage (%)</option>
+                                    </select></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Content: KPIs -->
+                    <div id="tab-content-kpi" class="hidden space-y-5">
+                        <div class="p-5 border border-slate-200 bg-surface rounded-2xl flex flex-col items-center justify-center text-center py-12">
+                            <i class="fas fa-chart-line text-4xl text-slate-200 mb-3"></i>
+                            <h4 class="text-sm font-black text-textMain">KPI System Coming Soon</h4>
+                            <p class="text-xs text-textMuted mt-1">You will be able to manage and view employee performance metrics here.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div id="leader-team-section" class="p-5 border border-slate-200 bg-surface rounded-2xl hidden">
-                    <p class="text-[10px] font-black text-textMain uppercase mb-3 tracking-widest border-b border-slate-200 pb-2"><i class="fas fa-users-viewfinder text-brand-blue mr-1"></i> Assigned Team Members (For This Leader)</p>
-                    <div id="leader-team-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto custom-scrollbar text-xs font-bold">
-                        <!-- Checkboxes populated dynamically -->
-                    </div>
-                </div>
-                
-                <div class="flex items-center justify-between p-5 bg-red-50 border border-red-200 rounded-2xl">
-                    <div><span class="text-sm font-black text-red-700 block"><i class="fas fa-ban mr-1"></i> Suspend Account</span><span class="text-[10px] text-red-500/80 font-bold">Immediately block user from logging in.</span></div>
-                    <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="u-suspended" class="sr-only peer"><div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div></label>
-                </div>
-                
-                <div class="pt-4 flex gap-3 border-t border-slate-100 shrink-0">
+                <div class="pt-4 flex gap-3 border-t border-slate-100 shrink-0 sticky bottom-0 bg-white pb-2 z-10">
                     <button type="submit" id="save-user-btn" class="flex-1 py-3.5 bg-brand-blue text-white rounded-xl font-black text-sm shadow-lg hover:bg-brand-navy2 mini-btn"><i class="fas fa-save mr-2"></i> Save Employee</button>
                     <button type="button" id="delete-user-btn" onclick="deleteUser()" class="px-6 py-3.5 border border-red-200 bg-white text-red-500 hover:bg-red-50 rounded-xl font-black text-sm hidden transition-colors"><i class="fas fa-trash-alt mr-1"></i> Delete</button>
                 </div>
             </form>
         </div>
     </div>
+
+
+        <!-- Tab: Payroll & Payslip -->
+        <div id="tab-payroll" class="tab-pane hidden flex-col flex-1 h-full relative overflow-y-auto custom-scrollbar p-4 md:p-8">
+            <div class="max-w-6xl mx-auto w-full space-y-6">
+                <!-- Header -->
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-black text-brand-navy tracking-tight mb-2">Payroll & <span class="text-brand-blue">Payslip</span></h2>
+                        <p class="text-sm font-bold text-textMuted">Generate and manage employee salaries.</p>
+                    </div>
+                </div>
+                
+                <!-- Main Controls -->
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-end">
+                    <div class="flex-1 w-full">
+                        <label class="text-[10px] font-black text-textMuted mb-2 block uppercase tracking-wider">Select Employee</label>
+                        <select id="payroll-employee-select" class="w-full bg-slate-50 border border-slate-200 h-12 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm">
+                            <option value="">-- Choose Employee --</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-48 shrink-0">
+                        <label class="text-[10px] font-black text-textMuted mb-2 block uppercase tracking-wider">Month</label>
+                        <input type="month" id="payroll-month" class="w-full bg-slate-50 border border-slate-200 h-12 rounded-xl px-4 text-sm font-bold outline-none focus:border-brand-blue shadow-sm">
+                    </div>
+                    <button onclick="generatePayslip()" class="h-12 px-8 bg-brand-blue text-white rounded-xl font-black text-sm shadow-lg hover:bg-brand-navy2 transition-colors shrink-0 w-full md:w-auto"><i class="fas fa-file-invoice-dollar mr-2"></i> Generate</button>
+                </div>
+
+                <!-- Payslip Result -->
+                <div id="payslip-result" class="hidden bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mt-6 relative">
+                    <button onclick="printPayslip()" class="absolute top-6 right-6 px-4 py-2 bg-slate-100 text-slate-600 hover:bg-brand-blue hover:text-white rounded-lg text-xs font-black transition-colors"><i class="fas fa-print mr-2"></i> Print</button>
+                    
+                    <div id="payslip-content" class="pt-8 md:pt-4">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Reports -->
+        <div id="tab-reports" class="tab-pane hidden flex-col flex-1 h-full relative overflow-y-auto custom-scrollbar p-4 md:p-8">
+            <div class="max-w-6xl mx-auto w-full space-y-6">
+                <!-- Header -->
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-black text-brand-navy tracking-tight mb-2">Comprehensive <span class="text-brand-blue">Reports</span></h2>
+                        <p class="text-sm font-bold text-textMuted">View and export full HR analytics.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-3xl p-12 shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+                    <i class="fas fa-tools text-5xl text-brand-blueLt mb-4"></i>
+                    <h3 class="text-xl font-black text-brand-navy">Reports Module Coming Soon</h3>
+                    <p class="text-sm text-textMuted mt-2 max-w-md">The comprehensive reporting engine is currently being built. It will allow you to export detailed monthly logs, performance metrics, and location tracking.</p>
+                </div>
+            </div>
+        </div>
 
     <!-- Logs Modal -->
     <div id="modal-logs" class="fixed inset-0 z-[550] hidden bg-brand-navy/60 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModal('modal-logs')">
@@ -975,7 +2159,6 @@
 
         if (isNew) {
             document.getElementById('u-gender').value = 'male';
-            // leader handled above
             document.getElementById('u-crm-role').value = 'agent';
             updateFallbackPreview();
             document.getElementById('u-leave-balance').value = ANNUAL_LEAVE_DEFAULT;
@@ -986,7 +2169,6 @@
             document.getElementById('u-title').value = u.title || '';
             document.getElementById('u-email').value = mode;
             document.getElementById('u-role').value = u.role || 'employee';
-            // leader handled above
             document.getElementById('u-gender').value = u.gender || 'male';
             document.getElementById('u-suspended').checked = !!u.isSuspended;
             document.getElementById('perm-crm').checked = !!(u.permissions && u.permissions.crm);
@@ -996,26 +2178,32 @@
             document.getElementById('user-photo-b64').value = u.photo || '';
             document.getElementById('u-leave-balance').value = balanceOf(mode);
             document.getElementById('u-online-limit').value = u.onlineDaysLimit || 0;
+            
+            // Payroll fields
+            document.getElementById('u-base-salary').value = u.baseSalary || '';
+            document.getElementById('u-regularity-bonus').value = u.regularityBonus || '';
+            document.getElementById('u-fixed-deductions').value = u.fixedDeductions || '';
+            document.getElementById('u-allowance-val').value = (u.allowance && u.allowance.value) || '';
+            document.getElementById('u-allowance-type').value = (u.allowance && u.allowance.type) || 'fixed';
         }
         toggleLeaderSection();
         openModal('modal-user-form');
+        switchUserFormTab('general'); // Default to general tab
     }
 
     function previewUserPhoto(input) {
-        if (!input.files || !input.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const c = document.createElement('canvas'); c.width = 150; c.height = 150;
-                c.getContext('2d').drawImage(img, 0, 0, 150, 150);
-                const b64 = c.toDataURL('image/jpeg', 0.8);
-                document.getElementById('user-photo-preview').src = b64;
-                document.getElementById('user-photo-b64').value = b64;
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(input.files[0]);
+        if (input.files && input.files[0]) {
+            const r = new FileReader();
+            r.onload = e => { document.getElementById('user-photo-preview').src = e.target.result; document.getElementById('user-photo-b64').value = e.target.result; };
+            r.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    function updateFallbackPreview() {
+        if (!document.getElementById('user-photo-b64').value) {
+            const g = document.getElementById('u-gender').value;
+            document.getElementById('user-photo-preview').src = g === 'female' ? 'https://api.dicebear.com/7.x/notionists/svg?seed=female&backgroundColor=f8fafc' : 'https://api.dicebear.com/7.x/notionists/svg?seed=male&backgroundColor=f8fafc';
+        }
     }
 
     async function saveUserData(e) {
@@ -1035,6 +2223,13 @@
             gender: document.getElementById('u-gender').value,
             leaderEmail: document.getElementById('u-leader-email') ? document.getElementById('u-leader-email').value : '',
             onlineDaysLimit: onLimit,
+            baseSalary: parseFloat(document.getElementById('u-base-salary').value) || 0,
+            regularityBonus: parseFloat(document.getElementById('u-regularity-bonus').value) || 0,
+            fixedDeductions: parseFloat(document.getElementById('u-fixed-deductions').value) || 0,
+            allowance: {
+                value: parseFloat(document.getElementById('u-allowance-val').value) || 0,
+                type: document.getElementById('u-allowance-type').value
+            },
             isSuspended: document.getElementById('u-suspended').checked,
             permissions: { 
                 crm: document.getElementById('perm-crm').checked, 
@@ -1234,6 +2429,185 @@
             dd.classList.add('hidden');
         }
     });
+
+
+    window.switchUserFormTab = function(tabName) {
+        ['general', 'hr', 'kpi'].forEach(t => {
+            const btn = document.getElementById('tab-btn-' + t);
+            const content = document.getElementById('tab-content-' + t);
+            if (t === tabName) {
+                btn.className = "px-4 py-2 text-xs font-black rounded-xl bg-brand-soft text-brand-blue transition-colors";
+                content.classList.remove('hidden');
+            } else {
+                btn.className = "px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-100 rounded-xl transition-colors";
+                content.classList.add('hidden');
+            }
+        });
+    };
+
+
+    // --- PAYROLL SYSTEM ---
+    function initPayrollDropdown() {
+        const sel = document.getElementById('payroll-employee-select');
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- Choose Employee --</option>';
+        const sorted = [...allUsersData].sort((a,b) => (a.name||'').localeCompare(b.name||''));
+        sorted.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.email;
+            opt.textContent = `${u.name} (${u.role})`;
+            sel.appendChild(opt);
+        });
+        if (currentVal && allUsersData.find(u => u.email === currentVal)) sel.value = currentVal;
+        
+        const mInput = document.getElementById('payroll-month');
+        if (!mInput.value) {
+            const d = new Date();
+            mInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+    }
+    
+    // Call initPayrollDropdown when users are loaded
+    const origRenderMonitorGrid = renderMonitorGrid;
+    renderMonitorGrid = function() {
+        origRenderMonitorGrid();
+        initPayrollDropdown();
+    };
+
+    window.generatePayslip = async function() {
+        const email = document.getElementById('payroll-employee-select').value;
+        const month = document.getElementById('payroll-month').value;
+        
+        if (!email || !month) {
+            showToast('Error', 'Please select an employee and a month.', 'error');
+            return;
+        }
+        
+        const u = allUsersData.find(x => x.email === email);
+        if (!u) return;
+        
+        const baseSalary = parseFloat(u.baseSalary) || 0;
+        let allowance = 0;
+        if (u.allowance && u.allowance.value) {
+            if (u.allowance.type === 'percentage') {
+                allowance = baseSalary * (parseFloat(u.allowance.value) / 100);
+            } else {
+                allowance = parseFloat(u.allowance.value);
+            }
+        }
+        const regularityBonus = parseFloat(u.regularityBonus) || 0;
+        const fixedDeductions = parseFloat(u.fixedDeductions) || 0;
+        
+        // Dynamic Delays / Deductions - Placeholder for future logic
+        // We will add an input for the admin to manually input any delay deductions for this month
+        
+        const totalAdditions = baseSalary + allowance + regularityBonus;
+        const totalDeductions = fixedDeductions;
+        const netSalary = totalAdditions - totalDeductions;
+        
+        const html = `
+            <div class="border-b border-slate-200 pb-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <img src="${getAvatar(u)}" class="w-16 h-16 rounded-full border border-slate-200 object-cover shadow-sm">
+                    <div>
+                        <h3 class="text-xl font-black text-brand-navy">${u.name}</h3>
+                        <p class="text-sm font-bold text-textMuted">${u.title || u.role} &bull; ${u.email}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-black uppercase text-textMuted tracking-widest mb-1">Payslip For</div>
+                    <div class="text-lg font-black text-brand-blue bg-brand-soft px-4 py-1.5 rounded-lg inline-block">${month}</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Additions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-emerald-600 tracking-widest mb-4 flex items-center"><i class="fas fa-plus-circle mr-2"></i> Earnings</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Base Salary</span>
+                            <span class="font-black text-brand-navy">${baseSalary.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Allowances (${u.allowance?.type === 'percentage' ? u.allowance.value+'%' : 'Fixed'})</span>
+                            <span class="font-black text-emerald-600">+ ${allowance.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Regularity Bonus</span>
+                            <span class="font-black text-emerald-600">+ ${regularityBonus.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Earnings</span>
+                        <span class="font-black text-emerald-600 text-lg">${totalAdditions.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <!-- Deductions -->
+                <div>
+                    <h4 class="text-xs font-black uppercase text-red-500 tracking-widest mb-4 flex items-center"><i class="fas fa-minus-circle mr-2"></i> Deductions</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Fixed Deductions</span>
+                            <span class="font-black text-red-500">- ${fixedDeductions.toFixed(2)}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center bg-orange-50 p-3 rounded-lg border border-orange-100 border-dashed">
+                            <span class="text-xs font-bold text-orange-600">Delay Deductions<br><span class="text-[9px] font-medium">(Awaiting future rules)</span></span>
+                            <span class="font-black text-orange-600">0.00</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 px-3">
+                        <span class="text-sm font-black text-brand-navy">Total Deductions</span>
+                        <span class="font-black text-red-500 text-lg">${totalDeductions.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-brand-navy text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Net Payable Salary</span>
+                    <span class="text-3xl font-black">${netSalary.toFixed(2)} EGP</span>
+                </div>
+                <div class="w-full md:w-auto h-px md:h-12 w-12 md:w-px bg-white/20"></div>
+                <div class="text-center md:text-right w-full md:w-auto">
+                    <p class="text-xs font-bold text-slate-400">Generated On</p>
+                    <p class="text-sm font-bold text-white">${new Date().toLocaleDateString('en-GB')}</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('payslip-content').innerHTML = html;
+        document.getElementById('payslip-result').classList.remove('hidden');
+    }
+
+    window.printPayslip = function() {
+        const content = document.getElementById('payslip-content').innerHTML;
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <html>
+                <head>
+                    <title>Payslip</title>
+                    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                    <style> @media print { body { -webkit-print-color-adjust: exact; } } </style>
+                </head>
+                <body class="p-10 font-sans">
+                    <h1 class="text-center font-black text-3xl mb-8 text-blue-600">AL MASTER - PAYSLIP</h1>
+                    ${content}
+                    <div class="mt-16 pt-8 border-t border-gray-200 flex justify-between">
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">Employee Signature</span></div>
+                        <div class="text-center"><div class="border-b border-gray-400 w-48 mb-2"></div><span class="text-xs font-bold text-gray-500">HR / Admin Signature</span></div>
+                    </div>
+                </body>
+            </html>
+        `);
+        win.document.close();
+        setTimeout(() => {
+            win.print();
+        }, 500);
+    }
 
 </script>
 </body>
