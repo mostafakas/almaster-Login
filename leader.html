@@ -473,7 +473,23 @@
                 await ref.set({ name: user.displayName || EMAIL.split('@')[0], title:'Team Leader', role:'leader', status:'Offline', timeBank:zero, firstOnlineAt:null, dayKey:'', lastChange: serverTs(), createdAt: serverTs(), onlineDaysLimit: 0 });
                 doc = await ref.get();
             }
-            userProfile = doc.data();
+            const data = doc.data();
+            const localSession = localStorage.getItem('my_session_id');
+            if (data.sessionId && localSession && data.sessionId !== localSession) {
+                if (unsubscribeUser) unsubscribeUser();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Session Expired',
+                    text: 'You logged in from another device. This session will be closed.',
+                    allowOutsideClick: false,
+                    showConfirmButton: true,
+                    confirmButtonText: 'Log out'
+                }).then(() => {
+                    auth.signOut().then(() => { window.location.replace('index.html'); });
+                });
+                return;
+            }
+            userProfile = data;
             await syncServerTime();
             await handleNewDayCheck(); 
         } catch (e) {
@@ -507,9 +523,23 @@
         const bal = userProfile.onlineDaysLimit || 0;
         
         const clientNow = Date.now();
+        const sNow = new Date(Date.now() + serverOffset);
+        const timeBank = Object.fromEntries(countedKeys().map(k => [k, 0]));
+        
+        // Grace Period Bonus Logic (9:00 to 9:30)
+        const timeInMins = sNow.getHours() * 60 + sNow.getMinutes();
+        if (timeInMins >= 540 && timeInMins <= 570) {
+            const nineAM = new Date(sNow);
+            nineAM.setHours(9, 0, 0, 0);
+            const bonusMs = sNow.getTime() - nineAM.getTime();
+            if (bonusMs > 0) {
+                timeBank['Online'] = bonusMs;
+            }
+        }
+        
         const updates = {
             status: 'Online',
-            timeBank: Object.fromEntries(countedKeys().map(k => [k, 0])),
+            timeBank: timeBank,
             lastChange: serverTs(),
             lastChangeClient: clientNow,
             dayKey: todayKey,
