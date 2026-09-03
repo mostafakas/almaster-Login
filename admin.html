@@ -6,7 +6,156 @@
     <title>AL MASTER | Central Console</title>
     <meta name="theme-color" content="#0b1b3f">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+    // --- Attendance Logic ---
+    async function loadAttendance() {
+        const dateInput = document.getElementById('att-date-picker').value;
+        if (!dateInput) return;
+        const tbody = document.getElementById('attendance-tbody');
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center"><i class="fas fa-circle-notch fa-spin text-brand-blue text-2xl"></i></td></tr>';
+
+        try {
+            // Fetch logs for the day
+            const logsSnap = await db.collection('logs').where('dayKey', '==', dateInput).get();
+            const logsByUser = {};
+            logsSnap.forEach(doc => {
+                const d = doc.data();
+                if (!logsByUser[d.user]) logsByUser[d.user] = [];
+                logsByUser[d.user].push(d);
+            });
+
+            // Fetch overrides (Leave / Absent)
+            const overridesSnap = await db.collection('attendance_override').where('dayKey', '==', dateInput).get();
+            const overrides = {};
+            overridesSnap.forEach(doc => {
+                overrides[doc.data().user] = doc.data();
+            });
+
+            let rowsHtml = '';
+            for (const user of allUsersData) {
+                if (user.role === 'admin') continue;
+
+                const email = user.email || user.id;
+                const userLogs = logsByUser[email] || [];
+                const override = overrides[email];
+                
+                let timeIn = '-';
+                let timeOut = '-';
+                let isLate = false;
+                let status = 'No Record';
+                let badgeClass = 'bg-slate-100 text-slate-500';
+
+                if (userLogs.length > 0) {
+                    userLogs.sort((a,b) => getMillis(a.timestamp) - getMillis(b.timestamp));
+                    // First online log
+                    const firstLog = userLogs.find(l => l.to_status === 'Online' || l.to_status === 'Office' || l.to_status === 'Remote');
+                    if (firstLog) {
+                        const ms = getMillis(firstLog.timestamp);
+                        timeIn = fmtTime(ms);
+                        // Check if late (after 9:30 AM)
+                        const d = new Date(ms);
+                        const mins = d.getHours() * 60 + d.getMinutes();
+                        if (mins > 570) isLate = true; // 9:30 AM = 570 mins
+                    }
+                    // Last log
+                    const lastLog = userLogs[userLogs.length - 1];
+                    timeOut = fmtTime(getMillis(lastLog.timestamp));
+                    
+                    status = 'Present';
+                    badgeClass = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
+                }
+
+                if (override) {
+                    status = override.status; // 'Absent' or 'Leave'
+                    if (status === 'Absent') badgeClass = 'bg-red-50 text-red-600 border border-red-100';
+                    if (status === 'Leave') badgeClass = 'bg-amber-50 text-amber-600 border border-amber-100';
+                }
+
+                const lateBadge = isLate 
+                    ? '<span class="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-full text-[10px]">Late</span>' 
+                    : '<span class="px-2 py-0.5 bg-slate-50 text-slate-400 rounded-full text-[10px]">-</span>';
+
+                rowsHtml += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <img src="${getAvatar(user)}" class="w-8 h-8 rounded-xl object-cover border border-slate-200">
+                                <div>
+                                    <p class="text-xs font-black">${user.name}</p>
+                                    <p class="text-[9px] text-textMuted">${user.title || ''}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-[10px] font-black ${badgeClass}">${status}</span>
+                        </td>
+                        <td class="px-6 py-4 tabular-nums text-xs">${timeIn}</td>
+                        <td class="px-6 py-4 tabular-nums text-xs">${timeOut}</td>
+                        <td class="px-6 py-4">${lateBadge}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="setAttendanceOverride('${email}', '${dateInput}', 'Absent')" class="text-[10px] font-black px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors mr-1">Mark Absent</button>
+                            <button onclick="setAttendanceOverride('${email}', '${dateInput}', 'Leave')" class="text-[10px] font-black px-3 py-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors mr-1">Mark Leave</button>
+                            <button onclick="setAttendanceOverride('${email}', '${dateInput}', 'Clear')" class="text-[10px] font-black px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors" title="Clear Override"><i class="fas fa-times"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            tbody.innerHTML = rowsHtml || '<tr><td colspan="6" class="px-6 py-10 text-center text-xs text-textMuted">No employees found.</td></tr>';
+
+        } catch (e) {
+            console.error(e);
+            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-xs text-red-500">Error loading data.</td></tr>';
+        }
+    }
+
+    async function setAttendanceOverride(email, dayKey, newStatus) {
+        try {
+            const docId = email + '_' + dayKey;
+            const ref = db.collection('attendance_override').doc(docId);
+            const doc = await ref.get();
+            const oldStatus = doc.exists ? doc.data().status : null;
+            
+            if (newStatus === 'Clear') {
+                if (doc.exists) await ref.delete();
+            } else {
+                await ref.set({ user: email, dayKey, status: newStatus, timestamp: serverTs() });
+            }
+
+            // Adjust Leaves Balance if changing to/from "Leave"
+            if (newStatus === 'Leave' && oldStatus !== 'Leave') {
+                const statRef = db.collection('hr_stats').doc(email);
+                const stat = await statRef.get();
+                if (stat.exists && typeof stat.data().annualLeavesLeft === 'number') {
+                    await statRef.update({ annualLeavesLeft: firebase.firestore.FieldValue.increment(-1) });
+                }
+            } else if (oldStatus === 'Leave' && newStatus !== 'Leave') {
+                const statRef = db.collection('hr_stats').doc(email);
+                const stat = await statRef.get();
+                if (stat.exists && typeof stat.data().annualLeavesLeft === 'number') {
+                    await statRef.update({ annualLeavesLeft: firebase.firestore.FieldValue.increment(1) });
+                }
+            }
+
+            showToast('Success', `Attendance updated for ${email}`, 'success');
+            loadAttendance();
+            
+        } catch (e) {
+            console.error(e);
+            showToast('Error', 'Could not update attendance', 'error');
+        }
+    }
+
+    // Default Date for DatePicker
+    document.addEventListener('DOMContentLoaded', () => {
+        const picker = document.getElementById('att-date-picker');
+        if (picker) {
+            picker.value = zonedYMD(serverNow());
+        }
+    });
+    // --- End Attendance Logic ---
+
+</script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -1023,6 +1172,7 @@
         
         const nav = document.getElementById('nav-' + tabId);
         if(nav) {
+            if(tabId === 'attendance') loadAttendance();
             nav.classList.add('active', 'bg-brand-soft', 'text-brand-blue');
             nav.classList.remove('text-textMuted');
         }
