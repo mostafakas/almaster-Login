@@ -424,7 +424,7 @@
             const data = doc.data();
             const localSession = localStorage.getItem('my_session_id');
             if (data.sessionId && localSession && data.sessionId !== localSession) {
-                if (unsubscribeUser) unsubscribeUser();
+                
                 Swal.fire({
                     icon: 'warning',
                     title: 'Session Expired',
@@ -612,6 +612,21 @@
         db.collection('users').doc(EMAIL).onSnapshot(doc => {
             if (!doc.exists) return;
             userProfile = doc.data();
+            
+            const localSession = localStorage.getItem('my_session_id');
+            if (userProfile.sessionId && localSession && userProfile.sessionId !== localSession) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Session Expired',
+                    text: 'You logged in from another device. This session will be closed.',
+                    allowOutsideClick: false,
+                    showConfirmButton: true,
+                    confirmButtonText: 'Log out'
+                }).then(() => {
+                    auth.signOut().then(() => { window.location.replace('index.html'); });
+                });
+                return;
+            }
             if (timeReady && !resetInProgress && userProfile.dayKey && userProfile.dayKey !== getDayKey(serverNow())) { performReset('boundary'); return; }
             updateCentralUI(userProfile);
         }, err => { console.error('profile:', err); showToast('Sync error', 'Could not update your data.', 'error'); });
